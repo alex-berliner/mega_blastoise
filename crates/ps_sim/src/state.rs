@@ -34,6 +34,14 @@ use crate::request::{RequestState, SideRequestState};
 
 /// Pokemon per side.
 pub const TEAM_CAP: usize = 6;
+
+/// Bytes of a `>player` avatar. PS keeps the option as given (custom
+/// avatars like `#gscpl6carapingacaterpies` run past a [`Name`]); the
+/// longest in the replay corpus is 25.
+pub const AVATAR_CAP: usize = 32;
+
+/// A `>player` avatar.
+pub type Avatar = ps_protocol::BoundedStr<AVATAR_CAP>;
 /// Volatiles one Pokemon can hold at once.
 pub const VOLATILE_CAP: usize = 12;
 /// Side conditions on one side (gen 3 has five: Spikes, Reflect, Light
@@ -595,7 +603,7 @@ pub struct Side {
     /// False until `>player` made the side (PS's `sides[i]` is `null`).
     pub exists: bool,
     pub name: Name,
-    pub avatar: Name,
+    pub avatar: Avatar,
     /// The `rating` option of `>player`, which only `|player|` shows.
     pub rating: Name,
     /// `pokemon.length`.
@@ -630,7 +638,7 @@ impl Side {
             slot_conditions: [EffectTable::new()],
             exists: false,
             name: Name::new(),
-            avatar: Name::new(),
+            avatar: Avatar::new(),
             rating: Name::new(),
             team_size: 0,
             order: [0, 1, 2, 3, 4, 5],

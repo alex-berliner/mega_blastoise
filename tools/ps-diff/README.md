@@ -39,6 +39,13 @@ do.
 `--trunc cartridge|math` picks the Gen 1 rule set (below); every mode
 takes it, `--self` included.
 
+`--replays DIR` replays the public replay corpus (V-3, V-4) with the
+choices each replay's `inputlog` recorded: the pinned PS on the left,
+`ps_sim_cli` on the right with the team PS generated (packed). A choice
+`ps_sim` rejects is a diff. `--validated` keeps only the replays
+`replays.js validate` kept; `--format` takes one format id or a comma list.
+The corpus comes from `replays.js` (below, Replays).
+
 `--hits FILE` (against a `ps_sim_cli` built with the `hit-count`
 feature) has every `ps_sim_cli` write its per-handler hit counts to
 FILE, `{pid}` replaced by `<pid>-<start ns>` so each process, respawns
@@ -57,7 +64,33 @@ scripts/ps-diff.sh --carried gen1 --ps-cli "$PWD/target/release/ps_sim_cli" --al
 scripts/ps-diff.sh --targeted gen1 --ps-cli "$PWD/target/release/ps_sim_cli" --trunc math
 scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 3 --n 200
 scripts/ps-diff.sh --ps-cli "$PWD/target/release/ps_sim_cli" --gen 1 --n 200 --teams wide --trunc math
+scripts/ps-diff.sh --replays /root/replay-cache/current --validated --format gen1randombattle --ps-cli "$PWD/target/release/ps_sim_cli" --jobs 6
 ```
+
+## Replays
+
+`replays.js` keeps the corpus of public replays from
+`replay.pokemonshowdown.com` (one request per second, backoff on 429 and
+5xx, resumable, never downloads a replay twice):
+
+```
+node tools/ps-diff/replays.js fetch    --cache /root/replay-cache --era current --format gen1randombattle,gen3randombattle --target 1000
+node tools/ps-diff/replays.js validate --cache /root/replay-cache --era current --jobs 6
+node tools/ps-diff/replays.js report   --cache /root/replay-cache
+```
+
+The seed picks the era. `gen5` (numeric seeds, `Gen5RNG`, before 2025) lives
+in `<cache>/<format>/`; `current` (`sodium,<hex>` seeds, `SodiumRNG`) in
+`<cache>/current/<format>/`. `validate` plays each replay's input log on the
+pinned PS and keeps it when PS's omniscient log matches the replay's `log`
+(the server's own lines ignored), writing `validated/<format>.json` with the
+drop reasons. The OU formats have no input log (the server keeps one only for
+generated teams), so only their logs are used, by the `ps_client` parse test
+(`crates/ps_client/tests/replay_logs.rs`). A committed sample lives in
+`crates/ps_harness/replays/` (`<format>/` for the numeric-seed era,
+`current/<format>/` for 20 validated `sodium,` replays per random format).
+`--replays` walks DIR recursively, so `/root/replay-cache` covers both eras
+and `/root/replay-cache/current` only the current one.
 
 `--self` or `--ps-cli` is required; both can be combined with `--pinned`
 (pinned runs are PS-vs-PS unless a `--ps-cli` is given). `check.sh`

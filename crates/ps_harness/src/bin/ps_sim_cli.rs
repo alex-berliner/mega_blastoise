@@ -65,7 +65,7 @@ use ps_protocol::text::line::encode_msg;
 use ps_protocol::text::names::Tables;
 use ps_protocol::text::team::unpack;
 use ps_protocol::text::encode_log;
-use ps_protocol::{Choice, Command, FormatSpec, Msg, PrngSeed, Request, SideId};
+use ps_protocol::{Choice, Command, FormatSpec, Msg, Name, PrngSeed, Request, SideId};
 use ps_sim::text::{dex_tables, Names};
 use ps_sim::effect::Rule;
 use ps_sim::{Battle, EffectId, EventId, Prefix, Sink};
@@ -471,6 +471,12 @@ impl Stream {
                 let choice = parse_choice(arg).ok_or_else(|| bad(format!("choice {arg:?}")))?;
                 b.step(&Command::Choose { side, choice }).map_err(|e| bad(format!("{e:?}")))?;
             }
+            "forcelose" => {
+                // PS `>forcelose pN`: the side loses, the battle ends.
+                let Some(b) = self.battle.as_mut() else { return Ok(String::new()) };
+                let side = SideId::parse(arg).ok_or_else(|| bad(format!(">forcelose: side {arg}")))?;
+                b.lose(side.index() as u8);
+            }
             other => return Err(bad(format!("command >{other}"))),
         }
         let b = self.battle.as_mut().unwrap();
@@ -484,13 +490,26 @@ impl Stream {
     }
 }
 
-/// A singles choice, PS grammar (`move 1`, `switch 2`, `pass`, `default`,
-/// `undo`).
+/// A singles choice, PS grammar (`move 1`, `move NAME`, `switch 2`,
+/// `switch NAME`, `pass`, `default`, `undo`).
+///
+/// The names are PS's: the replay corpus records the choice the player
+/// typed (`move submission`), and PS resolves it against the request's
+/// moves (by move id) or the team's Pokemon (by nickname or species id).
+/// `ps_sim`'s choice layer implements that resolution, so the name goes
+/// through unchanged.
 fn parse_choice(text: &str) -> Option<Choice> {
     let (kind, arg) = text.trim().split_once(' ').unwrap_or((text.trim(), ""));
+    let arg = arg.trim();
     Some(match kind {
-        "move" => Choice::Move(arg.trim().parse().ok()?),
-        "switch" => Choice::Switch(arg.trim().parse().ok()?),
+        "move" => match arg.parse::<u8>() {
+            Ok(n) => Choice::Move(n),
+            Err(_) => Choice::MoveName(Name::from_str(arg).ok()?),
+        },
+        "switch" => match arg.parse::<u8>() {
+            Ok(n) => Choice::Switch(n),
+            Err(_) => Choice::SwitchName(Name::from_str(arg).ok()?),
+        },
         "pass" => Choice::Pass,
         "default" => Choice::Default,
         "undo" => Choice::Undo,

@@ -500,7 +500,7 @@ impl Battle {
                 let sd = &mut self.sides[s as usize];
                 sd.exists = true;
                 sd.name = side_name;
-                sd.avatar = Name::from_str(avatar).unwrap_or_default();
+                sd.avatar = crate::state::Avatar::from_str(avatar).unwrap_or_default();
                 sd.team_size = team.len() as u8;
             }
             for (i, set) in sets.iter().enumerate() {
@@ -517,7 +517,7 @@ impl Battle {
                 did_something = true;
             }
             if !avatar.is_empty() && sd.avatar.as_str() != avatar {
-                sd.avatar = Name::from_str(avatar).unwrap_or_default();
+                sd.avatar = crate::state::Avatar::from_str(avatar).unwrap_or_default();
                 did_something = true;
             }
             if team.is_some() {
@@ -1843,6 +1843,12 @@ impl Battle {
     // PS: sim/battle.ts tie
     pub fn tie(&mut self) -> bool {
         self.win(None)
+    }
+
+    /// PS `lose(side)`: the side loses, the other one wins.
+    // PS: sim/battle.ts lose
+    pub fn lose(&mut self, side: u8) -> bool {
+        self.win(Some(1 - side))
     }
 
     // ---- choices ----------------------------------------------------------

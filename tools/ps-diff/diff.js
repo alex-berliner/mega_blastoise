@@ -18,6 +18,20 @@
 //   --ps-cli <path>    one PS, one rust.
 //   Either is required.
 //
+//   --replays DIR      the replay corpus (V-3, V-4): every replay in DIR
+//                      is played twice with the choices its `inputlog`
+//                      recorded, once on the pinned PS and once on
+//                      `ps_sim_cli`, and the two logs are compared line
+//                      for line. `ps_sim` gets the team PS generated
+//                      (packed), since it has no team generator; the
+//                      `>player` seed would make PS and `ps_sim` play
+//                      different teams. A choice `ps_sim` rejects is a
+//                      diff. `--validated` keeps only the replays
+//                      `replays.js validate` kept (DIR is a cache root:
+//                      `/root/replay-cache` for the numeric-seed era,
+//                      `/root/replay-cache/current` for the `sodium,`
+//                      one).
+//
 // Battle loop:
 //   - `--teams random` -> PS's own genNrandombattle generator.
 //   - `--teams wide`   -> the showdown_fuzz wide fuzz space; limited to
@@ -74,10 +88,11 @@
 const fs = require('fs');
 const path = require('path');
 const { spawn, spawnSync } = require('child_process');
-const { BattleStream, PRNG } = require('pokemon-showdown');
+const { BattleStream, PRNG, Teams } = require('pokemon-showdown');
 const teams = require('./teams');
 const { spawnPorted } = require('./ported');
 const rules = require('./rules');
+const { parseInputLog, takeForces } = require('./replays');
 
 const DEFAULT_TIMEOUT_MS = 30000;
 const DEFAULT_JOBS = 14;
@@ -87,6 +102,7 @@ const CARRIED_SEEDS = 20;
 function parseArgs(argv) {
   const opts = {
     gen: 3, n: 200,
+    format: 'all',
     seed: undefined,
     teamsMode: 'random',
     focus: null,
@@ -105,6 +121,10 @@ function parseArgs(argv) {
     carried: undefined, carriedPair: undefined,
     targeted: undefined, targetedName: undefined,
     trunc: undefined,
+    replays: undefined,
+    replaySlice: undefined,
+    validated: false,
+    limit: undefined,
   };
   let i = 0;
   while (i < argv.length) {
@@ -150,6 +170,11 @@ function parseArgs(argv) {
       case '--targeted-name': opts.targetedName = argv[i++]; break;
       case '--trunc': opts.trunc = argv[i++]; break;
       case '--slice': opts.slice = argv[i++].split(':').map((x) => parseInt(x, 10)); break;
+      case '--replays': opts.replays = argv[i++]; break;
+      case '--format': opts.format = argv[i++]; break;
+      case '--replay-slice': opts.replaySlice = argv[i++].split(':').map((x) => parseInt(x, 10)); break;
+      case '--limit': opts.limit = parseInt(argv[i++], 10); break;
+      case '--validated': opts.validated = true; break;
       case '--help': case '-h':
         console.log(
           'Usage: node diff.js (--self|--ps-cli P) [--gen 1|3] [--n N] '
@@ -157,7 +182,8 @@ function parseArgs(argv) {
           + '[--teams random|wide|file:<p>] [--focus ids] '
           + '[--jobs N] [--tamper-line K] [--pinned] [--carried gen1 [--carried-pair F#C]] '
           + '[--targeted gen1 [--targeted-name N]] '
-          + '[--trunc cartridge|math] [--quiet] [--allow-unported] [--hits FILE]'
+          + '[--trunc cartridge|math] [--quiet] [--allow-unported] [--hits FILE] '
+          + '[--replays DIR [--validated]] [--format id[,id]] [--limit N]'
         );
         process.exit(0);
       default:
@@ -537,10 +563,49 @@ class RustProc {
     const b = this.battle;
     if (!b || this.type !== 'sideupdate' || this.lines.length !== 2) return;
     const side = this.lines[0];
-    if (!/^p[12]$/.test(side) || !line.startsWith('|request|')) return;
+    if (!/^p[12]$/.test(side)) return;
+    if (line.startsWith('|error|')) {
+      // A rejected choice: PS does not ask again, the player sends the
+      // next one. The recording has it.
+      if (!b.choices) return;
+      const q = b.choices[side];
+      if (!q || !q.length) return;
+      const retry = q.shift();
+      b.sent += 1;
+      if (this.child) this.child.stdin.write(`>${side} ${retry}\n`);
+      return;
+    }
+    if (!line.startsWith('|request|')) return;
     let req;
     try { req = JSON.parse(line.slice('|request|'.length)); } catch (_) { return; }
     b.prngCalls += 1;
+    if (b.choices) {
+      // The replay mode: the choice the recording made, in the recording's
+      // order. PS's own grammar (`move submission`) goes through as it
+      // stands; `ps_sim` resolves the name like PS does.
+      if (req.wait) return;
+      // A forced loss ends the battle on its own.
+      const due = takeForces(b.forces, b.sent);
+      if (due.length) {
+        for (const f of due) {
+          if (this.child) this.child.stdin.write(`${f.cmd}\n`);
+        }
+        b.forced = true;
+        return;
+      }
+      if (b.forced) return;
+      const q = b.choices[side];
+      if (!q || !q.length) {
+        // The recording has no choice left for this side. PS's `default`
+        // (the first move) keeps the battle going.
+        if (this.child) this.child.stdin.write(`>${side} default\n`);
+        return;
+      }
+      const recorded = q.shift();
+      b.sent += 1;
+      if (this.child) this.child.stdin.write(`>${side} ${recorded}\n`);
+      return;
+    }
     const choice = b.choose(side, req);
     if (choice !== null && this.child) this.child.stdin.write(`>${side} ${choice}\n`);
   }
@@ -556,11 +621,18 @@ class RustProc {
   }
   /// Plays one battle: `cmds` are the `>start` / `>player` lines. Resolves
   /// with { out, prngCalls, status: end|unported|crash|timeout, detail }.
-  runBattle(cmds, choiceSeed, timeoutMs, script) {
+  /// `script` (optional) scripts the random choices; `choices` (the
+  /// replay mode) is the per-side queue of the recorded choices to play,
+  /// and `forces` the recording's `>forcelose` commands.
+  runBattle(cmds, choiceSeed, timeoutMs, script, choices, forces) {
     if (!this.child) this._spawn();
     return new Promise((resolve) => {
       this.battle = {
         log: [], prngCalls: 0, choose: makeChooser(choiceSeed, script), stderr: '', resolve,
+        choices: choices ? { p1: choices.p1.slice(), p2: choices.p2.slice() } : null,
+        forces: forces ? forces.slice() : [],
+        sent: 0,
+        forced: false,
         timer: setTimeout(() => this.kill('timeout'), timeoutMs),
       };
       this.type = null;
@@ -911,11 +983,447 @@ function parseSummary(line) {
     ? ids[1].split(',').map((p) => { const k = p.lastIndexOf(':'); return [p.slice(0, k), +p.slice(k + 1)]; })
     : [];
   const pc = line.match(/\sps_crashes=(\d+)/);
-  return { ran: +m[1], diff: +m[2], crash: +m[3], unported: +m[4], psCrash: pc ? +pc[1] : 0, unportedIds };
+  const skipped = line.match(/\sskipped=(\d+)/);
+  const reasons = line.match(/\sreasons=(\S*)/);
+  const reasonPairs = reasons && reasons[1]
+    ? reasons[1].split(',').filter(Boolean).map((p) => {
+      const k = p.lastIndexOf(':'); return [p.slice(0, k), +p.slice(k + 1)];
+    })
+    : [];
+  return {
+    ran: +m[1], diff: +m[2], crash: +m[3], unported: +m[4], psCrash: pc ? +pc[1] : 0, unportedIds,
+    skipped: skipped ? +skipped[1] : 0, reasons: reasonPairs,
+  };
+}
+
+// ---- the replay corpus -----------------------------------------------------
+
+/// The formats `ps_sim` can play (`ps_protocol::FormatId::ALL`): the
+/// base format must be one of these, and every custom rule after `@@@`
+/// must be one `ps_protocol::RuleId::ALL` knows, by its name.
+const PS_SIM_FORMATS = ['gen1customgame', 'gen3customgame', 'gen1randombattle', 'gen3randombattle'];
+const PS_SIM_RULES = [
+  'HP Percentage Mod', 'Cancel Mod', 'Desync Clause Mod', 'Sleep Clause Mod',
+  'Freeze Clause Mod', 'Endless Battle Clause', 'Species Clause', 'OHKO Clause',
+  'Evasion Moves Clause', 'Beat Up Nicknames Mod', 'Switch Priority Clause Mod',
+  'Evasion Items Clause', 'Cartridge Trunc',
+];
+
+/// Can `ps_sim` play the format a replay names?
+function psSimKnowsFormat(formatid) {
+  if (typeof formatid !== 'string') return false;
+  const [base, rules] = formatid.split('@@@');
+  if (!PS_SIM_FORMATS.includes(base)) return false;
+  if (rules === undefined) return true;
+  return rules.split(',').every((r) => PS_SIM_RULES.includes(r.trim()));
+}
+
+/// The pinned PS playing the choices the recording made. Returns the raw
+/// update log (the bytes the ps_sim side writes, so the two compare
+/// directly), the teams PS generated (packed) and the errors.
+///
+/// The `>start` line loses its `rated` field: `ps_sim` has no rated flag,
+/// and PS's `|rated|` line would be a difference that is not about the
+/// battle.
+async function drivePSRecorded(p, opts) {
+  rules.install();
+  const stream = new BattleStream({ keepAlive: false });
+  const log = [];
+  const errors = [];
+  const choices = { p1: p.choices.p1.slice(), p2: p.choices.p2.slice() };
+  const forces = (p.forces || []).slice();
+  let sent = 0;
+  let forced = false;
+  const start = { ...p.start };
+  delete start.rated;
+  const cmds = [`>start ${JSON.stringify(start)}`];
+  for (const side of ['p1', 'p2']) {
+    const pl = p.players[side];
+    if (!pl) continue;
+    cmds.push(`>player ${side} ${JSON.stringify(pl)}`);
+  }
+  const deadline = setTimeout(() => {
+    errors.push('timeout');
+    try { stream.writeEnd(); } catch (_) { /* already closed */ }
+  }, opts.timeoutMs || DEFAULT_TIMEOUT_MS);
+  const iter = stream[Symbol.asyncIterator]();
+  // The stream does not resolve while the battle waits for a choice, so
+  // the pump polls it and stops as soon as it knows the replay cannot go
+  // on.
+  let stopped = false;
+  let pending = null;
+  const nextMessage = async () => {
+    for (;;) {
+      if (stopped) return null;
+      if (!pending) pending = iter.next();
+      let timer = null;
+      const timeout = new Promise((resolve) => { timer = setTimeout(() => resolve(null), 200); });
+      const r = await Promise.race([pending, timeout]);
+      clearTimeout(timer);
+      if (r === null) continue;
+      pending = null;
+      return r;
+    }
+  };
+  const pump = (async () => {
+    for (;;) {
+      const r = await nextMessage();
+      if (!r || r.done) break;
+      const value = r.value;
+      const nl = value.indexOf('\n');
+      if (nl < 0) continue;
+      const type = value.slice(0, nl);
+      const data = value.slice(nl + 1);
+      if (type === 'update') {
+        log.push(data);
+        continue;
+      }
+      if (type === 'sideupdate') {
+        // The side updates carry the requests; the rust side writes them
+        // the same way, so both logs hold them.
+        log.push(data);
+        const nl2 = data.indexOf('\n');
+        const side = data.slice(0, nl2);
+        const body = data.slice(nl2 + 1);
+        if (body.startsWith('|request|')) {
+          let req;
+          try { req = JSON.parse(body.slice('|request|'.length)); } catch (_) { continue; }
+          if (req.wait) continue;
+          const q = choices[side];
+          // A forced loss ends the battle on its own.
+          const due = takeForces(forces, sent);
+          if (due.length) {
+            for (const f of due) stream.write(`${f.cmd}\n`);
+            forced = true;
+            continue;
+          }
+          if (forced) continue;
+          if (!q || !q.length) {
+            errors.push(`${side}: no recorded choice left`);
+            // The battle cannot go on: stop the driver instead of waiting
+            // for a choice that will never come.
+            stopped = true;
+            try { stream.writeEnd(); } catch (_) { /* already closed */ }
+            return;
+          }
+          const choice = q.shift();
+          sent += 1;
+          stream.write(`>${side} ${choice}\n`);
+        } else if (body.startsWith('|error|')) {
+          errors.push(`${side}: ${body}`);
+          // PS does not ask again after a rejected choice: the player
+          // sends the next one. The recording has it.
+          const q = choices[side];
+          if (q && q.length) {
+            const choice = q.shift();
+            sent += 1;
+            stream.write(`>${side} ${choice}\n`);
+          } else {
+            stopped = true;
+            try { stream.writeEnd(); } catch (_) { /* already closed */ }
+            return;
+          }
+        }
+        continue;
+      }
+      if (type === 'end') break;
+    }
+  })();
+  try {
+    stream.write(cmds.join('\n') + '\n');
+    await pump;
+  } catch (e) {
+    clearTimeout(deadline);
+    return { error: `PS threw: ${e && e.message}` };
+  }
+  clearTimeout(deadline);
+  // The teams PS generated (packed): `ps_sim` has no team generator, so
+  // it plays the team PS made. `side.team` is the list of sets; the
+  // packed form is what a `>player` line carries.
+  const teams = {};
+  if (stream.battle) {
+    for (const side of stream.battle.sides) {
+      if (side) teams[side.id] = Teams.pack(side.team);
+    }
+  }
+  return { log: log.join('\n'), errors, teams };
+}
+
+/// The replay files under `dir`, sorted. A format filter keeps the
+/// replays of one format (the cache keeps them in a directory per
+/// format).
+function replayFiles(dir, format) {
+  const out = [];
+  const walk = (d) => {
+    let entries;
+    try { entries = fs.readdirSync(d, { withFileTypes: true }); } catch (_) { return; }
+    for (const e of entries) {
+      const p = path.join(d, e.name);
+      if (e.isDirectory()) {
+        if (e.name !== 'validated') walk(p);
+      } else if (e.name.endsWith('.json') && e.name !== 'state.json') {
+        out.push(p);
+      }
+    }
+  };
+  walk(dir);
+  out.sort();
+  if (!format || format === 'all') return out;
+  const formats = format.split(',');
+  return out.filter((f) => {
+    const dirName = path.basename(path.dirname(f));
+    const stem = path.basename(f, '.json');
+    return formats.some((fmt) => dirName === fmt || stem.startsWith(fmt + '-'));
+  });
+}
+
+/// `--validated`: only the replays the validator kept
+/// (`replays.js validate` writes `validated/<format>.json` next to the
+/// format directories). A format without a validation report keeps
+/// nothing.
+function keepValidated(files) {
+  const kept = new Map();
+  const keptOf = (formatDir) => {
+    if (!kept.has(formatDir)) {
+      const report = path.join(path.dirname(formatDir), 'validated', `${path.basename(formatDir)}.json`);
+      let ids = new Set();
+      try { ids = new Set(JSON.parse(fs.readFileSync(report, 'utf8')).kept); } catch (_) { /* no report */ }
+      kept.set(formatDir, ids);
+    }
+    return kept.get(formatDir);
+  };
+  return files.filter((f) => keptOf(path.dirname(f)).has(path.basename(f, '.json')));
+}
+
+/// The gen a replay's formatid plays.
+function genOfFormat(formatid) {
+  const m = /^gen([0-9])/.exec(formatid || '');
+  return m ? parseInt(m[1], 10) : 1;
+}
+
+/// Play one replay on both sides and compare the logs.
+async function runReplay(file, opts) {
+  const result = { diff: 0, crash: 0, unported: 0, skipped: 0, reason: null, id: null };
+  let replay;
+  try {
+    replay = JSON.parse(fs.readFileSync(file, 'utf8'));
+  } catch (e) {
+    result.skipped = 1;
+    result.reason = 'unreadable';
+    return result;
+  }
+  result.id = replay.id || path.basename(file, '.json');
+  const p = parseInputLog(replay.inputlog || '');
+  if (!p.start) {
+    result.skipped = 1;
+    result.reason = 'no-inputlog';
+    return result;
+  }
+  if (!psSimKnowsFormat(p.start.formatid)) {
+    result.skipped = 1;
+    result.reason = 'unsupported-format';
+    return result;
+  }
+  for (const side of ['p1', 'p2']) {
+    for (const c of p.choices[side]) {
+      if (/^team\b/.test(c)) {
+        // The team preview choice is not in ps_sim's choice grammar yet.
+        result.skipped = 1;
+        result.reason = 'team-preview';
+        return result;
+      }
+    }
+  }
+  const ps = await drivePSRecorded(p, opts);
+  if (ps.error) {
+    result.crash = 1;
+    result.reason = 'ps-error';
+    result.detail = ps.error;
+    return result;
+  }
+  if (ps.errors.length) {
+    result.skipped = 1;
+    // A rejected choice means the team PS generated from the seed is not
+    // the team the recording played (the random team generator changed);
+    // a battle that runs out of recorded choices is the same drift.
+    result.reason = ps.errors.some((e) => e.includes('|error|'))
+      ? 'team-drift' : 'recording-incomplete';
+    result.detail = ps.errors[0];
+    return result;
+  }
+  const start = { ...p.start };
+  delete start.rated;
+  const cmds = [`>start ${JSON.stringify(start)}`];
+  for (const side of ['p1', 'p2']) {
+    const pl = p.players[side] || {};
+    const team = ps.teams[side];
+    if (!team) {
+      result.skipped = 1;
+      result.reason = 'no-team';
+      return result;
+    }
+    cmds.push(`>player ${side} ${JSON.stringify({
+      name: pl.name || side,
+      avatar: pl.avatar || '',
+      rating: String(pl.rating || ''),
+      team,
+    })}`);
+  }
+  const rust = rustFor(opts.psCli);
+  const bRun = await rust.runBattle(cmds, [1, 2, 3, 4], opts.timeoutMs, undefined, p.choices, p.forces);
+  const aLines = normaliseLines(ps.log);
+  let bLines = normaliseLines(bRun.out);
+  const stoppedEarly = bRun.status !== 'end';
+  if (stoppedEarly && bRun.out === '') bLines = [];
+  const at = stoppedEarly
+    ? firstDiff(aLines.slice(0, bLines.length), bLines)
+    : firstDiff(aLines, bLines);
+  // A choice ps_sim rejects is a diff: it answers with an `|error|` line.
+  const rejected = bRun.out.includes('|error|');
+  if (at >= 0 || rejected) {
+    result.diff = 1;
+    result.reason = rejected && at < 0 ? 'rejected-choice' : 'log-diff';
+    writeDivergence(opts.scratch || path.join(__dirname, '..', '..', '.scratch', 'ps-diff'), {
+      seed: result.id, gen: genOfFormat(p.start.formatid),
+      teams: 'replay', at: at < 0 ? 0 : at,
+      left: ps.log, right: bRun.out,
+      prngCallsA: 0, prngCallsB: bRun.prngCalls,
+      leftAt: at < 0 ? '' : aLines[at], rightAt: at < 0 ? '' : bLines[at],
+      ctxBefore: [], ctxAfter: [],
+    });
+  }
+  if (bRun.status === 'unported') {
+    result.unported = 1;
+    result.unportedId = bRun.detail;
+  } else if (bRun.status !== 'end') {
+    result.crash = 1;
+    result.reason = result.reason || `rust-${bRun.status}`;
+    writeError(opts.scratch || path.join(__dirname, '..', '..', '.scratch', 'ps-diff'),
+      { seed: result.id, gen: genOfFormat(p.start.formatid), teams: 'replay' },
+      new Error(`rust side: ${bRun.status}: ${bRun.detail}\n${bRun.stderr}`));
+  }
+  return result;
+}
+
+/// The `--replays DIR` mode: the corpus on both sides, one summary line.
+async function runReplayMode(opts) {
+  const scratch = opts.scratch || path.join(__dirname, '..', '..', '.scratch', 'ps-diff');
+  let files = replayFiles(opts.replays, opts.format);
+  if (opts.validated) files = keepValidated(files);
+  if (opts.limit) files = files.slice(0, opts.limit);
+  if (opts.replaySlice) files = files.slice(opts.replaySlice[0], opts.replaySlice[1]);
+  if (opts.jobs > 1 && files.length > 1) {
+    const code = await runReplaysWithJobs(files, opts);
+    process.exit(code);
+  }
+  let nRun = 0, nDiff = 0, nCrash = 0, nUnported = 0, nSkipped = 0;
+  const ids = new Map();
+  const reasons = {};
+  for (const file of files) {
+    const r = await runReplay(file, { ...opts, scratch });
+    nRun++;
+    nDiff += r.diff; nCrash += r.crash; nUnported += r.unported; nSkipped += r.skipped;
+    if (r.unportedId) ids.set(r.unportedId, (ids.get(r.unportedId) || 0) + 1);
+    if (r.skipped && r.reason) reasons[r.reason] = (reasons[r.reason] || 0) + 1;
+    if (r.diff && r.reason === 'log-diff') reasons['log-diff'] = (reasons['log-diff'] || 0) + 1;
+    if (!opts.quiet && nRun % 25 === 0) {
+      process.stdout.write(`ps-diff: replays ${nRun}/${files.length} (diffs ${nDiff})\n`);
+    }
+  }
+  if (rustProc) rustProc.close();
+  process.stdout.write(
+    `ps-diff: ran=${nRun} diffs=${nDiff} crashes=${nCrash} unported=${nUnported} skipped=${nSkipped}`
+    + ` mode=replays reasons=${formatReasons(reasons)}`
+    + (ids.size ? ` unported_ids=${formatIds(ids)}` : '') + '\n');
+  const failures = nDiff + nCrash + (opts.allowUnported ? 0 : nUnported);
+  process.exit(failures === 0 ? 0 : 1);
+}
+
+/// `reason:count` pairs, most frequent first.
+function formatReasons(reasons) {
+  return Object.entries(reasons)
+    .sort((a, b) => b[1] - a[1] || (a[0] < b[0] ? -1 : 1))
+    .map(([k, v]) => `${k}:${v}`)
+    .join(',');
+}
+
+/// `--jobs N` for the replay mode: N child processes running at once,
+/// each with a slice of the file list, merged into one summary line.
+async function runReplaysWithJobs(files, opts) {
+  const n = Math.max(1, Math.min(opts.jobs, files.length));
+  const per = Math.ceil(files.length / n);
+  const slices = [];
+  for (let i = 0; i < n; i++) {
+    const start = i * per;
+    const end = Math.min(start + per, files.length);
+    if (start >= end) break;
+    slices.push({ start, end });
+  }
+  const summaries = [];
+  let exitCode = 0;
+  const runSlice = (slice) => new Promise((resolve) => {
+    const aargs = ['--replays', opts.replays, '--ps-cli', opts.psCli, '--jobs', '1',
+      '--replay-slice', `${slice.start}:${slice.end}`];
+    if (opts.format && opts.format !== 'all') aargs.push('--format', opts.format);
+    if (opts.validated) aargs.push('--validated');
+    if (opts.limit) aargs.push('--limit', String(opts.limit));
+    if (opts.allowUnported) aargs.push('--allow-unported');
+    if (opts.scratch) aargs.push('--scratch', opts.scratch);
+    aargs.push('--per-battle-timeout', String(opts.timeoutMs));
+    const child = spawn(process.execPath, [__filename, ...aargs], { stdio: ['ignore', 'pipe', 'pipe'] });
+    let stdout = '';
+    let stderr = '';
+    child.stdout.on('data', (d) => { stdout += d; });
+    child.stderr.on('data', (d) => { stderr += d; });
+    child.on('close', (status) => resolve({ stdout, stderr, status }));
+  });
+  for (const r of await Promise.all(slices.map(runSlice))) {
+    if (r.stdout) {
+      for (const line of r.stdout.split('\n')) {
+        if (!line.trim()) continue;
+        if (line.startsWith('ps-diff: ran=')) {
+          summaries.push(line);
+        } else if (!opts.quiet) {
+          process.stdout.write(line + '\n');
+        }
+      }
+    }
+    if (r.stderr && !opts.quiet) process.stderr.write(r.stderr);
+    if (r.status !== 0) exitCode = r.status || 1;
+  }
+  let totalRun = 0, totalDiff = 0, totalCrash = 0, totalUn = 0, totalSkipped = 0;
+  const ids = new Map();
+  const reasons = {};
+  for (const line of summaries) {
+    const parsed = parseSummary(line);
+    if (!parsed) continue;
+    totalRun += parsed.ran; totalDiff += parsed.diff;
+    totalCrash += parsed.crash; totalUn += parsed.unported;
+    totalSkipped += parsed.skipped || 0;
+    for (const [id, k] of parsed.unportedIds) ids.set(id, (ids.get(id) || 0) + k);
+    for (const [r, k] of parsed.reasons || []) reasons[r] = (reasons[r] || 0) + k;
+  }
+  process.stdout.write(
+    `ps-diff: ran=${totalRun} diffs=${totalDiff} crashes=${totalCrash} unported=${totalUn}`
+    + ` skipped=${totalSkipped} mode=replays reasons=${formatReasons(reasons)}`
+    + (ids.size ? ` unported_ids=${formatIds(ids)}` : '') + '\n');
+  return exitCode;
 }
 
 async function main() {
   const opts = parseArgs(process.argv.slice(2));
+  if (opts.replays) {
+    if (!opts.psCli) {
+      process.stderr.write('error: --replays needs --ps-cli <path>\n');
+      process.exit(2);
+    }
+    if (!fs.existsSync(opts.psCli)) {
+      process.stderr.write(`ps-diff: ps_cli not found at ${opts.psCli}\n`);
+      process.exit(2);
+    }
+    await runReplayMode(opts);
+    return;
+  }
   if ((opts.pinned || opts.carried !== undefined || opts.targeted !== undefined) && !opts.psCli) opts.self = true;
   if ([opts.pinned || undefined, opts.carried, opts.targeted].filter((x) => x !== undefined).length > 1) {
     process.stderr.write('ps-diff: --pinned, --carried and --targeted are separate runs\n');
