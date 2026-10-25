@@ -665,20 +665,32 @@ impl Battle {
             return;
         }
         // `runEvent('ModifySecondaries', target, source, moveData,
-        // secondaries.slice())`: Shield Dust (gen 3's only handler) would
-        // bring the list relay.
+        // secondaries.slice())`: the copy travels as a mask over the dex's
+        // list, so Shield Dust can drop the effects that are not `self`
+        // effects.
         let effect = self.mv(mv).effect();
         let holder = target.mon().map_or(Holder::None, Holder::Mon);
-        let r = self.run_event(EventId::ModifySecondaries, holder, Some(source), effect, Some(Relay::TRUE));
-        assert_eq!(r, Relay::TRUE, "ModifySecondaries handler: the secondaries relay is not ported");
-        for secondary in secondaries {
+        assert!(secondaries.len() <= 8, "more secondaries than the relay holds");
+        let all = u8::MAX >> (8 - secondaries.len());
+        let r = self.run_event(EventId::ModifySecondaries, holder, Some(source), effect, Some(Relay::Secondaries(all)));
+        let kept = match r {
+            Relay::Secondaries(mask) => mask,
+            other => panic!("unported: ModifySecondaries answered {other:?}"),
+        };
+        // Serene Grace's `secondary.chance *= 2` on this use's copy.
+        let doubled = self.mv(mv).secondary_chances_doubled;
+        for (i, secondary) in secondaries.iter().enumerate() {
+            if kept & (1 << i) == 0 {
+                continue;
+            }
             let secondary_roll = self.prng.random_n(100);
             // Boosts and self effects overflow past 255 in gens 8 and before.
             let overflow = (secondary.boosts.is_some() || secondary.self_effect.is_some()) && self.gen <= 8;
             let hit = match secondary.chance {
                 None => true,
                 Some(c) => {
-                    let chance = if overflow { u32::from(c) % 256 } else { u32::from(c) };
+                    let c = if doubled { u32::from(c) * 2 } else { u32::from(c) };
+                    let chance = if overflow { c % 256 } else { c };
                     secondary_roll < chance
                 }
             };

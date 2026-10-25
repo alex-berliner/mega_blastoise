@@ -37,7 +37,7 @@
 //! `getEffectiveness`; data/mods/gen4/scripts.ts `applyRecoilDamage`.
 
 use ps_dex::{ConditionId, FixedDamage, MoveCategory, MoveId, MoveTarget, Type};
-use ps_protocol::{Arg, ArgValue, Kw, KwFlags, MoveNum, Msg, Word};
+use ps_protocol::{Arg, ArgValue, Kw, KwFlags, MoveNum, Msg, Text, TextArg, TextId, Word};
 
 use crate::effect::{Callback, EffectId, EventArgs, EventId, Prefix, Pseudo};
 use crate::mods::gen1::scripts::Gen1Scripts;
@@ -142,6 +142,10 @@ pub struct ActiveMove {
     /// `ModifySpA` shifts the first off.
     pub allies: [u8; 6],
     pub allies_len: u8,
+    /// `secondary.chance *= 2` on this use's copy of `secondaries` (PS's
+    /// `getActiveMove` deep-copies the move): Serene Grace. The effects
+    /// themselves are the dex's.
+    pub secondary_chances_doubled: bool,
 }
 
 impl ActiveMove {
@@ -172,6 +176,7 @@ impl ActiveMove {
         multihit: None,
         allies: [0; 6],
         allies_len: 0,
+        secondary_chances_doubled: false,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -548,6 +553,27 @@ impl Battle {
     /// `instafaint`): `spreadDamage` of one.
     // PS: sim/battle.ts damage, spreadDamage
     pub fn damage(&mut self, damage: i32, target: Option<MonRef>, source: Option<MonRef>, effect: EffectId) -> MoveResult {
+        self.damage_inner(damage, target, source, effect, false)
+    }
+
+    /// PS `battle.damage(damage, target, source, effect, true)`: the
+    /// `instafaint` form, which resolves the faints right away (Liquid
+    /// Ooze).
+    // PS: sim/battle.ts damage
+    pub fn damage_instafaint(&mut self, damage: i32, target: Option<MonRef>, source: Option<MonRef>, effect: EffectId) -> MoveResult {
+        self.damage_inner(damage, target, source, effect, true)
+    }
+
+    /// PS `spreadDamage` of one target.
+    // PS: sim/battle.ts damage, spreadDamage
+    fn damage_inner(
+        &mut self,
+        damage: i32,
+        target: Option<MonRef>,
+        source: Option<MonRef>,
+        effect: EffectId,
+        instafaint: bool,
+    ) -> MoveResult {
         let target = target.or(self.event.target.mon());
         let source = source.or(self.event.source);
         let effect = if effect.is_none() { self.frame.effect } else { effect };
@@ -658,6 +684,17 @@ impl Battle {
                     _ => Kw::from(from),
                 }
             }
+            // PS's default case, the ability half: `source &&
+            // (source !== target || effect.effectType === 'Ability')`, so
+            // the `[of] source` is there even when the source is the
+            // target (Liquid Ooze).
+            EffectId::Ability(a) => {
+                let from = Arg::new(ArgValue::AbilityEffect(ps_protocol::AbilityNum(a.0)));
+                match source {
+                    Some(s) => Kw::from_of(from, self.ident(s)),
+                    None => Kw::from(from),
+                }
+            }
             other => panic!("unported: the -damage line of {other:?}"),
         };
         self.add(Msg::Damage { mon, health, kw });
@@ -674,6 +711,24 @@ impl Battle {
                 }
                 self.heal(amount, Some(s), Some(target), EffectId::Pseudo(Pseudo::Drain));
             }
+        }
+        // `instafaint`: a target the damage took to 0 HP has the faint
+        // queue resolved right away (gens 3+ do no more).
+        if instafaint && target_damage != 0 && self.mon(target).hp == 0 {
+            let mut names = [TextArg::NONE; 2];
+            let mut n = 0;
+            for fd in self.faint_queue.iter().flatten() {
+                assert!(n < names.len(), "unported: instafaint with more than two faints queued");
+                names[n] = TextArg::nickname(self.ident(fd.target));
+                n += 1;
+            }
+            let text = match n {
+                1 => Text::with1(TextId::Instafaint, names[0]),
+                2 => Text::with2(TextId::Instafaint2, names[0], names[1]),
+                _ => panic!("unported: instafaint with an empty faint queue"),
+            };
+            self.debug(text);
+            self.resolve_faints(crate::battle::Faints { last_faint_first: true, ..crate::battle::Faints::DEFAULT });
         }
         MoveResult::Int(target_damage)
     }

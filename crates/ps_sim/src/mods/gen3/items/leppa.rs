@@ -36,9 +36,16 @@ fn on_eat(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
         .position(|s| live(s) && s.pp == 0)
         .or_else(|| slots.iter().position(|s| live(s) && i32::from(s.pp) < i32::from(s.maxpp)))?;
     let item = b.mon(mon).item;
-    let slot_mut = &mut b.mon_mut(mon).move_slots[slot];
+    let pokemon = b.mon_mut(mon);
+    let slot_mut = &mut pokemon.move_slots[slot];
     slot_mut.pp = (i32::from(slot_mut.pp) + 10).min(i32::from(slot_mut.maxpp)) as i8;
-    let mv = slot_mut.id;
+    let (mv, pp) = (slot_mut.id, slot_mut.pp);
+    // `moveSlots` share their objects with `baseMoveSlots` until Transform
+    // or Mimic replaces a slot, so the PP survives a switch (as in
+    // `deductPP`).
+    if !pokemon.move_slots[slot].virtual_ && !pokemon.transformed {
+        pokemon.base_move_slots[slot].pp = pp;
+    }
     let ident = b.ident(mon);
     b.add(Msg::Activate {
         mon: Some(ident),

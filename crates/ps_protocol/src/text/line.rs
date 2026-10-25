@@ -88,6 +88,8 @@ fn render_textarg(a: crate::msg::TextArg, dex: &dyn DexNames, names: &dyn Battle
         V::Int(n) => n.to_string(),
         V::MoveId(m) => dex.move_id(m).to_string(),
         V::Move(m) => dex.move_name(m).to_string(),
+        V::ItemId(i) => dex.item_id(i).to_string(),
+        V::AbilityId(x) => dex.ability_id(x).to_string(),
         V::Mon(m) => mon_str(m, names),
         V::Nickname(m) => nickname_only(m, names),
         V::Status(s) => s.as_str().to_string(),
@@ -1111,6 +1113,17 @@ fn parse_text_arg(kind: TextArgKind, s: &str, dex: &dyn DexNames, names: &mut Ba
         }
         TextArgKind::MoveId => TextArg::move_id(dex.move_from_id(s).filter(|&m| dex.move_id(m) == s)?),
         TextArgKind::Move => TextArg::mv(dex.move_from_id(&id_str(s)).filter(|&m| dex.move_name(m) == s)?),
+        TextArgKind::EffectId => {
+            if let Some(m) = dex.move_from_id(s).filter(|&m| dex.move_id(m) == s) {
+                TextArg::move_id(m)
+            } else if let Some(i) = dex.item_from_id(s).filter(|&i| dex.item_id(i) == s) {
+                TextArg::item_id(i)
+            } else if let Some(x) = dex.ability_from_id(s).filter(|&x| dex.ability_id(x) == s) {
+                TextArg::ability_id(x)
+            } else {
+                TextArg::word(Word::parse(s)?)
+            }
+        }
         TextArgKind::Mon => TextArg::mon(parse_mon(s, names).ok()?),
         TextArgKind::Nickname => {
             // A bare nickname names no side; take the first side that has it.

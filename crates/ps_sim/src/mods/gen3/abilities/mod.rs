@@ -10,41 +10,76 @@
 pub mod airlock;
 pub mod arenatrap;
 pub mod battlearmor;
+pub mod blaze;
+pub mod chlorophyll;
+pub mod clearbody;
 pub mod cloudnine;
 pub mod colorchange;
+pub mod cutecharm;
+pub mod compoundeyes;
 pub mod damp;
 pub mod drizzle;
 pub mod drought;
+pub mod effectspore;
+pub mod flamebody;
 pub mod flashfire;
 pub mod forecast;
+pub mod guts;
+pub mod hugepower;
+pub mod hustle;
+pub mod hypercutter;
 pub mod immunity;
 pub mod innerfocus;
 pub mod insomnia;
 pub mod intimidate;
+pub mod keeneye;
 pub mod lightningrod;
 pub mod limber;
+pub mod liquidooze;
 pub mod magmaarmor;
 pub mod magnetpull;
+pub mod marvelscale;
 pub mod minus;
+pub mod naturalcure;
 pub mod oblivious;
+pub mod overgrow;
 pub mod owntempo;
 pub mod plus;
+pub mod poisonpoint;
 pub mod pressure;
+pub mod purepower;
+pub mod raindish;
+pub mod rockhead;
+pub mod roughskin;
 pub mod sandstream;
+pub mod sandveil;
+pub mod serenegrace;
 pub mod shadowtag;
+pub mod shedskin;
 pub mod shellarmor;
+pub mod shielddust;
 pub mod soundproof;
+pub mod speedboost;
+pub mod r#static;
+pub mod stickyhold;
+pub mod sturdy;
+pub mod suctioncups;
+pub mod swarm;
+pub mod swiftswim;
 pub mod synchronize;
+pub mod thickfat;
+pub mod torrent;
 pub mod trace;
 pub mod truant;
 pub mod vitalspirit;
 pub mod voltabsorb;
 pub mod waterabsorb;
 pub mod waterveil;
+pub mod whitesmoke;
 pub mod wonderguard;
 
 use ps_dex::ConditionId;
-use ps_protocol::{AbilityNum, Arg, Kw, Msg};
+use ps_protocol::{AbilityNum, Arg, ArgValue, Kw, Msg, Stat, Word};
 
 use crate::actions::ActiveMove;
 use crate::effect::{EffectId, EventArgs};
@@ -130,6 +165,104 @@ pub fn relay_is(a: &EventArgs, id: ConditionId) -> bool {
 pub fn quarter_base_maxhp(b: &Battle, m: MonRef) -> i32 {
     let hp = i32::from(b.mon(m).base_maxhp);
     if hp > 0 { (hp / 4).max(1) } else { 0 }
+}
+
+/// PS's `onDamagingHit(damage, target, source, move)`'s guard: the hit
+/// did damage and the move made contact. The holder and the attacker.
+pub fn contact_hit(b: &Battle, a: &EventArgs) -> Option<(MonRef, MonRef)> {
+    let damage = a.relay?.as_int()?;
+    if damage == 0 {
+        return None;
+    }
+    let target = a.target.mon()?;
+    let source = a.source?;
+    let EffectId::Move(m) = a.effect else { return None };
+    if !b.dex.move_def(m).flags.has("contact") {
+        return None;
+    }
+    Some((target, source))
+}
+
+/// The number a handler sees as its relay, when PS's is a number
+/// (`typeof accuracy === "number"`): the accuracy travels as a float.
+pub fn relay_number(a: &EventArgs) -> Option<f64> {
+    match a.relay? {
+        Relay::Float(bits) => Some(f64::from_bits(bits)),
+        Relay::Int(n) => Some(f64::from(n)),
+        _ => None,
+    }
+}
+
+/// PS's `effect.secondaries`: whether the effect (a move) has secondary
+/// effects.
+pub fn effect_has_secondaries(b: &Battle, effect: EffectId) -> bool {
+    match effect {
+        EffectId::Move(m) => !b.dex.move_def(m).secondaries().is_empty(),
+        _ => false,
+    }
+}
+
+/// The index of a stat in the boosts table (`atk`, `def`, `spa`, `spd`,
+/// `spe`, `accuracy`, `evasion`).
+pub fn stat_index(stat: Stat) -> usize {
+    Stat::ALL.iter().position(|s| *s == stat).expect("a stat in Stat::ALL")
+}
+
+/// PS's `onTryBoost(boost, target, source, effect)` of Keen Eye and
+/// Hyper Cutter: the negative boost of one stat is dropped, and a
+/// `-fail` line says so (unless the effect has secondaries).
+pub fn block_stat_drop(b: &mut Battle, a: &EventArgs, stat: Stat) -> Option<Relay> {
+    let target = a.target.mon()?;
+    // `if (source && target === source) return;`
+    if a.source.is_some_and(|source| source == target) {
+        return None;
+    }
+    let Relay::Boosts(boosts) = a.relay? else { return None };
+    let i = stat_index(stat);
+    if boosts[i] >= 0 {
+        return None;
+    }
+    let mut table = boosts;
+    // `delete boost[stat]`: the key leaves the table.
+    table[i] = 0;
+    if !effect_has_secondaries(b, a.effect) {
+        let mon = b.ident(target);
+        let kw = Kw::from_of(b.effect_fullname(b.frame.effect), mon);
+        b.add(Msg::Fail {
+            mon,
+            what: Some(Arg::new(ArgValue::Word(Word::Unboost))),
+            what2: Some(Arg::new(ArgValue::Stat(stat))),
+            kw,
+        });
+    }
+    Some(Relay::Boosts(table))
+}
+
+/// PS's `onTryBoost(boost, target, source, effect)` of Clear Body and
+/// White Smoke: every negative boost is dropped, and a `-fail` line says
+/// so (unless the effect has secondaries).
+pub fn block_all_drops(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
+    let target = a.target.mon()?;
+    // `if (source && target === source) return;`
+    if a.source.is_some_and(|source| source == target) {
+        return None;
+    }
+    let Relay::Boosts(boosts) = a.relay? else { return None };
+    let mut table = boosts;
+    let mut show_msg = false;
+    for value in table.iter_mut() {
+        if *value < 0 {
+            *value = 0;
+            show_msg = true;
+        }
+    }
+    // `effect.id !== "octolock"`: Octolock is a gen 8 move.
+    if show_msg && !effect_has_secondaries(b, a.effect) {
+        let mon = b.ident(target);
+        let kw = Kw::from_of(b.effect_fullname(b.frame.effect), mon);
+        b.add(Msg::Fail { mon, what: Some(Arg::new(ArgValue::Word(Word::Unboost))), what2: None, kw });
+    }
+    Some(Relay::Boosts(table))
 }
 
 #[cfg(test)]

@@ -80,9 +80,9 @@ const BOOST_TABLE: [f64; 7] = [1.0, 4.0 / 3.0, 5.0 / 3.0, 2.0, 7.0 / 3.0, 8.0 / 
 impl Battle {
     /// Runs an event whose relay is a JS number that may carry a fraction
     /// (`move.accuracy` after the stage multipliers, the STAB `1.5`), or
-    /// `true` (`None`). A whole number travels as `Relay::Int`; a fraction
-    /// only passes through handler-free (a handler that changes it panics
-    /// `unported`).
+    /// `true` (`None`). The number travels as a float relay, so PS's final
+    /// modifier reaches it only when it is a whole number (PS:
+    /// `relayVar === Math.abs(Math.floor(relayVar))`).
     fn number_event(
         &mut self,
         event: EventId,
@@ -94,7 +94,7 @@ impl Battle {
     ) -> Option<f64> {
         let relay = match value {
             None => Relay::TRUE,
-            Some(v) => Relay::Int(v as i32),
+            Some(v) => Relay::float(v),
         };
         let r = if priority {
             self.priority_event(event, Holder::Mon(target), source, effect, Some(relay), false)
@@ -106,6 +106,7 @@ impl Battle {
         }
         match r {
             Relay::TRUE => None,
+            Relay::Float(bits) => Some(f64::from_bits(bits)),
             Relay::Int(n) if value.is_none_or(|v| v == (v as i64) as f64) => Some(f64::from(n)),
             other => panic!("unported: {event:?} changed a fractional relay ({other:?})"),
         }

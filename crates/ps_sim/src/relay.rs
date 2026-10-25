@@ -7,6 +7,11 @@
 //! reaches gens 1 and 3 as its own variant. A handler that returns PS's
 //! `undefined` ("change nothing") returns `None` instead of a `Relay`.
 //!
+//! A JS number is [`Relay::Int`], except where it may carry a fraction:
+//! gen 3's accuracy (`100 * 4 / 3`) and the STAB (`1.5`) travel as
+//! [`Relay::Float`], whole or not, since PS's final modifier only applies
+//! to a whole number and the fraction has to survive.
+//!
 //! PS's named constants are JS values, and code compares against them with
 //! `===`, so they are the plain values here too:
 //! - `FAIL` is `false` ([`Relay::FAIL`] is `Bool(false)`);
@@ -68,6 +73,14 @@ pub enum Relay {
     /// (`{...boost}`) that a handler may drop entries from (Mist drops the
     /// drops); a dropped entry is 0 here.
     Boosts([i8; 7]),
+    /// A JS number that may carry a fraction (gen 3's accuracy, the STAB).
+    /// The bits of the `f64`, so `Relay` stays `Eq`.
+    Float(u64),
+    /// The relay of `ModifySecondaries`, PS's `secondaries.slice()`: which
+    /// of the move's dex secondaries are left, bit `i` for
+    /// `secondaries[i]` (Shield Dust filters the list; a handler returns
+    /// a subset of the same objects).
+    Secondaries(u8),
 }
 
 impl Relay {
@@ -90,6 +103,11 @@ impl Relay {
             Relay::Int(n) => n != 0,
             Relay::Null | Relay::NotFail => false,
             Relay::Move(_) | Relay::Effect(_) | Relay::Types(_) | Relay::Recharge | Relay::Boosts(_) => true,
+            Relay::Float(bits) => {
+                let v = f64::from_bits(bits);
+                v != 0.0 && !v.is_nan()
+            }
+            Relay::Secondaries(_) => true,
         }
     }
 
@@ -99,6 +117,11 @@ impl Relay {
             Relay::Int(n) => Some(n),
             _ => None,
         }
+    }
+
+    /// A JS number relay (the accuracy, the STAB).
+    pub fn float(v: f64) -> Relay {
+        Relay::Float(v.to_bits())
     }
 }
 

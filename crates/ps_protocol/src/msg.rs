@@ -1100,6 +1100,10 @@ pub enum TextArgValue {
     MoveId(MoveNum),
     /// A move's name.
     Move(MoveNum),
+    /// An item's id (`Heal is occurring: ... :: sitrusberry`).
+    ItemId(ItemNum),
+    /// An ability's id (`Heal is occurring: ... :: waterabsorb`).
+    AbilityId(AbilityNum),
     /// A Pokemon ID (`p1a: NAME`).
     Mon(PokemonIdent),
     /// A Pokemon's nickname alone (`Your NAME doesn't have a move 5`).
@@ -1164,6 +1168,14 @@ impl TextArg {
                 data[0] = r as u8;
                 9
             }
+            TextArgValue::ItemId(i) => {
+                data[..2].copy_from_slice(&i.0.to_le_bytes());
+                10
+            }
+            TextArgValue::AbilityId(a) => {
+                data[..2].copy_from_slice(&a.0.to_le_bytes());
+                11
+            }
         };
         TextArg { kind, data }
     }
@@ -1181,6 +1193,8 @@ impl TextArg {
             7 => TextArgValue::Word(Word::from_u16(u).unwrap_or(Word::ALL[0])),
             8 => TextArgValue::Rule(RuleId::ALL[self.data[0] as usize % RuleId::ALL.len()]),
             9 => TextArgValue::Repeal(RuleId::ALL[self.data[0] as usize % RuleId::ALL.len()]),
+            10 => TextArgValue::ItemId(ItemNum(u)),
+            11 => TextArgValue::AbilityId(AbilityNum(u)),
             _ => TextArgValue::None,
         }
     }
@@ -1193,6 +1207,12 @@ impl TextArg {
     }
     pub fn mv(m: MoveNum) -> TextArg {
         TextArg::new(TextArgValue::Move(m))
+    }
+    pub fn item_id(i: ItemNum) -> TextArg {
+        TextArg::new(TextArgValue::ItemId(i))
+    }
+    pub fn ability_id(a: AbilityNum) -> TextArg {
+        TextArg::new(TextArgValue::AbilityId(a))
     }
     pub fn mon(m: PokemonIdent) -> TextArg {
         TextArg::new(TextArgValue::Mon(m))
@@ -1236,6 +1256,9 @@ pub enum TextArgKind {
     Int,
     MoveId,
     Move,
+    /// An effect's id, whatever its kind: a `MoveId`, an `ItemId`, an
+    /// `AbilityId` or a `Word` (a condition with no move of its id).
+    EffectId,
     Mon,
     Nickname,
     Status,
@@ -1284,6 +1307,8 @@ texts! {
     BeforeTurnCallback => "before turn callback: {}" (MoveId),
     // PS: data/mods/gen1/moves.ts bide.condition.onBeforeMove
     BideNoDamage => "Bide failed because no damage was stored" (),
+    // PS: data/mods/gen4/abilities.ts blaze onBasePower
+    BlazeBoost => "Blaze boost" (),
     // PS: data/moves.ts charge condition onBasePower
     ChargeBoost => "charge boost" (),
     // PS: data/abilities.ts compoundeyes onSourceModifyAccuracy
@@ -1309,6 +1334,13 @@ texts! {
     // PS: data/moves.ts attract volatileStatus onStart
     AttractEventFailed => "Attract event failed" (),
     IncompatibleGender => "incompatible gender" (),
+    // PS: sim/battle.ts spreadDamage (`instafaint`: the faint queue's
+    // names, joined by `,`; the two-name form first, so the decoder does
+    // not read both names as one)
+    Instafaint2 => "instafaint: {},{}" (Nickname, Nickname),
+    Instafaint => "instafaint: {}" (Nickname),
+    // PS: data/mods/gen4/abilities.ts liquidooze onSourceTryHeal (`effect.id`)
+    LiquidOozeHeal => "Heal is occurring: {} <- {} :: {}" (Mon, Mon, EffectId),
     // PS: sim/battle-actions.ts runMoveEffects
     MoveFailedNothing => "move failed because it did nothing" (),
     // PS: sim/pokemon.ts runStatusImmunity
@@ -1318,6 +1350,8 @@ texts! {
     NegatingDefBoost => "Negating (sp)def boost/penalty." (),
     NotAGen1Mechanic => "not a gen 1 mechanic" (),
     NothingToLeechInto => "Nothing to leech into" (),
+    // PS: data/mods/gen4/abilities.ts overgrow onBasePower
+    OvergrowBoost => "Overgrow boost" (),
     // PS: data/moves.ts pursuit basePowerCallback
     PursuitDamageBoost => "Pursuit damage boost" (),
     // PS: data/mods/gen3/moves.ts pursuit condition onFoeBeforeSwitchOut
@@ -1333,10 +1367,14 @@ texts! {
     RemovingGrudge => "removing Grudge before attack" (),
     // PS: data/moves.ts rage condition onBeforeMove
     RemovingRage => "removing Rage before attack" (),
+    // PS: data/mods/gen4/abilities.ts sandveil onModifyAccuracy
+    SandVeilAccuracy => "Sand Veil - decreasing accuracy" (),
     // PS: data/mods/gen1/scripts.ts getDamage
     ScreenDoublingDef => "Screen doubling (Sp)Def" (),
     // PS: sim/pokemon.ts setStatus (`status.id`)
     SetStatusInterrupted => "set status [{}] interrupted" (Status),
+    // PS: data/abilities.ts shedskin onResidual
+    ShedSkin => "shed skin" (),
     // PS: data/abilities.ts shielddust onModifySecondaries
     ShieldDustPrevent => "Shield Dust prevent secondary" (),
     // PS: sim/pokemon.ts setStatus (`status.id`)

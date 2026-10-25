@@ -149,3 +149,12 @@
 3 wide 17  # G3-M4 a benched future-move user as an event source, a second team (crashed)
 3 wide 166  # G3-M4 a future move's miss appends a second `[miss]` to the turn's last `|move|` line (PS appends text; flags deduped)
 3 wide 894  # G3-M4 the second `[miss]` on another Pokemon's `|move|` line, a second team
+# G3-A1: the modifier and contact abilities. 7104 is a real bug the
+# unfocused sweep found (G3-I2's Leppa Berry with G3-M3's Grudge); the
+# others fail with one plausible slip of this batch put back (a mutant
+# build per slip; the real build passes all five).
+3 wide 7104  # G3-A1 Leppa Berry's +10 PP lands on the shared base move slot too, so it survives a switch (after Grudge's PP 0)
+3 wide 81  # G3-A1 Serene Grace doubles this use's secondary chances
+3 wide 87  # G3-A1 Shield Dust keeps only the `self` secondaries
+3 wide 14  # G3-A1 gen 3 accuracy is a JS number: a fractional one takes no event modifier (runEvent's whole-number check)
+3 wide 10  # G3-A1 Clear Body / White Smoke print no `-fail` for a move with secondaries

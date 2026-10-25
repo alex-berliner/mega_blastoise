@@ -865,11 +865,26 @@ impl Battle {
         }
 
         self.event_depth -= 1;
-        if let Relay::Int(n) = relay {
-            if n >= 0 {
-                let m = i64::from(self.event.modifier.unwrap_or(0));
-                relay = Relay::Int(crate::modify::modify_4096(self.trunc, i64::from(n), m) as i32);
+        // PS: `if (typeof relayVar === 'number' && relayVar ===
+        // Math.abs(Math.floor(relayVar))) relayVar = this.modify(relayVar,
+        // this.event.modifier)`. A whole number that is not negative gets
+        // the event's modifier; a fraction does not.
+        match relay {
+            Relay::Int(n) => {
+                if n >= 0 {
+                    let m = i64::from(self.event.modifier.unwrap_or(0));
+                    relay = Relay::Int(crate::modify::modify_4096(self.trunc, i64::from(n), m) as i32);
+                }
             }
+            Relay::Float(bits) => {
+                let v = f64::from_bits(bits);
+                if v >= 0.0 && v.is_finite() && v % 1.0 == 0.0 {
+                    let m = i64::from(self.event.modifier.unwrap_or(0));
+                    let out = crate::modify::modify_4096(self.trunc, v as i64, m);
+                    relay = Relay::float(out as f64);
+                }
+            }
+            _ => {}
         }
         self.event = parent_event;
         relay

@@ -300,6 +300,28 @@ fn gen3_ability_lines_round_trip() {
     }
 }
 
+/// Liquid Ooze's debug line names the heal's effect by id, whatever kind
+/// it is (a condition, a move, an item, an ability), and its `instafaint`
+/// damage names the whole faint queue.
+#[test]
+fn liquid_ooze_lines_round_trip() {
+    let mut state = CodecState::new(load_names());
+    for line in [
+        "|switch|p1a: Tentacruel|Tentacruel|100/100",
+        "|switch|p2a: Lanturn|Lanturn|100/100",
+        "|debug|Heal is occurring: p2a: Lanturn <- p1a: Tentacruel :: drain",
+        "|debug|Heal is occurring: p2a: Lanturn <- p1a: Tentacruel :: leechseed",
+        "|debug|Heal is occurring: p1a: Tentacruel <- p1a: Tentacruel :: sitrusberry",
+        "|debug|Heal is occurring: p2a: Lanturn <- p1a: Tentacruel :: voltabsorb",
+        "|-damage|p2a: Lanturn|0 fnt|[from] ability: Liquid Ooze|[of] p1a: Tentacruel",
+        "|debug|instafaint: Tentacruel,Lanturn",
+        "|debug|instafaint: Lanturn",
+    ] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+}
+
 /// Lines a gen 3 future move, Solar Beam in the sun and Beat Up write: a
 /// second `[miss]` on a `|move|` line (the future hit's miss lands on the
 /// turn's last one), `[miss]` on an `|-anim|` line, and Beat Up's `[of]`

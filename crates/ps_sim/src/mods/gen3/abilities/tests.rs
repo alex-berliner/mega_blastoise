@@ -257,3 +257,25 @@ fn lightning_rod_never_redirects_in_singles() {
     let r = b.run_event(EventId::RedirectTarget, Holder::Mon(P2), Some(P2), EffectId::Move(m::EARTHQUAKE), Some(Relay::TRUE));
     assert_eq!(r, Relay::TRUE);
 }
+
+#[test]
+fn sticky_hold_keeps_its_item_from_another_pokemon_only() {
+    // No gen 3 move that takes an item is ported yet: call `takeItem`.
+    let mut b = battle("Snorlax|||Stench|tackle|||||||", "Muk||firestone|StickyHold|tackle|||||||");
+    take_log(&mut b);
+    assert_eq!(b.take_item(P2, Some(P1)), Err(Relay::FAIL));
+    assert_eq!(take_log(&mut b), "|-activate|p2a: Muk|ability: Sticky Hold\n");
+    assert!(b.take_item(P2, None).is_ok());
+    assert_eq!(take_log(&mut b), "");
+}
+
+#[test]
+fn liquid_ooze_turns_a_drain_into_damage() {
+    let mut b = battle("Venusaur|||Overgrow|gigadrain|||||||", "Tentacruel|||LiquidOoze|tackle|||||||");
+    take_log(&mut b);
+    moves(&mut b, 1, 1);
+    let log = take_log(&mut b);
+    assert!(log.contains("|debug|Heal is occurring: p1a: Venusaur <- p2a: Tentacruel :: drain\n"), "{log}");
+    assert!(log.contains("|[from] ability: Liquid Ooze|[of] p2a: Tentacruel\n"), "{log}");
+    assert!(!log.contains("|-heal|p1a: Venusaur"), "{log}");
+}
