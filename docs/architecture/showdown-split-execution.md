@@ -692,13 +692,23 @@ relay runs `ps_sim` and speaks the same protocol `ps_client` already reads.
   override for a local relay.
 - Accept: a headless test drives a battle against a local relay.
 
-**N-3 Single-seat mode in core** · C2 · depends: G3-8
-- The UI assumes two seats at one device. Online there is one local seat and
-  a hidden opponent. All of it lives in `oled_ctl` and `choice_collect`
-  (zero-drift rule); the web build shows the one seat at full size.
-  Opponent-thinking and disconnected states, a forfeit control, rematch.
-- Accept: the headless seat probe plays a battle in single-seat mode in both
-  gens with the same screens the two-seat mode shows for that seat.
+**N-3 Remote seat and flipped view in core** · C2 · depends: G3-8
+- Online looks exactly like the normal device: the same double-sided
+  display, both halves drawn as today. Two differences, both in core
+  (`oled_ctl`, `choice_collect`; zero-drift rule), not in the web crate:
+  1. **Flipped view:** a view setting `local_seat` (1 or 2). For seat 2 the
+     whole frame turns 180 degrees, so the local player's half is at the
+     bottom and upright and the opponent's is on top (upside-down, as the
+     far player's half is on the device). Seat 1 is the normal orientation.
+     Input follows the same mapping (D-pad and buttons are the local
+     player's, rotated with the view).
+  2. **Remote seat:** only the local seat takes input; the other half shows
+     the remote player's state (their prompt as a waiting or thinking
+     screen, then their move) driven by the protocol. Opponent
+     disconnected, forfeit and rematch states.
+- Accept: the headless seat probe plays a battle in both gens with
+  `local_seat` 1 and 2; the frames for seat 2 are the seat 1 frames rotated
+  180 degrees apart from the labels; no battle UX code in the web crate.
 
 **N-4 Lobby screen** · MM · depends: N-2, N-3
 - Create room (shows the code and a share link), join by code, pick gen and
