@@ -80,7 +80,7 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 | `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the ends; 5.6 along the sides, the keys' tabs 6.7) | `1_case`, `5_unit` |
 | `top.stl` | 77.4 x 132.7 x 6.9 (face down: the screen face on the bed, the ends 1.85 above it) | `1_case`, `5_unit` |
 
-`1_case` (the tub and the top) is 49.7 g of PLA and 5.8 g of support filament, with 21 filament changes, in 4 h 27 min; `5_unit` (the
+`1_case` (the tub and the top, a release plate) is 49.7 g of PLA and 5.8 g of support filament, with 21 filament changes, in 4 h 27 min; `5_unit` (the
 tub, the top, the board mock and the dummies on one plate, which fits both beds) is 75.6 g and 5.8 g in 6 h 22 min. The weights include the
 purge (the flush at each change and the prime tower: 11.4 g of PLA and 4.0 g of support filament on `1_case`). Those are with the print
 settings below; before them (2026-10-25, 2 walls, 200 mm/s outer wall, 0.20 mm layers) `1_case` was 47.1 g and 6.9 g in 2 h 10 min.
@@ -126,16 +126,16 @@ on a U1 preset), so their numbers are the P1S's.
 | Wall order | inner, outer | **inner, outer, inner** | the outer wall is held between two walls, so the fits keep their size; the support interface's surface is a bottom surface, which a wall order doesn't touch (support_check passes, interface extrusion 101 m before, 115 m now with the finer layers) |
 | Seam | aligned | **back** | the long walls show no seam line; it sits at the +Y end of each part, on a plate's back |
 | Elephant's foot | P1S 0.25 (U1 0.15) | **unchanged** | Alex's first-layer test (2026-10-22) found 0.15 left a lip on the tub's edge and 0.25 didn't, so it isn't lowered to the 0.1 to 0.15 asked for; `overhang_kit.zip`'s `8_first_layer_*` plates answer it again |
-| Layer height | 0.20 | **0.08 over the first 4.5 mm** of the top (and the coupons cut from it), **2.5 mm** of the tub, 0.20 above | the DS curve and side rounds rise from the bed and a 0.20 mm layer steps them 0.35 mm (0.08: 0.14 mm); Bambu Studio's and Orca's own per-object height ranges (`Metadata/layer_config_ranges.xml`), as adaptive layer height isn't in a project. 0.08 is the P1S profile's `min_layer_height`, the lowest it takes (54 layers in the fine zone of `1_case`, 36 at 0.12). 0.12 was the first choice |
+| Layer height | 0.20 | **0.08 on the release plates, 0.12 on the test plates**, over the first 4.5 mm of the top (and the coupons cut from it) and 2.5 mm of the tub, 0.20 above | the DS curve and side rounds rise from the bed and a 0.20 mm layer steps them 0.35 mm (0.12: 0.21 mm, 0.08: 0.14 mm). Release plates (`RELEASE_PLATES`: `1_case`, the case itself, and `5_unit`, the whole unit) are what you keep, so they get the finest the P1S profile takes (0.08 is its `min_layer_height`); the test plates (`0_buttons_end`, `4_fit_coupons`) only have to fit, so 0.12 saves 35 min on `0_buttons_end` (2 h 00 against 2 h 35 at 0.08) and 49 min on `4_fit_coupons` (2 h 35 against 3 h 24). Bambu Studio's and Orca's own per-object height ranges (`Metadata/layer_config_ranges.xml`), as adaptive layer height isn't in a project |
 | Flush multiplier (P1S, two filaments) | 1 | **0.7** | the profile's flush is 230 mm3 from PLA to the support filament and 700 back; 0.6 to 0.8 was asked for, the middle is kept (0.6 would be less purge, but a white support filament left in a dark PLA shows) |
 | Brim, mouse ears | auto brim (none was drawn) | unchanged | the first layer is 2465 mm2 for the top (a 77 x 133 mm frame) and 8924 mm2 for the tub, 6.9 mm tall: nothing to lift |
 
 What the slicer wouldn't take: a plate with a prime tower needs every object on it at the same layer height ranges (Bambu Studio:
 "The prime tower is only supported if all objects have the same variable layer height"), so on `0_buttons_end`, `1_case`,
-`4_fit_coupons` and `5_unit` the tub and every other object get the top's 0.08 mm to 4.5 mm too. The fine layers are the
-cost: each layer of the top's slope carries support interface in the second filament, so the changes go from 9 to 21 and the purge
+`4_fit_coupons` and `5_unit` the tub and every other object get the top's fine layers to 4.5 mm too. The fine layers are the
+cost (the release plates' 0.08; the test plates' 0.12 costs less): each layer of the top's slope carries support interface in the second filament, so the changes go from 9 to 21 and the purge
 and the prime tower grow with them (at 0.08 mm the tower flushes more per layer and its G-code left the P1S's bed at x 210, so the P1S's
-tower stands at x 200, `TOWER_AT`; the U1's tower is untested at 0.08 mm). The same plate with only 0.20 mm layers took 2 h 19 min
+tower stands at x 200, `TOWER_AT`; the U1's tower is untested at 0.08 mm). `1_case` with only 0.20 mm layers took 2 h 19 min
 (46.0 g, 6.4 g, 9 changes). To drop them, empty
 `FINE_LAYERS` in `print_package.py`. Flushing into the objects' infill (`flush_into_infill`, `flush_into_objects`) made the support
 filament print part of the walls and infill, which the build refuses, so they stay off; `flush_into_support` is on in the profile

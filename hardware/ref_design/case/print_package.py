@@ -191,12 +191,15 @@ CASE_SETTINGS = {
     "small_perimeter_speed": ["50%", "50%"], "small_perimeter_threshold": ["15", "15"],
 }
 # Variable layer height where the surface rises from the bed in a slope or round, whose steps a 0.20 mm layer makes visible (a
-# face 30 degrees from the bed steps 0.35 mm a layer): 0.08 mm layers over the first FINE_LAYERS (0.08 is the P1S profile's min_layer_height, the lowest it takes)[object] mm (the top's DS Lite
+# face 30 degrees from the bed steps 0.35 mm a layer): fine layers over the first FINE_LAYERS[object] mm (the top's DS Lite
 # curve and side rounds rise for 4.5 mm face down, the tub's back round for 2.5 mm), 0.20 above. Bambu Studio's and Orca's own
 # per-object height range modifiers (Metadata/layer_config_ranges.xml), as adaptive layer height isn't a setting of a project. The
 # coupons cut from the top and the tub follow the part they are cut from; measured as the sloped face area by height above the bed.
 # A plate with a prime tower gives every object the same range (the tower needs one layer height profile)
-FINE_LAYER = "0.08"
+# Per plate (Alex, 2026-10-25): the release plates, the case itself and the whole unit, at 0.08 mm (the P1S profile's
+# min_layer_height, the lowest it takes); the test plates (the fit coupons, the end) at 0.12, which prints sooner
+RELEASE_PLATES = {"1_case", "5_unit"}
+FINE_LAYER_RELEASE, FINE_LAYER_TEST = "0.08", "0.12"
 FINE_LAYERS = {**{o: 4.5 for o in ("top", "usb_top", "seam_top", "buttons_top")},
                **{o: 2.5 for o in ("tub_print", "usb_tub", "seam_tub", "buttons_tub")}}
 
@@ -206,13 +209,13 @@ def case_plate(plate):
     return plate.removesuffix("_a").removesuffix("_b") not in TEST_PLATES
 
 
-def layer_ranges_xml(ids, same=False):
-    """Metadata/layer_config_ranges.xml: the fine layer height over each object's first FINE_LAYERS mm; ids: {object's number in the project, from 1: name}.
+def layer_ranges_xml(plate, ids, same=False):
+    """Metadata/layer_config_ranges.xml: the fine layer height (FINE_LAYER_RELEASE on a RELEASE_PLATES plate, else FINE_LAYER_TEST) over each object's first FINE_LAYERS mm; ids: {object's number in the project, from 1: name}.
     same: every object of the plate gets the highest range of them (Bambu Studio won't slice a prime tower unless all the
     plate's objects have the same variable layer height). None if no object of the plate has one."""
     top = max((FINE_LAYERS[n] for n in ids.values() if n in FINE_LAYERS), default=0)
     ranges = {i: (top if same else FINE_LAYERS.get(n, 0)) for i, n in ids.items()}
-    objs = "".join(f' <object id="{i}">\n  <range min_z="0" max_z="{h}">\n   <option opt_key="layer_height">{FINE_LAYER}'
+    objs = "".join(f' <object id="{i}">\n  <range min_z="0" max_z="{h}">\n   <option opt_key="layer_height">{FINE_LAYER_RELEASE if plate in RELEASE_PLATES else FINE_LAYER_TEST}'
                    f'</option>\n  </range>\n </object>\n' for i, h in ranges.items() if h)
     return f'<?xml version="1.0" encoding="utf-8"?>\n<objects>\n{objs}</objects>\n' if objs else None
 
@@ -470,7 +473,7 @@ def build(plate, parts, z, supported):
     files["3D/_rels/3dmodel.model.rels"] = ('<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns='
                                             '"http://schemas.openxmlformats.org/package/2006/relationships">\n'
                                             + "\n".join(rels) + "\n</Relationships>")
-    ranges = layer_ranges_xml({i: n for i, (n, _) in enumerate(parts, 1)}, has_top(parts)) if case_plate(plate) else None
+    ranges = layer_ranges_xml(plate, {i: n for i, (n, _) in enumerate(parts, 1)}, has_top(parts)) if case_plate(plate) else None
     if ranges:
         files["Metadata/layer_config_ranges.xml"] = ranges
     cfg = z.read("Metadata/model_settings.config").decode()

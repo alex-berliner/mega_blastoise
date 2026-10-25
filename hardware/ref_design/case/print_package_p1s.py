@@ -114,7 +114,7 @@ def mark_presets(project, plate, extra=(), project_cfg=None):
             z.writestr(k, v)
 
 
-def fine_layers(project, same):
+def fine_layers(project, plate, same):
     """Give the objects with a slope or round rising from the bed their fine layers (print_package.FINE_LAYERS), as Bambu
     Studio's own height range modifier; all of a plate's objects the same if it has a prime tower (same)."""
     with zipfile.ZipFile(project) as z:
@@ -123,7 +123,7 @@ def fine_layers(project, same):
     names = re.findall(r'<object id="\d+">\s*<metadata key="name" value="([^"]+?)\.stl"',
                        files["Metadata/model_settings.config"].decode())
     ids = dict(enumerate(names, 1))          # (the ranges file counts its objects from 1, whatever their ids)
-    xml = print_package.layer_ranges_xml(ids, same)
+    xml = print_package.layer_ranges_xml(plate, ids, same)
     if xml:
         files["Metadata/layer_config_ranges.xml"] = xml.encode()
         with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
@@ -224,7 +224,7 @@ def slice_plate(name, parts, supported, tmp):
     if own_objs:
         own_settings(project, own_objs)
     if print_package.case_plate(plate_name):
-        fine_layers(project, two)
+        fine_layers(project, plate_name, two)
     applied(project, own)
     project_cfg = {"flush_multiplier": [P1S_FLUSH_MULTIPLIER]} if two and print_package.case_plate(plate_name) else {}
     mark_presets(project, plate_name, set(own), project_cfg)
