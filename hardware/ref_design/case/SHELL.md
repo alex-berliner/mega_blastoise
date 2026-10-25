@@ -7,15 +7,47 @@ differ). Everything here is in `case.scad`; this file says why.
 
 **Experiment (2026-10-24, branch `ref-design-unibody` only): a one-piece top.** `part="top_unibody"` (face up) and
 `"top_unibody_down"` in `case.scad` are a mock-up of the island and both decks as one part, printed with Bambu Support
-For PLA as the support interface: true radii, no joints. The island parts still build unchanged. Its first edge was an
-S (r 3.0 convex, r 1.5 concave). Since 2026-10-25 (Alex: "Look how the DS Lite screen is a sharp corner at the top and
-then slopes downward") the screen block's edge is the DS Lite's lower screen frame: a sharp top edge, a flat slope at
-30 degrees (the DS model's upper half), an r 1.0 foot, 3.47 run for the 1.85 step, plan corners r 1.0 at the top edge.
-The block is smaller (foot 4807 mm2, was 5279): its core's top edge runs just outside the panel's pocket (x 22.11,
-y 30.53), and it reaches out to the side walls only where the board's tall parts are: on the right a wing from the
-step to the USB-C ear (J4, the speaker), on the left the same turned round (J2 under the ear, J5 under the wing). The
-debug switches sit under the deck in a pocket (0.75 skin). Renders, sections, slices and the write-ups are in the
-sessions' scratch folders (`jobs/unibody/REPORT.md`, `jobs/dsedge/REPORT.md`), not in this file.
+For PLA as the support interface: true radii, no joints. The island parts still build unchanged (positions.json, tub.stl,
+top.stl and deck.stl are identical). Its first edge was an S (r 3.0 convex, r 1.5 concave); then (Alex: "Look how the DS
+Lite screen is a sharp corner at the top and then slopes downward") the DS Lite's lower screen frame, on a block that
+reached the side walls only where the board's tall parts are (wings, ears, spines).
+
+*Since 2026-10-25 the block is a band across the whole width, and its two ends copy the DS Lite's frame.* Alex, after an
+x-ray showing that J1, J2, J4, J5 and the speaker force the block out to the sides: "have the island extend fully to the
+left and right but try to minimize its extension on the top and bottom". The band is at the screen's height from the left
+side wall to the right (the side at the screen's height is the case's side round, beyond the band the decks'); the ears,
+wings, spines and plan corners are gone. His first sketch for its ends (a sharp top edge, a vertical wall, an r 0.7 foot)
+was built and was replaced the same day: "i basically want you to make an exact copy of this curve structure and adapt it
+to our purpose" (a close-up render of the DS Lite's frame corner).
+- **The DS Lite's section**, measured from `nintendo_ds_bottom_base.stl` (four sides, several sections each, and the
+  corners from a 0.02 mm height map): the slope is **one concave arc of radius 8.0** (rms 0.002 mm to the mesh's facets on
+  the right side and the top), starting at **36 degrees** off the flat at the top edge and tangent to the deck **4.70** out
+  and **1.528** down (a facet's chord reads 34 degrees at the edge, 30 over the upper half: the earlier "34-36 / 30 /
+  r 8-9" were that arc's facets). A 0.07 bead and a 0.11 step in front of the edge are left out here: under half a layer,
+  and face down the bead would lie below the bed. Its plan corners (the frame is an island in the DS, 31 from the side
+  wall; a corner's contours are all the slope's offset, with a corner radius growing with the height, 0 at the foot to 1.45
+  at the top edge: a sharp mitre at the foot) are not needed here. At the DS's end of the frame the base stl is cut flat
+  at the deck's level with the slope's foot at the cut, so there is no side wall in the model to copy.
+- **Ours**: the same arc scaled uniformly to the 1.85 step (x1.211: R 9.69, **5.69 out**, still 36 degrees), nothing
+  else changed. The scale broke no clearance (below). The top edge is 0.4 outside the panel's pocket (30.53 from the middle:
+  the pocket's upper corner keeps 0.88 from the slope), the foot at 36.22; the nearest button well (the D-pad's) starts at
+  37.35. `uni_h(t)` is the height over the decks' face t out from the edge.
+- **Where the step meets the side walls**: no corner and no blend. Each slice of the step is the decks' side section
+  (the flat and the two r 2.8 rounds) lifted by the profile's height at that distance, so the same curve shows in the
+  side view and the edge is cut by the case's side at both heights; nothing twists or diverges (see "The island" for the
+  blends Alex disliked).
+- **Spines gone** (U6 is 1.75 tall, the decks' underside 1.9 over the board: a pocket in the decks' underside, 0.5 round
+  it, 0.75 skin under the face, gives it 1.4). The debug switches' pocket is gone (SW18/19 are under the band).
+- **The inside's ceiling** stays z_ceil (7.55) until 2.0 past the top edge; beyond it keeps `uni_skin` 0.7 under the slope
+  (a loft of its offset: the arc at radius R + skin about the same centre). J4 (3.4) reaches y 30.82, 0.3 past the edge, under the slope's top
+  (0.65 clear); the FPC's fold reaches 31.23 and is under the slope's ceiling (7.2 and over).
+- Fit (fitcheck, model boxes, and a 3D distance to the mesh): no collisions; J2 0.36, J4 0.65, SW18/19 0.46, U6 0.52 (to
+  its pocket's side), U7 0.70; J1 touches its opening (as it must). The speaker's worst case 0.45 (in its pocket).
+- Slice (P1S, face down, Bambu Support For PLA interface, as before), against d5921d1: PLA 27.1 g total (part 15.4, support
+  body 3.0) vs 27.4; support filament 6.9 g (interface 4.9) vs 7.5; purge 5.0 PLA + 2.0 support vs 4.9 + 2.0; 9 changes
+  both; 1 h 36.5 vs 1 h 41.6.
+Renders, sections, the DS measurements, slice and write-up are in the session's scratch folder (`jobs/band/`), not in
+this file.
 
 ## The island (2026-10-23)
 
