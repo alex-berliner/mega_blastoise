@@ -231,6 +231,36 @@ in `crates/ps_harness/coverage-allow.txt` (each entry with its reason and
 the PS line). `--report-only` re-prints the tables after an allow-list
 edit; reports land in `.scratch/coverage/gen<N>/`.
 
+### The allow-list format
+
+`coverage-allow.txt` names lines by their source text, not their line
+numbers, so an entry survives edits elsewhere in the file (V-1b; the
+re-sync to c0845f33d moved most line-number entries by 5). The full
+format is at the top of the file; in short:
+
+```
+<path under crates/ps_sim/src>  <selector>  <reason>; PS: <file>:<line>
+handler <gen> <kind:id> <key>  <reason>; PS: <file>:<line>
+
+mods/gen1/scripts.rs  `return 0;`  ...                       one line, its text unique in the file
+mods/gen1/scripts.rs  `}`#3  ...                             the 3rd occurrence
+mods/gen1/scripts.rs  `}`@120  ...                           the occurrence nearest line 120
+mods/gen1/scripts.rs  `s.counter = 0;` > `}`  ...            the first `}` after that line
+mods/gen1/moves/dig.rs  `fn on_prepare_hit(...) {` .. `}`  ...  a range, to the first `}` after the start
+```
+
+Each anchor is a whole source line, trimmed, in backticks. A repeated
+line needs `#n`, `@n` or a `>` chain (closing braces are best chained off
+the unique line above them); otherwise the entry is an error. The PS line
+is at the pin (`node_modules/pokemon-showdown` here).
+
+The gate reports two kinds of stale entry, without failing on them: an
+entry whose text is no longer in the file, and an entry none of whose
+lines is unrun (the code now runs). `scripts/coverage-allow.py --check`
+(run by `scripts/check.sh`) checks that every entry still resolves, so an
+edit that breaks an entry fails the landing, not only the next coverage
+run; `--show` prints the lines each entry resolves to now.
+
 ## What the driver does
 
 For each entry, `driverCommands` builds three lines (the PS BattleStream

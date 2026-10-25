@@ -166,7 +166,7 @@ fi
 LLVM_PROFILE_FILE=/dev/null "$BIN" --handlers "$GEN" > "$OUT/handlers.tsv"
 set +e
 python3 - "$GEN" "$MIN_BATTLES" "$OUT" "$HITS_DIR" "$LINES" "$ROOT" "$SWEEP" <<'PY'
-import os, re, sys
+import os, sys
 from collections import defaultdict
 
 gen, min_battles, out, hits_dir, lines_on, root, sweep = sys.argv[1:]
@@ -174,27 +174,31 @@ gen = int(gen); min_battles = int(min_battles); lines_on = lines_on == '1'
 fail = False
 
 # ---- coverage-allow.txt ----
-# `<path under crates/ps_sim/src>:<first>[-<last>]  <reason>` or
-# `handler <gen> <kind:id> <key>  <reason>`
-allow = defaultdict(list)  # path -> [[first, last, reason, used]]
+# Parsed and resolved by scripts/coverage-allow.py (the format is at the top
+# of the allow file): handler entries by `<kind:id> <key>`, line entries by
+# the source text of the lines they name.
+import importlib.util
+_spec = importlib.util.spec_from_file_location('coverage_allow', os.path.join(root, 'scripts/coverage-allow.py'))
+ca = importlib.util.module_from_spec(_spec); _spec.loader.exec_module(ca)
+allow = defaultdict(list)  # path -> [[first, last, entry, used]]
+allow_unresolved = []      # (entry, why): stale (text gone) or ambiguous
 allow_handlers = {}        # (effect, key) -> [reason, used]
-allow_file = os.path.join(root, 'crates/ps_harness/coverage-allow.txt')
-for raw in open(allow_file):
-    s = raw.strip()
-    if not s or s.startswith('#'):
-        continue
-    m = re.match(r'handler\s+(\d+)\s+(\S+)\s+(\S+)\s+(.*)', s)
-    if m:
-        if int(m.group(1)) == gen:
-            allow_handlers[(m.group(2), m.group(3))] = [m.group(4), False]
-        continue
-    m = re.match(r'(\S+):(\d+)(?:-(\d+))?\s+(.*)', s)
-    if not m:
-        print(f'coverage-allow.txt: bad line: {raw.rstrip()}')
-        fail = True
-        continue
-    a, b = int(m.group(2)), int(m.group(3) or m.group(2))
-    allow[m.group(1)].append([a, b, m.group(4), False])
+_handlers, _entries, _errors = ca.parse()
+for msg in _errors:
+    print(msg)
+    fail = True
+for h in _handlers:
+    if h.gen == gen:
+        allow_handlers[(h.effect, h.key)] = [h.reason, False]
+for e in _entries:
+    r, why = ca.resolve(e)
+    if r is None:
+        allow_unresolved.append((e, why))
+        if why.startswith('ambiguous'):
+            print(f'coverage-allow.txt:{e.lineno}: {e.path}: {why}')
+            fail = True
+    else:
+        allow[e.path].append([r[0], r[1], e, False])
 
 # ---- 1. handler hits ----
 battles = 0
@@ -333,11 +337,17 @@ if unallowed_total == 0:
     report.append('  (none)')
 else:
     fail = True
-stale = [(p, e) for p, es in allow.items() if p.startswith(mods) for e in es if not e[3]]
+stale = [(p, f'{e[0]}-{e[1]}', e[2]) for p, es in allow.items() if p.startswith(mods) for e in es if not e[3]]
+stale_text = [(e.path, why, e) for e, why in allow_unresolved
+              if e.path.startswith(mods) and not why.startswith('ambiguous')]
 if stale:
     report.append('coverage-allow.txt entries that match no unrun line (stale or now run):')
-    for p, e in stale:
-        report.append(f'  {p}:{e[0]}-{e[1]}  {e[2]}')
+    for p, where, e in stale:
+        report.append(f'  coverage-allow.txt:{e.lineno}: {p}:{where}  {e.raw[len(e.path):].strip()}')
+if stale_text:
+    report.append('coverage-allow.txt entries whose text is not in the source (stale):')
+    for p, why, e in stale_text:
+        report.append(f'  coverage-allow.txt:{e.lineno}: {p}: {why}')
 report.append('')
 report.append('core files (information, not gated):')
 report.append(f'{"lines":>6} {"run":>6} {"unrun":>6} {"cover":>6}  file: unrun lines')

@@ -35,6 +35,12 @@ echo "── ps_sim_cli binary: build + protocol-diff integration test ──"
 cargo build --quiet -p ps_harness --bin ps_sim_cli
 cargo test --quiet -p ps_harness --test protocol_diff
 
+# The coverage gate itself runs at phase gates (scripts/ps-coverage.sh);
+# here only its allow-list: every entry parses and its source text is
+# still in the tree, so an edit that breaks an entry fails the landing.
+echo "── coverage-allow.txt resolves against the source ──"
+python3 -I scripts/coverage-allow.py --check
+
 if [[ "${1:-}" != "--fast" ]]; then
   echo "── pinned seeds (the old engines' corpus) ──"
   scripts/pinned-seeds.sh
