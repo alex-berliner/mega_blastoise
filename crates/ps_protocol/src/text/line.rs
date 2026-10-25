@@ -96,6 +96,7 @@ fn render_textarg(a: crate::msg::TextArg, dex: &dyn DexNames, names: &dyn Battle
         V::Word(w) => w.as_str().to_string(),
         V::Rule(r) => r.name().to_string(),
         V::Repeal(r) => alloc::format!("!{}", r.name()),
+        V::Player(side) => names.player_name(side).to_string(),
     }
 }
 
@@ -1136,6 +1137,7 @@ fn parse_text_arg(kind: TextArgKind, s: &str, dex: &dyn DexNames, names: &mut Ba
         TextArgKind::Status => TextArg::status(Status::parse(s)?),
         TextArgKind::Word => TextArg::word(Word::parse(s)?),
         TextArgKind::Rule => TextArg::custom_rule(crate::command::CustomRule::parse(s)?),
+        TextArgKind::Player => TextArg::player(parse_win_side(s, names)),
     })
 }
 
@@ -1155,10 +1157,11 @@ fn parse_kwargs(args: &[&str], dex: &dyn DexNames, names: &mut Battle) -> Result
         let mut matched = false;
         for (flag, text) in KwFlags::RENDERED.iter().copied() {
             if *s == text {
-                if flag == KwFlags::MISS && kw.flags.contains(flag) {
-                    kw.repeat_miss += 1;
+                if flag == KwFlags::MISS {
+                    kw.append_miss();
+                } else {
+                    kw.flags.insert(flag);
                 }
-                kw.flags.insert(flag);
                 matched = true;
                 break;
             }

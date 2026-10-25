@@ -186,4 +186,9 @@ fn attr_last_move_marks_anim_lines_and_repeats_a_miss() {
     b.attr_last_move(KwFlags::MISS);
     b.attr_last_move(KwFlags::MISS);
     assert_eq!(take_log(&mut b), "|move|p2a: Snorlax|Tackle|p1a: Sunflora|[miss]|[miss]\n");
+    // A `[notarget]` line, then a future move's miss: PS appends the text.
+    b.add_move(Msg::Move { user, mv: MoveNum(m::TACKLE.0), target: None, kw: Kw::NONE });
+    b.attr_last_move(KwFlags::NOTARGET);
+    b.attr_last_move(KwFlags::MISS);
+    assert!(take_log(&mut b).ends_with("|[notarget]|[miss]\n"));
 }

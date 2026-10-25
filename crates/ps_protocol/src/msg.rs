@@ -973,10 +973,11 @@ pub struct Kw {
     pub from: Option<Arg>,
     pub of: Option<PokemonIdent>,
     pub flags: KwFlags,
-    /// `[miss]` flags past the first, rendered last: each
+    /// `[miss]` flags rendered last, after every other flag: each
     /// `attrLastMove('[miss]')` appends one to the `|move|` line, and a
     /// future move's miss at the end of the turn lands on the turn's last
-    /// `|move|` line, which may have its own already.
+    /// `|move|` line, which may have its own `[miss]` or a `[notarget]`
+    /// already ([`Kw::append_miss`]).
     pub repeat_miss: u8,
 }
 
@@ -1023,6 +1024,20 @@ impl Kw {
     pub fn with(mut self, flags: KwFlags) -> Kw {
         self.flags.insert(flags);
         self
+    }
+
+    /// Appends a `[miss]` as PS's `attrLastMove('[miss]')` does: in the
+    /// flag's place, unless the line already has a `[miss]` or a flag that
+    /// renders after it (`[notarget]`: a future move's miss lands on the
+    /// turn's last `|move|` line), in which case it is counted in
+    /// [`Kw::repeat_miss`] and rendered last.
+    pub fn append_miss(&mut self) {
+        let after_miss = KwFlags::RENDERED.iter().skip_while(|(f, _)| *f != KwFlags::MISS).skip(1).any(|(f, _)| self.flags.contains(*f));
+        if self.flags.contains(KwFlags::MISS) || after_miss {
+            self.repeat_miss += 1;
+        } else {
+            self.flags.insert(KwFlags::MISS);
+        }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -1119,6 +1134,8 @@ pub enum TextArgValue {
     Rule(RuleId),
     /// A custom rule's repeal, `!` and the name (`!Cartridge Trunc`).
     Repeal(RuleId),
+    /// A player's name (`${side.name}`).
+    Player(SideId),
 }
 
 /// [`TextArgValue`] packed into 5 bytes with alignment 1 (see [`Arg`]).
@@ -1179,6 +1196,10 @@ impl TextArg {
                 data[..2].copy_from_slice(&a.0.to_le_bytes());
                 11
             }
+            TextArgValue::Player(side) => {
+                data[0] = side.index() as u8;
+                12
+            }
         };
         TextArg { kind, data }
     }
@@ -1198,6 +1219,7 @@ impl TextArg {
             9 => TextArgValue::Repeal(RuleId::ALL[self.data[0] as usize % RuleId::ALL.len()]),
             10 => TextArgValue::ItemId(ItemNum(u)),
             11 => TextArgValue::AbilityId(AbilityNum(u)),
+            12 => TextArgValue::Player(if self.data[0] == 0 { SideId::P1 } else { SideId::P2 }),
             _ => TextArgValue::None,
         }
     }
@@ -1228,6 +1250,9 @@ impl TextArg {
     }
     pub fn word(w: Word) -> TextArg {
         TextArg::new(TextArgValue::Word(w))
+    }
+    pub fn player(side: SideId) -> TextArg {
+        TextArg::new(TextArgValue::Player(side))
     }
     pub fn rule(r: RuleId) -> TextArg {
         TextArg::new(TextArgValue::Rule(r))
@@ -1267,6 +1292,7 @@ pub enum TextArgKind {
     Status,
     Word,
     Rule,
+    Player,
 }
 
 /// The text templates. `{}` marks an argument, and the parenthesised list
@@ -1398,6 +1424,8 @@ texts! {
     WonderGuardImmunity => "Wonder Guard immunity: {}" (MoveId),
     // ---- -message (PS: sim/battle.ts maybeTriggerEndlessBattleClause;
     // data/rulesets.ts freezeclausemod, sleepclausemod) ----------------
+    EndlessBattleBerryCycling => "Each side's team started with the rudimentary means to perform restorative berry-cycling." (),
+    EndlessBattleBerryCyclingLoses => "{}'s team started with the rudimentary means to perform restorative berry-cycling and thus loses." (Player),
     EndlessBattleNoProgress => "This battle cannot progress. Endless Battle Clause activated!" (),
     FreezeClauseActivated => "Freeze Clause activated." (),
     // PS: data/mods/gen1/conditions.ts invulnerability onInvulnerability
@@ -1430,6 +1458,8 @@ texts! {
     HintGen1HyperBeamSleep => "In Gen 1, if a Pokémon that has just used Hyper Beam and has yet to recharge is targeted with a sleep inducing move, any other status it may already have will be ignored and sleep will be induced regardless." (),
     HintGen1LeechSeedRecovery => "In Gen 1, Leech Seed recovery is not limited by the remaining HP of the seeded Pokemon." (),
     HintGen1LeechSeedToxic => "In Gen 1, Leech Seed's damage is affected by Toxic's counter." (),
+    // PS: data/moves.ts fakeout onTry
+    HintFakeOut => "Fake Out only works on your first turn out." (),
     HintGen1Miss => "In Gen 1, moves with 100% accuracy can still miss 1/256 of the time." (),
     HintGen1NoMove => "In Gen 1, if a Pokémon is thawed from freeze and no move has been selected yet, the Pokémon will use a move with Fissure's animation, 102 base power, ??? type, Special category, and around 31.6% accuracy." (),
     HintGen1ParSemiInvulnerable => "In Gen 1, when a Dig/Fly user is fully paralyzed while semi-invulnerable, it will remain semi-invulnerable until it switches out or fully executes Dig/Fly" (),
@@ -1552,6 +1582,7 @@ mod tests {
             TextArgValue::Status(Status::Slp),
             TextArgValue::Word(Word::Move),
             TextArgValue::Rule(RuleId::FreezeClauseMod),
+            TextArgValue::Player(SideId::P2),
         ];
         for v in values {
             assert_eq!(TextArg::new(v).value(), v);

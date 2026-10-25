@@ -298,6 +298,19 @@ function choose(battle, rec, side, rng) {
     });
     send(again.length ? `move ${pick(rng, again)}` : 'default');
   }
+  // A move the request offered can be refused when PS learns it is
+  // disabled only on the attempt (a foe's Imprison: the request said
+  // `maybeDisabled`). PS re-sends the request with the move disabled: pick
+  // again from it. (No draw unless that happens, so earlier fixtures replay
+  // unchanged.)
+  if (choice.startsWith('move') && !battle.getSide(side).isChoiceDone()
+    && /disabled/.test(battle.getSide(side).choice.error)) {
+    const again = [];
+    (rec.requests[side].active[0].moves || []).forEach((m, i) => {
+      if (!m.disabled) again.push(i + 1);
+    });
+    send(again.length ? `move ${pick(rng, again)}` : 'default');
+  }
 }
 
 function play(battle, rec, rng) {

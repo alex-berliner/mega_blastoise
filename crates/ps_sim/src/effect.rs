@@ -514,15 +514,29 @@ impl EventMask {
 }
 
 /// An effect's handlers. Build with [`EffectDef::new`] so the mask matches.
+///
+/// A move's `self` effect has its own handlers (PS's `move.self.onHit`),
+/// which PS runs through `moveDataEvent` with the `self` effect as the
+/// effect, not the move. They live in [`EffectDef::self_handlers`] so a
+/// move's own `onHit` and its `self` effect's `onHit` stay apart.
 #[derive(Debug)]
 pub struct EffectDef {
     pub handlers: &'static [Handler],
     pub events: EventMask,
+    /// The move's `self` effect's handlers (`move.self`).
+    pub self_handlers: &'static [Handler],
+    /// The mask of [`EffectDef::self_handlers`].
+    pub self_events: EventMask,
 }
 
 impl EffectDef {
     pub const fn new(handlers: &'static [Handler]) -> EffectDef {
-        EffectDef { handlers, events: EventMask::of(handlers) }
+        EffectDef { handlers, events: EventMask::of(handlers), self_handlers: &[], self_events: EventMask::EMPTY }
+    }
+
+    /// An effect with a move's `self` effect handlers.
+    pub const fn with_self(handlers: &'static [Handler], self_handlers: &'static [Handler]) -> EffectDef {
+        EffectDef { handlers, events: EventMask::of(handlers), self_handlers, self_events: EventMask::of(self_handlers) }
     }
 
     /// The handler for `on{prefix}{event}`, if this effect has one.
@@ -531,6 +545,14 @@ impl EffectDef {
             return None;
         }
         self.handlers.iter().find(|h| h.event == event && h.prefix == prefix)
+    }
+
+    /// The `self` effect's handler for `on{prefix}{event}`, if it has one.
+    pub fn find_self(&'static self, prefix: Prefix, event: EventId) -> Option<&'static Handler> {
+        if !self.self_events.contains(event) {
+            return None;
+        }
+        self.self_handlers.iter().find(|h| h.event == event && h.prefix == prefix)
     }
 }
 
@@ -554,6 +576,11 @@ impl Registry {
     /// The handler for `on{prefix}{event}` on effect `id`.
     pub fn handler(&self, id: EffectId, prefix: Prefix, event: EventId) -> Option<&'static Handler> {
         self.get(id)?.find(prefix, event)
+    }
+
+    /// The `self` effect's handler for `on{prefix}{event}` on the move `id`.
+    pub fn self_handler(&self, id: EffectId, prefix: Prefix, event: EventId) -> Option<&'static Handler> {
+        self.get(id)?.find_self(prefix, event)
     }
 
     /// True when the entries are strictly increasing (sorted, no

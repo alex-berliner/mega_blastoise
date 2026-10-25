@@ -382,6 +382,11 @@ pub struct Pokemon {
     /// `setItem` and resolved by `eatItem` for restorative berries.
     pub staleness: Staleness,
     pub pending_staleness: Staleness,
+    /// The set's item is a restorative berry, and the set can cycle one
+    /// (Pickup or Recycle): what Endless Battle Clause reads of
+    /// `pokemon.set`.
+    pub set_restorative_berry: bool,
+    pub set_cycles_berries: bool,
     /// `weighthg`, from the species (`setSpecies`) or copied by Transform.
     pub weighthg: u16,
     pub move_slots: [MoveSlot; 4],
@@ -498,6 +503,8 @@ impl Pokemon {
         ate_berry: false,
         staleness: Staleness::None,
         pending_staleness: Staleness::None,
+        set_restorative_berry: false,
+        set_cycles_berries: false,
         weighthg: 0,
         move_slots: [MoveSlot::EMPTY; 4],
         base_move_slots: [MoveSlot::EMPTY; 4],

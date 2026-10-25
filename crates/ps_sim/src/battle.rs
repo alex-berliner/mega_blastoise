@@ -36,7 +36,7 @@ use crate::prng::PrngSeed;
 use crate::queue::{Action, ActionKind, ActionMove};
 use crate::relay::{Relay, TypeList};
 use crate::request::RequestState;
-use crate::state::{Battle, EffectState, FaintData, Holder, MonRef, MoveSlot, StateRef, SwitchFlag, Trapped};
+use crate::state::{Battle, EffectState, FaintData, Holder, MonRef, MoveSlot, Staleness, StateRef, SwitchFlag, Trapped};
 use crate::stats::Stat;
 
 /// The test-only move pipeline: `runMove(move, pokemon, targetLoc)`.
@@ -441,6 +441,12 @@ impl Battle {
         mon.base_ability = set.ability;
         mon.ability = set.ability;
         mon.item = set.item;
+        // `pokemon.set.item`, `set.ability` and `set.moves`, as Endless
+        // Battle Clause reads them (Harvest is gen 5).
+        mon.set_restorative_berry =
+            !set.item.is_none() && crate::pokemon::RESTORATIVE_BERRIES.contains(&dex.item_def(set.item).name.as_str());
+        mon.set_cycles_berries = (!set.ability.is_none() && dex.ability_def(set.ability).name.as_str() == "Pickup")
+            || set.moves[..set.move_count].iter().any(|&id| dex.move_def(id).name.as_str() == "Recycle");
         mon.types = TypeList(species_def.types);
         *self.mon_mut(m) = mon;
         // `initEffectState({})` for the status, `{id, target: this}` for
@@ -1320,8 +1326,10 @@ impl Battle {
         }
 
         let mut trapped_by_side = [true; 2];
+        let mut staleness_by_side = [Staleness::None; 2];
         for s in 0..2u8 {
             let mut side_trapped = true;
+            let mut side_staleness = Staleness::None;
             for pos in 0..self.sides[s as usize].active.len() as u8 {
                 let Some(m) = self.active_at(s, pos) else { continue };
                 let turn = self.turn;
@@ -1395,16 +1403,22 @@ impl Battle {
                     continue;
                 }
                 side_trapped = side_trapped && self.mon(m).trapped.truthy();
-                // Staleness only matters under Endless Battle Clause.
+                // `volatileStaleness || staleness`: `volatileStaleness` is
+                // Skill Swap's, which is not ported (it stops `unported`).
+                let staleness = self.mon(m).staleness;
+                if staleness != Staleness::None && side_staleness != Staleness::External {
+                    side_staleness = staleness;
+                }
                 self.mon_mut(m).active_turns += 1;
             }
             trapped_by_side[s as usize] = side_trapped;
+            staleness_by_side[s as usize] = side_staleness;
             let sd = &mut self.sides[s as usize];
             sd.fainted_last_turn = sd.fainted_this_turn;
             sd.fainted_this_turn = None;
         }
 
-        if self.maybe_trigger_endless_battle_clause(trapped_by_side) {
+        if self.maybe_trigger_endless_battle_clause(trapped_by_side, staleness_by_side) {
             return;
         }
 
@@ -1513,11 +1527,13 @@ impl Battle {
     }
 
     /// PS `maybeTriggerEndlessBattleClause(trappedBySide, stalenessBySide)`.
-    /// Only `gen1randombattle` has Endless Battle Clause; staleness never
-    /// arises in gen 1, so past the turn limit only Gen 1's no-progress
-    /// check can end the battle.
+    /// The random battle formats have Endless Battle Clause. Staleness never
+    /// arises in gen 1. In gen 3 a restorative berry set by Trick, Thief,
+    /// Covet or Recycle and then eaten makes its holder internally stale
+    /// (`setItem`, `eatItem`); only Skill Swap's `volatileStaleness` (not
+    /// ported) is external, so the clause cannot activate yet.
     // PS: sim/battle.ts maybeTriggerEndlessBattleClause
-    pub fn maybe_trigger_endless_battle_clause(&mut self, _trapped_by_side: [bool; 2]) -> bool {
+    pub fn maybe_trigger_endless_battle_clause(&mut self, trapped_by_side: [bool; 2], staleness_by_side: [Staleness; 2]) -> bool {
         if self.gen <= 1 {
             let mut no_progress = true;
             for s in 0..2u8 {
@@ -1576,15 +1592,58 @@ impl Battle {
         if !self.has_rule(Rule::EndlessBattleClause) {
             return false;
         }
-        // `stalenessBySide.every(s => !!s)`: staleness comes only from
-        // restorative berries, Recycle-like moves and Skill Swap. None exists
-        // in gen 1. In gen 3 Skill Swap is ported: it makes its target
-        // externally stale (`volatile_staleness`) and clears its user, so
-        // on its own it never leaves both sides' actives stale. The berries
-        // and Recycle are not ported yet (they panic `unported` first), so
-        // the clause never activates; their ports must port the rest of
-        // this function (`endTurn`'s `stalenessBySide` included).
-        false
+        // No free-for-all in our formats.
+        // Are all Pokemon on every side stale, with at least one side
+        // containing an externally stale Pokemon?
+        if !staleness_by_side.iter().all(|&s| s != Staleness::None)
+            || !staleness_by_side.contains(&Staleness::External)
+        {
+            return false;
+        }
+        // Can both sides switch to a non-stale Pokemon?
+        let mut can_switch = [false; 2];
+        for (i, &trapped) in trapped_by_side.iter().enumerate() {
+            if trapped {
+                break;
+            }
+            for j in 0..self.sides[i].team_size as usize {
+                let mon = self.mon(self.pokemon_at(i as u8, j));
+                if !mon.fainted && mon.staleness == Staleness::None {
+                    can_switch[i] = true;
+                    break;
+                }
+            }
+        }
+        if can_switch.iter().all(|&s| s) {
+            return false;
+        }
+        // Endless Battle Clause activates: the winner comes from each side's
+        // sets.
+        let mut losers = [false; 2];
+        for (s, loser) in losers.iter_mut().enumerate() {
+            // `berry` is the last Pokemon's, `cycle` any Pokemon's.
+            let (mut berry, mut cycle) = (false, false);
+            for j in 0..self.sides[s].team_size as usize {
+                let mon = self.mon(self.pokemon_at(s as u8, j));
+                berry = mon.set_restorative_berry;
+                cycle |= mon.set_cycles_berries;
+                if berry && cycle {
+                    break;
+                }
+            }
+            *loser = berry && cycle;
+        }
+        match losers {
+            [true, false] | [false, true] => {
+                let loser = if losers[0] { 0 } else { 1 };
+                let text = Text::with1(TextId::EndlessBattleBerryCyclingLoses, TextArg::player(side_id(loser)));
+                self.add(Msg::Message(text));
+                return self.win(Some(1 - loser));
+            }
+            [true, true] => self.add(Msg::Message(Text::new(TextId::EndlessBattleBerryCycling))),
+            [false, false] => {}
+        }
+        self.tie()
     }
 
     /// `pokemon.moves.every(moveid => moveid === 'transform')`.

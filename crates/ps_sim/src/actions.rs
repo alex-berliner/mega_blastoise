@@ -552,11 +552,13 @@ impl Battle {
         let Some(i) = self.last_move_line else { return };
         // `addMove` wrote a `|move|` or an `|-anim|` line.
         if let Msg::Move { kw, .. } | Msg::Anim { kw, .. } = &mut self.log.as_mut_slice()[i as usize] {
-            // PS appends the text again: a second `[miss]` is counted.
-            if flag == KwFlags::MISS && kw.flags.contains(flag) {
-                kw.repeat_miss += 1;
+            // PS appends the text: a `[miss]` after another `[miss]` or a
+            // `[notarget]` renders last.
+            if flag == KwFlags::MISS {
+                kw.append_miss();
+            } else {
+                kw.flags.insert(flag);
             }
-            kw.flags.insert(flag);
         }
     }
 
@@ -1045,8 +1047,9 @@ impl Battle {
     }
 
     /// Runs a `moveData`'s own handler: the move's through `singleEvent`; a
-    /// secondary or `self` effect has none ported (its handlers are not in
-    /// any registry), so the relay comes back.
+    /// `self` effect's through the move's `self` slot in the registry; a
+    /// secondary has none ported (its handlers are not in any registry), so
+    /// the relay comes back.
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn move_data_event(
         &mut self,
@@ -1064,10 +1067,21 @@ impl Battle {
                 return self.single_event(event, own, StateRef::Scratch, 0, target, source, effect, relay);
             }
             MoveData::Secondary(s) => s.handlers,
-            MoveData::SelfEffect(s) => s.handlers,
+            MoveData::SelfEffect(s) => {
+                let effect = self.mv(mv).effect();
+                let own = self.mv(mv).handler_effect();
+                match self.registry.self_handler(own, Prefix::None, event) {
+                    Some(h) => {
+                        return self.single_event_with(event, own, StateRef::Scratch, 0, target, source, effect, relay, Some(h));
+                    }
+                    None => s.handlers,
+                }
+            }
             MoveData::Damage(_) => &[],
         };
-        assert!(handlers.is_empty(), "unported: the handlers of a secondary or self effect of {:?}", self.mv(mv).id);
+        // No handler for this event: PS's `singleEvent` finds no callback.
+        let answers = handlers.iter().any(|h| crate::effect::parse_handler_key(h.name()) == Some((Prefix::None, event)));
+        assert!(!answers, "unported: the handlers of a secondary or self effect of {:?}", self.mv(mv).id);
         relay.unwrap_or(Relay::TRUE)
     }
 

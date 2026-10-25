@@ -163,6 +163,17 @@
 # its bug put back (a mutant build per bug); like the other wide entries
 # they draw new teams whenever `ported(3)` grows.
 3 wide 69  # G3-M5 Sketch's new move slot has no `target` key, so the request leaves it out
-3 wide 70  # G3-M5 Mimic's new move slot has no `target` key either
+3 wide 70  # G3-M5 Mimic's new move slot has no `target` key either; also G3-M6 Thief's `-enditem ... [silent]|[from] move: Thief|[of] SOURCE` before its `-item`
 3 wide 222  # G3-M5 Transform leaves the foe's copied types unknown (`knownType` false): a foe's Magnet Pull then sets `maybeTrapped` on a non-Steel user
 3 wide 4502  # G3-M5 Conversion 2 reads the type of the move object `lastMoveUsed` holds, after Hidden Power's `ModifyMove`
+
+# G3-M6: item moves, Counter, Mirror Coat and the rest (Trick, Knock Off,
+# Thief, Covet, Recycle, Baton Pass, Spite, Fake Out, Dream Eater, Toxic).
+# 1481 is a real bug the focused sweep found (G3-M4's future-move miss
+# after Helping Hand's `[notarget]`); the others fail with one plausible
+# slip of this batch put back (a mutant build per slip; the real build
+# passes all five).
+3 wide 1481  # G3-M6 a future move's `[miss]` after `[notarget]` on the turn's last `|move|` line renders last (PS appends text)
+3 wide 418  # G3-M6 Trick's `-enditem|MON|ITEM|[silent]|[from] move: Trick` (flags first); Spite's 2-5 PP roll
+3 wide 609  # G3-M6 Trick's silent `-enditem`, a second team; Fake Out fails after the first action
+3 wide 39  # G3-M6 Counter returns twice the damage it recorded

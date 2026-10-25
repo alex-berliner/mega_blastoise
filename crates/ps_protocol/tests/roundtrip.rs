@@ -324,7 +324,7 @@ fn liquid_ooze_lines_round_trip() {
 
 /// Lines a gen 3 future move, Solar Beam in the sun and Beat Up write: a
 /// second `[miss]` on a `|move|` line (the future hit's miss lands on the
-/// turn's last one), `[miss]` on an `|-anim|` line, and Beat Up's `[of]`
+/// turn's last one, also after a `[notarget]`), `[miss]` on an `|-anim|` line, and Beat Up's `[of]`
 /// with the ally's nickname alone.
 #[test]
 fn attr_last_move_lines_and_beat_up_round_trip() {
@@ -334,6 +334,8 @@ fn attr_last_move_lines_and_beat_up_round_trip() {
         "|switch|p1a: Sneasel|Sneasel|100/100",
         "|move|p2a: Kakuna|Rock Blast|p1a: Sneasel|[miss]|[miss]",
         "|move|p2a: Spearow|Dig||[still]|[miss]",
+        "|move|p1a: Bob|Helping Hand|null|[notarget]|[miss]",
+        "|move|p1a: Bob|Helping Hand|null|[miss]|[notarget]",
         "|-anim|p2a: Linoone|Solar Beam|p1a: Sneasel|[miss]",
         "|-anim|p2a: Linoone|Solar Beam|p1a: Sneasel",
         "|-activate|p1a: Sneasel|move: Beat Up|[of] Bob",

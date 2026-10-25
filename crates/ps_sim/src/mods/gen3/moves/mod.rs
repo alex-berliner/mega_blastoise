@@ -2,6 +2,7 @@
 
 pub mod assist;
 pub mod attract;
+pub mod batonpass;
 pub mod beatup;
 pub mod bide;
 pub mod block;
@@ -9,12 +10,16 @@ pub mod bounce;
 pub mod camouflage;
 pub mod conversion2;
 pub mod conversion;
+pub mod counter;
+pub mod covet;
 pub mod curse;
 pub mod destinybond;
 pub mod dig;
 pub mod disable;
 pub mod dive;
 pub mod doomdesire;
+pub mod dreameater;
+pub mod fakeout;
 pub mod fly;
 pub mod focuspunch;
 pub mod followme;
@@ -25,12 +30,14 @@ pub mod helpinghand;
 pub mod hiddenpower;
 pub mod iceball;
 pub mod imprison;
+pub mod knockoff;
 pub mod leechseed;
 pub mod lockon;
 pub mod meanlook;
 pub mod metronome;
 pub mod mimic;
 pub mod mindreader;
+pub mod mirrorcoat;
 pub mod mirrormove;
 pub mod naturepower;
 pub mod odorsleuth;
@@ -38,6 +45,7 @@ pub mod perishsong;
 pub mod psychup;
 pub mod pursuit;
 pub mod razorwind;
+pub mod recycle;
 pub mod roleplay;
 pub mod rollout;
 pub mod sketch;
@@ -48,13 +56,16 @@ pub mod sleeptalk;
 pub mod snore;
 pub mod solarbeam;
 pub mod spiderweb;
+pub mod spite;
 pub mod spitup;
 pub mod stockpile;
 pub mod struggle;
 pub mod substitute;
 pub mod swallow;
 pub mod teleport;
+pub mod thief;
 pub mod transform;
+pub mod trick;
 pub mod uproar;
 pub mod yawn;
 
@@ -193,3 +204,67 @@ fn add_typechange(b: &mut Battle, pokemon: crate::state::MonRef, t: ps_dex::Type
 
 #[cfg(test)]
 mod tests_call;
+
+/// Counter's and Mirror Coat's `beforeTurnCallback(pokemon)`:
+/// `pokemon.addVolatile(id)`.
+// PS: data/moves.ts counter.beforeTurnCallback, mirrorcoat.beforeTurnCallback
+pub fn counter_before_turn(b: &mut Battle, a: &EventArgs, id: ps_dex::ConditionId) -> Option<Relay> {
+    let pokemon = a.target.mon()?;
+    b.add_volatile(pokemon, id, None, EffectId::None);
+    None
+}
+
+/// Counter's and Mirror Coat's `onTry(source)`: `false` without the
+/// volatile, or while its `slot` is `null`.
+// PS: data/moves.ts counter.onTry, mirrorcoat.onTry
+pub fn counter_try(b: &mut Battle, a: &EventArgs, id: ps_dex::ConditionId) -> Option<Relay> {
+    use crate::mods::gen3::conditions::counter::SLOT;
+    let source = a.target.mon()?;
+    match b.mon(source).volatiles.get(EffectId::Condition(id)) {
+        None => Some(Relay::FAIL),
+        Some(st) if st.data[SLOT] == 0 => Some(Relay::FAIL),
+        Some(_) => None,
+    }
+}
+
+/// Counter's and Mirror Coat's `damageCallback(pokemon)`: `0` without the
+/// volatile, else its `damage || 1`.
+// PS: data/moves.ts counter.damageCallback, mirrorcoat.damageCallback
+pub fn counter_damage(b: &mut Battle, a: &EventArgs, id: ps_dex::ConditionId) -> Option<Relay> {
+    use crate::mods::gen3::conditions::counter::damage;
+    let pokemon = a.target.mon()?;
+    let Some(st) = b.mon(pokemon).volatiles.get(EffectId::Condition(id)) else { return Some(Relay::Int(0)) };
+    let damage = damage(st);
+    Some(Relay::Int(if damage == 0 { 1 } else { damage }))
+}
+
+/// Thief's and Covet's `onAfterHit(target, source, move)`: an empty-handed
+/// user (no gems in gen 3) takes the target's item, unless `takeItem`, the
+/// item's own `TakeItem` or `setItem` refuses (the item goes back). Thief
+/// adds the `-enditem|TARGET|ITEM|[silent]|[from] move: Thief|[of] SOURCE`
+/// line; both add `-item|SOURCE|ITEM|[from] move: NAME|[of] TARGET`.
+// PS: data/moves.ts thief.onAfterHit, covet.onAfterHit
+pub fn steal_item_after_hit(b: &mut Battle, a: &EventArgs, mv: ps_dex::MoveId, end_line: bool) -> Option<Relay> {
+    use ps_protocol::{Arg, ArgValue, ItemNum, Kw, KwFlags};
+    let target = a.target.mon()?;
+    let source = a.source.expect("an item-stealing move's onAfterHit without a source");
+    if !b.mon(source).item.is_none() {
+        return None;
+    }
+    let Ok(your_item) = b.take_item(target, Some(source)) else { return None };
+    if !trick::item_take_event(b, your_item, target, source, target, a.effect) || !b.set_item(source, your_item, None, EffectId::None) {
+        b.mon_mut(target).item = your_item;
+        return None;
+    }
+    let from = Arg::new(ArgValue::MoveEffect(MoveNum(mv.0)));
+    let (tgt, src) = (b.ident(target), b.ident(source));
+    if end_line {
+        let kw = Kw::from_of(from, src).with(KwFlags::SILENT.union(KwFlags::FLAGS_FIRST));
+        b.add(Msg::EndItem { mon: tgt, item: ItemNum(your_item.0), kw });
+    }
+    b.add(Msg::Item { mon: src, item: ItemNum(your_item.0), kw: Kw::from_of(from, tgt) });
+    None
+}
+
+#[cfg(test)]
+mod item_counter_tests;

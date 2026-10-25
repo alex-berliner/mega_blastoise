@@ -25,7 +25,7 @@ use crate::relay::Relay;
 use crate::state::{Battle, Holder, MonRef, Staleness, StateRef, Trapped};
 
 /// PS's `RESTORATIVE_BERRIES` (sim/pokemon.ts), by item name.
-const RESTORATIVE_BERRIES: [&str; 9] =
+pub(crate) const RESTORATIVE_BERRIES: [&str; 9] =
     ["Leppa Berry", "Aguav Berry", "Enigma Berry", "Figy Berry", "Iapapa Berry", "Mago Berry", "Sitrus Berry", "Wiki Berry", "Oran Berry"];
 
 impl Battle {

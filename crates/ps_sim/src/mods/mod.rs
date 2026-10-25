@@ -90,11 +90,18 @@ pub fn is_ported(dex: &Dex, registry: &Registry, id: EffectId) -> bool {
     match id {
         EffectId::Move(m) => {
             let def = dex.move_def(m);
-            // Secondaries and `self` effects have no id to register under.
-            let self_free = |s: Option<&ps_dex::SelfEffect>| s.is_none_or(|s| s.handlers.is_empty());
+            // A move's `self` effect has no id of its own: its handlers live
+            // in the move's `self` slot of the registry. A secondary has
+            // nowhere to go, so a move with one is not ported.
+            let self_ok = |s: Option<&ps_dex::SelfEffect>| match s {
+                None => true,
+                Some(s) => s.handlers.iter().all(|h| {
+                    parse_handler_key(h.name()).is_some_and(|(p, e)| registry.self_handler(id, p, e).is_some())
+                }),
+            };
             all_in(def.handlers)
-                && self_free(def.self_effect())
-                && def.secondaries().iter().all(|s| s.handlers.is_empty() && self_free(s.self_effect))
+                && self_ok(def.self_effect())
+                && def.secondaries().iter().all(|s| s.handlers.is_empty() && self_ok(s.self_effect))
         }
         _ => dex_handlers(dex, id).is_none_or(all_in),
     }
@@ -182,8 +189,9 @@ mod tests {
             assert!(reg.is_sorted(), "gen {} registry not sorted", dex.gen);
             for (id, def) in reg.entries {
                 assert_eq!(def.events, crate::effect::EventMask::of(def.handlers), "{id:?} mask");
+                assert_eq!(def.self_events, crate::effect::EventMask::of(def.self_handlers), "{id:?} self mask");
                 let Some(dex_hs) = dex_handlers(dex, *id) else { continue };
-                for h in def.handlers {
+                let check = |h: &crate::effect::Handler, dex_hs: &'static [ps_dex::Handler]| {
                     let found = dex_hs.iter().find(|d| parse_handler_key(d.name()) == Some((h.prefix, h.event)));
                     let d = found.unwrap_or_else(|| panic!("gen {} {id:?}: {:?}{:?} not in PS data", dex.gen, h.prefix, h.event));
                     assert_eq!(
@@ -203,6 +211,16 @@ mod tests {
                             assert_eq!(d.constant_id(), Some("recharge"));
                         }
                         (c, v) => panic!("gen {} {id:?} {}: {c:?} vs PS {v:?}", dex.gen, d.name()),
+                    }
+                };
+                for h in def.handlers {
+                    check(h, dex_hs);
+                }
+                // A move's `self` effect has its own handlers in PS's data.
+                if let EffectId::Move(m) = *id {
+                    let self_hs = dex.move_def(m).self_effect().map(|s| s.handlers).unwrap_or(&[]);
+                    for h in def.self_handlers {
+                        check(h, self_hs);
                     }
                 }
             }
