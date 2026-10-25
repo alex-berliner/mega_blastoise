@@ -624,6 +624,12 @@ words! {
     Boost => "boost",
     Confusion => "confusion",
     Drain => "drain",
+    // Event names in `|debug|EVENT handler suppressed by Air Lock` (PS:
+    // sim/battle.ts runEvent, singleEvent): the ones gen 3's weathers and
+    // weather abilities answer.
+    EventImmunity => "Immunity",
+    EventWeather => "Weather",
+    EventWeatherModifyDamage => "WeatherModifyDamage",
     Flinch => "flinch",
     Heal => "heal",
     LockedMove => "lockedmove",
@@ -1259,6 +1265,8 @@ texts! {
     HealInterrupted => "heal interrupted" (),
     // PS: sim/pokemon.ts setStatus
     ImmuneToStatus => "immune to status" (),
+    // PS: sim/battle.ts runEvent, singleEvent (`eventid`)
+    HandlerSuppressedByAirLock => "{} handler suppressed by Air Lock" (Word),
     // PS: data/moves.ts attract volatileStatus onStart
     IncompatibleGender => "incompatible gender" (),
     // PS: sim/battle-actions.ts runMoveEffects

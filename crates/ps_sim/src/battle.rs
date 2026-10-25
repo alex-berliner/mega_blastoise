@@ -661,6 +661,7 @@ impl Battle {
         mon.species = species;
         // `setType(species.types, true)`.
         mon.types = TypeList(def.types);
+        mon.weighthg = def.weighthg;
         if mon.maxhp == 0 {
             mon.base_maxhp = stats[0];
             mon.maxhp = stats[0];
@@ -702,12 +703,13 @@ impl Battle {
         }
     }
 
-    /// PS `pokemon.transformInto(pokemon, effect)` for gens 1 and 2 (no
-    /// Illusion, abilities, Terastallization or forme items there):
-    /// `false` when it fails. `effect` is always `undefined` from Transform.
+    /// PS `pokemon.transformInto(pokemon, effect)` for gens 1 to 3 (no
+    /// Illusion, Terastallization or forme items there, no Roost or added
+    /// types): `false` when it fails. `effect` is always `undefined` from
+    /// Transform.
     // PS: sim/pokemon.ts transformInto
     pub fn transform_into(&mut self, m: MonRef, pokemon: MonRef) -> bool {
-        assert!(self.gen <= 2, "unported: transformInto in gen {} (setAbility)", self.gen);
+        assert!(self.gen <= 3, "unported: transformInto in gen {}", self.gen);
         let species = self.mon(pokemon).species;
         if self.mon(pokemon).fainted || (self.mon(pokemon).transformed && self.gen >= 2) {
             return false;
@@ -718,7 +720,7 @@ impl Battle {
         self.set_species(m, species, true);
 
         self.mon_mut(m).transformed = true;
-        // `weighthg` is not kept: nothing in gens 1-2 reads it.
+        self.mon_mut(m).weighthg = self.mon(pokemon).weighthg;
 
         // `setType(pokemon.getTypes(true, true), true)` (no Roost before gen
         // 4, no added type before gen 6).
@@ -737,7 +739,7 @@ impl Battle {
         let mon = self.mon_mut(m);
         mon.hp_type = hp_type;
         mon.hp_power = hp_power;
-        // `timesAttacked` is not kept: nothing in gens 1-2 reads it.
+        // `timesAttacked` is not kept: only Rage Fist (gen 9) reads it.
         let mut slots = [MoveSlot::EMPTY; 4];
         for (i, ms) in self.mon(pokemon).move_slots.iter().enumerate() {
             if ms.id.is_none() {
@@ -755,6 +757,11 @@ impl Battle {
 
         let (mon, into) = (self.ident(m), self.ident(pokemon));
         self.add(Msg::Transform { mon, into, kw: Kw::NONE });
+        if self.gen > 2 {
+            let ability = self.mon(pokemon).ability;
+            self.set_ability(m, ability, Some(m), EffectId::None, true, true);
+        }
+        // The gen 4 Giratina and Arceus forme changes are not in gens 1-3.
         true
     }
 
@@ -1884,8 +1891,11 @@ impl Battle {
             }
         }
         self.sides[s as usize].active[pos as usize] = Some(pokemon.index);
-        // Gens <= 4: a knocked-off item is lost again on every switch-in
-        // (`itemKnockedOff`). Knock Off is not ported, so nothing sets it.
+        if self.gen <= 4 && self.mon(pokemon).item_knocked_off && !self.mon(pokemon).item.is_none() {
+            // Gens 3-4: a knocked-off item is lost again on every switch-in.
+            self.hint(TextId::HintGens3To4KnockOffSwitchIn, false, None);
+            self.mon_mut(pokemon).item = ItemId::NONE;
+        }
         if self.gen <= 2 {
             // `lastMove` is reset for every Pokemon on the field after a
             // switch (Mirror Move).

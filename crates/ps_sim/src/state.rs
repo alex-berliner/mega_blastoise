@@ -284,6 +284,16 @@ impl<const N: usize> EffectTable<N> {
     }
 }
 
+/// PS's `staleness` / `pendingStaleness` (Endless Battle Clause):
+/// `undefined`, `'internal'` or `'external'`.
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub enum Staleness {
+    #[default]
+    None,
+    Internal,
+    External,
+}
+
 /// One move slot (`pokemon.moveSlots[i]`).
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub struct MoveSlot {
@@ -351,6 +361,18 @@ pub struct Pokemon {
     pub item: ItemId,
     pub last_item: ItemId,
     pub item_state: EffectState,
+    /// `itemKnockedOff`: gen 3-4 Knock Off. In gens 3-4 the item is lost
+    /// again on every switch-in ([`Battle::switch_in`]); gen 4's `takeItem`
+    /// also refuses it.
+    pub item_knocked_off: bool,
+    /// `ateBerry`.
+    pub ate_berry: bool,
+    /// `staleness` / `pendingStaleness` (Endless Battle Clause): set by
+    /// `setItem` and resolved by `eatItem` for restorative berries.
+    pub staleness: Staleness,
+    pub pending_staleness: Staleness,
+    /// `weighthg`, from the species (`setSpecies`) or copied by Transform.
+    pub weighthg: u16,
     pub move_slots: [MoveSlot; 4],
     pub base_move_slots: [MoveSlot; 4],
     pub last_move: MoveId,
@@ -448,6 +470,11 @@ impl Pokemon {
         item: ItemId::NONE,
         last_item: ItemId::NONE,
         item_state: EffectState::EMPTY,
+        item_knocked_off: false,
+        ate_berry: false,
+        staleness: Staleness::None,
+        pending_staleness: Staleness::None,
+        weighthg: 0,
         move_slots: [MoveSlot::EMPTY; 4],
         base_move_slots: [MoveSlot::EMPTY; 4],
         last_move: MoveId::NONE,
@@ -766,6 +793,7 @@ pub struct KnownIds {
     pub neutralizinggas: AbilityId,
     pub klutz: AbilityId,
     pub corrosion: AbilityId,
+    pub sheerforce: AbilityId,
     pub abilityshield: ItemId,
 }
 
@@ -783,6 +811,7 @@ impl KnownIds {
             neutralizinggas: a("neutralizinggas"),
             klutz: a("klutz"),
             corrosion: a("corrosion"),
+            sheerforce: a("sheerforce"),
             abilityshield: dex.item_id("abilityshield").unwrap_or(ItemId::NONE),
         }
     }
@@ -1124,7 +1153,15 @@ impl Battle {
         st
     }
 
-    fn bury(&mut self, st: EffectState) {
+    /// PS `clearEffectState(state)`: the same object (identity and
+    /// `target` kept), emptied: id `''`, `effectOrder` 0, every other key
+    /// deleted.
+    // PS: sim/battle.ts clearEffectState
+    pub fn clear_effect_state(state: &mut EffectState) {
+        *state = EffectState { serial: state.serial, target: state.target, ..EffectState::EMPTY };
+    }
+
+    pub(crate) fn bury(&mut self, st: EffectState) {
         let i = self.graveyard_next as usize;
         self.graveyard[i] = st;
         self.graveyard_next = ((i + 1) % GRAVEYARD_CAP) as u8;
@@ -1318,6 +1355,17 @@ impl Battle {
             && !(!shield.is_none() && self.has_item(t, shield))
     }
 
+    /// PS `suppressingSecondaries()`: `activeMove.hasSheerForce` and the
+    /// user has Sheer Force. Sheer Force (gen 5) is the only effect that
+    /// sets `hasSheerForce`, so with no such ability in the dex this is
+    /// always false.
+    // PS: sim/battle.ts suppressingSecondaries
+    pub fn suppressing_secondaries(&mut self) -> bool {
+        let sheerforce = self.known.sheerforce;
+        assert!(sheerforce.is_none(), "unported: suppressingSecondaries (activeMove.hasSheerForce)");
+        false
+    }
+
     /// PS `field.suppressingWeather()`.
     // PS: sim/field.ts suppressingWeather
     pub fn suppressing_weather(&mut self) -> bool {
@@ -1392,7 +1440,13 @@ impl Battle {
 
     /// A condition's `durationCallback`, called directly as PS does
     /// (`status.durationCallback.call(this.battle, target, source, effect)`).
-    fn duration_callback(
+    /// Whether PS's data gives `status` a `durationCallback` (`if
+    /// (status.durationCallback)`).
+    pub(crate) fn has_duration_callback(&self, status: ConditionId) -> bool {
+        self.dex.condition_def(status).handlers.iter().any(|h| h.name() == "durationCallback")
+    }
+
+    pub(crate) fn duration_callback(
         &mut self,
         status: ConditionId,
         target: Holder,
@@ -1976,10 +2030,7 @@ impl Battle {
         let serial = self.field.weather_state.serial;
         self.single_event(EventId::FieldEnd, prev, StateRef::Weather, serial, Holder::Field, None, EffectId::None, None);
         self.field.weather = ConditionId::NONE;
-        // `clearEffectState`: the same object, emptied (id '' and
-        // effectOrder 0; `target` kept).
-        let target = self.field.weather_state.target;
-        self.field.weather_state = EffectState { serial, target, ..EffectState::EMPTY };
+        Battle::clear_effect_state(&mut self.field.weather_state);
         self.each_event(EventId::WeatherChange, EffectId::None, None);
         true
     }

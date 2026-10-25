@@ -533,7 +533,8 @@ impl Battle {
                 let weather = data_weather(data, def);
                 if !weather.is_none() {
                     self.require_ported(EffectId::Condition(weather));
-                    panic!("unported: setWeather");
+                    let hit_result = MoveResult::from_relay(self.set_weather(weather, Some(source), effect));
+                    did_something = MoveResult::combine(did_something, hit_result);
                 }
                 // `terrain`: gen 6.
                 let pseudo_weather = data_pseudo_weather(data, def);
@@ -865,18 +866,32 @@ impl Battle {
         if !self.mon(target).is_active {
             return MoveResult::False;
         }
-        // `runEvent('ChangeBoost' / 'TryBoost', ..., {...boost})`: the boosts
-        // table relay arrives with the first handler (Mist, Clear Body).
-        let r = self.run_event(EventId::ChangeBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
-        assert_eq!(r, Relay::TRUE, "ChangeBoost handler: the boosts relay is not ported");
-        let boost = self.get_capped_boost(target, boost);
-        let r = self.run_event(EventId::TryBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
-        assert_eq!(r, Relay::TRUE, "TryBoost handler: the boosts relay is not ported");
+        // `runEvent('ChangeBoost', ..., {...boost})`: the table travels as
+        // `Relay::Boosts`, 0 for a stat it leaves out (no boost table PS
+        // passes here holds a 0).
+        let boost = match self.run_event(EventId::ChangeBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(boost))) {
+            Relay::Boosts(t) => t,
+            other => panic!("ChangeBoost answered {other:?}"),
+        };
+        let capped = self.get_capped_boost(target, boost);
+        // `runEvent('TryBoost', ..., {...boost})`. The capped table can hold
+        // a 0 (a stat already at its cap), which is still a key; a handler
+        // removes a key with `delete boost[i]` (Mist, Clear Body), which the
+        // relay shows as a nonzero entry that came back 0.
+        let sent: [i8; 7] = core::array::from_fn(|i| capped[i].unwrap_or(0));
+        let tried = match self.run_event(EventId::TryBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(sent))) {
+            Relay::Boosts(t) => t,
+            other => panic!("TryBoost answered {other:?}"),
+        };
+        let boost: [Option<i8>; 7] = core::array::from_fn(|i| match capped[i] {
+            Some(c) if c != 0 && tried[i] == 0 => None,
+            Some(_) => Some(tried[i]),
+            None => (tried[i] != 0).then_some(tried[i]),
+        });
         let mut success = MoveResult::Null;
         let effect_type = self.effect_type(effect);
-        let boosted = is_secondary;
+        let mut boosted = is_secondary;
         for (i, &b) in boost.iter().enumerate() {
-            // `getCappedBoost` keeps every stat it was given: `Some` here.
             let Some(b) = b else { continue };
             let mut current = [0i8; 7];
             current[i] = b;
@@ -888,40 +903,59 @@ impl Battle {
             }
             let mon = self.ident(target);
             let stat = ps_protocol::Stat::ALL[i];
-            let line = |amount: i32| {
+            let line = |amount: i32, kw: Kw| {
                 let amount = amount.unsigned_abs() as u8;
                 if unboost {
-                    Msg::Unboost { mon, stat, amount, kw: Kw::NONE }
+                    Msg::Unboost { mon, stat, amount, kw }
                 } else {
-                    Msg::Boost { mon, stat, amount, kw: Kw::NONE }
+                    Msg::Boost { mon, stat, amount, kw }
                 }
             };
             if boost_by != 0 {
                 success = MoveResult::True;
-                match effect {
-                    // `bellydrum`, `angerpoint`, `zpower`: none here.
-                    EffectId::None => {}
+                let name = match effect {
+                    EffectId::Move(m) => self.dex.move_def(m).name.as_str(),
+                    EffectId::Ability(a) => self.dex.ability_def(a).name.as_str(),
+                    _ => "",
+                };
+                match name {
+                    "Belly Drum" | "Anger Point" => {
+                        let from = self.effect_fullname(effect);
+                        let amount = self.mon(target).boosts[0];
+                        self.add(Msg::SetBoost { mon, stat: ps_protocol::Stat::Atk, amount, kw: Kw::from(from) });
+                    }
+                    // `bellydrum2` (gen 2) and `zpower` (gen 7) are not
+                    // effects of gens 1-3.
                     _ => match effect_type {
-                        crate::effect::EffectType::Move => self.add(line(boost_by)),
-                        crate::effect::EffectType::Item => panic!("unported: the [from] item line of a boost ({effect:?})"),
+                        _ if effect.is_none() => {}
+                        crate::effect::EffectType::Move => self.add(line(boost_by, Kw::NONE)),
+                        crate::effect::EffectType::Item => {
+                            let from = self.effect_fullname(effect);
+                            self.add(line(boost_by, Kw::from(from)));
+                        }
                         _ => {
-                            if effect_type == crate::effect::EffectType::Ability && !boosted {
-                                panic!("unported: the -ability line of a boost from {effect:?}");
+                            if let (crate::effect::EffectType::Ability, EffectId::Ability(a)) = (effect_type, effect) {
+                                if !boosted {
+                                    let ability = ps_protocol::AbilityNum(a.0);
+                                    self.add(Msg::Ability { mon, ability, old: None, boost: true, kw: Kw::NONE });
+                                    boosted = true;
+                                }
                             }
-                            self.add(line(boost_by));
+                            self.add(line(boost_by, Kw::NONE));
                         }
                     },
                 }
-                self.run_event(EventId::AfterEachBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
+                self.run_event(EventId::AfterEachBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(current)));
             } else if effect_type == crate::effect::EffectType::Ability {
                 if is_secondary || is_self {
-                    self.add(line(boost_by));
+                    self.add(line(boost_by, Kw::NONE));
                 }
             } else if !is_secondary && !is_self {
-                self.add(line(boost_by));
+                self.add(line(boost_by, Kw::NONE));
             }
         }
-        self.run_event(EventId::AfterBoost, Holder::Mon(target), source, effect, Some(Relay::TRUE));
+        let table: [i8; 7] = core::array::from_fn(|i| boost[i].unwrap_or(0));
+        self.run_event(EventId::AfterBoost, Holder::Mon(target), source, effect, Some(Relay::Boosts(table)));
         if success == MoveResult::True {
             if boost.iter().any(|b| b.is_some_and(|x| x > 0)) {
                 self.mon_mut(target).stats_raised_this_turn = true;

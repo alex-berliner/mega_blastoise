@@ -101,8 +101,23 @@ function handlersOf(obj, where) {
 	}
 	// An order key with no handler beside it (gen 3 sandstorm keeps
 	// onModifySpDPriority after the mod drops onModifySpD) is never read by
-	// resolvePriority, so it is not dumped.
+	// resolvePriority, so it is not dumped here; the one exception, the
+	// `onSwitchIn` keys of an ability or item answering SwitchIn with its
+	// onStart, is `switchInOrderOf`.
 	return out;
+}
+
+/** The `onSwitchInPriority` / `Order` / `SubOrder` keys of an ability or
+ * item, or null where it has none. `getCallback` lets an ability or item
+ * without `onSwitchIn` answer the SwitchIn event with its `onStart` (or, in
+ * gen 3 on turn 0, `onAfterEntryHazard`), and `resolvePriority` still reads
+ * the `onSwitchIn` keys for it (gen 3 Intimidate's 2, Trace's 1). */
+function switchInOrderOf(obj, where) {
+	const priority = orderValue(obj, 'onSwitchInPriority', where);
+	const order = orderValue(obj, 'onSwitchInOrder', where);
+	const subOrder = orderValue(obj, 'onSwitchInSubOrder', where);
+	if (priority === null && order === null && subOrder === null) return null;
+	return { priority, order, subOrder };
 }
 
 /** Checks every non-handler key of `obj` is in `known`. */
@@ -411,6 +426,7 @@ function dumpItem(key, item) {
 		boosts: boostsOf(item.boosts, where),
 		condition: item.condition ? key : null,
 		handlers: handlersOf(item, where),
+		switchInOrder: switchInOrderOf(item, where),
 	};
 }
 
@@ -441,6 +457,7 @@ function dumpAbility(key, ability) {
 		flags,
 		condition: ability.condition ? key : null,
 		handlers: handlersOf(ability, where),
+		switchInOrder: switchInOrderOf(ability, where),
 	};
 }
 

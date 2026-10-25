@@ -411,6 +411,29 @@ fn fraction(v: &Value, what: &str) -> String {
     format!("Some(Fraction {{ num: {}, den: {} }})", u8_(&a[0], what), u8_(&a[1], what))
 }
 
+/// An ability's or item's `onSwitchIn` ordering keys (`switchInOrder`;
+/// absent or null for none, as in a dump from before the key existed).
+fn switch_in_order(v: &Value, what: &str) -> String {
+    if v.is_null() {
+        return "SwitchInOrder::NONE".into();
+    }
+    let small = |k: &str| -> i64 {
+        let x = &v[k];
+        if x.is_null() {
+            0
+        } else {
+            ranged(x, i8::MIN as i64, i8::MAX as i64, &format!("{what}.switchInOrder.{k}"))
+        }
+    };
+    assert!(v["order"].is_null() || small("order") != 0, "{what}: switchInOrder order 0");
+    format!(
+        "SwitchInOrder {{ priority: {}, order: {}, sub_order: {} }}",
+        small("priority"),
+        small("order"),
+        small("subOrder")
+    )
+}
+
 fn handlers(v: &Value, names: &Names, what: &str) -> String {
     let list = v["handlers"].as_array().unwrap_or_else(|| panic!("{what}: no handlers"));
     if list.is_empty() {
@@ -701,7 +724,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
             s,
             "    ItemDef {{ name: {}, num: {}, is_berry: {}, is_gem: {}, is_pokeball: {}, is_choice: {}, \
              ignore_klutz: {}, natural_gift: {natural_gift}, fling: {fling}, item_user: {item_user}, \
-             boosts: {}, condition: {condition}, handlers: {} }},",
+             boosts: {}, condition: {condition}, handlers: {}, switch_in_order: {} }},",
             pool.add(it["name"].as_str().unwrap()),
             ranged(&it["num"], i16::MIN as i64, i16::MAX as i64, &w),
             boolean(&it["isBerry"], &w),
@@ -711,6 +734,7 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
             boolean(&it["ignoreKlutz"], &w),
             boosts(&it["boosts"], &w),
             handlers(it, names, &w),
+            switch_in_order(&it["switchInOrder"], &w),
         )
         .unwrap();
     }
@@ -731,13 +755,14 @@ fn emit_gen(g: &GenData, names: &Names, pool: &mut Pool) -> String {
         writeln!(
             s,
             "    AbilityDef {{ name: {}, num: {}, rating_tenths: {}, suppress_weather: {}, \
-             flags: AbilityFlags({}), condition: {condition}, handlers: {} }},",
+             flags: AbilityFlags({}), condition: {condition}, handlers: {}, switch_in_order: {} }},",
             pool.add(a["name"].as_str().unwrap()),
             ranged(&a["num"], i16::MIN as i64, i16::MAX as i64, &w),
             tenths as i8,
             boolean(&a["suppressWeather"], &w),
             Names::bits(&names.ability_flags, &a["flags"]),
             handlers(a, names, &w),
+            switch_in_order(&a["switchInOrder"], &w),
         )
         .unwrap();
     }

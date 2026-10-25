@@ -335,10 +335,24 @@ impl Battle {
     /// PS `resolvePriority(handler, callbackName)`.
     // PS: sim/battle.ts resolvePriority
     fn resolve_priority(&self, l: &mut Listener, prefix: Prefix) {
-        let (order, priority, sub_order) = match l.handler {
+        let (mut order, mut priority, mut sub_order) = match l.handler {
             Some(h) => (h.order, h.priority, h.sub_order),
             None => (0, 0, 0),
         };
+        // `effect[`${callbackName}Priority`]` reads the keys of the event
+        // being run: an ability or item answering `onSwitchIn` with its
+        // `onStart` (or gen 3's `onAfterEntryHazard`, `getCallback`) is
+        // ordered by its `onSwitchIn` keys, not by those of the handler.
+        if l.event == EventId::SwitchIn && prefix == Prefix::None {
+            let keys = match l.effect {
+                EffectId::Ability(a) => Some(self.dex.ability_def(a).switch_in_order),
+                EffectId::Item(i) => Some(self.dex.item_def(i).switch_in_order),
+                _ => None,
+            };
+            if let Some(k) = keys {
+                (order, priority, sub_order) = (k.order, k.priority, k.sub_order);
+            }
+        }
         l.key.order = i64::from(order);
         l.key.priority = i32::from(priority);
         l.key.sub_order = i32::from(sub_order);
@@ -621,28 +635,45 @@ impl Battle {
             // The `!effect.num` branch after this one is dead in PS: a
             // breakable ability always `continue`s here first.
             if self.dex.ability_def(a).flags.has("breakable") && self.suppressing_ability(holder_mon) {
-                return true;
+                // Its `|debug|` line: Mold Breaker is gen 4.
+                panic!("unported: {event:?} handler suppressed by Mold Breaker");
             }
         }
         if !matches!(event, EventId::Start | EventId::SwitchIn | EventId::TakeItem)
             && etype == EffectType::Item
             && holder_mon.is_some_and(|m| self.ignoring_item(m))
         {
-            return true;
+            // Embargo, Klutz and Magic Room are gen 4 and later.
+            panic!("unported: {event:?} handler suppressed by Embargo, Klutz or Magic Room");
         } else if event != EventId::End
             && etype == EffectType::Ability
             && holder_mon.is_some_and(|m| self.ignoring_ability(m))
         {
-            return true;
+            // Gastro Acid and Neutralizing Gas are gen 4 and later, and no
+            // gen 1-3 ability has the `notransform` flag.
+            panic!("unported: {event:?} handler suppressed by Gastro Acid or Neutralizing Gas");
         }
         if (etype == EffectType::Weather || event == EventId::Weather)
             && event != EventId::Residual
             && event != EventId::End
             && self.suppressing_weather()
         {
+            self.debug_suppressed_by_air_lock(event);
             return true;
         }
         false
+    }
+
+    /// `this.debug(eventid + ' handler suppressed by Air Lock')`.
+    fn debug_suppressed_by_air_lock(&mut self, event: EventId) {
+        use ps_protocol::{Text, TextArg, TextId, Word};
+        let word = match event {
+            EventId::Immunity => Word::EventImmunity,
+            EventId::Weather => Word::EventWeather,
+            EventId::WeatherModifyDamage => Word::EventWeatherModifyDamage,
+            other => panic!("unported: the Air Lock debug line of {other:?}"),
+        };
+        self.debug(Text::with1(TextId::HandlerSuppressedByAirLock, TextArg::word(word)));
     }
 
     /// PS `runEvent(eventid, target, source, sourceEffect, relayVar)`.
@@ -903,10 +934,12 @@ impl Battle {
                 }
             }
         }
+        // The Mold Breaker, Embargo and Gastro Acid suppressions (and their
+        // `|debug|` lines) cannot happen in gens 1-3; see `run_event_skips`.
         if event == EventId::SwitchIn {
             if let EffectId::Ability(a) = effect {
                 if self.dex.ability_def(a).flags.has("breakable") && self.suppressing_ability(target_mon) {
-                    return relay;
+                    panic!("unported: {event:?} handler suppressed by Mold Breaker");
                 }
             }
         }
@@ -914,15 +947,16 @@ impl Battle {
             && etype == EffectType::Item
             && target_mon.is_some_and(|m| self.ignoring_item(m))
         {
-            return relay;
+            panic!("unported: {event:?} handler suppressed by Embargo, Klutz or Magic Room");
         }
         if event != EventId::End && etype == EffectType::Ability && target_mon.is_some_and(|m| self.ignoring_ability(m)) {
-            return relay;
+            panic!("unported: {event:?} handler suppressed by Gastro Acid or Neutralizing Gas");
         }
         if etype == EffectType::Weather
             && !matches!(event, EventId::FieldStart | EventId::FieldResidual | EventId::FieldEnd)
             && self.suppressing_weather()
         {
+            self.debug_suppressed_by_air_lock(event);
             return relay;
         }
 

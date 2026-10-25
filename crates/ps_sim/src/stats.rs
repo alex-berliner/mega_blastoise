@@ -171,12 +171,9 @@ impl Battle {
         if !unboosted {
             let mut boost = self.mon(m).boosts[s];
             if !unmodified {
-                // `runEvent('ModifyBoost', this, null, null, {...boosts})`:
-                // no gen 1-3 effect answers it (Unaware and Simple are gen
-                // 4); the boosts table relay arrives with the first one.
-                let r = self.run_event(EventId::ModifyBoost, Holder::Mon(m), None, EffectId::None, Some(Relay::TRUE));
-                debug_assert_eq!(r, Relay::TRUE, "ModifyBoost handler: boosts relay not ported");
-                boost = self.mon(m).boosts[s];
+                // `runEvent('ModifyBoost', this, null, null, {...boosts})`.
+                let boosts = self.mon(m).boosts;
+                boost = self.modify_boost_event(m, boosts)[s];
             }
             let b = boost.clamp(-6, 6);
             value = if b >= 0 {
@@ -203,17 +200,28 @@ impl Battle {
         value as i32
     }
 
+    /// `runEvent('ModifyBoost', m, null, null, boosts)`: the boosts table
+    /// as `Relay::Boosts` (no gen 1-3 effect answers it; Unaware and Simple
+    /// are gen 4).
+    pub fn modify_boost_event(&mut self, m: MonRef, boosts: [i8; 7]) -> [i8; 7] {
+        match self.run_event(EventId::ModifyBoost, Holder::Mon(m), None, EffectId::None, Some(Relay::Boosts(boosts))) {
+            Relay::Boosts(t) => t,
+            other => panic!("ModifyBoost answered {other:?}"),
+        }
+    }
+
     /// PS `pokemon.calculateStat(statName, boost, modifier, statUser)` with
     /// `modifier` 1 (`getDamage`'s): the stored stat at stage `boost`. No
     /// Wonder Room in gens 1-3.
     // PS: sim/pokemon.ts calculateStat
     pub fn calculate_stat(&mut self, m: MonRef, stat: Stat, boost: i8, stat_user: Option<MonRef>) -> i32 {
         let value = i64::from(self.mon(m).stored_stats[stat as usize]);
-        // `runEvent('ModifyBoost', statUser || this, null, null, boosts)`:
-        // no gen 1-3 effect answers it (see `get_stat`).
+        // `boosts[boostName] = boost; boosts = runEvent('ModifyBoost',
+        // statUser || this, null, null, boosts); boost = boosts[boostName]`.
         let user = stat_user.unwrap_or(m);
-        let r = self.run_event(EventId::ModifyBoost, Holder::Mon(user), None, EffectId::None, Some(Relay::TRUE));
-        debug_assert_eq!(r, Relay::TRUE, "ModifyBoost handler: boosts relay not ported");
+        let mut table = [0i8; 7];
+        table[stat as usize] = boost;
+        let boost = self.modify_boost_event(user, table)[stat as usize];
         let b = boost.clamp(-6, 6);
         let value = if b >= 0 { value * BOOST_HALVES[b as usize] / 2 } else { value * 2 / BOOST_HALVES[(-b) as usize] };
         // `this.battle.modify(stat, modifier || 1)`.

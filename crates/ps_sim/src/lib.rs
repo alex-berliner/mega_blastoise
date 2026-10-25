@@ -33,10 +33,12 @@ pub mod choice;
 pub mod effect;
 pub mod emit;
 pub mod events;
+pub mod field;
 #[cfg(feature = "hit-count")]
 pub mod hits;
 pub mod mods;
 pub mod modify;
+pub mod pokemon;
 pub mod prng;
 pub mod queue;
 pub mod relay;

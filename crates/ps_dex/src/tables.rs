@@ -445,6 +445,25 @@ pub struct ItemDef {
     pub boosts: Option<&'static Boosts>,
     pub condition: ConditionId,
     pub handlers: &'static [Handler],
+    /// `onSwitchInPriority` / `Order` / `SubOrder`, see [`SwitchInOrder`].
+    pub switch_in_order: SwitchInOrder,
+}
+
+/// An ability's or item's `onSwitchInPriority`, `onSwitchInOrder` and
+/// `onSwitchInSubOrder`, whether or not it has an `onSwitchIn` handler:
+/// PS's `getCallback` lets one without it answer `SwitchIn` with its
+/// `onStart` (gen 3 on turn 0: `onAfterEntryHazard`), and `resolvePriority`
+/// reads these keys for that answer (gen 3 Intimidate 2, Trace 1). 0 is
+/// PS's missing key (`order` 0 is `false`).
+#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
+pub struct SwitchInOrder {
+    pub priority: i8,
+    pub order: i8,
+    pub sub_order: i8,
+}
+
+impl SwitchInOrder {
+    pub const NONE: SwitchInOrder = SwitchInOrder { priority: 0, order: 0, sub_order: 0 };
 }
 
 /// An ability, as `Dex.mod(gen).abilities.get(key)` resolves it.
@@ -458,6 +477,8 @@ pub struct AbilityDef {
     pub flags: AbilityFlags,
     pub condition: ConditionId,
     pub handlers: &'static [Handler],
+    /// `onSwitchInPriority` / `Order` / `SubOrder`, see [`SwitchInOrder`].
+    pub switch_in_order: SwitchInOrder,
 }
 
 /// A condition, as `Dex.mod(gen).conditions.get(key)` resolves it.

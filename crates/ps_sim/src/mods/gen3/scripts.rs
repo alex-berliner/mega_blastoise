@@ -23,7 +23,7 @@
 //! PS: data/mods/gen3/scripts.ts `useMoveInner`, `tryMoveHit`,
 //! `modifyDamage`, `checkFainted`.
 
-use ps_dex::gen3::{abilities, conditions, moves};
+use ps_dex::gen3::{abilities, conditions};
 use ps_dex::{MoveCategory, MoveId, MoveTarget, Type};
 use ps_protocol::{Kw, KwFlags, MoveNum, Msg};
 
@@ -131,11 +131,9 @@ impl Battle {
         let mut accuracy = self.mv(mv).accuracy_x256.map(|a| f64::from(a) / 256.0)?;
         let def = self.dex.move_def(self.mv(mv).id);
         if !def.bools.has("ignoreAccuracy") {
-            // `runEvent('ModifyBoost', pokemon, null, null, {...boosts})`: no
-            // gen 3 effect answers it.
-            let r = self.run_event(EventId::ModifyBoost, Holder::Mon(pokemon), None, EffectId::None, Some(Relay::TRUE));
-            assert_eq!(r, Relay::TRUE, "ModifyBoost handler: the boosts relay is not ported");
-            let boost = self.mon(pokemon).boosts[5].clamp(-6, 6);
+            // `runEvent('ModifyBoost', pokemon, null, null, {...boosts})`.
+            let boosts = self.mon(pokemon).boosts;
+            let boost = self.modify_boost_event(pokemon, boosts)[5].clamp(-6, 6);
             if boost > 0 {
                 accuracy *= BOOST_TABLE[boost as usize];
             } else {
@@ -143,9 +141,8 @@ impl Battle {
             }
         }
         if !def.bools.has("ignoreEvasion") {
-            let r = self.run_event(EventId::ModifyBoost, Holder::Mon(target), None, EffectId::None, Some(Relay::TRUE));
-            assert_eq!(r, Relay::TRUE, "ModifyBoost handler: the boosts relay is not ported");
-            let boost = self.mon(target).boosts[6].clamp(-6, 6);
+            let boosts = self.mon(target).boosts;
+            let boost = self.modify_boost_event(target, boosts)[6].clamp(-6, 6);
             if boost > 0 {
                 accuracy /= BOOST_TABLE[boost as usize];
             } else if boost < 0 {
@@ -343,7 +340,13 @@ impl GenScripts for Gen3Scripts {
 
         let targets = b.get_move_targets(pokemon, mv, t);
 
-        if source_effect.is_none() || source_effect == EffectId::Move(moves::PURSUIT) {
+        // `callerMoveForPressure`: a calling move (any `sourceEffect` with
+        // `pp`, Pursuit's switch-out use included) pays Pressure's PP.
+        let caller_move_for_pressure = match source_effect {
+            EffectId::Move(m) if b.dex.move_def(m).pp != 0 => Some(m),
+            _ => None,
+        };
+        if source_effect.is_none() || caller_move_for_pressure.is_some() {
             let mut extra_pp = 0;
             for source in targets.pressure.iter() {
                 let pp_drop = b.run_event(EventId::DeductPP, Holder::Mon(source), Some(pokemon), effect, None);
@@ -352,7 +355,7 @@ impl GenScripts for Gen3Scripts {
                 }
             }
             if extra_pp > 0 {
-                Self::deduct_pp(b, pokemon, id, extra_pp);
+                Self::deduct_pp(b, pokemon, caller_move_for_pressure.unwrap_or(id), extra_pp);
             }
         }
 
@@ -447,9 +450,10 @@ impl GenScripts for Gen3Scripts {
             return false;
         }
 
-        // Sheer Force is gen 5.
-        b.single_event(EventId::AfterMoveSecondarySelf, effect, StateRef::Scratch, 0, Holder::Mon(pokemon), target, effect, None);
-        b.run_event(EventId::AfterMoveSecondarySelf, Holder::Mon(pokemon), target, effect, None);
+        if !b.suppressing_secondaries() {
+            b.single_event(EventId::AfterMoveSecondarySelf, effect, StateRef::Scratch, 0, Holder::Mon(pokemon), target, effect, None);
+            b.run_event(EventId::AfterMoveSecondarySelf, Holder::Mon(pokemon), target, effect, None);
+        }
         true
     }
 

@@ -14,6 +14,7 @@ use ps_dex::gen3::moves as m;
 /// Gen 3's effect definitions, sorted by id.
 pub static REGISTRY: Registry = Registry {
     entries: &[
+        (EffectId::Move(m::HIDDENPOWER), &moves::hiddenpower::DEF),
         (EffectId::Move(m::STRUGGLE), &moves::struggle::DEF),
         (EffectId::Move(m::TELEPORT), &moves::teleport::DEF),
         (EffectId::Ability(a::BATTLEARMOR), &abilities::battlearmor::DEF),
@@ -90,6 +91,7 @@ pub static PORTED: &[&str] = &[
     "move:guillotine",
     "move:gust",
     "move:harden",
+    "move:hiddenpower",
     "move:hornattack",
     "move:horndrill",
     "move:howl",
