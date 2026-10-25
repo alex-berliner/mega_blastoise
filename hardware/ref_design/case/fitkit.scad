@@ -77,27 +77,25 @@ module kit_speaker() difference() {               // GSPK151035PN: 10 x 15 x 3.5
 }
 
 // ---------------- coupons: slices of the real case geometry, quick to print ----------------
-// the seam: the left wall round a crush rib and a key, the tub's tongue and seat 2's arm's skirt over it
+// the seam: the left wall round a crush rib and a key, the tub's tongue and the top's skirt over it
 module seam_box() translate([-case_w / 2 - 1, crush[2][1] - 12, -1]) cube([12, 24, case_h + 2]);
-module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the top piece prints face down
+module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the top prints face down
 // the tub as it prints, floor down (it has no feet since 2026-10-20, so that's the tub itself)
 module tub_flat() tub();
 
 band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from the case end into the glass by 2 mm
 module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);
-// the ear and the ends of the right arms that meet it (its laps go 3.15 into them)
+// the wall over J1: the USB-C opening (its lower half in the tub's tab, its upper half in the top's wall)
 module usb_box() translate([case_w / 2 - 12, usb_y - 16, -1]) cube([13, 32, case_h + 2]);
-// the left wall's ear (blank, the right one turned round) and the left arms' ends that meet it (2026-10-24: the arms met
-// each other there, seat 1's lap behind seat 2's skirt, until the left wall got its ear)
-module lear_box() rotate(180) usb_box();
-module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = panel_l + panel_fit + 2 * frame_wall + 8)
+// (its ends stop at the slope's top edge, uni_edge less 0.1, so it needs no support: the frame's end walls are cut there)
+module frame_box() let(w = panel_w + panel_fit + 2 * frame_wall + 8, l = 2 * (uni_edge - 0.1))
   translate([-w / 2, -l / 2, -1]) cube([w, l, case_h + 2]);
 
 // ---------------- tuning coupons: small, quick, one question each ----------------
-// tune_openings: the deck's button cuts, seen from the face, at the deck's real thickness (pocket
-// floor to deck face). Top row: D-pad openings 0.1 under, at and 0.1 over dpad_gap past the cross. Bottom row: a
+// tune_openings: the ends' button cuts, seen from the face, at the ends' real thickness (pocket
+// floor to face). Top row: D-pad openings 0.1 under, at and 0.1 over dpad_gap past the cross. Bottom row: a
 // whole keyed A/B/X/Y cluster (tab slots and notch ribs) and three plain hole sizes round it. Printed
-// face down like the deck; the numbers are engraved in the face
+// face down like the top; the numbers are engraved in the face
 tune_t = deck_face - retainer_bot;
 tune_holes = [for (o = [-0.4, -0.2, 0.2]) cap_hole_d + o];
 tune_gaps = [for (o = [-0.1, 0, 0.1]) dpad_gap + o];
@@ -113,32 +111,35 @@ module tune_openings() difference() {
     translate([-20, -29]) text("A B X Y keyed", size = 2.0, halign = "center", valign = "center");
   }
 }
-// tune_stack: one cluster's slice of the board and of the deck (its kit names still say "lid"), the
-// deck slice on four legs at its real height over the board, so the silicone and caps sit as in the
+// tune_stack: one cluster's slice of the board and of the top's end (its kit names still say "lid"), the
+// end slice on four legs at its real height over the board, so the silicone and caps sit as in the
 // case. Print one at each dome_h
 // (the silicone's height, ESTIMATE in case.scad) and keep the one where the caps stand right
 stack_half = 16;
 // Start/Select's stack is smaller and off-centre: it sits against the case's end, so its box and
-// legs stay inside the case (legs in the deck, clear of the membrane's retainer)
+// legs stay inside the case (legs in the top's plate, clear of the membrane's retainer)
 ss_box = [12.6, 5.1, 8.6];          // half width, reach towards the end, reach towards the screen
 // (a cluster's box 0.01 inside stack_half: at stack_half its sides lie on the case's inner wall
 // faces, which leaves non-manifold edges)
+// (a cluster's box stops short of the top's slope at the band's end, uni_foot + 0.2 from the middle, and of the end's round,
+// face_r + 0.05 in from the case's end: the coupon is the ends' flat plate, which prints without support; the legs stay inside it)
+stack_y1 = uni_foot + 0.2;
+stack_y0 = case_l / 2 - face_r - 0.05;
 function box_of(c, ss) = let(h = stack_half - 0.01) ss ? [c[0] - ss_box[0], c[1] - ss_box[1], 2 * ss_box[0], ss_box[1] + ss_box[2]]
-                            : [c[0] - h, c[1] - h, 2 * h, 2 * h];
+                            : [c[0] - h, max(c[1] - h, -stack_y0), 2 * h, min(c[1] + h, -stack_y1) - max(c[1] - h, -stack_y0)];
 module stack_box(c, ss = false) let(b = box_of(c, ss)) translate([b[0], b[1], -1]) cube([b[2], b[3], case_h + 2]);
 module stack_legs(c, ss = false)
   for (p = ss ? [[-10.5, -4.3], [10.5, -4.3], [-10.5, 3.5], [10.5, 3.5]]   // 3.5: clear of seat 1's Y cap hole
-              : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy * (stack_half - 3)]])
+              : [for (sx = [-1, 1], sy = [-1, 1]) [sx * (stack_half - 3), sy < 0 ? max(-(stack_half - 3), -stack_y0 + 2 - c[1]) : -stack_y1 - 2 - c[1]]])
     // up into the deck (0.6 under its face), so a leg under one of the deck's reliefs still meets
     // solid deck and doesn't hang over the relief when printed face down (turned half a facet:
     // unturned, the old wedge's top layer ran exactly through two of a cluster leg's corners)
     at(c + p, z_top_cu) rotate(180 / $fn) cylinder(d = 3, h = deck_face - 0.6 - z_top_cu);
-// It prints deck face down on the bed, as the deck does, so it needs no supports: a slice of the deck
-// itself (less the laps at its side joints), its skirts and boss cut off at the walls' bottom so it
-// stands on its legs
+// It prints face down on the bed, as the top does, so it needs no supports: a slice of the top itself (its end's
+// plate, walls and openings), cut off at the walls' bottom so it stands on its legs
 module tune_stack_lid(c, ss = false) difference() {
   union() {
-    intersection() { deck_body(-1); stack_box(c, ss); translate([-case_w, -case_l, retainer_bot - 0.01]) cube([2 * case_w, 2 * case_l, case_h]); }
+    intersection() { top(); stack_box(c, ss); translate([-case_w, -case_l, retainer_bot - 0.01]) cube([2 * case_w, 2 * case_l, case_h]); }
     stack_legs(c, ss);
   }
   at(c + (ss ? [0, 5.6] : [0, -stack_half + 1.8]), deck_face - engrave) linear_extrude(engrave + 0.01)
@@ -162,30 +163,13 @@ if (kit == "cell")         kit_cell();
 if (kit == "plug")         kit_plug();
 if (kit == "speaker")      kit_speaker();
 if (kit == "seam_tub")     intersection() { tub_flat(); seam_box(); }
-if (kit == "seam_deck")    flip_at(deck_face) intersection() { deck(1); seam_box(); }
+if (kit == "seam_top")     flip() intersection() { top(); seam_box(); }
 if (kit == "buttons_tub")  intersection() { tub_flat(); band_box(); }
 if (kit == "buttons_board") intersection() { kit_board(); band_box(); }
+// seat 1's end of the top: the slope, the end, the buttons' openings and walls
 if (kit == "buttons_top")  flip() intersection() { top(); band_box(); }
-// seat 1's deck's core and its arms' roots, face down
-if (kit == "buttons_deck") flip_at(deck_face) intersection() { deck(-1); band_box(); }
 if (kit == "usb_tub")      intersection() { tub_flat(); usb_box(); }
 if (kit == "usb_top")      flip() intersection() { top(); usb_box(); }
-// the two arms' ends either side of the ear, face down (two pieces)
-if (kit == "usb_arms")     flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } usb_box(); }
-if (kit == "lear_tub")     intersection() { tub_flat(); lear_box(); }
-if (kit == "lear_top")     flip() intersection() { top(); lear_box(); }
-if (kit == "lear_arms")    flip_at(deck_face) intersection() { union() { deck(-1); deck(1); } lear_box(); }
-// The build bars (2026-10-23): built face down, the decks go in first and the island drops into them from
-// behind, so the decks' faces must stand step_d off the bench (the island's face, step_d proud of them, on the
-// bench; the caps, cap_proud proud, clear of it). Two bars, one under each deck's core's end, on its flat face
-// outside every opening (print two)
-stand_w = 2.0;  stand_y = case_l / 2 - edge_in(0, face_r) - 0.3 - stand_w / 2;   // a bar's middle, from the case's centre
-stand_x = case_w / 2 - edge_in(0, face_r) - 1.0;       // a bar's half length, inside the flat face
-for (b = buttons) assert(abs(b[2][1]) + cap_hole_d / 2 + cap_chamfer + 0.3 <= stand_y - stand_w / 2, "a build bar runs under a cap");
-for (c = [dpad1, dpad2]) assert(abs(c[1]) + dpad_arm_l / 2 + dpad_gap + dpad_chamfer + 0.3 <= stand_y - stand_w / 2, "a build bar runs under the D-pad");
-for (b = ss_buttons) assert(abs(b[2][1]) + ss_hole_d / 2 + cap_chamfer + 0.3 <= stand_y - stand_w / 2, "a build bar runs under Start/Select");
-assert(step_d > cap_proud + 0.2, "the caps stand on the bench past the build bars");
-if (kit == "build_bar")    translate([-stand_x, -stand_w / 2, 0]) cube([2 * stand_x, stand_w, step_d]);
 if (kit == "frame_top")    flip() intersection() { top(); frame_box(); }
 
 // ---------------- test plate (6_tests): questions for the shell's redesign ----------------
@@ -229,11 +213,11 @@ module test_overhangs() {        // the round first, its ticked face at the ladd
 }
 // Screw holes: two of the tub's (H4's slimmed side boss by the left wall and an end boss), cut from
 // the real tub up to the board with the floor, ribs and wall round them, printed flat as the tub prints;
-// and one of the top piece's bosses with its pilot hole, printed face down as the top piece prints
+// and one of the top's bosses (H3, beside the speaker's pocket) with its pilot hole, printed face down as the top prints
 module screws_box(s, r) translate([s[0] - r, s[1] - r, -1]) cube([2 * r, 2 * r, case_h + 2]);
 module coupon_screws_tub() for (i = [0, 1]) let(s = pins[[3, 4][i]]) translate([16 * i, 0, 0] - [s[0], s[1], 0])
   intersection() { tub_flat(); screws_box(s, 6); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, z_board + 1]); }
-module coupon_screws_top() translate(-[pins[0][0], -pins[0][1], 0]) flip() intersection() { top(); screws_box(pins[0], 5); }
+module coupon_screws_top() translate(-[pins[2][0], -pins[2][1], 0]) flip() intersection() { top(); screws_box(pins[2], 5); }
 // Clearance round a screw column (the old deck insert's ring round the lid's 5.0 boss was too tight
 // at 0.15 a side): a boss_d column printed upright as the top piece's bosses are, and a strip of
 // rings (test_ring_w walls, a deck's height over the board), holes test_fits a side over boss_d,

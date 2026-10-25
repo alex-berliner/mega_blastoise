@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """Build the printable fit kit (case/fitkit/): stand-ins for the board and the loose parts, and quick
-coupons cut from the real tub, island and decks, to test the case with the real parts before ordering boards.
+coupons cut from the real tub and top, to test the case with the real parts before ordering boards.
 
     python3 case/fitkit.py            # after case/export.py --stl and a routed board
 
@@ -24,32 +24,26 @@ KIT = [  # (kit name, file, what it tests)
     ("cell", "cell_dummy.stl", "403450 cell (nominal 50 x 34 x 4), for the board mock's hole"),
     ("plug", "cell_plug_dummy.stl", "PicoBlade 51021-0200 plug with a cable stub (approximate)"),
     ("speaker", "speaker_dummy.stl", "GSPK151035PN speaker, 10 x 15 x 3.5 mm, face up, for its pocket under the grille"),
-    ("seam_tub", "coupon_seam_tub.stl", "the left wall of the tub at the seam: its tongue, a crush rib, a hook's slot"),
-    ("seam_deck", "coupon_seam_deck.stl", "seat 2's left arm over it: its skirt, its key's pocket, the grip ribs, its hook"),
+    ("seam_tub", "coupon_seam_tub.stl", "the left wall of the tub at the seam: its tongue, a crush rib, a key, grip ribs"),
+    ("seam_top", "coupon_seam_top.stl", "the top over it: its skirt and groove, the key's pocket, the tongue's step, face down on support filament"),
     ("buttons_tub", "coupon_buttons_tub.stl", "seat 1's end of the tub: ribs, bosses, crush ribs"),
     ("buttons_board", "coupon_buttons_board.stl", "seat 1's end of the board mock"),
-    ("buttons_top", "coupon_buttons_top.stl", "seat 1's end of the island: the step, the spine and the wedge round them"),
-    ("buttons_deck", "coupon_buttons_deck.stl", "seat 1's deck's core (the real part): cap holes, walls, the lip over the island's wedge, printed face down"),
+    ("buttons_top", "coupon_buttons_top.stl", "seat 1's end of the top: the DS Lite slope, the end, cap holes and walls, face down on support filament"),
     ("usb_tub", "coupon_usb_tub.stl", "the USB-C opening's lower half, in the tub's tab"),
-    ("usb_top", "coupon_usb_top.stl", "its upper half, in the island's ear, and the ear's laps"),
-    ("usb_arms", "coupon_usb_arms.stl", "the right arms' ends either side of the ear (two pieces), face down"),
-    ("lear_tub", "coupon_lear_tub.stl", "the left wall under the blank ear: the tongue and the laps' slots"),
-    ("lear_top", "coupon_lear_top.stl", "the island's blank ear on the left wall, its laps"),
-    ("lear_arms", "coupon_lear_arms.stl", "the left arms' ends either side of it (two pieces), face down"),
+    ("usb_top", "coupon_usb_top.stl", "its upper half, in the top's wall, face down on support filament"),
     ("usb_board", "coupon_usb_board.stl", "the board's tab with a USB-C shell stand-in, between the two halves"),
     ("tune_openings", "tune_openings.stl", "D-pad openings 0.55/0.65/0.75, a keyed A/B/X/Y cluster (8.0 holes), holes 7.6/7.8/8.2"),
     ("tune_stack_dpad_board", "tune_stack_dpad_board.stl", "seat 1's D-pad: board slice with the contact rings"),
     ("tune_stack_abxy_board", "tune_stack_abxy_board.stl", "seat 1's A/B/X/Y: board slice with the contact rings"),
     ("tune_stack_ss_board", "tune_stack_ss_board.stl", "seat 1's Start/Select: board slice with the two small contacts"),
-] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its deck slice on legs, silicone height {d} mm",
+] + [(f"tune_stack_{c}_lid", f"tune_stack_{c}_lid_dome{d}.stl", f"its end slice on legs, silicone height {d} mm",
        {"dome_h": d, "tune": "true"}) for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.75", "1.9")] + [
     # (a fourth element: case.scad settings to render that coupon with, as openscad -D name=value)
-    ("frame_top", "coupon_frame_top.stl", "the island's window, pocket and panel frame"),
-    ("build_bar", "build_bar.stl", "a bar under each deck's end while the case is built face down (print two)"),
+    ("frame_top", "coupon_frame_top.stl", "the top's window, pocket and panel frame"),
     # the test plate (6_tests): questions for the shell's redesign
     ("test_overhangs", "test_overhangs.stl", "overhang ladder: fins at 45 to 75 degrees from vertical, a convex R6 round"),
     ("test_screws_tub", "coupon_screws_tub.stl", "two of the tub's screw holes (counterbore, clearance, boss), printed flat"),
-    ("test_screws_top", "coupon_screws_top.stl", "one of the top piece's bosses with its 1.6 pilot, printed face down"),
+    ("test_screws_top", "coupon_screws_top.stl", "one of the top's bosses (H3) with its 1.6 pilot, printed face down"),
     ("test_column", "test_column.stl", "a 5.0 column, as the screw bosses"),
     ("test_rings", "test_rings.stl", "rings 0.2/0.3/0.4/0.5 a side over the 5.0 column"),
 ] + [
