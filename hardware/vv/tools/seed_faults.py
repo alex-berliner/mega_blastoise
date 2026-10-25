@@ -216,6 +216,14 @@ def fake_pass(repo, vid, base, extra=""):
              commit=base[:7], date=TODAY, needs="")
 
 
+def reopen_closed(repo):
+    """Set every CLOSED defect to FIXED in the clone: a fault that makes evidence stale on
+    purpose would otherwise also trip 'CLOSED but its check is stale', which is not what it tests."""
+    p = os.path.join(repo, "hardware/vv/defects.md")
+    s = re.sub(r"^- Status: CLOSED\b", "- Status: FIXED (seeded fault setup)", open(p, encoding="utf-8").read(), flags=re.M)
+    open(p, "w", encoding="utf-8").write(s)
+
+
 def g_r6(repo, base):
     open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
         REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base))
@@ -248,6 +256,7 @@ def g_claude_waiver(repo, base):
 
 
 def g_part_stale(repo, base):
+    reopen_closed(repo)
     fake_pass(repo, "VER-99", base)
     commit(repo, "VER-99 passes")
     p = os.path.join(repo, "hardware/ref_design/board/design.py")
@@ -308,6 +317,7 @@ def g_result_disagrees(repo, base):
 
 
 def g_expired(repo, base):
+    reopen_closed(repo)
     fake_pass(repo, "VER-99", base)
     csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-99", valid_days="30", date="2026-01-01")
     return None
