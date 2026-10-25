@@ -703,15 +703,24 @@ relay runs `ps_sim` and speaks the same protocol `ps_client` already reads.
 - Accept: two headless browsers meet through a local relay and finish a
   battle.
 
-**N-5 Deploy and soak** · MM · depends: N-4
-- Dockerfile and a deploy note for one small host (Fly.io or a VPS, TLS in
-  front); a soak run of 200 scripted battles with random disconnects.
-- Accept: no leaked rooms or tasks after the soak; Alex plays one real
-  battle with a friend.
+**N-5 Home deploy and soak** · MM · depends: N-4
+- Deploy on `box` (10.67.1.101, always on, Caddy on 80/443 with a wildcard
+  certificate for `*.hubshouse.duckdns.org`): a Dockerfile and a compose
+  service for the relay on a local port, and a Caddy route for
+  `relay.hubshouse.duckdns.org` proxying WebSocket to it. Never touch the
+  bare `hubshouse.duckdns.org` name (the WireGuard endpoint). The router's
+  ddns service already keeps DuckDNS current.
+- Alex's side, by hand or through the infra session after he approves: a
+  router forward of TCP 443 to box (or another external port if the router
+  admin page owns 443), and the Caddy and docker change under `/srv/infra`
+  (needs `claude-admin`). The worker writes the exact request, never edits
+  the router or Caddy itself.
+- A soak run of 200 scripted battles with random disconnects.
+- Accept: no leaked rooms or tasks after the soak; a client on another
+  network plays through the public name; Alex plays one real battle with a
+  friend.
 
-Open choices for Alex: where to host the relay (a cheap VPS, Fly.io or a
-Cloudflare Worker with a Durable Object per room, which would need the
-relay logic in wasm); whether rooms are public by code only (default) or
+Open choice for Alex: whether rooms are public by code only (default) or
 need a passphrase.
 
 ## 4. Order and critical path
