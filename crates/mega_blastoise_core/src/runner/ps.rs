@@ -402,6 +402,77 @@ mod tests {
         rec.0
     }
 
+    /// Held items handed out in the Gen 3 battles: the ones that announce
+    /// themselves (berries, herbs, Leftovers, Choice Band, Focus Band,
+    /// Shell Bell) and a few silent ones.
+    const GEN3_ITEMS: &[&str] = &[
+        "Leftovers", "Choice Band", "Lum Berry", "Salac Berry", "Petaya Berry", "Liechi Berry",
+        "Ganlon Berry", "Apicot Berry", "Starf Berry", "Sitrus Berry", "Oran Berry", "Chesto Berry",
+        "Cheri Berry", "Pecha Berry", "Rawst Berry", "Aspear Berry", "Persim Berry", "Leppa Berry",
+        "Figy Berry", "White Herb", "Mental Herb", "Focus Band", "Quick Claw", "King's Rock",
+        "Shell Bell", "Bright Powder", "Scope Lens", "Macho Brace",
+    ];
+
+    /// Moves spliced into the Gen 3 teams so the battles reach the lines
+    /// a random set seldom does: items changing hands, `-activate`s,
+    /// field and side effects, ability copies. Unported ones are skipped.
+    const GEN3_MOVES: &[&str] = &[
+        "Trick", "Thief", "Covet", "Knock Off", "Heal Bell", "Aromatherapy", "Perish Song",
+        "Substitute", "Protect", "Endure", "Destiny Bond", "Attract", "Mean Look", "Pursuit",
+        "Spite", "Mimic", "Pain Split", "Wish", "Rapid Spin", "Spikes", "Encore", "Taunt", "Yawn",
+        "Rain Dance", "Sunny Day", "Sandstorm", "Hail", "Skill Swap", "Role Play", "Recycle", "Bide",
+        "Magic Coat", "Snatch", "Grudge", "Imprison", "Uproar", "Stockpile", "Curse", "Lock-On",
+        "Foresight", "Camouflage", "Conversion 2", "Memento", "Baton Pass", "Rest", "Sleep Talk",
+        "Toxic", "Will-O-Wisp", "Thunder Wave", "Swagger", "Belly Drum", "Refresh", "Ingrain",
+        "Future Sight", "Doom Desire", "Fake Out", "Focus Punch", "Counter", "Mirror Coat",
+        "Teeter Dance", "Outrage", "Hyper Beam", "Solar Beam", "Fly", "Bind", "Whirlpool",
+        "Torment", "Nightmare", "Disable", "Leech Seed", "Water Sport", "Mud Sport", "Charge",
+        "Transform", "Psych Up", "Haze", "Beat Up", "Block", "Smelling Salt", "Brick Break",
+        "Light Screen", "Reflect", "Safeguard", "Mist", "Focus Energy", "Fissure", "Double Kick",
+    ];
+
+    /// Gen 3 teams with items and abilities in play: the device's PS draw,
+    /// then for each mon one of its species' abilities, a held item (four
+    /// mons in five) and one move from [`GEN3_MOVES`] in place of its last.
+    fn gen3_teams(seed: u64) -> [PackedTeam; 2] {
+        let dex = &ps_dex::GEN3;
+        let ported = |kind: &str, name: &str| {
+            let id: String = name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect();
+            ps_sim::mods::ported(3).contains(&format!("{kind}:{id}").as_str())
+        };
+        let mut rng = SimpleRng::new(seed ^ 0x6e3);
+        let mut teams = crate::randbat::draw_two_ps_teams(dex, seed, 6);
+        for team in teams.iter_mut() {
+            for set in team.iter_mut() {
+                let id: String = set.name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect();
+                let species = dex.species_def(dex.species_id(&id).expect("a dex species"));
+                let slot = (rng.next_u64() % 2) as usize;
+                let ability = species.ability(slot).or(species.ability(0)).unwrap_or("");
+                set.ability = Name::from_str(ability).unwrap_or_default();
+                // One mon in five holds nothing, so Thief and Covet have
+                // somewhere to put what they take.
+                let item = GEN3_ITEMS[(rng.next_u64() % GEN3_ITEMS.len() as u64) as usize];
+                if rng.next_u64() % 5 != 0 {
+                    set.item = Name::from_str(item).unwrap_or_default();
+                }
+                let mv = GEN3_MOVES[(rng.next_u64() % GEN3_MOVES.len() as u64) as usize];
+                if ported("move", mv) && !set.moves.iter().any(|m| m.as_str() == mv) {
+                    let last = set.moves.len() - 1;
+                    set.moves[last] = Name::from_str(mv).unwrap_or_default();
+                }
+            }
+        }
+        teams
+    }
+
+    fn play_gen3<T: Transport>(transport: &mut T, seed: u64) -> Vec<BoardEvent> {
+        let setup = BattleSetup::local(3, seed, gen3_teams(seed));
+        let bus = InputBus::new();
+        let mut rec = Record::default();
+        block_on(run_battle(transport, &setup, &bus, robot(&bus, seed ^ 0x5eed), &mut rec));
+        rec.0
+    }
+
     // ── The text server: `ps_sim` behind `BattleStream` text ───────────
 
     thread_local! {
@@ -612,6 +683,68 @@ mod tests {
             seed += 1;
         }
         std::println!("seeds 50..{seed}: {transforms} Transform and {mimics} Mimic battles, identical over both transports");
+    }
+
+    /// Gen 3 with items and abilities in play ([`gen3_teams`]): the
+    /// item, ability and `-activate` lines must reach the board alike over
+    /// both transports, and every kind of them must turn up somewhere in
+    /// the seeds played. Each event the board narrates must have words
+    /// (no empty description) that fit the 48-byte narration box.
+    #[test]
+    fn gen3_items_and_abilities_agree_over_both_transports() {
+        use crate::board_event::BoardEventExt;
+        use std::collections::BTreeMap;
+        let mut seen: BTreeMap<String, u32> = BTreeMap::new();
+        let mut turns = 0u32;
+        for seed in 0..60u64 {
+            let mut local = LocalTransport::new();
+            let typed = play_gen3(&mut local, seed);
+            let b = local.battle().expect("the battle started");
+            assert!(b.ended, "seed {seed}: the battle did not end (turn {})", b.turn);
+            turns += u32::from(b.turn);
+            assert!(typed.iter().any(|e| matches!(e, BoardEvent::Win { .. } | BoardEvent::Tie)), "seed {seed}: no end");
+
+            let mut text = TextTransport::new(SimLink::default());
+            let decoded = play_gen3(&mut text, seed);
+            assert_eq!(text.undecoded(), 0, "seed {seed}: the text path skipped lines it could not decode");
+            if typed != decoded {
+                let at = typed.iter().zip(&decoded).position(|(a, b)| a != b).unwrap_or(typed.len().min(decoded.len()));
+                panic!("seed {seed}: the streams part at event {at}:\n  typed: {:?}\n  text:  {:?}", typed.get(at), decoded.get(at));
+            }
+            for e in &typed {
+                let key = match e {
+                    BoardEvent::Ability { how, .. } => format!("Ability {how}"),
+                    BoardEvent::ItemGained { how, .. } => format!("ItemGained {how}"),
+                    BoardEvent::ItemEnded { how, .. } => format!("ItemEnded {how}"),
+                    BoardEvent::Activate { what, .. } => format!("Activate {what}"),
+                    _ => continue,
+                };
+                let words = e.description();
+                assert!(!words.is_empty() && !words.contains("activated!)"), "seed {seed}: {e:?} reads {words:?}");
+                assert!(crate::oled_ctl::oled_cmds_for_event(e).iter().any(|c| matches!(c, crate::oled_ctl::OledCmd::EventFlash { .. })), "{e:?} does not flash");
+                *seen.entry(key).or_default() += 1;
+            }
+        }
+        std::println!("60 gen 3 battles: {turns} turns, identical over both transports; narrated: {seen:?}");
+        for kind in [
+            "Ability ",          // Intimidate, Pressure
+            "Ability activate",  // a `[from] ability:` banner
+            "Ability trace",
+            "Ability roleplay",
+            "ItemGained trick",
+            "ItemGained thief",
+            "ItemEnded eat",
+            "ItemEnded knockoff",
+            "Activate confusion",
+            "Activate Spite",
+            "Activate Attract",
+            "Activate Trick",
+            "Activate Lock-On",
+            "Activate hitcount",
+            "Activate Perish Song",
+        ] {
+            assert!(seen.keys().any(|k| k == kind), "no {kind:?} in 60 battles: {seen:?}");
+        }
     }
 
     #[test]

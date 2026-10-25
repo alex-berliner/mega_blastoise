@@ -10,7 +10,7 @@
 //!   [`choice_string`] to the same PS text, and be one [`slot_options`]
 //!   allows. The active mon's PP the view tracked from `|move|` lines must
 //!   equal the request's.
-//! - `golden_*`: the whole `BoardEvent` stream of three battles per gen,
+//! - `golden_*`: the whole `BoardEvent` stream of three Gen 1 and seven Gen 3 battles,
 //!   compared to `tests/golden/*.txt`. `PS_CLIENT_BLESS=1` rewrites them.
 //!
 //! The text codec numbers moves, species, items and abilities by the
@@ -391,4 +391,24 @@ fn golden_gen3_weather_sethp() {
 #[test]
 fn golden_gen3_setboost() {
     golden(3, &ps_dex::GEN3, "2");
+}
+
+#[test]
+fn golden_gen3_knock_off_and_berries() {
+    golden(3, &ps_dex::GEN3, "19");
+}
+
+#[test]
+fn golden_gen3_flash_fire() {
+    golden(3, &ps_dex::GEN3, "24");
+}
+
+#[test]
+fn golden_gen3_wonder_guard() {
+    golden(3, &ps_dex::GEN3, "8");
+}
+
+#[test]
+fn golden_gen3_white_herb_and_lum_berry() {
+    golden(3, &ps_dex::GEN3, "0");
 }

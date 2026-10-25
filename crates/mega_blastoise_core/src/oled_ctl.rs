@@ -323,7 +323,11 @@ pub fn oled_cmds_for_event(event: &BoardEvent) -> Vec<OledCmd> {
         | BoardEvent::Immune { .. }
         | BoardEvent::Resisted { .. }
         | BoardEvent::Fail { .. }
-        | BoardEvent::Cant { .. } => flash(&event.description()),
+        | BoardEvent::Cant { .. }
+        | BoardEvent::Ability { .. }
+        | BoardEvent::ItemGained { .. }
+        | BoardEvent::ItemEnded { .. }
+        | BoardEvent::Activate { .. } => flash(&event.description()),
         _ => {}
     }
     cmds

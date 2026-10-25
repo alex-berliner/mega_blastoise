@@ -1,0 +1,673 @@
+# BoardEvent stream of gen3.log.gz battle index=24: each protocol line that
+# yields events, then its events. `|request|...` is a request's prompt events.
+|start
+    BattleStart
+|switch|p1a: Rapidash|Rapidash, L83, F|244/244
+    SwitchIn p1 name=Rapidash species=Some("Rapidash") slot=Some(0) speed=None moves=[]
+|switch|p2a: Flareon|Flareon, L89, F|260/260
+    SwitchIn p2 name=Flareon species=Some("Flareon") slot=Some(0) speed=None moves=[]
+|turn|1
+    Turn { n: 1 }
+|request|...
+    ActiveMonUpdate { mon: "Rapidash,p1,0", name: "Rapidash", speed: Some(221) }
+    MovesUpdate p1 [Toxic Poison Status -/85 16/16; Substitute Normal Status -/- 16/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    ActiveMonUpdate { mon: "Flareon,p2,0", name: "Flareon", speed: Some(166) }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Toxic|p2a: Flareon
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 15/16; Substitute Normal Status -/- 16/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-status|p2a: Flareon|tox
+    SetStatus { mon: "Flareon,p2,0", status: "tox" }
+|move|p2a: Flareon|Flamethrower|p1a: Rapidash
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Flamethrower" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 23/24]
+|-start|p1a: Rapidash|ability: Flash Fire
+    Ability { mon: "Rapidash,p1,0", ability: "Flash Fire", how: "activate", other: None }
+    EffectStart { mon: "Rapidash,p1,0", what: "Flash Fire", detail: None }
+|-damage|p2a: Flareon|244/260 tox|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "244/260" }
+|turn|2
+    Turn { n: 2 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 15/16; Substitute Normal Status -/- 16/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Toxic|p2a: Flareon
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 16/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-fail|p2a: Flareon|tox
+    Fail { mon: "Flareon,p2,0" }
+|move|p2a: Flareon|Wish|p2a: Flareon
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Wish" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 23/24]
+|-heal|p2a: Flareon|260/260 tox|[from] item: Leftovers
+    Heal { mon: "Flareon,p2,0", health: "260/260" }
+|-damage|p2a: Flareon|228/260 tox|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "228/260" }
+|turn|3
+    Turn { n: 3 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 16/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 23/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Substitute|p1a: Rapidash
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Substitute" }
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 15/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-start|p1a: Rapidash|Substitute
+    EffectStart { mon: "Rapidash,p1,0", what: "substitute", detail: None }
+|-damage|p1a: Rapidash|183/244
+    Damage { mon: "Rapidash,p1,0", health: "183/244" }
+|move|p2a: Flareon|Flamethrower|p1a: Rapidash
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Flamethrower" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 22/24]
+|-immune|p1a: Rapidash|[from] ability: Flash Fire
+    Ability { mon: "Rapidash,p1,0", ability: "Flash Fire", how: "activate", other: None }
+    Immune { mon: "Rapidash,p1,0" }
+|-heal|p2a: Flareon|260/260 tox|[from] move: Wish|[wisher] Flareon
+    Heal { mon: "Flareon,p2,0", health: "260/260" }
+|-heal|p1a: Rapidash|198/244|[from] item: Leftovers
+    Heal { mon: "Rapidash,p1,0", health: "198/244" }
+|-damage|p2a: Flareon|212/260 tox|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "212/260" }
+|turn|4
+    Turn { n: 4 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 15/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 24/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Substitute|p1a: Rapidash
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Substitute" }
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 14/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-fail|p1a: Rapidash|move: Substitute
+    Fail { mon: "Rapidash,p1,0" }
+|move|p2a: Flareon|Hidden Power|p1a: Rapidash
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 23/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 22/24]
+|-resisted|p1a: Rapidash
+    Resisted { mon: "Rapidash,p1,0" }
+|-activate|p1a: Rapidash|Substitute|[damage]
+    Activate { mon: "Rapidash,p1,0", what: "Substitute", detail: None, other: None, n: None }
+|-heal|p1a: Rapidash|213/244|[from] item: Leftovers
+    Heal { mon: "Rapidash,p1,0", health: "213/244" }
+|-heal|p2a: Flareon|228/260 tox|[from] item: Leftovers
+    Heal { mon: "Flareon,p2,0", health: "228/260" }
+|-damage|p2a: Flareon|164/260 tox|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "164/260" }
+|turn|5
+    Turn { n: 5 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 14/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 23/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Substitute|p1a: Rapidash
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Substitute" }
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-fail|p1a: Rapidash|move: Substitute
+    Fail { mon: "Rapidash,p1,0" }
+|move|p2a: Flareon|Hidden Power|p1a: Rapidash
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 22/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 22/24]
+|-resisted|p1a: Rapidash
+    Resisted { mon: "Rapidash,p1,0" }
+|-activate|p1a: Rapidash|Substitute|[damage]
+    Activate { mon: "Rapidash,p1,0", what: "Substitute", detail: None, other: None, n: None }
+|-heal|p1a: Rapidash|228/244|[from] item: Leftovers
+    Heal { mon: "Rapidash,p1,0", health: "228/244" }
+|-heal|p2a: Flareon|180/260 tox|[from] item: Leftovers
+    Heal { mon: "Flareon,p2,0", health: "180/260" }
+|-damage|p2a: Flareon|100/260 tox|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "100/260" }
+|turn|6
+    Turn { n: 6 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 14/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 22/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 22/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Toxic|p2a: Flareon
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 13/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-fail|p2a: Flareon|tox
+    Fail { mon: "Flareon,p2,0" }
+|move|p2a: Flareon|Flamethrower|p1a: Rapidash
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Flamethrower" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 22/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 21/24]
+|-immune|p1a: Rapidash|[from] ability: Flash Fire
+    Ability { mon: "Rapidash,p1,0", ability: "Flash Fire", how: "activate", other: None }
+    Immune { mon: "Rapidash,p1,0" }
+|-heal|p1a: Rapidash|243/244|[from] item: Leftovers
+    Heal { mon: "Rapidash,p1,0", health: "243/244" }
+|-heal|p2a: Flareon|116/260 tox|[from] item: Leftovers
+    Heal { mon: "Flareon,p2,0", health: "116/260" }
+|-damage|p2a: Flareon|20/260 tox|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "20/260" }
+|turn|7
+    Turn { n: 7 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 13/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 22/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 21/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Toxic|p2a: Flareon
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 12/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-fail|p2a: Flareon|tox
+    Fail { mon: "Flareon,p2,0" }
+|move|p2a: Flareon|Hidden Power|p1a: Rapidash
+    Move { user: Some("Flareon"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Grass Special 70/100 21/24; Wish Normal Status -/- 15/16; Protect Normal Status -/- 16/16; Flamethrower Fire Special 95/100 21/24]
+|-resisted|p1a: Rapidash
+    Resisted { mon: "Rapidash,p1,0" }
+|-end|p1a: Rapidash|Substitute
+    EffectEnd { mon: "Rapidash,p1,0", what: "substitute" }
+|-heal|p1a: Rapidash|244/244|[from] item: Leftovers
+    Heal { mon: "Rapidash,p1,0", health: "244/244" }
+|-heal|p2a: Flareon|36/260 tox|[from] item: Leftovers
+    Heal { mon: "Flareon,p2,0", health: "36/260" }
+|-damage|p2a: Flareon|0 fnt|[from] psn
+    Damage { mon: "Flareon,p2,0", health: "0/260" }
+|faint|p2a: Flareon
+    Faint { mon: "Flareon,p2,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Starmie|Starmie, L74|211/211
+    SwitchIn p2 name=Starmie species=Some("Starmie") slot=Some(4) speed=Some(213) moves=[Psychic Psychic Special 90/100 16/16; Hydro Pump Water Special 120/80 8/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 16/16]
+|turn|8
+    Turn { n: 8 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 12/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Psychic Psychic Special 90/100 16/16; Hydro Pump Water Special 120/80 8/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Toxic|p2a: Starmie
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 11/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-status|p2a: Starmie|tox
+    SetStatus { mon: "Starmie,p2,0", status: "tox" }
+|move|p2a: Starmie|Hydro Pump|p1a: Rapidash
+    Move { user: Some("Starmie"), player_id: Some("p2"), name: "Hydro Pump" }
+    MovesUpdate p2 [Psychic Psychic Special 90/100 16/16; Hydro Pump Water Special 120/80 7/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 16/16]
+|-supereffective|p1a: Rapidash
+    SuperEffective { mon: "Rapidash,p1,0" }
+|-damage|p1a: Rapidash|38/244
+    Damage { mon: "Rapidash,p1,0", health: "38/244" }
+|-heal|p1a: Rapidash|53/244|[from] item: Leftovers
+    Heal { mon: "Rapidash,p1,0", health: "53/244" }
+|-damage|p2a: Starmie|198/211 tox|[from] psn
+    Damage { mon: "Starmie,p2,0", health: "198/211" }
+|turn|9
+    Turn { n: 9 }
+|request|...
+    MovesUpdate p1 [Toxic Poison Status -/85 11/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Psychic Psychic Special 90/100 16/16; Hydro Pump Water Special 120/80 7/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Rapidash|Toxic|p2a: Starmie
+    Move { user: Some("Rapidash"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Toxic Poison Status -/85 10/16; Substitute Normal Status -/- 13/16; Fire Blast Fire Special 120/85 8/8; Hidden Power Rock Physical 70/100 24/24]
+|-fail|p2a: Starmie|tox
+    Fail { mon: "Starmie,p2,0" }
+|move|p2a: Starmie|Ice Beam|p1a: Rapidash
+    Move { user: Some("Starmie"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Psychic Psychic Special 90/100 16/16; Hydro Pump Water Special 120/80 7/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 15/16]
+|-resisted|p1a: Rapidash
+    Resisted { mon: "Rapidash,p1,0" }
+|-crit|p1a: Rapidash
+    CriticalHit { mon: "Rapidash,p1,0" }
+|-damage|p1a: Rapidash|0 fnt
+    Damage { mon: "Rapidash,p1,0", health: "0/244" }
+|faint|p1a: Rapidash
+    Faint { mon: "Rapidash,p1,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Beedrill|Beedrill, L93, F|272/272
+    SwitchIn p1 name=Beedrill species=Some("Beedrill") slot=Some(4) speed=Some(192) moves=[Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 48/48; Endure Normal Status -/- 16/16; Hidden Power Bug Bug Physical 70/100 24/24]
+|-heal|p2a: Starmie|211/211 tox|[from] item: Leftovers
+    Heal { mon: "Starmie,p2,0", health: "211/211" }
+|-damage|p2a: Starmie|185/211 tox|[from] psn
+    Damage { mon: "Starmie,p2,0", health: "185/211" }
+|turn|10
+    Turn { n: 10 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 48/48; Endure Normal Status -/- 16/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Psychic Psychic Special 90/100 16/16; Hydro Pump Water Special 120/80 7/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Endure|p1a: Beedrill
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Endure" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 48/48; Endure Normal Status -/- 15/16; Hidden Power Bug Physical 70/100 24/24]
+|-singleturn|p1a: Beedrill|move: Endure
+    EffectStart { mon: "Beedrill,p1,0", what: "Endure", detail: None }
+|move|p2a: Starmie|Psychic|p1a: Beedrill
+    Move { user: Some("Starmie"), player_id: Some("p2"), name: "Psychic" }
+    MovesUpdate p2 [Psychic Psychic Special 90/100 15/16; Hydro Pump Water Special 120/80 7/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 15/16]
+|-supereffective|p1a: Beedrill
+    SuperEffective { mon: "Beedrill,p1,0" }
+|-damage|p1a: Beedrill|117/272
+    Damage { mon: "Beedrill,p1,0", health: "117/272" }
+|-heal|p2a: Starmie|198/211 tox|[from] item: Leftovers
+    Heal { mon: "Starmie,p2,0", health: "198/211" }
+|-damage|p2a: Starmie|159/211 tox|[from] psn
+    Damage { mon: "Starmie,p2,0", health: "159/211" }
+|turn|11
+    Turn { n: 11 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 48/48; Endure Normal Status -/- 15/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Psychic Psychic Special 90/100 15/16; Hydro Pump Water Special 120/80 7/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Starmie|Hydro Pump|p1a: Beedrill
+    Move { user: Some("Starmie"), player_id: Some("p2"), name: "Hydro Pump" }
+    MovesUpdate p2 [Psychic Psychic Special 90/100 15/16; Hydro Pump Water Special 120/80 6/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 15/16]
+|-damage|p1a: Beedrill|18/272
+    Damage { mon: "Beedrill,p1,0", health: "18/272" }
+|move|p1a: Beedrill|Swords Dance|p1a: Beedrill
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Swords Dance" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 47/48; Endure Normal Status -/- 15/16; Hidden Power Bug Physical 70/100 24/24]
+|-boost|p1a: Beedrill|atk|2
+    StatChange { mon: "Beedrill,p1,0", stat: "Attack", delta: 2 }
+|-heal|p2a: Starmie|172/211 tox|[from] item: Leftovers
+    Heal { mon: "Starmie,p2,0", health: "172/211" }
+|-damage|p2a: Starmie|120/211 tox|[from] psn
+    Damage { mon: "Starmie,p2,0", health: "120/211" }
+|-enditem|p1a: Beedrill|Salac Berry|[eat]
+    ItemEnded { mon: "Beedrill,p1,0", item: "Salac Berry", how: "eat", other: None }
+|-boost|p1a: Beedrill|spe|1|[from] item: Salac Berry
+    StatChange { mon: "Beedrill,p1,0", stat: "Speed", delta: 1 }
+|turn|12
+    Turn { n: 12 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 47/48; Endure Normal Status -/- 15/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Psychic Psychic Special 90/100 15/16; Hydro Pump Water Special 120/80 6/8; Recover Normal Status -/- 32/32; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Endure|p1a: Beedrill
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Endure" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 47/48; Endure Normal Status -/- 14/16; Hidden Power Bug Physical 70/100 24/24]
+|-singleturn|p1a: Beedrill|move: Endure
+    EffectStart { mon: "Beedrill,p1,0", what: "Endure", detail: None }
+|move|p2a: Starmie|Recover|p2a: Starmie
+    Move { user: Some("Starmie"), player_id: Some("p2"), name: "Recover" }
+    MovesUpdate p2 [Psychic Psychic Special 90/100 15/16; Hydro Pump Water Special 120/80 6/8; Recover Normal Status -/- 31/32; Ice Beam Ice Special 95/100 15/16]
+|-heal|p2a: Starmie|211/211 tox
+    Heal { mon: "Starmie,p2,0", health: "211/211" }
+|-damage|p2a: Starmie|146/211 tox|[from] psn
+    Damage { mon: "Starmie,p2,0", health: "146/211" }
+|turn|13
+    Turn { n: 13 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 16/16; Swords Dance Normal Status -/- 47/48; Endure Normal Status -/- 14/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Psychic Psychic Special 90/100 15/16; Hydro Pump Water Special 120/80 6/8; Recover Normal Status -/- 31/32; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Sludge Bomb|p2a: Starmie
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 47/48; Endure Normal Status -/- 14/16; Hidden Power Bug Physical 70/100 24/24]
+|-damage|p2a: Starmie|0 fnt
+    Damage { mon: "Starmie,p2,0", health: "0/211" }
+|faint|p2a: Starmie
+    Faint { mon: "Starmie,p2,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Blissey|Blissey, L75, F|506/506
+    SwitchIn p2 name=Blissey species=Some("Blissey") slot=Some(1) speed=Some(126) moves=[Toxic Poison Status -/85 16/16; Protect Normal Status -/- 16/16; Wish Normal Status -/- 16/16; Seismic Toss Fighting Physical -/100 32/32]
+|turn|14
+    Turn { n: 14 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 47/48; Endure Normal Status -/- 14/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Protect Normal Status -/- 16/16; Wish Normal Status -/- 16/16; Seismic Toss Fighting Physical -/100 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Blissey|Protect|p2a: Blissey
+    Move { user: Some("Blissey"), player_id: Some("p2"), name: "Protect" }
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Protect Normal Status -/- 15/16; Wish Normal Status -/- 16/16; Seismic Toss Fighting Physical -/100 32/32]
+|-singleturn|p2a: Blissey|Protect
+    EffectStart { mon: "Blissey,p2,0", what: "Protect", detail: None }
+|move|p1a: Beedrill|Swords Dance|p1a: Beedrill
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Swords Dance" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 14/16; Hidden Power Bug Physical 70/100 24/24]
+|-boost|p1a: Beedrill|atk|2
+    StatChange { mon: "Beedrill,p1,0", stat: "Attack", delta: 2 }
+|turn|15
+    Turn { n: 15 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 14/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Protect Normal Status -/- 15/16; Wish Normal Status -/- 16/16; Seismic Toss Fighting Physical -/100 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Endure|p1a: Beedrill
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Endure" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 13/16; Hidden Power Bug Physical 70/100 24/24]
+|-singleturn|p1a: Beedrill|move: Endure
+    EffectStart { mon: "Beedrill,p1,0", what: "Endure", detail: None }
+|move|p2a: Blissey|Seismic Toss|p1a: Beedrill
+    Move { user: Some("Blissey"), player_id: Some("p2"), name: "Seismic Toss" }
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Protect Normal Status -/- 15/16; Wish Normal Status -/- 16/16; Seismic Toss Fighting Physical -/100 31/32]
+|-activate|p1a: Beedrill|move: Endure
+    Activate { mon: "Beedrill,p1,0", what: "Endure", detail: None, other: None, n: None }
+|-damage|p1a: Beedrill|1/272
+    Damage { mon: "Beedrill,p1,0", health: "1/272" }
+|turn|16
+    Turn { n: 16 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 13/16; Hidden Power Bug Physical 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Protect Normal Status -/- 15/16; Wish Normal Status -/- 16/16; Seismic Toss Fighting Physical -/100 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Hidden Power|p2a: Blissey
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 13/16; Hidden Power Bug Physical 70/100 23/24]
+|-damage|p2a: Blissey|0 fnt
+    Damage { mon: "Blissey,p2,0", health: "0/506" }
+|faint|p2a: Blissey
+    Faint { mon: "Blissey,p2,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Flygon|Flygon, L78, F|253/253
+    SwitchIn p2 name=Flygon species=Some("Flygon") slot=Some(5) speed=Some(201) moves=[Toxic Poison Status -/85 16/16; Earthquake Ground Physical 100/100 16/16; Protect Normal Status -/- 16/16; Dragon Claw Dragon Special 80/100 24/24]
+|turn|17
+    Turn { n: 17 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 13/16; Hidden Power Bug Physical 70/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Toxic Poison Status -/85 16/16; Earthquake Ground Physical 100/100 16/16; Protect Normal Status -/- 16/16; Dragon Claw Dragon Special 80/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Hidden Power|p2a: Flygon
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 13/16; Hidden Power Bug Physical 70/100 22/24]
+|-damage|p2a: Flygon|0 fnt
+    Damage { mon: "Flygon,p2,0", health: "0/253" }
+|faint|p2a: Flygon
+    Faint { mon: "Flygon,p2,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Mawile|Mawile, L96, M|251/251
+    SwitchIn p2 name=Mawile species=Some("Mawile") slot=Some(2) speed=Some(150) moves=[Hidden Power Steel Steel Physical 70/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 24/24; Rock Slide Rock Physical 75/90 16/16]
+|-ability|p2a: Mawile|Intimidate|boost
+    Ability { mon: "Mawile,p2,0", ability: "Intimidate", how: "", other: None }
+|-unboost|p1a: Beedrill|atk|1
+    StatChange { mon: "Beedrill,p1,0", stat: "Attack", delta: -1 }
+|turn|18
+    Turn { n: 18 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 13/16; Hidden Power Bug Physical 70/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 24/24; Rock Slide Rock Physical 75/90 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Endure|p1a: Beedrill
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Endure" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 12/16; Hidden Power Bug Physical 70/100 22/24]
+|-singleturn|p1a: Beedrill|move: Endure
+    EffectStart { mon: "Beedrill,p1,0", what: "Endure", detail: None }
+|move|p2a: Mawile|Rock Slide|p1a: Beedrill
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Rock Slide" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 24/24; Rock Slide Rock Physical 75/90 15/16]
+|-supereffective|p1a: Beedrill
+    SuperEffective { mon: "Beedrill,p1,0" }
+|-activate|p1a: Beedrill|move: Endure
+    Activate { mon: "Beedrill,p1,0", what: "Endure", detail: None, other: None, n: None }
+|-damage|p1a: Beedrill|1/272
+    Damage { mon: "Beedrill,p1,0", health: "1/272" }
+|turn|19
+    Turn { n: 19 }
+|request|...
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 15/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 12/16; Hidden Power Bug Physical 70/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 24/24; Rock Slide Rock Physical 75/90 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Beedrill|Sludge Bomb|p2a: Mawile
+    Move { user: Some("Beedrill"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Sludge Bomb Poison Physical 90/100 14/16; Swords Dance Normal Status -/- 46/48; Endure Normal Status -/- 12/16; Hidden Power Bug Physical 70/100 22/24]
+|-immune|p2a: Mawile
+    Immune { mon: "Mawile,p2,0" }
+|move|p2a: Mawile|Brick Break|p1a: Beedrill
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Brick Break" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 15/16]
+|-resisted|p1a: Beedrill
+    Resisted { mon: "Beedrill,p1,0" }
+|-damage|p1a: Beedrill|0 fnt
+    Damage { mon: "Beedrill,p1,0", health: "0/272" }
+|faint|p1a: Beedrill
+    Faint { mon: "Beedrill,p1,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Claydol|Claydol, L81|230/230
+    SwitchIn p1 name=Claydol species=Some("Claydol") slot=Some(3) speed=Some(168) moves=[Psychic Psychic Special 90/100 16/16; Toxic Poison Status -/85 16/16; Explosion Normal Physical 250/100 8/8; Earthquake Ground Physical 100/100 16/16]
+|turn|20
+    Turn { n: 20 }
+|request|...
+    MovesUpdate p1 [Psychic Psychic Special 90/100 16/16; Toxic Poison Status -/85 16/16; Explosion Normal Physical 250/100 8/8; Earthquake Ground Physical 100/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Claydol|Earthquake|p2a: Mawile
+    Move { user: Some("Claydol"), player_id: Some("p1"), name: "Earthquake" }
+    MovesUpdate p1 [Psychic Psychic Special 90/100 16/16; Toxic Poison Status -/85 16/16; Explosion Normal Physical 250/100 8/8; Earthquake Ground Physical 100/100 15/16]
+|-supereffective|p2a: Mawile
+    SuperEffective { mon: "Mawile,p2,0" }
+|-damage|p2a: Mawile|122/251
+    Damage { mon: "Mawile,p2,0", health: "122/251" }
+|move|p2a: Mawile|Hidden Power|p1a: Claydol
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 15/16]
+|-damage|p1a: Claydol|145/230
+    Damage { mon: "Claydol,p1,0", health: "145/230" }
+|-heal|p1a: Claydol|159/230|[from] item: Leftovers
+    Heal { mon: "Claydol,p1,0", health: "159/230" }
+|-heal|p2a: Mawile|137/251|[from] item: Leftovers
+    Heal { mon: "Mawile,p2,0", health: "137/251" }
+|turn|21
+    Turn { n: 21 }
+|request|...
+    MovesUpdate p1 [Psychic Psychic Special 90/100 16/16; Toxic Poison Status -/85 16/16; Explosion Normal Physical 250/100 8/8; Earthquake Ground Physical 100/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Claydol|Explosion|p2a: Mawile
+    Move { user: Some("Claydol"), player_id: Some("p1"), name: "Explosion" }
+    MovesUpdate p1 [Psychic Psychic Special 90/100 16/16; Toxic Poison Status -/85 16/16; Explosion Normal Physical 250/100 7/8; Earthquake Ground Physical 100/100 15/16]
+|-resisted|p2a: Mawile
+    Resisted { mon: "Mawile,p2,0" }
+|-damage|p2a: Mawile|16/251
+    Damage { mon: "Mawile,p2,0", health: "16/251" }
+|faint|p1a: Claydol
+    Faint { mon: "Claydol,p1,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Articuno|Articuno, L80|275/275
+    SwitchIn p1 name=Articuno species=Some("Articuno") slot=Some(1) speed=Some(182) moves=[Sleep Talk Normal Status -/- 16/16; Toxic Poison Status -/85 16/16; Rest Psychic Status -/- 16/16; Ice Beam Ice Special 95/100 16/16]
+|-heal|p2a: Mawile|31/251|[from] item: Leftovers
+    Heal { mon: "Mawile,p2,0", health: "31/251" }
+|turn|22
+    Turn { n: 22 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Toxic Poison Status -/85 16/16; Rest Psychic Status -/- 16/16; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Articuno|Sleep Talk|p1a: Articuno
+    Move { user: Some("Articuno"), player_id: Some("p1"), name: "Sleep Talk" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Toxic Poison Status -/85 16/16; Rest Psychic Status -/- 16/16; Ice Beam Ice Special 95/100 16/16]
+|move|p2a: Mawile|Rock Slide|p1a: Articuno
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Rock Slide" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 13/16]
+|-supereffective|p1a: Articuno
+    SuperEffective { mon: "Articuno,p1,0" }
+|-damage|p1a: Articuno|41/275
+    Damage { mon: "Articuno,p1,0", health: "41/275" }
+|-heal|p1a: Articuno|58/275|[from] item: Leftovers
+    Heal { mon: "Articuno,p1,0", health: "58/275" }
+|-heal|p2a: Mawile|46/251|[from] item: Leftovers
+    Heal { mon: "Mawile,p2,0", health: "46/251" }
+|turn|23
+    Turn { n: 23 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Toxic Poison Status -/85 16/16; Rest Psychic Status -/- 16/16; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 13/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Articuno|Toxic|p2a: Mawile
+    Move { user: Some("Articuno"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Toxic Poison Status -/85 15/16; Rest Psychic Status -/- 16/16; Ice Beam Ice Special 95/100 16/16]
+|-immune|p2a: Mawile
+    Immune { mon: "Mawile,p2,0" }
+|move|p2a: Mawile|Rock Slide|p1a: Articuno
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Rock Slide" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 11/16]
+|-supereffective|p1a: Articuno
+    SuperEffective { mon: "Articuno,p1,0" }
+|-damage|p1a: Articuno|0 fnt
+    Damage { mon: "Articuno,p1,0", health: "0/275" }
+|faint|p1a: Articuno
+    Faint { mon: "Articuno,p1,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Sunflora|Sunflora, L99, F|308/308
+    SwitchIn p1 name=Sunflora species=Some("Sunflora") slot=Some(2) speed=Some(114) moves=[Sunny Day Fire Status -/- 8/8; Synthesis Grass Status -/- 8/8; Hidden Power Fire Fire Special 70/100 24/24; Solar Beam Grass Special 120/100 16/16]
+|-heal|p2a: Mawile|61/251|[from] item: Leftovers
+    Heal { mon: "Mawile,p2,0", health: "61/251" }
+|turn|24
+    Turn { n: 24 }
+|request|...
+    MovesUpdate p1 [Sunny Day Fire Status -/- 8/8; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24; Solar Beam Grass Special 120/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 11/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Mawile|Rock Slide|p1a: Sunflora
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Rock Slide" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 10/16]
+|-damage|p1a: Sunflora|238/308
+    Damage { mon: "Sunflora,p1,0", health: "238/308" }
+|move|p1a: Sunflora|Solar Beam||[still]
+    Move { user: Some("Sunflora"), player_id: Some("p1"), name: "Solar Beam" }
+    MovesUpdate p1 [Sunny Day Fire Status -/- 8/8; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24; Solar Beam Grass Special 120/100 15/16]
+|-prepare|p1a: Sunflora|Solar Beam
+    EffectStart { mon: "Sunflora,p1,0", what: "charging", detail: Some("Solar Beam") }
+|-heal|p2a: Mawile|76/251|[from] item: Leftovers
+    Heal { mon: "Mawile,p2,0", health: "76/251" }
+|-heal|p1a: Sunflora|257/308|[from] item: Leftovers
+    Heal { mon: "Sunflora,p1,0", health: "257/308" }
+|turn|25
+    Turn { n: 25 }
+|request|...
+    MovesUpdate p1 [Sunny Day Fire Status -/- 8/8; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24; Solar Beam Grass Special 120/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 23/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 10/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Mawile|Hidden Power|p1a: Sunflora
+    Move { user: Some("Mawile"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Hidden Power Steel Physical 70/100 22/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 23/24; Rock Slide Rock Physical 75/90 10/16]
+|-damage|p1a: Sunflora|161/308
+    Damage { mon: "Sunflora,p1,0", health: "161/308" }
+|move|p1a: Sunflora|Solar Beam|p2a: Mawile|[from] lockedmove
+    Move { user: Some("Sunflora"), player_id: Some("p1"), name: "Solar Beam" }
+    MovesUpdate p1 [Sunny Day Fire Status -/- 8/8; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24; Solar Beam Grass Special 120/100 15/16]
+|-resisted|p2a: Mawile
+    Resisted { mon: "Mawile,p2,0" }
+|-damage|p2a: Mawile|0 fnt
+    Damage { mon: "Mawile,p2,0", health: "0/251" }
+|faint|p2a: Mawile
+    Faint { mon: "Mawile,p2,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Qwilfish|Qwilfish, L82, M|241/241
+    SwitchIn p2 name=Qwilfish species=Some("Qwilfish") slot=Some(3) speed=Some(187) moves=[Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 8/8; Hydro Pump Water Special 120/80 8/8; Sludge Bomb Poison Physical 90/100 16/16]
+|-heal|p1a: Sunflora|180/308|[from] item: Leftovers
+    Heal { mon: "Sunflora,p1,0", health: "180/308" }
+|turn|26
+    Turn { n: 26 }
+|request|...
+    MovesUpdate p1 [Sunny Day Fire Status -/- 8/8; Synthesis Grass Status -/- 8/8; Hidden Power Fire Special 70/100 24/24; Solar Beam Grass Special 120/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 8/8; Hydro Pump Water Special 120/80 8/8; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Qwilfish|Sludge Bomb|p1a: Sunflora
+    Move { user: Some("Qwilfish"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 8/8; Hydro Pump Water Special 120/80 8/8; Sludge Bomb Poison Physical 90/100 15/16]
+|-supereffective|p1a: Sunflora
+    SuperEffective { mon: "Sunflora,p1,0" }
+|-damage|p1a: Sunflora|0 fnt
+    Damage { mon: "Sunflora,p1,0", health: "0/308" }
+|faint|p1a: Sunflora
+    Faint { mon: "Sunflora,p1,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Vaporeon|Vaporeon, L79, M|335/335
+    SwitchIn p1 name=Vaporeon species=Some("Vaporeon") slot=Some(5) speed=Some(148) moves=[Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16]
+|turn|27
+    Turn { n: 27 }
+|request|...
+    MovesUpdate p1 [Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 8/8; Hydro Pump Water Special 120/80 8/8; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Qwilfish|Hydro Pump|p1a: Vaporeon
+    Move { user: Some("Qwilfish"), player_id: Some("p2"), name: "Hydro Pump" }
+    MovesUpdate p2 [Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 8/8; Hydro Pump Water Special 120/80 7/8; Sludge Bomb Poison Physical 90/100 15/16]
+|-immune|p1a: Vaporeon|[from] ability: Water Absorb
+    Ability { mon: "Vaporeon,p1,0", ability: "Water Absorb", how: "activate", other: None }
+    Immune { mon: "Vaporeon,p1,0" }
+|move|p1a: Vaporeon|Ice Beam|p2a: Qwilfish
+    Move { user: Some("Vaporeon"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16]
+|-resisted|p2a: Qwilfish
+    Resisted { mon: "Qwilfish,p2,0" }
+|-damage|p2a: Qwilfish|197/241
+    Damage { mon: "Qwilfish,p2,0", health: "197/241" }
+|-heal|p2a: Qwilfish|212/241|[from] item: Leftovers
+    Heal { mon: "Qwilfish,p2,0", health: "212/241" }
+|turn|28
+    Turn { n: 28 }
+|request|...
+    MovesUpdate p1 [Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 8/8; Hydro Pump Water Special 120/80 7/8; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Vaporeon|Protect|p1a: Vaporeon
+    Move { user: Some("Vaporeon"), player_id: Some("p1"), name: "Protect" }
+    MovesUpdate p1 [Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24; Wish Normal Status -/- 16/16; Protect Normal Status -/- 15/16]
+|-singleturn|p1a: Vaporeon|Protect
+    EffectStart { mon: "Vaporeon,p1,0", what: "Protect", detail: None }
+|move|p2a: Qwilfish|Self-Destruct|p1a: Vaporeon
+    Move { user: Some("Qwilfish"), player_id: Some("p2"), name: "Self-Destruct" }
+    MovesUpdate p2 [Spikes Ground Status -/- 32/32; Self-Destruct Normal Physical 200/100 7/8; Hydro Pump Water Special 120/80 7/8; Sludge Bomb Poison Physical 90/100 15/16]
+|-activate|p1a: Vaporeon|Protect
+    Activate { mon: "Vaporeon,p1,0", what: "Protect", detail: None, other: None, n: None }
+|faint|p2a: Qwilfish
+    Faint { mon: "Qwilfish,p2,0", team_slot: Some(3) }
+|win|Player 1
+    Win { side: Some("0") }

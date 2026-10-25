@@ -66,6 +66,8 @@
 |move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
     Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
     MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 61/64]
+|-activate|p2a: Cacturne|Substitute|[damage]
+    Activate { mon: "Cacturne,p2,0", what: "Substitute", detail: None, other: None, n: None }
 |-heal|p2a: Cacturne|215/290|[from] item: Leftovers
     Heal { mon: "Cacturne,p2,0", health: "215/290" }
 |turn|4
@@ -84,6 +86,8 @@
 |move|p1a: Armaldo|Rapid Spin|p2a: Cacturne
     Move { user: Some("Armaldo"), player_id: Some("p1"), name: "Rapid Spin" }
     MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Rock Slide Rock Physical 75/90 16/16; Hidden Power Bug Physical 70/100 24/24; Rapid Spin Normal Physical 20/100 60/64]
+|-activate|p2a: Cacturne|Substitute|[damage]
+    Activate { mon: "Cacturne,p2,0", what: "Substitute", detail: None, other: None, n: None }
 |-end|p1a: Armaldo|Leech Seed|[from] move: Rapid Spin|[of] p1a: Armaldo
     EffectEnd { mon: "Armaldo,p1,0", what: "seeded" }
 |-heal|p2a: Cacturne|233/290|[from] item: Leftovers
@@ -950,6 +954,8 @@
     SwitchIn p2 name=Hitmontop species=Some("Hitmontop") slot=Some(5) speed=Some(170) moves=[Hidden Power Ghost Ghost Physical 70/100 24/24; Brick Break Fighting Physical 75/100 24/24; Earthquake Ground Physical 100/100 16/16; Bulk Up Fighting Status -/- 32/32]
 |-damage|p2a: Hitmontop|170/226|[from] Spikes
     Damage { mon: "Hitmontop,p2,0", health: "170/226" }
+|-ability|p2a: Hitmontop|Intimidate|boost
+    Ability { mon: "Hitmontop,p2,0", ability: "Intimidate", how: "", other: None }
 |-unboost|p1a: Ditto|atk|1
     StatChange { mon: "Ditto,p1,0", stat: "Attack", delta: -1 }
 |-heal|p2a: Hitmontop|184/226|[from] item: Leftovers

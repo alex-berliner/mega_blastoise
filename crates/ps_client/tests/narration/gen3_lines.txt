@@ -1,0 +1,85 @@
+# Gen 3 lines in the form ps_sim and PS 0.11.11 write them (crates/ps_client/tests/narration.rs).
+|start
+|switch|p1a: Gardevoir|Gardevoir, L80, F|250/250
+|switch|p2a: Golduck|Golduck, L80, M|260/260
+|request|{"active":[{"moves":[{"move":"Psychic","id":"psychic","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Surf","id":"surf","pp":24,"maxpp":24,"target":"allAdjacent","disabled":false},{"move":"Ice Beam","id":"icebeam","pp":16,"maxpp":16,"target":"normal","disabled":false},{"move":"Calm Mind","id":"calmmind","pp":32,"maxpp":32,"target":"self","disabled":false}]}],"side":{"name":"Red","id":"p2","pokemon":[{"ident":"p2: Golduck","details":"Golduck, L80, M","condition":"260/260","active":true,"stats":{"atk":150,"def":150,"spa":180,"spd":160,"spe":170},"moves":["psychic","surf","icebeam","calmmind"],"baseAbility":"cloudnine","item":"leftovers","pokeball":"pokeball"}]}}
+|turn|1
+# -ability: an ability's own line
+|-ability|p2a: Golduck|Intimidate|boost
+|-ability|p2a: Golduck|Pressure
+|-ability|p2a: Golduck|Pressure|[silent]
+|-ability|p1a: Gardevoir|Levitate|Trace|[from] ability: Trace|[of] p2a: Golduck
+|-ability|p1a: Gardevoir|Cloud Nine|Levitate|[from] move: Role Play|[of] p2a: Golduck
+# [from] ability: on another line opens with the ability's banner
+|-immune|p2a: Golduck|[from] ability: Water Absorb
+|-heal|p2a: Golduck|255/260|[from] ability: Water Absorb|[of] p1a: Gardevoir
+|-status|p1a: Gardevoir|par|[from] ability: Static|[of] p2a: Golduck
+|-damage|p1a: Gardevoir|230/250|[from] ability: Rough Skin|[of] p2a: Golduck
+|-weather|SunnyDay|[from] ability: Drought|[of] p1a: Gardevoir
+|-curestatus|p1a: Gardevoir|par|[from] ability: Natural Cure
+|-start|p1a: Gardevoir|Attract|[from] ability: Cute Charm|[of] p2a: Golduck
+|-start|p2a: Golduck|ability: Flash Fire
+|-immune|p1a: Gardevoir|confusion|[from] ability: Own Tempo
+|-fail|p2a: Golduck|unboost|Attack|[from] ability: Hyper Cutter|[of] p2a: Golduck
+|-fail|p2a: Golduck|unboost|[from] ability: Clear Body|[of] p2a: Golduck
+|cant|p2a: Golduck|ability: Truant
+# -item
+|-item|p1a: Gardevoir|Choice Band|[from] move: Trick
+|-item|p1a: Gardevoir|Leftovers|[from] move: Thief|[of] p2a: Golduck
+|-item|p1a: Gardevoir|Leppa Berry|[from] move: Recycle
+|-item|p1a: Gardevoir|Leftovers
+# -enditem
+|-enditem|p1a: Gardevoir|Salac Berry|[eat]
+|-enditem|p1a: Gardevoir|Leftovers|[from] move: Knock Off|[of] p2a: Golduck
+|-enditem|p1a: Gardevoir|White Herb
+|-enditem|p1a: Gardevoir|Leftovers|[silent]|[from] move: Thief|[of] p2a: Golduck
+|-enditem|p1a: Gardevoir|Bright Powder|[silent]|[from] move: Trick
+# -activate
+|-activate|p1a: Gardevoir|confusion
+|-activate|p1a: Gardevoir|move: Struggle
+|-activate|p2a: Golduck|Substitute|[damage]
+|-activate|p2a: Golduck|Protect
+|-activate|p2a: Golduck|move: Endure
+|-activate|p2a: Golduck|item: Focus Band
+|-activate|p2a: Golduck|move: Spite|psychic|4
+|-activate|p2a: Golduck|move: Grudge|Surf
+|-activate|p2a: Golduck|item: Leppa Berry|Psychic|[consumed]
+|-activate|p1a: Gardevoir|move: Attract|[of] p2a: Golduck
+|-activate|p1a: Gardevoir|move: Trick|[of] p2a: Golduck
+|-activate|p1a: Gardevoir|move: Lock-On|[of] p2a: Golduck
+|-activate|p1a: Gardevoir|Skill Swap|||[of] p2a: Golduck
+|-activate|p1a: Gardevoir|move: Snatch|[of] p2a: Golduck
+|-activate|p1a: Gardevoir|move: Mimic|Surf
+|-activate|p1a: Gardevoir|move: Destiny Bond
+|-activate|p2a: Golduck|move: Pursuit
+|-activate|p1a: Gardevoir|move: Beat Up|[of] Snorlax
+|-activate|p1a: Gardevoir|move: Bide
+|-activate|p1a: Gardevoir|move: Heal Bell
+|-activate|p1a: Gardevoir|ability: Shed Skin
+|-activate|p1a: Gardevoir|trapped
+|-activate|p1a: Gardevoir|move: Bind|[of] p2a: Golduck
+|-cureteam|p1a: Gardevoir|[from] move: Aromatherapy
+|-fieldactivate|move: Perish Song
+|-hitcount|p2a: Golduck|3
+|-ohko
+# -start / -end: [silent] says nothing, [upkeep] is a notice
+|-start|p1a: Gardevoir|Uproar|[upkeep]
+|-end|p1a: Gardevoir|Uproar
+|-start|p1a: Gardevoir|perish3|[silent]
+|-start|p1a: Gardevoir|perish2
+|-start|p1a: Gardevoir|move: Taunt
+|-end|p1a: Gardevoir|move: Taunt|[silent]
+|-start|p1a: Gardevoir|Encore
+|-end|p1a: Gardevoir|Encore
+|-start|p1a: Gardevoir|stockpile2
+|-start|p2a: Golduck|Future Sight
+|-end|p1a: Gardevoir|move: Future Sight
+|-start|p2a: Golduck|typechange|Fire
+|-singlemove|p1a: Gardevoir|Grudge
+|-singleturn|p1a: Gardevoir|move: Magic Coat
+|-mustrecharge|p1a: Gardevoir
+|-prepare|p1a: Gardevoir|Solar Beam
+|-weather|none
+# Forecast
+|switch|p1a: Castform|Castform, L80, F|240/240
+|-formechange|p1a: Castform|Castform-Sunny|[msg]|[from] ability: Forecast

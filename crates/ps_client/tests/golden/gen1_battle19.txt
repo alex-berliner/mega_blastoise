@@ -336,6 +336,8 @@
     MovesUpdate p1 [Confuse Ray Ghost Status -/100 15/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
 |-start|p2a: Magmar|confusion
     EffectStart { mon: "Magmar,p2,0", what: "confusion", detail: None }
+|-activate|p2a: Magmar|confusion
+    Activate { mon: "Magmar,p2,0", what: "confusion", detail: None, other: None, n: None }
 |-damage|p2a: Magmar|166/255|[from] confusion
     Cant { mon: "Magmar,p2,0", reason: "confusion" }
     Damage { mon: "Magmar,p2,0", health: "166/255" }
@@ -350,6 +352,8 @@
 |move|p1a: Ninetales|Confuse Ray|p2a: Magmar
     Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Confuse Ray" }
     MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 24/24]
+|-activate|p2a: Magmar|confusion
+    Activate { mon: "Magmar,p2,0", what: "confusion", detail: None, other: None, n: None }
 |move|p2a: Magmar|Fire Blast|p1a: Ninetales
     Move { user: Some("Magmar"), player_id: Some("p2"), name: "Fire Blast" }
     MovesUpdate p2 [Confuse Ray Ghost Status -/100 16/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
@@ -372,6 +376,8 @@
     Resisted { mon: "Magmar,p2,0" }
 |-damage|p2a: Magmar|121/255
     Damage { mon: "Magmar,p2,0", health: "121/255" }
+|-activate|p2a: Magmar|confusion
+    Activate { mon: "Magmar,p2,0", what: "confusion", detail: None, other: None, n: None }
 |move|p2a: Magmar|Confuse Ray|p1a: Ninetales
     Move { user: Some("Magmar"), player_id: Some("p2"), name: "Confuse Ray" }
     MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
@@ -385,6 +391,8 @@
 |request|...
     MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 24/24; Fire Blast Fire Special 120/85 7/8]
     Prompt { player_id: "p2", kind: ChooseMove }
+|-activate|p1a: Ninetales|confusion
+    Activate { mon: "Ninetales,p1,0", what: "confusion", detail: None, other: None, n: None }
 |move|p1a: Ninetales|Flamethrower|p2a: Magmar
     Move { user: Some("Ninetales"), player_id: Some("p1"), name: "Flamethrower" }
     MovesUpdate p1 [Confuse Ray Ghost Status -/100 14/16; Body Slam Normal Physical 85/100 22/24; Fire Blast Fire Special 120/85 6/8; Flamethrower Fire Special 95/100 22/24]
@@ -407,6 +415,8 @@
 |request|...
     MovesUpdate p2 [Confuse Ray Ghost Status -/100 15/16; Seismic Toss Fighting Physical 1/100 31/32; Body Slam Normal Physical 85/100 23/24; Fire Blast Fire Special 120/85 7/8]
     Prompt { player_id: "p2", kind: ChooseMove }
+|-activate|p1a: Ninetales|confusion
+    Activate { mon: "Ninetales,p1,0", what: "confusion", detail: None, other: None, n: None }
 |-damage|p1a: Ninetales|9/260|[from] confusion
     Cant { mon: "Ninetales,p1,0", reason: "confusion" }
     Damage { mon: "Ninetales,p1,0", health: "9/260" }

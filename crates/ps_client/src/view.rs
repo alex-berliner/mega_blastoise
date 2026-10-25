@@ -29,15 +29,28 @@
 //! | `-boost` / `-unboost` / `-setboost` | `StatChange` (none for a 0 change; gen 1's `spd` twin of `spa` is folded into "Special") |
 //! | `-clearallboost` | `EffectStart{haze}` |
 //! | `-crit`, `-supereffective`, `-resisted`, `-immune`, `-miss`, `-fail` | the matching event |
-//! | `-start` / `-end` | `EffectStart` / `EffectEnd` |
+//! | `-fail\|MON\|unboost` (Clear Body and kin) | `Activate{unboost}` |
+//! | `-start` / `-end` | `EffectStart` / `EffectEnd`; `Activate` for an `[upkeep]` start |
 //! | `-sidestart` / `-sideend` | `EffectStart` / `EffectEnd` on that side's active mon |
 //! | `-weather` | `EffectStart` when weather begins, `EffectEnd` when it stops |
 //! | `-singleturn`, `-singlemove` | `EffectStart` |
 //! | `-activate` `trapped` / a binding move | `EffectStart{trapped}` / `EffectStart{wrap}` |
+//! | `-activate` `move: Mimic` (gen 3) | `EffectStart{mimic}`, `MovesUpdate` |
+//! | `-activate` `ability: X` | `Ability` (the banner) |
+//! | `-activate` any other effect, `-fieldactivate`, `-cureteam` with `[from]` | `Activate` (Spite, Grudge, Leppa Berry also a `MovesUpdate`) |
+//! | `-hitcount`, `-ohko`, `-nothing` | `Activate` |
+//! | `-item` with `[from]` | `ItemGained` |
+//! | `-enditem` | `ItemEnded` |
+//! | `-ability` | `Ability` |
+//! | `[from] ability: X` on any other line, an ability `-start` / `cant` | an `Ability` banner first |
 //! | `-prepare` | `EffectStart{charging}` |
 //! | `-transform` | `EffectStart{transform}`, `ActiveMonUpdate`, `MovesUpdate` |
-//! | `-formechange`, `detailschange` | `ActiveMonUpdate` |
+//! | `-formechange`, `detailschange` | `ActiveMonUpdate`; `-formechange` with `[msg]` first `EffectStart{transform}` |
 //! | `win` / `tie` | `Win` / `Tie` |
+//!
+//! A `[silent]` line yields nothing (the PS client prints nothing for it)
+//! but still updates the view, except `-clearallboost` (Gen 1's Haze says
+//! itself with it) and HP lines.
 //!
 //! Everything else updates state only.
 
@@ -47,7 +60,7 @@ use alloc::vec::Vec;
 
 use ps_dex::{Dex, MoveCategory, Type};
 use ps_protocol::{
-    to_id, AbilityNum, Arg, ArgValue, BattleNames, Details, Health, Hp, ItemNum, Msg, MoveNum, PokemonIdent,
+    to_id, AbilityNum, Arg, ArgValue, BattleNames, Details, Health, Hp, ItemNum, Kw, KwFlags, Msg, MoveNum, PokemonIdent,
     Request, RequestMoveName, SideId, SideMoveId, SpeciesNum, Stat, Status, TypeNum, Weather,
     Word, MAX_MOVES, MAX_TEAM,
 };
@@ -581,6 +594,7 @@ impl BattleView {
             _ => self.split = SplitState::None,
         }
 
+        let banner = self.ability_banner(msg);
         match *msg {
             Msg::TeamSize { side, size } => self.sides[side.index()].team_size = size,
             Msg::Start => {
@@ -614,9 +628,14 @@ impl BattleView {
                 }
                 self.active_mon_update(mon, details.species, &mut out);
             }
-            Msg::FormeChange { mon, species, .. } => {
+            Msg::FormeChange { mon, species, kw } => {
                 if let Some(m) = self.mon_mut(mon) {
                     m.shown_species = Some(species);
+                }
+                // PS client `-formechange` with `[msg]` (Forecast): the
+                // `transform` text, "NAME transformed!".
+                if kw.flags.contains(KwFlags::MSG) && !kw.flags.contains(KwFlags::SILENT) {
+                    out.push(BoardEvent::EffectStart { mon: self.mon_str(mon), what: "transform".to_string(), detail: None });
                 }
                 self.active_mon_update(mon, species, &mut out);
             }
@@ -680,9 +699,20 @@ impl BattleView {
                 }
                 out.push(BoardEvent::CureStatus { mon: self.mon_str(mon), status: status.as_str().to_string() });
             }
-            Msg::CureTeam { mon, .. } => {
+            Msg::CureTeam { mon, kw } => {
                 for m in self.sides[mon.side.index()].mons.iter_mut() {
                     m.status = None;
+                }
+                // PS client `-cureteam`: the `activate` text of its
+                // `[from]` (Aromatherapy's aroma).
+                if let (Some(from), false) = (kw.from, kw.flags.contains(KwFlags::SILENT)) {
+                    out.push(BoardEvent::Activate {
+                        mon: self.mon_str(mon),
+                        what: self.arg_name(from),
+                        detail: None,
+                        other: None,
+                        n: None,
+                    });
                 }
             }
 
@@ -733,15 +763,50 @@ impl BattleView {
                 };
                 out.push(BoardEvent::Miss { mon });
             }
+            // A stat drop an ability or Mist refused (`-fail|MON|unboost|
+            // STAT|[from] ability: Clear Body`): PS's `unboost` `fail`
+            // text. Every other `-fail` is the old runners' `Fail`.
+            Msg::Fail { mon, what: Some(w), what2, .. } if w.value() == ArgValue::Word(Word::Unboost) => {
+                let detail = match what2.map(|x| x.value()) {
+                    Some(ArgValue::Stat(st) | ArgValue::StatName(st)) => Some(self.stat_label(st).to_string()),
+                    _ => None,
+                };
+                out.push(BoardEvent::Activate {
+                    mon: self.mon_str(mon),
+                    what: "unboost".to_string(),
+                    detail,
+                    other: None,
+                    n: None,
+                });
+            }
             Msg::Fail { mon, .. } => out.push(BoardEvent::Fail { mon: self.mon_str(mon) }),
             Msg::NoTarget(Some(mon)) => out.push(BoardEvent::Fail { mon: self.mon_str(mon) }),
 
-            Msg::StartEffect { mon, effect, a, .. } => {
+            Msg::StartEffect { mon, effect, a, kw, .. } => {
                 let what = self.effect_what(effect);
                 if what != "transform" {
                     if let Some(s) = self.sides.get_mut(mon.side.index()) {
                         add_arg(&mut s.volatiles, effect);
                     }
+                }
+                // PS client `-start`: `[silent]` says nothing; `[upkeep]`
+                // (Uproar's turns) is the effect's `upkeep` text, a notice
+                // that it goes on rather than a new start.
+                if kw.flags.contains(KwFlags::SILENT) {
+                    if what == "mimic" {
+                        self.mimic(mon, a);
+                    }
+                    return out;
+                }
+                if kw.flags.contains(KwFlags::UPKEEP) {
+                    out.push(BoardEvent::Activate {
+                        mon: self.mon_str(mon),
+                        what: self.arg_name(effect),
+                        detail: Some("upkeep".to_string()),
+                        other: None,
+                        n: None,
+                    });
+                    return out;
                 }
                 let detail = a.map(|x| self.arg_name(x));
                 if what == "mimic" {
@@ -752,9 +817,11 @@ impl BattleView {
                     self.moves_update(mon, &mut out);
                 }
             }
-            Msg::EndEffect { mon, effect, .. } => {
+            Msg::EndEffect { mon, effect, kw } => {
                 remove_arg(&mut self.sides[mon.side.index()].volatiles, effect);
-                out.push(BoardEvent::EffectEnd { mon: self.mon_str(mon), what: self.effect_what(effect) });
+                if !kw.flags.contains(KwFlags::SILENT) {
+                    out.push(BoardEvent::EffectEnd { mon: self.mon_str(mon), what: self.effect_what(effect) });
+                }
             }
             Msg::SingleTurn { mon, effect, .. } | Msg::SingleMove { mon, effect, .. } => {
                 out.push(BoardEvent::EffectStart { mon: self.mon_str(mon), what: self.arg_name(effect), detail: None });
@@ -777,7 +844,7 @@ impl BattleView {
                 out.push(BoardEvent::EffectEnd { mon: self.active_str(side), what: self.effect_what(effect) });
             }
             Msg::Weather { weather, kw } => {
-                let upkeep = kw.flags.contains(ps_protocol::KwFlags::UPKEEP);
+                let upkeep = kw.flags.contains(KwFlags::UPKEEP);
                 let before = self.weather;
                 self.weather = weather;
                 if weather == Weather::None {
@@ -793,37 +860,76 @@ impl BattleView {
                 }
             }
 
-            Msg::Activate { mon: Some(mon), effect, .. } => {
-                // Two `-activate`s start a condition the Gen 3 runner
-                // narrated (PS `data/conditions.ts`): `trapped` `onStart`
-                // (Mean Look, Spider Web, Block) and `partiallytrapped`
-                // `onStart` (`move: Bind|[of] SOURCE`). The rest (confusion's
-                // per-turn notice, Struggle, a Substitute taking a hit, a
-                // Protect blocking) the old runners did not narrate.
-                let what = match effect.value() {
-                    ArgValue::Word(Word::Trapped) => Some("trapped".to_string()),
-                    ArgValue::Move(_) | ArgValue::MoveEffect(_) => {
-                        Some(self.effect_what(effect)).filter(|w| w == "wrap")
-                    }
-                    _ => None,
-                };
-                if let Some(what) = what {
-                    out.push(BoardEvent::EffectStart { mon: self.mon_str(mon), what, detail: None });
+            Msg::Activate { mon: Some(mon), effect, a, b, kw } => self.activate(mon, effect, a, b, kw, &mut out),
+            Msg::Activate { mon: None, effect, kw, .. } | Msg::FieldActivate { effect, kw } => {
+                if !kw.flags.contains(KwFlags::SILENT) && effect.value() != ArgValue::Word(Word::Empty) {
+                    out.push(BoardEvent::Activate {
+                        mon: String::new(),
+                        what: self.arg_name(effect),
+                        detail: None,
+                        other: None,
+                        n: None,
+                    });
                 }
             }
-            Msg::Item { mon, item, .. } => {
+            Msg::HitCount { mon, count } => out.push(BoardEvent::Activate {
+                mon: self.mon_str(mon),
+                what: "hitcount".to_string(),
+                detail: None,
+                other: None,
+                n: Some(count as i16),
+            }),
+            Msg::Ohko | Msg::Nothing => out.push(BoardEvent::Activate {
+                mon: String::new(),
+                what: if matches!(msg, Msg::Ohko) { "ohko" } else { "nothing" }.to_string(),
+                detail: None,
+                other: None,
+                n: None,
+            }),
+            Msg::Item { mon, item, kw } => {
                 if let Some(m) = self.mon_mut(mon) {
                     m.item = Some(item);
                 }
+                // PS client `-item`: with no `[from]` an item has a line
+                // only if its text has a `start` entry, which no gen 1-3
+                // item has.
+                if kw.from.is_some() && !kw.flags.contains(KwFlags::SILENT) {
+                    out.push(BoardEvent::ItemGained {
+                        mon: self.mon_str(mon),
+                        item: self.item_name(item).to_string(),
+                        how: self.from_id(kw.from),
+                        other: kw.of.map(|o| self.mon_str(o)),
+                    });
+                }
             }
-            Msg::Ability { mon, ability, .. } => {
+            Msg::EndItem { mon, item, kw } => {
+                if let Some(m) = self.mon_mut(mon) {
+                    m.item = None;
+                }
+                if !kw.flags.contains(KwFlags::SILENT) {
+                    let how = if kw.flags.contains(KwFlags::EAT) { "eat".to_string() } else { self.from_id(kw.from) };
+                    out.push(BoardEvent::ItemEnded {
+                        mon: self.mon_str(mon),
+                        item: self.item_name(item).to_string(),
+                        how,
+                        other: kw.of.map(|o| self.mon_str(o)),
+                    });
+                }
+            }
+            Msg::Ability { mon, ability, kw, .. } => {
                 if let Some(m) = self.mon_mut(mon) {
                     m.ability = Some(ability);
                 }
-            }
-            Msg::EndItem { mon, .. } => {
-                if let Some(m) = self.mon_mut(mon) {
-                    m.item = None;
+                // PS client `-ability`: Trace and Role Play say whose
+                // ability was copied (`changeAbility`); otherwise the
+                // ability's own banner and text.
+                if !kw.flags.contains(KwFlags::SILENT) {
+                    out.push(BoardEvent::Ability {
+                        mon: self.mon_str(mon),
+                        ability: self.ability_name(ability).to_string(),
+                        how: self.from_id(kw.from),
+                        other: kw.of.map(|o| self.mon_str(o)),
+                    });
                 }
             }
 
@@ -841,24 +947,210 @@ impl BattleView {
             | Msg::Debug(_)
             | Msg::DebugNum { .. }
             | Msg::Error { .. }
-            | Msg::Activate { mon: None, .. }
             | Msg::Block { .. }
             | Msg::NoTarget(None)
-            | Msg::HitCount { .. }
-            | Msg::Ohko
-            | Msg::Nothing
             | Msg::MustRecharge(_)
             | Msg::Anim { .. }
             | Msg::FieldStart { .. }
             | Msg::FieldEnd { .. }
-            | Msg::FieldActivate { .. }
             | Msg::EndAbility { .. }
             | Msg::Message(_)
             | Msg::Notice(_)
             | Msg::BigError(_)
             | Msg::Hint { .. } => {}
         }
+        if let Some(b) = banner {
+            if !out.is_empty() {
+                out.insert(0, b);
+            }
+        }
         out
+    }
+
+    /// PS client `maybeAbility(kwArgs.from, holder)`: a line that an
+    /// ability caused (`[from] ability: NAME`, or an ability as the effect
+    /// of `-start` / `cant`) opens with that ability's banner. The holder is
+    /// `[of]` when the line has one, else the line's mon; `-heal` names the
+    /// healed mon (Water Absorb, Volt Absorb). A `[silent]` line says
+    /// nothing, and `-ability` / `-activate` carry their own.
+    fn ability_banner(&self, msg: &Msg) -> Option<BoardEvent> {
+        let ability = |a: Option<Arg>| match a.map(|x| x.value()) {
+            Some(ArgValue::AbilityEffect(x)) | Some(ArgValue::Ability(x)) => Some(x),
+            _ => None,
+        };
+        let (holder, kw, a) = match *msg {
+            Msg::Heal { mon, kw, .. } => (Some(mon), kw, ability(kw.from)),
+            Msg::Damage { mon, kw, .. }
+            | Msg::SetHp { mon, kw, .. }
+            | Msg::SetStatus { mon, kw, .. }
+            | Msg::CureStatus { mon, kw, .. }
+            | Msg::CureTeam { mon, kw }
+            | Msg::Boost { mon, kw, .. }
+            | Msg::Unboost { mon, kw, .. }
+            | Msg::SetBoost { mon, kw, .. }
+            | Msg::Immune { mon, kw, .. }
+            | Msg::Fail { mon, kw, .. }
+            | Msg::Block { mon, kw, .. }
+            | Msg::EndEffect { mon, kw, .. }
+            | Msg::FormeChange { mon, kw, .. } => (Some(kw.of.unwrap_or(mon)), kw, ability(kw.from)),
+            Msg::StartEffect { mon, effect, kw, .. } => {
+                (Some(kw.of.unwrap_or(mon)), kw, ability(Some(effect)).or(ability(kw.from)))
+            }
+            Msg::Cant { mon, reason, kw, .. } => (Some(kw.of.unwrap_or(mon)), kw, ability(Some(reason))),
+            Msg::Weather { kw, .. } => (kw.of, kw, ability(kw.from)),
+            _ => return None,
+        };
+        if kw.flags.contains(KwFlags::SILENT) {
+            return None;
+        }
+        let (holder, a) = (holder?, a?);
+        Some(BoardEvent::Ability {
+            mon: self.mon_str(holder),
+            ability: self.ability_name(a).to_string(),
+            how: "activate".to_string(),
+            other: None,
+        })
+    }
+
+    fn ability_name(&self, a: AbilityNum) -> &'static str {
+        self.dex.abilities.get(a.0 as usize).map(|d| d.name.as_str()).unwrap_or("")
+    }
+
+    fn item_name(&self, i: ItemNum) -> &'static str {
+        self.dex.items.get(i.0 as usize).map(|d| d.name.as_str()).unwrap_or("")
+    }
+
+    /// The PS id of a `[from]` effect (`move: Knock Off` is `knockoff`).
+    fn from_id(&self, from: Option<Arg>) -> String {
+        from.map(|a| id_of(&self.arg_name(a))).unwrap_or_default()
+    }
+
+    /// `-activate|MON|EFFECT|A|B`, PS client `-activate`. Besides the two
+    /// conditions the Gen 3 runner narrated (`trapped`, a binding move),
+    /// every effect is told as an `Activate`, except:
+    /// - an ability (`ability: Shed Skin`): its banner, PS's whole line;
+    /// - Gen 3's Mimic (`move: Mimic|MOVE`), the same as Gen 1's `-start`:
+    ///   the slot becomes the copied move;
+    /// - Gen 1's Haze, whose `-clearallboost` already says it.
+    ///
+    /// Spite, Grudge and a Leppa Berry change a move's PP, as the PS
+    /// client's `rememberMove` does, and refresh that seat's moves.
+    fn activate(&mut self, mon: PokemonIdent, effect: Arg, a: Option<Arg>, b: Option<Arg>, kw: Kw, out: &mut BoardEvents) {
+        let silent = kw.flags.contains(KwFlags::SILENT);
+        let what = match effect.value() {
+            ArgValue::Word(Word::Trapped) => Some("trapped".to_string()),
+            ArgValue::Move(_) | ArgValue::MoveEffect(_) => Some(self.effect_what(effect)).filter(|w| w == "wrap"),
+            _ => None,
+        };
+        if let Some(what) = what {
+            if !silent {
+                out.push(BoardEvent::EffectStart { mon: self.mon_str(mon), what, detail: None });
+            }
+            return;
+        }
+        let id = id_of(&self.arg_name(effect));
+        let named_move = |v: Option<Arg>| match v.map(|x| x.value()) {
+            Some(ArgValue::Move(m) | ArgValue::MoveEffect(m) | ArgValue::MoveId(m)) => Some(m),
+            _ => None,
+        };
+        let mut refresh = false;
+        match (effect.value(), id.as_str()) {
+            (ArgValue::AbilityEffect(x) | ArgValue::Ability(x), _) => {
+                if !silent {
+                    out.push(BoardEvent::Ability {
+                        mon: self.mon_str(mon),
+                        ability: self.ability_name(x).to_string(),
+                        how: "activate".to_string(),
+                        other: None,
+                    });
+                }
+                return;
+            }
+            (_, "mimic") => {
+                let Some(copied) = named_move(a) else { return };
+                let dex = self.dex;
+                let mimic = dex.move_id("mimic").map(|m| MoveNum(m.0));
+                if let Some(m) = self.mon_mut(mon) {
+                    // PS gen 4 `mimic.onHit` (gen 3 inherits it): at most 5
+                    // PP, max PP from the slot's PP Ups (the default 3).
+                    if let Some(k) = m.moves.iter_mut().find(|k| Some(k.mv) == mimic) {
+                        let base = dex.moves.get(copied.0 as usize).map(|d| d.pp).unwrap_or(0);
+                        *k = KnownMove { mv: copied, ty: None, power: None, pp: base.min(5), maxpp: calculate_pp(dex, copied, 3) };
+                    }
+                }
+                out.push(BoardEvent::EffectStart {
+                    mon: self.mon_str(mon),
+                    what: "mimic".to_string(),
+                    detail: Some(self.move_name(copied).to_string()),
+                });
+                self.moves_update(mon, out);
+                return;
+            }
+            (_, "haze") => return,
+            (_, "spite") | (_, "grudge") | (_, "leppaberry") => {
+                // Spite: `|MOVEID|N`; Grudge: `|MOVE` (all its PP);
+                // Leppa: `|MOVE` (10 PP back, gen 3 `leppaberry.onUpdate`).
+                let n = match b.map(|x| x.value()) {
+                    Some(ArgValue::Int(n)) => Some(n),
+                    _ => None,
+                };
+                if let Some(mv) = named_move(a) {
+                    let dex = self.dex;
+                    if let Some(m) = self.mon_mut(mon) {
+                        if let Some(k) = m.moves.iter_mut().find(|k| same_move(dex, k.mv, mv)) {
+                            k.pp = match id.as_str() {
+                                "spite" => k.pp.saturating_sub(n.unwrap_or(0).max(0) as u8),
+                                "grudge" => 0,
+                                _ => k.pp.saturating_add(10).min(k.maxpp),
+                            };
+                            refresh = true;
+                        }
+                    }
+                }
+                if !silent {
+                    out.push(BoardEvent::Activate {
+                        mon: self.mon_str(mon),
+                        what: self.arg_name(effect),
+                        detail: named_move(a).map(|m| self.move_name(m).to_string()),
+                        other: None,
+                        n,
+                    });
+                }
+                if refresh && self.sides[mon.side.index()].active == Some(mon.slot) {
+                    self.moves_update(mon, out);
+                }
+                return;
+            }
+            _ => {}
+        }
+        if silent {
+            return;
+        }
+        // The second mon: an argument (`move: Bind|SOURCE` style) or `[of]`
+        // (Attract, Trick, Lock-On, Snatch, Skill Swap). Beat Up's `[of]
+        // NAME` is a nickname alone, which does not say the side; the
+        // ally is always on the user's.
+        let nickname_only = kw.flags.contains(KwFlags::WISHER);
+        let other = [a, b]
+            .into_iter()
+            .flatten()
+            .find_map(|x| match x.value() {
+                ArgValue::Mon(m) => Some(m),
+                _ => None,
+            })
+            .map(|m| self.mon_str(m))
+            .or(kw.of.map(|o| {
+                if nickname_only {
+                    mon_field(&self.nickname(o), mon.side.as_str())
+                } else {
+                    self.mon_str(o)
+                }
+            }));
+        let detail = a.and_then(|x| match x.value() {
+            ArgValue::Mon(_) | ArgValue::Word(Word::Empty) => None,
+            _ => Some(self.arg_name(x)),
+        });
+        out.push(BoardEvent::Activate { mon: self.mon_str(mon), what: self.arg_name(effect), detail, other, n: None });
     }
 
     /// `Cant::reason` in the old runners' words.

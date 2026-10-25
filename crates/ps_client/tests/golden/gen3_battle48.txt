@@ -26,6 +26,8 @@
     MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 31/32]
 |drag|p2a: Arbok|Arbok, L85, M|241/241
     SwitchIn p2 name=Arbok species=Some("Arbok") slot=Some(4) speed=Some(185) moves=[Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 16/16; Sleep Talk Normal Status -/- 16/16]
+|-ability|p2a: Arbok|Intimidate|boost
+    Ability { mon: "Arbok,p2,0", ability: "Intimidate", how: "", other: None }
 |-unboost|p1a: Noctowl|atk|1
     StatChange { mon: "Noctowl,p1,0", stat: "Attack", delta: -1 }
 |-heal|p1a: Noctowl|236/337|[from] item: Leftovers
@@ -202,6 +204,8 @@
 |move|p1a: Ampharos|Heal Bell|p1a: Ampharos
     Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Heal Bell" }
     MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 7/8; Fire Punch Fire Special 75/100 24/24]
+|-activate|p1a: Ampharos|move: Heal Bell
+    Activate { mon: "Ampharos,p1,0", what: "Heal Bell", detail: None, other: None, n: None }
 |-heal|p1a: Ampharos|217/282|[from] item: Leftovers
     Heal { mon: "Ampharos,p1,0", health: "217/282" }
 |turn|10
@@ -235,6 +239,7 @@
 |switch|p2a: Kyogre|Kyogre, L67|245/245
     SwitchIn p2 name=Kyogre species=Some("Kyogre") slot=Some(1) speed=Some(160) moves=[Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
 |-weather|RainDance|[from] ability: Drizzle|[of] p2a: Kyogre
+    Ability { mon: "Kyogre,p2,0", ability: "Drizzle", how: "activate", other: None }
     EffectStart { mon: "", what: "rain", detail: None }
 |-heal|p1a: Ampharos|183/282|[from] item: Leftovers
     Heal { mon: "Ampharos,p1,0", health: "183/282" }
@@ -254,6 +259,8 @@
 |move|p1a: Ampharos|Heal Bell|p1a: Ampharos
     Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Heal Bell" }
     MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 6/8; Fire Punch Fire Special 75/100 24/24]
+|-activate|p1a: Ampharos|move: Heal Bell
+    Activate { mon: "Ampharos,p1,0", what: "Heal Bell", detail: None, other: None, n: None }
 |-heal|p1a: Ampharos|140/282|[from] item: Leftovers
     Heal { mon: "Ampharos,p1,0", health: "140/282" }
 |turn|12
@@ -545,8 +552,6 @@
     Damage { mon: "Glalie,p1,0", health: "78/265" }
 |-heal|p1a: Glalie|94/265|[from] item: Leftovers
     Heal { mon: "Glalie,p1,0", health: "94/265" }
-|-end|p1a: Glalie|move: Yawn|[silent]
-    EffectEnd { mon: "Glalie,p1,0", what: "drowsy" }
 |-status|p1a: Glalie|slp
     SetStatus { mon: "Glalie,p1,0", status: "slp" }
 |-heal|p2a: Swalot|98/316|[from] item: Leftovers
@@ -766,6 +771,8 @@
 |move|p1a: Marowak|Double-Edge|p2a: Delcatty
     Move { user: Some("Marowak"), player_id: Some("p1"), name: "Double-Edge" }
     MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 15/16]
+|-activate|p2a: Delcatty|Protect
+    Activate { mon: "Delcatty,p2,0", what: "Protect", detail: None, other: None, n: None }
 |-heal|p2a: Delcatty|89/290|[from] item: Leftovers
     Heal { mon: "Delcatty,p2,0", health: "89/290" }
 |turn|35
@@ -794,6 +801,8 @@
     SwitchIn p2 name=Arbok species=Some("Arbok") slot=Some(4) speed=Some(185) moves=[Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 15/16]
 |-damage|p2a: Arbok|181/241|[from] Spikes
     Damage { mon: "Arbok,p2,0", health: "181/241" }
+|-ability|p2a: Arbok|Intimidate|boost
+    Ability { mon: "Arbok,p2,0", ability: "Intimidate", how: "", other: None }
 |-unboost|p1a: Marowak|atk|1
     StatChange { mon: "Marowak,p1,0", stat: "Attack", delta: -1 }
 |-heal|p2a: Arbok|196/241|[from] item: Leftovers

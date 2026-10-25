@@ -214,7 +214,12 @@ fn trapping_activations_start_effects() {
     assert_eq!(t, vec![BoardEvent::EffectStart { mon: "Charizard,p1,0".into(), what: "trapped".into(), detail: None }]);
     let w = line(&mut codec, &mut view, "|-activate|p1a: Charizard|move: Whirlpool|[of] p2a: Horsea");
     assert_eq!(w, vec![BoardEvent::EffectStart { mon: "Charizard,p1,0".into(), what: "wrap".into(), detail: None }]);
-    assert!(line(&mut codec, &mut view, "|-activate|p1a: Charizard|confusion").is_empty());
+    // Confusion's per-turn notice is PS's "NAME is confused!" (UX-2).
+    let c = line(&mut codec, &mut view, "|-activate|p1a: Charizard|confusion");
+    assert_eq!(
+        c,
+        vec![BoardEvent::Activate { mon: "Charizard,p1,0".into(), what: "confusion".into(), detail: None, other: None, n: None }]
+    );
 }
 
 /// A move request for Growlithe (team slot 2, active) with these `active`

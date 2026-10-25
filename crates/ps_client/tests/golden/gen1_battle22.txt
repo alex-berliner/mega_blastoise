@@ -290,6 +290,8 @@
     MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Hyper Beam Normal Physical 150/90 7/8; Body Slam Normal Physical 85/100 24/24; Submission Fighting Physical 80/80 38/40]
 |-resisted|p1a: Tentacool
     Resisted { mon: "Tentacool,p1,0" }
+|-activate|p1a: Tentacool|Substitute|[damage]
+    Activate { mon: "Tentacool,p1,0", what: "Substitute", detail: None, other: None, n: None }
 |-damage|p2a: Pinsir|90/252|[from] Recoil
     Damage { mon: "Pinsir,p2,0", health: "90/252" }
 |turn|15
@@ -368,6 +370,8 @@
     MovesUpdate p2 [Body Slam Normal Physical 85/100 24/24; Hyper Beam Normal Physical 150/90 8/8; Fire Blast Fire Special 120/85 6/8; Reflect Psychic Status -/- 32/32]
 |-resisted|p1a: Tentacool
     Resisted { mon: "Tentacool,p1,0" }
+|-activate|p1a: Tentacool|Substitute|[damage]
+    Activate { mon: "Tentacool,p1,0", what: "Substitute", detail: None, other: None, n: None }
 |move|p1a: Tentacool|Substitute|p1a: Tentacool
     Move { user: Some("Tentacool"), player_id: Some("p1"), name: "Substitute" }
     MovesUpdate p1 [Blizzard Ice Special 120/90 7/8; Substitute Normal Status -/- 11/16; Mega Drain Grass Special 40/100 16/16; Surf Water Special 95/100 22/24]
@@ -537,6 +541,8 @@
 |request|...
     MovesUpdate p2 [Psychic Psychic Special 90/100 13/16; Thunder Wave Electric Status -/100 31/32; Recover Normal Status -/- 32/32; Reflect Psychic Status -/- 31/32]
     Prompt { player_id: "p2", kind: ChooseMove }
+|-activate|p2a: Kadabra|confusion
+    Activate { mon: "Kadabra,p2,0", what: "confusion", detail: None, other: None, n: None }
 |move|p2a: Kadabra|Recover|p2a: Kadabra
     Move { user: Some("Kadabra"), player_id: Some("p2"), name: "Recover" }
     MovesUpdate p2 [Psychic Psychic Special 90/100 13/16; Thunder Wave Electric Status -/100 31/32; Recover Normal Status -/- 31/32; Reflect Psychic Status -/- 31/32]
@@ -564,6 +570,8 @@
     EffectStart { mon: "Vulpix,p1,0", what: "substitute", detail: None }
 |-damage|p1a: Vulpix|29/249
     Damage { mon: "Vulpix,p1,0", health: "29/249" }
+|-activate|p2a: Kadabra|confusion
+    Activate { mon: "Kadabra,p2,0", what: "confusion", detail: None, other: None, n: None }
 |-damage|p2a: Kadabra|157/212 par|[from] confusion
     Cant { mon: "Kadabra,p2,0", reason: "confusion" }
     Damage { mon: "Kadabra,p2,0", health: "157/212" }

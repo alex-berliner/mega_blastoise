@@ -386,6 +386,22 @@ fn a_psychic_detail_is_the_move_unless_it_is_a_typechange() {
     }
 }
 
+/// Spite's line as PS writes it in gens 1 to 3: the move's id and the PP it
+/// took (`this.add('-activate', target, 'move: Spite', move.id, ppDeducted)`).
+/// Both survive the round trip: the id stays an id, the number a number.
+#[test]
+fn spite_keeps_its_move_id_and_count() {
+    use ps_protocol::ArgValue;
+    let mut state = CodecState::new(load_names());
+    let psychic = state.dex().move_from_id("psychic").unwrap();
+    let line = "|-activate|p1a: Mew|move: Spite|psychic|4";
+    let msg = decode_line(line, &mut state).unwrap();
+    let Msg::Activate { a, b, .. } = msg else { panic!("{msg:?}") };
+    assert_eq!(a.map(|x| x.value()), Some(ArgValue::MoveId(psychic)));
+    assert_eq!(b.map(|x| x.value()), Some(ArgValue::Int(4)));
+    assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+}
+
 #[test]
 fn text_lines_decode_to_their_templates() {
     let mut state = CodecState::new(load_names());

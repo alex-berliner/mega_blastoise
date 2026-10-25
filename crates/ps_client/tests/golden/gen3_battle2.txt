@@ -65,6 +65,8 @@
 |move|p2a: Pikachu|Thunderbolt|p1a: Quagsire
     Move { user: Some("Pikachu"), player_id: Some("p2"), name: "Thunderbolt" }
     MovesUpdate p2 [Hidden Power Ice Special 70/100 23/24; Encore Normal Status -/100 8/8; Surf Water Special 95/100 24/24; Thunderbolt Electric Special 95/100 22/24]
+|-activate|p1a: Quagsire|Protect
+    Activate { mon: "Quagsire,p1,0", what: "Protect", detail: None, other: None, n: None }
 |turn|4
     Turn { n: 4 }
 |request|...
@@ -175,6 +177,10 @@
     MovesUpdate p1 [Toxic Poison Status -/85 15/16; Protect Normal Status -/- 15/16; Ice Beam Ice Special 95/100 14/16; Earthquake Ground Physical 100/100 14/16]
 |-resisted|p2a: Sneasel
     Resisted { mon: "Sneasel,p2,0" }
+|-activate|p2a: Sneasel|Substitute|[damage]
+    Activate { mon: "Sneasel,p2,0", what: "Substitute", detail: None, other: None, n: None }
+|-enditem|p2a: Sneasel|Liechi Berry|[eat]
+    ItemEnded { mon: "Sneasel,p2,0", item: "Liechi Berry", how: "eat", other: None }
 |-boost|p2a: Sneasel|atk|1|[from] item: Liechi Berry
     StatChange { mon: "Sneasel,p2,0", stat: "Attack", delta: 1 }
 |-heal|p1a: Quagsire|234/297|[from] item: Leftovers
@@ -217,6 +223,8 @@
     MovesUpdate p1 [Toxic Poison Status -/85 15/16; Protect Normal Status -/- 14/16; Ice Beam Ice Special 95/100 13/16; Earthquake Ground Physical 100/100 14/16]
 |-resisted|p2a: Sneasel
     Resisted { mon: "Sneasel,p2,0" }
+|-activate|p2a: Sneasel|Substitute|[damage]
+    Activate { mon: "Sneasel,p2,0", what: "Substitute", detail: None, other: None, n: None }
 |-heal|p1a: Quagsire|270/297|[from] item: Leftovers
     Heal { mon: "Quagsire,p1,0", health: "270/297" }
 |turn|11
@@ -612,6 +620,8 @@
     MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Thunderbolt Electric Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16; Thunder Wave Electric Status -/100 31/32]
 |-status|p2a: Linoone|par
     SetStatus { mon: "Linoone,p2,0", status: "par" }
+|-enditem|p2a: Linoone|Lum Berry|[eat]
+    ItemEnded { mon: "Linoone,p2,0", item: "Lum Berry", how: "eat", other: None }
 |-curestatus|p2a: Linoone|par|[msg]
     CureStatus { mon: "Linoone,p2,0", status: "par" }
 |-heal|p1a: Regice|104/253|[from] item: Leftovers

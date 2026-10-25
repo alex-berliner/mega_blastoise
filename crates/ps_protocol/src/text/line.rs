@@ -738,13 +738,14 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
             } else { None };
             let effect = parse_arg_simple(arg(args, i)?, dex)?.0;
             i += 1;
-            // Details name moves (`-activate|MON|move: Spite|Psychic|4`), never types.
+            // Details name moves, never types; Spite writes the move's id
+            // and a number (`-activate|MON|move: Spite|psychic|4`).
             let a = if let Some(s) = args.get(i).copied() {
-                let (ta, used) = parse_detail_arg(s, dex)?;
+                let (ta, used) = parse_activate_detail(s, dex)?;
                 if used { i += 1; Some(ta) } else { None }
             } else { None };
             let b = if let Some(s) = args.get(i).copied() {
-                let (tb, used) = parse_detail_arg(s, dex)?;
+                let (tb, used) = parse_activate_detail(s, dex)?;
                 if used { i += 1; Some(tb) } else { None }
             } else { None };
             Ok(Msg::Activate { mon, effect, a, b, kw: parse_kwargs(&args[i..], dex, names)? })
@@ -1340,6 +1341,22 @@ fn parse_detail_arg(s: &str, dex: &dyn DexNames) -> Result<(Arg, bool), CodecErr
         }
     }
     Ok((a, used))
+}
+
+/// A detail of `-activate`: [`parse_detail_arg`], plus the two forms only
+/// Spite writes there (PS `data/mods/gen3/moves.ts` spite `onHit`:
+/// `this.add('-activate', target, 'move: Spite', move.id, ppDeducted)`): a
+/// move's id, which is not its name (`psychic`), and a number.
+fn parse_activate_detail(s: &str, dex: &dyn DexNames) -> Result<(Arg, bool), CodecError> {
+    if let Ok(n) = s.parse::<i16>() {
+        return Ok((Arg::new(ArgValue::Int(n)), true));
+    }
+    if let Some(m) = dex.move_from_id(s) {
+        if dex.move_id(m) == s && dex.move_name(m) != s {
+            return Ok((Arg::new(ArgValue::MoveId(m)), true));
+        }
+    }
+    parse_detail_arg(s, dex)
 }
 
 // ============================================================================

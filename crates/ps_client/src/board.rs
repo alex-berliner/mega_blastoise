@@ -142,6 +142,32 @@ pub enum BoardEvent {
     /// Display-only, not narrated.
     ActiveMonUpdate { mon: String, name: String, speed: Option<u16> },
     Fail { mon: String },
+    /// An ability showed itself (PS's `[NAME's ABILITY]` banner and the
+    /// ability's own line). `how` says why, as a PS id:
+    /// - `""`: the `-ability` line itself (Intimidate, Pressure);
+    /// - `"activate"`: another line's `[from] ability:`, or
+    ///   `-activate|MON|ability: ...` (Water Absorb, Shed Skin);
+    /// - `"trace"` / `"roleplay"`: the ability was copied from `other`.
+    Ability { mon: String, ability: String, how: String, other: Option<String> },
+    /// A held item arrived (`-item`). `how` is the PS id of the effect
+    /// that brought it (`"trick"`, `"thief"`, `"covet"`, `"recycle"`);
+    /// `other` is the mon it was taken from, for a theft.
+    ItemGained { mon: String, item: String, how: String, other: Option<String> },
+    /// A held item was used up or lost (`-enditem`). `how` is `"eat"` for
+    /// a berry, the PS id of the effect that took it (`"knockoff"`), or
+    /// empty when the item used itself up (White Herb, Mental Herb);
+    /// `other` is the mon behind it (Knock Off's user).
+    ItemEnded { mon: String, item: String, how: String, other: Option<String> },
+    /// An effect acted without starting or ending anything the board
+    /// keeps (`-activate`, `-fieldactivate`, `-hitcount`, `-ohko`,
+    /// `-cureteam`, an `[upkeep]` `-start`, a stat drop an ability
+    /// refused). `what` is the effect's PS name (`"Protect"`,
+    /// `"confusion"`, `"Focus Band"`, `"Perish Song"`) or one of the
+    /// words `"hitcount"`, `"ohko"`, `"nothing"`, `"unboost"`;
+    /// `detail` its argument (Spite's move, the stat);
+    /// `other` the second mon it names, `n` its number (Spite's PP, the
+    /// hit count). `mon` is empty for a field-wide line.
+    Activate { mon: String, what: String, detail: Option<String>, other: Option<String>, n: Option<i16> },
     /// The active mon's moves refreshed (PP change, switch-in). Not
     /// narrated.
     MovesUpdate {
@@ -185,7 +211,11 @@ impl BoardEvent {
             | BoardEvent::EffectStart { mon, .. }
             | BoardEvent::EffectEnd { mon, .. }
             | BoardEvent::ActiveMonUpdate { mon, .. }
-            | BoardEvent::Fail { mon } => mon.split(',').nth(1),
+            | BoardEvent::Fail { mon }
+            | BoardEvent::Ability { mon, .. }
+            | BoardEvent::ItemGained { mon, .. }
+            | BoardEvent::ItemEnded { mon, .. }
+            | BoardEvent::Activate { mon, .. } => mon.split(',').nth(1),
             BoardEvent::Move { player_id, .. } | BoardEvent::SwitchIn { player_id, .. } => {
                 player_id.as_deref()
             }

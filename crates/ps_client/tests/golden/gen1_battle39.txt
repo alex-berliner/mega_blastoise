@@ -23,6 +23,8 @@
     Damage { mon: "Cubone,p2,0", health: "254/270" }
 |-damage|p2a: Cubone|238/270
     Damage { mon: "Cubone,p2,0", health: "238/270" }
+|-hitcount|p2a: Cubone|2
+    Activate { mon: "Cubone,p2,0", what: "hitcount", detail: None, other: None, n: Some(2) }
 |move|p2a: Cubone|Earthquake|p1a: Nidoran-F
     Move { user: Some("Cubone"), player_id: Some("p2"), name: "Earthquake" }
     MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Blizzard Ice Special 120/90 8/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
@@ -63,6 +65,8 @@
     Damage { mon: "Cubone,p2,0", health: "223/270" }
 |-damage|p2a: Cubone|208/270
     Damage { mon: "Cubone,p2,0", health: "208/270" }
+|-hitcount|p2a: Cubone|2
+    Activate { mon: "Cubone,p2,0", what: "hitcount", detail: None, other: None, n: Some(2) }
 |move|p2a: Cubone|Earthquake|p1a: Nidoran-F
     Move { user: Some("Cubone"), player_id: Some("p2"), name: "Earthquake" }
     MovesUpdate p2 [Earthquake Ground Physical 100/100 14/16; Blizzard Ice Special 120/90 7/8; Seismic Toss Fighting Physical 1/100 32/32; Body Slam Normal Physical 85/100 24/24]
