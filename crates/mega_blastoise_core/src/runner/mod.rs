@@ -17,9 +17,10 @@
 //! (`DeviceRunner::run_gen1` / `run_gen3`), picked per battle by
 //! [`Engine`]: the Showdown split's server and client, one runner for both
 //! generations ([`ps`], over a [`crate::transport::Transport`]), and the
-//! legacy Gen 3 engine ([`gen3`], until `ps_sim` ports Gen 3). Gen 1 always
-//! plays on [`ps`].
+//! legacy Gen 3 engine (`gen3`, only with the `legacy_gen3` feature). Both
+//! generations play on the PS engine by default.
 
+#[cfg(feature = "legacy_gen3")]
 pub mod gen3;
 pub mod ps;
 #[cfg(test)]
@@ -28,16 +29,42 @@ mod forced;
 /// Idle delay (ms) at lobby start before the demo battle begins automatically.
 pub const LOBBY_DEMO_DELAY_MS: u64 = 15_000;
 
+/// Which generation's rules a battle runs under: the device's GEN 1 /
+/// GEN 3 pick (`DeviceSession::ruleset`).
+#[derive(Clone, Copy, PartialEq, Eq, Debug, Default)]
+pub enum Ruleset {
+    #[default]
+    Gen1,
+    Gen3,
+}
+
+impl Ruleset {
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Ruleset::Gen1 => "Gen 1",
+            Ruleset::Gen3 => "Gen 3",
+        }
+    }
+
+    /// The generation number (`ps_dex::Dex::gen`).
+    pub fn gen(self) -> u8 {
+        match self {
+            Ruleset::Gen1 => 1,
+            Ruleset::Gen3 => 3,
+        }
+    }
+}
+
 /// Which battle engine plays a battle.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Engine {
-    /// `ps_sim` and `ps_client` through [`ps::run_battle`]: Gen 1 always,
-    /// Gen 3 once [`GEN3_ON_PS`] is switched on (until then Gen 3 plays on
-    /// its legacy engine).
+    /// `ps_sim` and `ps_client` through [`ps::run_battle`], for both
+    /// generations.
     #[default]
     Ps,
-    /// `gen3_battle` through [`gen3::run_battle`]. Gen 1 has no legacy
-    /// engine any more and plays on `Ps` either way.
+    /// `gen3_battle` through [`gen3::run_battle`], with the `legacy_gen3`
+    /// feature; without it Gen 3 plays on `Ps`. Gen 1 has no legacy engine
+    /// any more and plays on `Ps` either way.
     Legacy,
 }
 
@@ -55,17 +82,10 @@ impl Engine {
     }
 }
 
-/// Gen 3 plays on the PS engine. Off until the Gen 3 cut-over (G3-8),
-/// which switches it on after the Gen 3 gate (G3-7) and the client's Gen 3
-/// narration (UX-2): every Gen 3 move being ported
-/// ([`ps_ports_every_move`]) is necessary, not sufficient.
-pub const GEN3_ON_PS: bool = false;
-
 /// True once `ps_sim` ports every move of `gen`'s dex a team can carry
 /// (`ps_sim::mods::ported`; like its own derivation, Struggle and the
-/// Hidden Power placeholders are not team moves). Until then a PS battle of that generation
-/// could only use the moves already ported (`randbat::draw_ps_team` drops
-/// the rest), so the generation keeps playing on its legacy engine.
+/// Hidden Power placeholders are not team moves). Both generations do: the
+/// tests below hold it, so a PS battle never meets an unported move.
 pub fn ps_ports_every_move(gen: u8) -> bool {
     let dex: &ps_dex::Dex = match gen {
         1 => &ps_dex::GEN1,
@@ -86,5 +106,11 @@ mod tests {
     #[test]
     fn gen1_is_fully_ported() {
         assert!(super::ps_ports_every_move(1));
+    }
+
+    /// Gen 3 plays on the PS engine: every one of its moves is ported.
+    #[test]
+    fn gen3_is_fully_ported() {
+        assert!(super::ps_ports_every_move(3));
     }
 }

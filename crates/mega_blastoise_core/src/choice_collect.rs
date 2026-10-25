@@ -162,7 +162,7 @@ impl SlotOptions {
     /// nothing but this — which is what keeps one input state machine
     /// serving every engine. Distillers live with their engines
     /// ([`crate::runner::ps::slot_options_from_seat`] for the PS engine,
-    /// [`crate::runner::gen3`]'s in its battle loop), because parsing an
+    /// the legacy `runner::gen3`'s in its battle loop), because parsing an
     /// engine's request shape is battle logic, not UI.
     pub fn blank(player_num: u8, player_id: String) -> Self {
         Self {

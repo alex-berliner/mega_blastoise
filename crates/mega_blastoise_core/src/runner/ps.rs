@@ -730,6 +730,47 @@ mod tests {
     /// both transports, and every kind of them must turn up somewhere in
     /// the seeds played. Each event the board narrates must have words
     /// (no empty description) that fit the 48-byte narration box.
+    /// The device's own Gen 3 battles (G3-8): PS random-battle teams with
+    /// their items and abilities ([`crate::randbat::draw_device_teams`]),
+    /// three and six a side, play to an end on the PS engine, and the
+    /// typed and text transports narrate them identically.
+    #[test]
+    fn device_gen3_battles_end_over_both_transports() {
+        use crate::board_event::BoardEventExt;
+        let mut turns = 0u32;
+        let mut fallback = 0u32;
+        for seed in 0..40u64 {
+            let size = if seed % 2 == 0 { 3 } else { 6 };
+            let play_dev = |transport: &mut dyn FnMut(&BattleSetup, &InputBus, &mut Record)| {
+                let teams = crate::randbat::draw_device_teams(&ps_dex::GEN3, seed, size);
+                assert!(teams.iter().all(|t| t.len() == size), "seed {seed}: short team");
+                let setup = BattleSetup::local(3, seed, teams);
+                let bus = InputBus::new();
+                let mut rec = Record::default();
+                transport(&setup, &bus, &mut rec);
+                rec.0
+            };
+            let mut local = LocalTransport::new();
+            let typed = play_dev(&mut |setup, bus, rec| {
+                block_on(run_battle(&mut local, setup, bus, robot(bus, seed ^ 0x5eed), rec))
+            });
+            let b = local.battle().expect("the battle started");
+            assert!(b.ended, "seed {seed}: the battle did not end (turn {})", b.turn);
+            turns += u32::from(b.turn);
+            let mut text = TextTransport::new(SimLink::default());
+            let decoded = play_dev(&mut |setup, bus, rec| {
+                block_on(run_battle(&mut text, setup, bus, robot(bus, seed ^ 0x5eed), rec))
+            });
+            assert_eq!(text.undecoded(), 0, "seed {seed}: undecoded lines");
+            if typed != decoded {
+                let at = typed.iter().zip(&decoded).position(|(a, b)| a != b).unwrap_or(typed.len().min(decoded.len()));
+                panic!("seed {seed}: the streams part at event {at}:\n  typed: {:?}\n  text:  {:?}", typed.get(at), decoded.get(at));
+            }
+            fallback += typed.iter().filter(|e| e.description().contains("activated!)")).count() as u32;
+        }
+        std::println!("40 device gen 3 battles: {turns} turns, {fallback} default `activated` lines");
+    }
+
     #[test]
     fn gen3_items_and_abilities_agree_over_both_transports() {
         use crate::board_event::BoardEventExt;

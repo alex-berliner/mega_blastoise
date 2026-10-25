@@ -49,12 +49,11 @@ pub use choice_collect::{
     PadEvent, ReadySequence, SlotOptions, AI_HOLD_MS, AI_THINK_MS, BATTLE_HELP, COLLECT_TICK_MS,
     HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS, UNREADY_GRACE_MS,
 };
-pub use gen3_battle::Ruleset;
-pub use runner::Engine;
+pub use runner::{Engine, Ruleset};
 pub use runner::LOBBY_DEMO_DELAY_MS;
 pub use hp_bar::HpBarState;
 pub use move_sprites::{move_sprite, MOVE_SPRITE_SIDE};
-pub use randbat::{draw_ps_team, draw_two_ps_teams, TEAM_SEED_SALT};
+pub use randbat::{draw_device_teams, draw_ps_team, draw_two_ps_teams, TEAM_SEED_SALT};
 pub use rng::SimpleRng;
 pub use random_ai::RandomAi;
 pub use cli_parse::{

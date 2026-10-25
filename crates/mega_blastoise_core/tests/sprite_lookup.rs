@@ -39,18 +39,19 @@ fn spot_checks() {
 /// colour sprite tables were built off a hand-kept list of Kanto's 151 — so
 /// every mon past Mew reached the field with no art at all, and the miss was
 /// silent because `front_sprite_in` just returns false and draws nothing.
-/// This is the guard: the table is built from the same vendored dex the engine
-/// compiles against, and this asserts the two still agree.
+/// This is the guard: the table is built from the same dex the engine
+/// compiles against (`ps_dex`), and this asserts the two still agree.
 #[test]
 fn every_gen3_species_name_has_a_color_sprite() {
     use mega_blastoise_core::{mon_back_sprite_color, mon_sprite_color};
     let mut missing = Vec::new();
-    for entry in gen3_battle::data::SPECIES {
-        if mon_sprite_color(entry.name).is_none() {
-            missing.push((entry.name, "front"));
+    for entry in ps_dex::GEN3.species.iter().filter(|s| (1..=386).contains(&s.num)) {
+        let name = entry.name.as_str();
+        if mon_sprite_color(name).is_none() {
+            missing.push((name, "front"));
         }
-        if mon_back_sprite_color(entry.name).is_none() {
-            missing.push((entry.name, "back"));
+        if mon_back_sprite_color(name).is_none() {
+            missing.push((name, "back"));
         }
     }
     assert!(missing.is_empty(), "no colour sprite for: {missing:?}");
@@ -105,15 +106,21 @@ fn formes_use_their_own_art_under_the_base_name() {
     }
 }
 
-/// Every Gen 3 species the drafter can send out needs art, under the name the
-/// engine actually uses.
+/// Every Gen 3 mon the device's draw can send out needs art, under the name
+/// the screen is handed (the packed set's nickname).
 #[test]
 fn every_gen3_species_name_has_color_art() {
     use mega_blastoise_core::sprites_color::mon_sprite_color;
-    let missing: Vec<&str> = gen3_battle::SPECIES
-        .iter()
-        .map(|s| s.name)
-        .filter(|n| mon_sprite_color(n).is_none())
-        .collect();
+    let mut missing: Vec<String> = Vec::new();
+    for seed in 0..400u64 {
+        for team in mega_blastoise_core::randbat::gen3::draw_two_teams(seed.wrapping_mul(0x9e37_79b9), 6) {
+            for set in team.iter() {
+                let name = set.name.as_str();
+                if mon_sprite_color(name).is_none() && !missing.iter().any(|m| m == name) {
+                    missing.push(name.to_string());
+                }
+            }
+        }
+    }
     assert!(missing.is_empty(), "no color art for: {missing:?}");
 }

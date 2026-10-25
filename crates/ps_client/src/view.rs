@@ -1282,7 +1282,13 @@ impl BattleView {
                 for (i, id) in p.moves.iter().enumerate() {
                     let (mv, ty, power) = match *id {
                         SideMoveId::Move(mv) => (mv, None, None),
-                        SideMoveId::HiddenPower(t) => (hp_move.unwrap_or_default(), Some(t), None),
+                        // The text decoder reads `hiddenpowerbug` as the
+                        // dex's `Hidden Power Bug` entry (its key); the typed
+                        // id names the same move, so take that entry too.
+                        SideMoveId::HiddenPower(t) => match hidden_power_entry(dex, t) {
+                            Some(mv) => (mv, None, None),
+                            None => (hp_move.unwrap_or_default(), Some(t), None),
+                        },
                         SideMoveId::WithPower { mv, power } => (mv, None, Some(power)),
                     };
                     let known = m.moves.get(i).copied().filter(|k| same_move(dex, k.mv, mv));
@@ -1375,6 +1381,16 @@ impl BattleView {
         }
         out
     }
+}
+
+/// The dex's typed Hidden Power entry (`Hidden Power Bug`, key
+/// `hiddenpowerbug`) for type `t`, where the gen has one (gen 3; gen 1 has
+/// no Hidden Power).
+fn hidden_power_entry(dex: &Dex, t: TypeNum) -> Option<MoveNum> {
+    let ty = Type::ALL.get(t.0 as usize)?;
+    let mut id = String::from("hiddenpower");
+    id.push_str(&ty.name().to_ascii_lowercase());
+    dex.move_id(&id).map(|m| MoveNum(m.0))
 }
 
 /// The same move slot: equal ids, or two forms of Hidden Power (`|move|`

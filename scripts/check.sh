@@ -91,8 +91,10 @@ if [[ "${1:-}" != "--fast" ]]; then
 
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
-  # The default engine (PS for Gen 1, legacy for Gen 3 until it is ported).
+  # The default engine (PS for both generations).
   scripts/ui-probe.sh --skip-build
+  # The legacy Gen 3 engine, until G3-9 deletes it.
+  scripts/ui-probe.sh --skip-build --engine legacy
 fi
 
 echo "check: OK"

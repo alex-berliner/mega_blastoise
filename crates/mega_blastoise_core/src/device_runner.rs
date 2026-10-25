@@ -38,7 +38,7 @@ use crate::transport::LocalTransport;
 use crate::runner;
 use crate::runner::Engine;
 use crate::{player_id_to_num, LOBBY_DEMO_DELAY_MS};
-use gen3_battle::Ruleset;
+use crate::runner::Ruleset;
 
 // ── The platform's side of the contract ──────────────────────────────────────
 
@@ -671,16 +671,21 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
 
     async fn run_gen3(&self, seed: u64, six: bool) {
         if self.port.engine() == Engine::Ps {
-            // Gen 3 moves to the PS engine at its cut-over (G3-8,
-            // `runner::GEN3_ON_PS`), and only with every move ported (a team
-            // would lose the moves that are not); the legacy engine plays
-            // until then.
-            if runner::GEN3_ON_PS && runner::ps_ports_every_move(3) {
-                self.run_ps(3, seed, six).await;
-                return;
-            }
-            self.port.line_out("Gen 3: the PS engine is not switched on for Gen 3 yet; using the legacy engine.");
+            self.run_ps(3, seed, six).await;
+            return;
         }
+        #[cfg(feature = "legacy_gen3")]
+        self.run_gen3_legacy(seed, six).await;
+        #[cfg(not(feature = "legacy_gen3"))]
+        {
+            self.port.line_out("Gen 3: this build has no legacy engine; using the PS engine.");
+            self.run_ps(3, seed, six).await;
+        }
+    }
+
+    /// A Gen 3 battle on the legacy engine (`gen3_battle`, [`runner::gen3`]).
+    #[cfg(feature = "legacy_gen3")]
+    async fn run_gen3_legacy(&self, seed: u64, six: bool) {
         let Some(mut battle) = runner::gen3::drafted_battle(seed, six) else {
             self.port.line_out("Gen 3: could not draft teams.");
             return;
@@ -705,7 +710,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
     /// pump and the effects sink are the legacy runners' own.
     async fn run_ps(&self, gen: u8, seed: u64, six: bool) {
         let dex: &'static ps_dex::Dex = if gen == 1 { &ps_dex::GEN1 } else { &ps_dex::GEN3 };
-        let teams = crate::randbat::draw_two_ps_teams(dex, seed, if six { 6 } else { 3 });
+        let teams = crate::randbat::draw_device_teams(dex, seed, if six { 6 } else { 3 });
         if teams.iter().any(|t| t.is_empty()) {
             self.port.line_out("PS engine: could not draft teams.");
             return;

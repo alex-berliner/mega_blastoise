@@ -15,14 +15,12 @@
 # collector, the runners, or the web glue:
 #
 #   scripts/ui-probe.sh                  # both lanes, the default engine (no
-#                                        # engine= on the URL): PS for gen 1,
-#                                        # legacy for gen 3 until ps_sim ports it
+#                                        # engine= on the URL): PS for both
 #   scripts/ui-probe.sh --skip-build     # reuse the existing pkg/
 #   scripts/ui-probe.sh --engine legacy  # the legacy Gen 3 engine
 #                                        # (engine=legacy), gen 3 only: Gen 1
 #                                        # has no legacy engine any more
-#   scripts/ui-probe.sh --engine ps      # the PS engine (engine=ps), gen 1
-#                                        # only: ps_sim has no gen 3 port yet
+#   scripts/ui-probe.sh --engine ps      # both lanes, the PS engine (engine=ps)
 #
 # Chromium: the snap at /usr/bin/chromium-browser cannot write outside $HOME;
 # the playwright build can run anywhere. Override with $CHROME.
@@ -48,18 +46,17 @@ done
 # seed, freezes the PS lead on turn 1, and a frozen Gen 1 mon's request
 # is a forced move, so seat 1 has nothing to commit and cancel.) Each lane
 # also names the engine it must find playing (`expect=`): the default is the
-# PS engine for Gen 1 and the legacy one for Gen 3, which ps_sim has not
-# fully ported yet.
+# PS engine for both generations.
 SEED=1
 case "$ENGINE" in
   default) LANES="gen1 gen3"; PARAM="" ;;
   legacy) LANES="gen3"; PARAM="&engine=legacy" ;;
-  ps) LANES="gen1"; PARAM="&engine=ps" ;;
+  ps) LANES="gen1 gen3"; PARAM="&engine=ps" ;;
   *) echo "ui-probe: --engine is default, legacy or ps" >&2; exit 2 ;;
 esac
 expect_for() {
   case "$ENGINE:$1" in
-    *:gen3) echo legacy ;;
+    legacy:gen3) echo legacy ;;
     *) echo ps ;;
   esac
 }

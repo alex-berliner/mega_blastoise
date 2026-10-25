@@ -1,5 +1,7 @@
 extern crate alloc;
 
+pub mod gen3;
+
 use alloc::string::String;
 use alloc::vec::Vec;
 
@@ -121,6 +123,18 @@ pub fn draw_ps_team(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> ps_pr
 /// [`TEAM_SEED_SALT`]. Returns `[p1, p2]`.
 pub fn draw_two_ps_teams(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> [ps_protocol::PackedTeam; 2] {
     [draw_ps_team(dex, seed, count), draw_ps_team(dex, seed.wrapping_add(TEAM_SEED_SALT), count)]
+}
+
+/// The two teams a device battle of `dex`'s generation plays: Gen 1 draws
+/// [`draw_two_ps_teams`] (the randbat roster), Gen 3 draws Showdown's
+/// `gen3randombattle` sets, with their items and abilities ([`gen3`]).
+/// Returns `[p1, p2]`.
+pub fn draw_device_teams(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> [ps_protocol::PackedTeam; 2] {
+    if dex.gen == 3 {
+        gen3::draw_two_teams(seed, count)
+    } else {
+        draw_two_ps_teams(dex, seed, count)
+    }
 }
 
 #[cfg(test)]

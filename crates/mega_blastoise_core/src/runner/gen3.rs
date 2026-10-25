@@ -547,7 +547,7 @@ pub fn slot_options_for(battle: &Battle, side: u8) -> crate::choice_collect::Slo
             types: {
                 let (t1, t2) = m.species.types;
                 let mut v = alloc::vec![t1];
-                if t2 != battle_types::Type::None {
+                if t2 != gen3_battle::Type::None {
                     v.push(t2);
                 }
                 v
