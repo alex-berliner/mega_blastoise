@@ -477,6 +477,17 @@ impl Stream {
                 let side = SideId::parse(arg).ok_or_else(|| bad(format!(">forcelose: side {arg}")))?;
                 b.lose(side.index() as u8);
             }
+            "forcetie" => {
+                // PS `>forcetie`: the battle ends in a tie.
+                let Some(b) = self.battle.as_mut() else { return Ok(String::new()) };
+                b.step(&Command::ForceTie).map_err(|e| bad(format!("{e:?}")))?;
+            }
+            "forcewin" => {
+                // PS `>forcewin pN`: that side wins.
+                let Some(b) = self.battle.as_mut() else { return Ok(String::new()) };
+                let side = SideId::parse(arg).ok_or_else(|| bad(format!(">forcewin: side {arg}")))?;
+                b.step(&Command::ForceWin(side)).map_err(|e| bad(format!("{e:?}")))?;
+            }
             other => return Err(bad(format!("command >{other}"))),
         }
         let b = self.battle.as_mut().unwrap();

@@ -421,6 +421,22 @@ fn text_lines_decode_to_their_templates() {
     assert!(decode_line("|debug|something PS never says", &mut state).is_err());
 }
 
+/// PS's eruption and water spout print their base power as a JS number
+/// (`BP: 132.72727272727272`), which the text system's integer arguments
+/// cannot hold.
+#[test]
+fn a_number_debug_line_round_trips() {
+    let mut state = CodecState::new(load_names());
+    for line in ["|debug|BP: 132.72727272727272", "|debug|BP: 79.0909090909091"] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert!(matches!(msg, Msg::DebugNum { .. }), "{:?}", msg);
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+    // The whole-number form stays a text template.
+    let msg = decode_line("|debug|BP: 150", &mut state).unwrap();
+    assert!(matches!(msg, Msg::Debug(t) if t.id == TextId::BasePower));
+}
+
 /// Gen 1's plain math (`!Cartridge Trunc`): a binding move forced at 0 PP
 /// is left at -1 (PS ps-diff wide seed 1006883 under `--trunc math`).
 #[test]

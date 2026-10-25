@@ -434,6 +434,14 @@ impl Battle {
         let Some(t) = target.mon() else { return MoveResult::Int(0) };
         match damage {
             MoveResult::Int(n) => self.damage(n, Some(t), source, effect),
+            // A fraction (Psywave's): `clampIntRange(targetDamage, 1)`
+            // floors it before anything reads it (`as` floors a
+            // non-negative number).
+            MoveResult::Float(bits) => {
+                let v = f64::from_bits(bits);
+                let n = if v == 0.0 { 0 } else { (v as i32).max(1) };
+                self.damage(n, Some(t), source, effect)
+            }
             // `true` only stands with a target that is `null` or `false`.
             other => panic!("spreadDamage of {other:?} against a target"),
         }
@@ -483,7 +491,7 @@ impl Battle {
                         did_something = MoveResult::combine(did_something, hit_result);
                     }
                 }
-                if let Some(heal) = data_heal(data, def) {
+                if let Some(heal) = data_heal(data, self.mv(mv)) {
                     if !self.mon(t).fainted {
                         if self.mon(t).hp >= self.mon(t).maxhp {
                             let mon = self.ident(t);
@@ -776,8 +784,16 @@ impl Battle {
         let category = self.mv(mv).category;
 
         let mut base_power = MoveResult::Int(i32::from(self.mv(mv).base_power));
-        if let Some(r) = self.move_callback(mv, EventId::BasePowerCallback, source, Some(target)) {
-            base_power = MoveResult::from_relay(r);
+        match self.move_callback(mv, EventId::BasePowerCallback, source, Some(target)) {
+            // A fractional base power (Eruption, Water Spout): truthy unless
+            // 0, and `clampIntRange(basePower, 1)` floors it (`as` floors a
+            // non-negative number).
+            Some(Relay::Float(bits)) => {
+                let v = f64::from_bits(bits);
+                base_power = MoveResult::Int(if v == 0.0 { 0 } else { (v as i32).max(1) });
+            }
+            Some(r) => base_power = MoveResult::from_relay(r),
+            None => {}
         }
         let base_power = match base_power {
             MoveResult::Int(0) => return DamageStep::Done(MoveResult::Undefined),

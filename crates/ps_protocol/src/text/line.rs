@@ -79,6 +79,27 @@ fn render_text_to_str(t: crate::msg::Text, dex: &dyn DexNames, names: &dyn Battl
     out
 }
 
+/// The template `id` with its one `{}` filled by `value`, a JS number.
+fn render_number_text(id: crate::msg::TextId, value: f64) -> String {
+    let tmpl = id.template();
+    let mut out = String::with_capacity(tmpl.len());
+    let mut last = 0usize;
+    while let Some(pos) = tmpl[last..].find("{}") {
+        out.push_str(&tmpl[last..last + pos]);
+        out.push_str(&js_number(value));
+        last = last + pos + 2;
+    }
+    out.push_str(&tmpl[last..]);
+    out
+}
+
+/// A number as JS prints it: the shortest decimal that reads back as the
+/// same number. Rust's `Display` for `f64` prints the same digits, except
+/// for the exponents JS writes as `1e+21` (no PS debug line holds one).
+fn js_number(value: f64) -> String {
+    format!("{value}")
+}
+
 fn render_textarg(a: crate::msg::TextArg, dex: &dyn DexNames, names: &dyn BattleNames)
     -> String
 {
@@ -230,6 +251,7 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
         Msg::Turn(n) => push_arg(buf, &n.to_string()),
         Msg::Win(side) => push_arg(buf, names.player_name(*side)),
         Msg::Debug(t) => push_arg(buf, &render_text_to_str(*t,  dex, names)),
+        Msg::DebugNum { id, bits } => push_arg(buf, &render_number_text(*id, f64::from_bits(u64::from_le_bytes(*bits)))),
         Msg::Notice(t) | Msg::BigError(t) => push_arg(buf, &render_text_to_str(*t, dex, names)),
         Msg::Error { unavailable, text, .. } => {
             let prefix = if *unavailable { "[Unavailable choice] " } else { "[Invalid choice] " };
@@ -611,7 +633,15 @@ fn decode_kind(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle
         "turn" => Ok(Msg::Turn(parse_u16(arg(args, 0)?, "turn")?)),
         "win" => Ok(Msg::Win(parse_win_side(arg(args, 0)?, names))),
         "tie" => Ok(Msg::Tie),
-        "debug" => Ok(Msg::Debug(decode_text(&text_arg(args)?, dex, names)?)),
+        "debug" => {
+            let text = text_arg(args)?;
+            match decode_text(&text, dex, names) {
+                Ok(t) => Ok(Msg::Debug(t)),
+                // A JS number (PS's `BP: ${bp}`) is not a text template's
+                // argument: it has no integer form.
+                Err(e) => decode_number_text(&text).map_or(Err(e), Ok),
+            }
+        }
         "message" => Ok(Msg::Notice(decode_text(&text_arg(args)?, dex, names)?)),
         "bigerror" => Ok(Msg::BigError(decode_text(&text_arg(args)?, dex, names)?)),
         // The line does not name its side: PS sends it in a `sideupdate pN`
@@ -1065,6 +1095,26 @@ fn text_arg(args: &[&str]) -> Result<String, CodecError> {
         return Err(CodecError::BadTrailingArg(0));
     }
     Ok(args.join("|"))
+}
+
+/// The number-carrying debug line: a template with one `{}` whose text is
+/// a JS number (PS's `this.debug(\`BP: ${bp}\`)`).
+fn decode_number_text(s: &str) -> Option<Msg> {
+    for &id in crate::msg::TextId::ALL {
+        let tmpl = id.template();
+        // A template with exactly one `{}`.
+        let Some((prefix, suffix)) = tmpl.split_once("{}") else { continue };
+        if suffix.contains("{}") {
+            continue;
+        }
+        let Some(num) = s.strip_prefix(prefix).and_then(|r| r.strip_suffix(suffix)) else { continue };
+        let Ok(value) = num.parse::<f64>() else { continue };
+        if js_number(value) != num {
+            continue;
+        }
+        return Some(Msg::DebugNum { id, bits: value.to_bits().to_le_bytes() });
+    }
+    None
 }
 
 /// Finds the [`TextId`] template `s` was rendered from and reads its

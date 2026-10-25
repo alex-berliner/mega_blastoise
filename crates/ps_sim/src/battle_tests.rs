@@ -724,7 +724,8 @@ fn unported_moves_panic() {
     b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
 }
 
-/// The same in gen 3: Facade has an `onBasePower` handler.
+/// The same in gen 3, on gen 3's registry minus Facade (which has an
+/// `onBasePower` handler): every gen 3 effect has a port now.
 #[test]
 #[should_panic(expected = "unported: facade")]
 fn unported_moves_panic_gen3() {
@@ -736,6 +737,9 @@ fn unported_moves_panic_gen3() {
     ];
     let mut b = setup(&cmds);
     b.move_hook = None;
+    let facade = EffectId::Move(ps_dex::gen3::moves::FACADE);
+    let entries: Vec<_> = b.registry.entries.iter().copied().filter(|(id, _)| *id != facade).collect();
+    b.registry = Box::leak(Box::new(crate::effect::Registry { entries: entries.leak() }));
     b.step(&Command::Choose { side: SideId::P1, choice: ps_protocol::Choice::Move(1) }).unwrap();
     b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
 }

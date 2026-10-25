@@ -26,7 +26,7 @@
 pub mod gen1;
 pub mod gen3;
 
-use crate::effect::{parse_handler_key, EffectId, Registry};
+use crate::effect::{parse_handler_key, EffectId, EventId, Prefix, Registry};
 use ps_dex::{ConditionId, Dex, MoveId};
 
 /// The ported effects for `gen`: species, moves, items, abilities, conditions
@@ -79,6 +79,17 @@ pub fn dex_handlers(dex: &Dex, id: EffectId) -> Option<&'static [ps_dex::Handler
     }
 }
 
+/// The handler a move's secondary has for `event`, when this gen ports
+/// it. PS's secondaries have no id of their own (their
+/// handlers sit in the move's data), so they are named here: gen 3's only
+/// one is Tri Attack's secondary `onHit`.
+pub fn secondary_handler(dex: &Dex, mv: MoveId, event: EventId) -> Option<&'static crate::effect::Handler> {
+    match dex.gen {
+        3 => crate::mods::gen3::moves::secondary_handler(mv, event),
+        _ => None,
+    }
+}
+
 /// True when `registry` holds every handler PS's data gives `id` in `dex`
 /// (a move's secondaries and `self` effects included): an effect without
 /// handlers is ported as it is. The pipelines panic `unported: <id>` when
@@ -91,9 +102,9 @@ pub fn is_ported(dex: &Dex, registry: &Registry, id: EffectId) -> bool {
         EffectId::Move(m) => {
             let def = dex.move_def(m);
             // A move's `self` effect has no id of its own: its handlers live
-            // in the move's [`EffectDef::self_def`]. A secondary (and a
-            // secondary's `self`) has nowhere to go, so a move with
-            // handlers there is not ported.
+            // in the move's [`EffectDef::self_def`]; a secondary's are the
+            // gen's `secondary_handler`. A secondary's own `self` has
+            // nowhere to go, so a move with handlers there is not ported.
             let self_free = |s: Option<&ps_dex::SelfEffect>| s.is_none_or(|s| s.handlers.is_empty());
             let self_in = def.self_effect().is_none_or(|s| {
                 s.handlers
@@ -102,10 +113,18 @@ pub fn is_ported(dex: &Dex, registry: &Registry, id: EffectId) -> bool {
             });
             all_in(def.handlers)
                 && self_in
-                && def.secondaries().iter().all(|s| s.handlers.is_empty() && self_free(s.self_effect))
+                && def.secondaries().iter().all(|s| secondary_ported(dex, m, s) && self_free(s.self_effect))
         }
         _ => dex_handlers(dex, id).is_none_or(all_in),
     }
+}
+
+/// A secondary's handlers are ported when the gen's [`secondary_handler`]
+/// has one for each of them (gen 3: Tri Attack's secondary `onHit`).
+fn secondary_ported(dex: &Dex, m: MoveId, s: &ps_dex::Secondary) -> bool {
+    s.handlers.iter().all(|h| {
+        parse_handler_key(h.name()).is_some_and(|(p, event)| p == Prefix::None && secondary_handler(dex, m, event).is_some())
+    })
 }
 
 /// Every condition a move's data can put on the field: its status,

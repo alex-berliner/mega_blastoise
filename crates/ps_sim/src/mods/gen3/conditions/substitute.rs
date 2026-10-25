@@ -4,7 +4,9 @@
 //! `undefined`). A broken doll leaves a handler-less `substitutebroken`
 //! volatile (gen 4 clears it on switch-in; gen 3 keeps it).
 //!
-//! Effect state: `hp` in `data[HP]`.
+//! Effect state: `hp`, a JS number (Psywave's fractional damage leaves a
+//! fraction in it), as the bits of an `f64` across all of `data`
+//! ([`hp`], [`set_hp`]).
 //!
 //! PS: data/moves.ts substitute.condition (onStart, onEnd);
 //! data/mods/gen4/moves.ts substitute.condition.onTryPrimaryHit
@@ -18,8 +20,22 @@ use crate::relay::Relay;
 use crate::state::{Battle, Holder};
 use ps_dex::gen3::{conditions, moves};
 
-/// `this.effectState.hp`.
-pub const HP: usize = 0;
+/// `this.effectState.hp` of the holder's substitute state.
+pub fn hp(data: &[i16; 4]) -> f64 {
+    let mut bits = 0u64;
+    for (i, w) in data.iter().enumerate() {
+        bits |= u64::from(*w as u16) << (16 * i);
+    }
+    f64::from_bits(bits)
+}
+
+/// Writes `this.effectState.hp`.
+pub fn set_hp(data: &mut [i16; 4], hp: f64) {
+    let bits = hp.to_bits();
+    for (i, w) in data.iter_mut().enumerate() {
+        *w = (bits >> (16 * i)) as u16 as i16;
+    }
+}
 
 const SUBSTITUTE: EffectId = EffectId::Condition(conditions::SUBSTITUTE);
 
@@ -36,7 +52,7 @@ fn on_start(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let mon = b.ident(target);
     b.add(Msg::StartEffect { mon, effect: substitute_arg(), a: None, b: None, kw: Kw::NONE });
     let hp = b.mon(target).maxhp / 4;
-    b.effect_state().data[HP] = hp as i16;
+    set_hp(&mut b.effect_state().data, f64::from(hp));
     let trapped = EffectId::Condition(conditions::PARTIALLYTRAPPED);
     if let Some(st) = b.mon(target).volatiles.get(trapped) {
         // `-end|MON|<the trapping move>|[partiallytrapped]|[silent]`.
@@ -69,20 +85,26 @@ fn on_try_primary_hit(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     }
     let damage = Gen3Scripts::get_damage(b, source, target, mv, MoveData::Move, false);
     // `if (!damage && damage !== 0)`.
-    let MoveResult::Int(mut damage) = damage else {
+    let mut damage = match damage {
+        MoveResult::Int(n) => f64::from(n),
+        MoveResult::Float(bits) => f64::from_bits(bits),
+        _ => f64::NAN,
+    };
+    if damage.is_nan() {
         let mon = b.ident(source);
         b.add(Msg::Fail { mon, what: None, what2: None, kw: Kw::NONE });
         b.attr_last_move_still();
         return Some(Relay::Null);
-    };
+    }
     let st = b.mon_mut(target).volatiles.get_mut(SUBSTITUTE).expect("the substitute");
-    let hp = i32::from(st.data[HP]);
+    let hp = hp(&st.data);
     if damage > hp {
         damage = hp;
     }
-    st.data[HP] = (hp - damage) as i16;
+    set_hp(&mut st.data, hp - damage);
+    // `source.lastDamage = damage`: nothing in gen 3 reads a fraction of it.
     b.mon_mut(source).last_damage = damage as u16;
-    if hp - damage <= 0 {
+    if hp - damage <= 0.0 {
         b.remove_volatile(target, conditions::SUBSTITUTE);
         // `target.addVolatile('substitutebroken')` and its `move`: nothing
         // in gen 3 reads them.
@@ -97,16 +119,18 @@ fn on_try_primary_hit(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     if b.mv(mv).ohko {
         b.add(Msg::Ohko);
     }
-    if damage != 0 {
-        b.apply_recoil_damage(damage, mv, source);
+    if damage != 0.0 {
+        b.apply_recoil_damage_num(damage, mv, source);
     }
     if let Some(drain) = def.drain() {
         // `Math.ceil(damage * drain[0] / drain[1])`.
-        let amount = (damage * i32::from(drain.num)).div_euclid(i32::from(drain.den))
-            + i32::from((damage * i32::from(drain.num)).rem_euclid(i32::from(drain.den)) != 0);
+        let x = damage * f64::from(drain.num) / f64::from(drain.den);
+        let amount = x as i32 + i32::from(f64::from(x as i32) < x);
         b.heal(amount, Some(source), Some(target), EffectId::Pseudo(Pseudo::Drain));
     }
-    b.run_event(EventId::AfterSubDamage, Holder::Mon(target), Some(source), EffectId::Move(id), Some(Relay::Int(damage)));
+    let whole = f64::from(damage as i32) == damage;
+    let relay = if whole { Relay::Int(damage as i32) } else { Relay::float(damage) };
+    b.run_event(EventId::AfterSubDamage, Holder::Mon(target), Some(source), EffectId::Move(id), Some(relay));
     Some(Relay::HIT_SUBSTITUTE)
 }
 

@@ -9,6 +9,7 @@ pub mod bellydrum;
 pub mod bide;
 pub mod block;
 pub mod bounce;
+pub mod brickbreak;
 pub mod camouflage;
 pub mod conversion2;
 pub mod conversion;
@@ -22,23 +23,33 @@ pub mod disable;
 pub mod dive;
 pub mod doomdesire;
 pub mod dreameater;
+pub mod endeavor;
 pub mod endure;
+pub mod eruption;
+pub mod facade;
 pub mod fakeout;
+pub mod falseswipe;
+pub mod flail;
 pub mod fly;
 pub mod focuspunch;
 pub mod followme;
 pub mod foresight;
+pub mod frustration;
 pub mod furycutter;
 pub mod futuresight;
 pub mod haze;
 pub mod healbell;
 pub mod helpinghand;
 pub mod hiddenpower;
+pub mod highjumpkick;
 pub mod iceball;
 pub mod imprison;
+pub mod jumpkick;
 pub mod knockoff;
 pub mod leechseed;
 pub mod lockon;
+pub mod lowkick;
+pub mod magnitude;
 pub mod meanlook;
 pub mod metronome;
 pub mod mimic;
@@ -50,22 +61,30 @@ pub mod morningsun;
 pub mod naturepower;
 pub mod odorsleuth;
 pub mod painsplit;
+pub mod payday;
 pub mod perishsong;
+pub mod present;
 pub mod protect;
 pub mod psychup;
+pub mod psywave;
 pub mod pursuit;
 pub mod rapidspin;
 pub mod razorwind;
 pub mod recycle;
 pub mod refresh;
 pub mod rest;
+pub mod return_;
+pub mod revenge;
+pub mod reversal;
 pub mod roleplay;
 pub mod rollout;
+pub mod secretpower;
 pub mod sketch;
 pub mod skillswap;
 pub mod skullbash;
 pub mod skyattack;
 pub mod sleeptalk;
+pub mod smellingsalts;
 pub mod snore;
 pub mod solarbeam;
 pub mod spiderweb;
@@ -75,13 +94,19 @@ pub mod splash;
 pub mod stockpile;
 pub mod struggle;
 pub mod substitute;
+pub mod superfang;
 pub mod swallow;
 pub mod synthesis;
 pub mod teleport;
 pub mod thief;
+pub mod thunder;
 pub mod transform;
+pub mod triattack;
 pub mod trick;
+pub mod triplekick;
 pub mod uproar;
+pub mod waterspout;
+pub mod weatherball;
 pub mod yawn;
 
 #[cfg(test)]
@@ -89,7 +114,7 @@ mod tests;
 
 use ps_protocol::{MoveNum, Msg};
 
-use crate::effect::{EffectId, EventArgs, EventId};
+use crate::effect::{EffectId, EventArgs, EventId, Handler};
 use crate::relay::Relay;
 use crate::state::{Battle, MonRef};
 use ps_dex::gen3::conditions;
@@ -307,3 +332,16 @@ fn weather_heal(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
 mod item_counter_tests;
 #[cfg(test)]
 mod tests_protect;
+
+/// The handler of a move's secondary effect for `event`: a secondary has
+/// no id to register under, so its handlers are named here. Gen 3's only
+/// one is Tri Attack's secondary `onHit`.
+pub fn secondary_handler(mv: ps_dex::MoveId, event: EventId) -> Option<&'static Handler> {
+    match mv {
+        ps_dex::gen3::moves::TRIATTACK if event == EventId::Hit => Some(&triattack::SECONDARY_ON_HIT),
+        _ => None,
+    }
+}
+
+#[cfg(test)]
+mod tests_power;

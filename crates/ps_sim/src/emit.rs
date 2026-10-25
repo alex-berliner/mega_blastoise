@@ -126,6 +126,16 @@ impl Battle {
         }
     }
 
+    /// PS `this.debug(\`BP: ${bp}\`)`: a `|debug|` line whose one argument is
+    /// a JS number (the base power of a move that scales with the user's
+    /// HP).
+    // PS: sim/battle.ts debug
+    pub fn debug_num(&mut self, id: TextId, value: f64) {
+        if self.debug_mode {
+            self.add(Msg::DebugNum { id, bits: value.to_bits().to_le_bytes() });
+        }
+    }
+
     /// PS `sendUpdates()` after a command, with `BattleStream`'s ordering:
     /// the `sideupdate`s made while the command ran, then the `update`
     /// block, then (after a new request) both sides' requests.

@@ -148,6 +148,13 @@ pub enum Msg {
     Tie,
     /// `|debug|TEXT`
     Debug(Text),
+    /// `|debug|TEXT` where TEXT's one argument is a JS number: PS's
+    /// `this.debug(\`BP: ${bp}\`)` prints the base power the way JS prints
+    /// a number (the shortest decimal that reads back as the same number),
+    /// which the text system's integer arguments cannot hold. The number
+    /// travels as its IEEE-754 bits; the text is `id`'s template with its
+    /// one `{}` filled by the number.
+    DebugNum { id: TextId, bits: [u8; 8] },
     /// `|message|TEXT` (no dash): PS's `add('message', ...)`, which the
     /// turn limit uses.
     Notice(Text),
@@ -325,6 +332,7 @@ impl Msg {
             Msg::Win(_) => "win",
             Msg::Tie => "tie",
             Msg::Debug(_) => "debug",
+            Msg::DebugNum { .. } => "debug",
             Msg::Notice(_) => "message",
             Msg::BigError(_) => "bigerror",
             Msg::Error { .. } => "error",
@@ -1336,6 +1344,10 @@ texts! {
     BeforeTurnCallback => "before turn callback: {}" (MoveId),
     // PS: data/mods/gen1/moves.ts bide.condition.onBeforeMove
     BideNoDamage => "Bide failed because no damage was stored" (),
+    // PS: data/moves.ts revenge.basePowerCallback (`target`)
+    BpDoubledForGettingHitBy => "BP doubled for getting hit by {}" (Mon),
+    // PS: data/moves.ts smellingsalts.basePowerCallback
+    BpDoubledOnParalyzedTarget => "BP doubled on paralyzed target" (),
     // PS: data/mods/gen4/abilities.ts blaze onBasePower
     BlazeBoost => "Blaze boost" (),
     // PS: data/moves.ts charge condition onBasePower

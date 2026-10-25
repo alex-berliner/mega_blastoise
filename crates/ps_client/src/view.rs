@@ -839,6 +839,7 @@ impl BattleView {
             | Msg::Raw(_)
             | Msg::Upkeep
             | Msg::Debug(_)
+            | Msg::DebugNum { .. }
             | Msg::Error { .. }
             | Msg::Activate { mon: None, .. }
             | Msg::Block { .. }

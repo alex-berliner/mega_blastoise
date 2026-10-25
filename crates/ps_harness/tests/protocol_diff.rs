@@ -165,9 +165,9 @@ fn ps_sim_cli_init_block() {
         eprintln!("(skipping: ps_sim_cli not built; run `cargo build -p ps_harness --bin ps_sim_cli`)");
         return;
     };
-    // Two battles in one process: the first reaches gen 3's Rest (a move
-    // with handlers, unported), the second is left waiting for choices.
-    // Every gen 1 move has a port, so the unported battle is a gen 3 one.
+    // Two battles in one process: the first ends early on `>forcetie`
+    // (every gen 1 and gen 3 effect has a port now, so nothing stops a
+    // battle as unported), the second is left waiting for choices.
     let team = |mv: &str| format!("Pikachu|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||50|");
     let team3 = "Snorlax|||illuminate|facade||85,85,85,85,85,85|M||||";
     let start = ">start {\"formatid\":\"gen1customgame\",\"seed\":[0,0,0,0]}\n";
@@ -177,7 +177,7 @@ fn ps_sim_cli_init_block() {
         start3.to_string(),
         player("p1", "a", team3),
         player("p2", "b", team3),
-        ">p1 move 1\n>p2 move 1\n".to_string(),
+        ">forcetie\n".to_string(),
         start.to_string(),
         player("p1", "c", &team("tackle")),
         player("p2", "d", &team("tackle")),
@@ -206,7 +206,7 @@ fn ps_sim_cli_init_block() {
         "|teamsize|p1|1",
         "|start\n|split|p1\n|switch|p1a: Snorlax|Snorlax, M|",
         "sideupdate\np1\n|request|{\"active\":",
-        "\nunported\nfacade\n",
+        "|tie\nend\n",
         "|player|p2|d||",
         "|gen|1",
         "|switch|p1a: Pikachu|Pikachu, L50|",
@@ -214,7 +214,7 @@ fn ps_sim_cli_init_block() {
     for line in &needs {
         assert!(s.contains(line), "ps_sim_cli output missing `{line}`:\n{s}");
     }
-    let second = s.split("\nunported\nfacade\n").nth(1).unwrap();
+    let second = s.split("|tie\nend\n").nth(1).unwrap();
     assert!(second.contains("|start\n"), "the second battle did not start:\n{second}");
 }
 

@@ -156,6 +156,10 @@ pub struct ActiveMove {
     /// `move.totalDamage`: the damage the move in flight has dealt (gen
     /// 3's `tryMoveHit` writes it, Shell Bell reads it; 0 is PS's unset).
     pub total_damage: i32,
+    /// `move.heal`: the dex's, or Present's from its `ModifyMove`.
+    pub heal: Option<ps_dex::Fraction>,
+    /// `move.magnitude`: Magnitude's roll from its `ModifyMove` (0 before).
+    pub magnitude: u8,
 }
 
 impl ActiveMove {
@@ -190,6 +194,8 @@ impl ActiveMove {
         has_bounced: false,
         added_secondary: None,
         total_damage: 0,
+        heal: None,
+        magnitude: 0,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -214,6 +220,7 @@ impl ActiveMove {
             ignore_ability: def.bools.has("ignoreAbility"),
             damage: def.damage(),
             multihit: def.multihit(),
+            heal: def.heal(),
             ..ActiveMove::EMPTY
         }
     }
@@ -276,6 +283,11 @@ pub enum MoveResult {
     False,
     True,
     Int(i32),
+    /// A number with a fraction: Psywave's `damageCallback`
+    /// (`random(50, 151) * level / 100`). The bits of the `f64`, so
+    /// `MoveResult` stays `Eq`. `spreadDamage` floors it; Substitute's HP
+    /// keeps it.
+    Float(u64),
 }
 
 impl MoveResult {
@@ -283,6 +295,7 @@ impl MoveResult {
     pub fn truthy(self) -> bool {
         match self {
             MoveResult::Int(n) => n != 0,
+            MoveResult::Float(bits) => Relay::Float(bits).truthy(),
             MoveResult::True => true,
             _ => false,
         }
@@ -290,13 +303,14 @@ impl MoveResult {
 
     /// `x || x === 0`: a number.
     pub fn is_number(self) -> bool {
-        matches!(self, MoveResult::Int(_))
+        matches!(self, MoveResult::Int(_) | MoveResult::Float(_))
     }
 
     /// The number, or 0 for anything else (`x || 0`).
     pub fn or_zero(self) -> i32 {
         match self {
             MoveResult::Int(n) => n,
+            MoveResult::Float(_) => panic!("a fractional damage past spreadDamage"),
             _ => 0,
         }
     }
@@ -305,6 +319,7 @@ impl MoveResult {
     pub fn from_relay(r: Relay) -> MoveResult {
         match r {
             Relay::Int(n) => MoveResult::Int(n),
+            Relay::Float(bits) => MoveResult::Float(bits),
             Relay::Bool(true) => MoveResult::True,
             Relay::Bool(false) => MoveResult::False,
             Relay::Null => MoveResult::Null,
@@ -339,7 +354,7 @@ impl MoveResult {
                 MoveResult::NotFail => 1,
                 MoveResult::Null => 2,
                 MoveResult::False | MoveResult::True => 3,
-                MoveResult::Int(_) => 4,
+                MoveResult::Int(_) | MoveResult::Float(_) => 4,
             }
         }
         if rank(left) > rank(right) {
@@ -362,6 +377,7 @@ impl MoveResult {
             MoveResult::False => Some(Relay::FAIL),
             MoveResult::True => Some(Relay::TRUE),
             MoveResult::Int(n) => Some(Relay::Int(n)),
+            MoveResult::Float(bits) => Some(Relay::Float(bits)),
         }
     }
 }
@@ -891,9 +907,18 @@ impl Battle {
     /// `mindBlownRecoil` or `chloroblastRecoil`.
     // PS: data/mods/gen4/scripts.ts applyRecoilDamage
     pub fn apply_recoil_damage(&mut self, damage_dealt: i32, mv: MoveRef, pokemon: MonRef) -> Option<i32> {
+        self.apply_recoil_damage_num(f64::from(damage_dealt), mv, pokemon)
+    }
+
+    /// [`Battle::apply_recoil_damage`] of a JS number: a hit on a
+    /// Substitute whose HP holds Psywave's fraction deals that fraction.
+    // PS: data/mods/gen4/scripts.ts applyRecoilDamage
+    pub fn apply_recoil_damage_num(&mut self, damage_dealt: f64, mv: MoveRef, pokemon: MonRef) -> Option<i32> {
         let id = self.mv(mv).id;
         let recoil = if id.is_none() { None } else { self.dex.move_def(id).recoil() }?;
-        let recoil_damage = (damage_dealt * i32::from(recoil.num) / i32::from(recoil.den)).max(1);
+        // `clampIntRange(Math.floor(damageDealt * recoil[0] / recoil[1]), 1)`
+        // (`as` floors a non-negative number).
+        let recoil_damage = ((damage_dealt * f64::from(recoil.num) / f64::from(recoil.den)) as i32).max(1);
         self.damage(recoil_damage, Some(pokemon), Some(pokemon), EffectId::Pseudo(Pseudo::Recoil));
         Some(recoil_damage)
     }
@@ -1097,8 +1122,7 @@ impl Battle {
 
     /// Runs a `moveData`'s own handler: the move's through `singleEvent`; a
     /// `self` effect's through the move's `self_def` in the registry; a
-    /// secondary has none ported (its handlers are not in any registry), so
-    /// the relay comes back.
+    /// secondary's through the gen's [`crate::mods::secondary_handler`].
     #[allow(clippy::too_many_arguments)]
     pub(crate) fn move_data_event(
         &mut self,
@@ -1115,7 +1139,18 @@ impl Battle {
                 let own = self.mv(mv).handler_effect();
                 return self.single_event(event, own, StateRef::Scratch, 0, target, source, effect, relay);
             }
-            MoveData::Secondary(s) => s.handlers,
+            MoveData::Secondary(s) => {
+                // A secondary has no id of its own: its handlers come from
+                // the gen's `secondary_handler` (gen 3: Tri Attack's onHit).
+                let effect = self.mv(mv).effect();
+                let own = self.mv(mv).handler_effect();
+                match crate::mods::secondary_handler(self.dex, self.mv(mv).id, event) {
+                    Some(h) => {
+                        return self.single_event_with(event, own, StateRef::Scratch, 0, target, source, effect, relay, Some(h));
+                    }
+                    None => s.handlers,
+                }
+            }
             MoveData::SelfEffect(s) => {
                 let effect = self.mv(mv).effect();
                 let own = self.mv(mv).handler_effect();
@@ -1274,9 +1309,10 @@ pub fn data_secondaries(data: MoveData, def: &'static ps_dex::MoveDef) -> &'stat
 
 /// `moveData.heal`, `forceSwitch`, `selfdestruct`, `selfSwitch`,
 /// `slotCondition`, `weather`: only a move has them.
-pub fn data_heal(data: MoveData, def: &'static ps_dex::MoveDef) -> Option<ps_dex::Fraction> {
+pub fn data_heal(data: MoveData, am: &ActiveMove) -> Option<ps_dex::Fraction> {
     match data {
-        MoveData::Move => def.heal(),
+        // `move.heal`: the dex's, unless a `ModifyMove` set it (Present).
+        MoveData::Move => am.heal,
         _ => None,
     }
 }

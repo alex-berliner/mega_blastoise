@@ -33,9 +33,9 @@ pub const LOBBY_DEMO_DELAY_MS: u64 = 15_000;
 /// Which battle engine plays a battle.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum Engine {
-    /// `ps_sim` and `ps_client` through [`ps::run_battle`], for every
-    /// generation [`ps_ports_every_move`] holds for; Gen 3 plays on its
-    /// legacy engine until then.
+    /// `ps_sim` and `ps_client` through [`ps::run_battle`]: Gen 1 always,
+    /// Gen 3 once [`GEN3_ON_PS`] is switched on (until then Gen 3 plays on
+    /// its legacy engine).
     #[default]
     Ps,
     /// `gen1_battle` / `gen3_battle` through their own runners. Gen 1
@@ -56,6 +56,12 @@ impl Engine {
         }
     }
 }
+
+/// Gen 3 plays on the PS engine. Off until the Gen 3 cut-over (G3-8),
+/// which switches it on after the Gen 3 gate (G3-7) and the client's Gen 3
+/// narration (UX-2): every Gen 3 move being ported
+/// ([`ps_ports_every_move`]) is necessary, not sufficient.
+pub const GEN3_ON_PS: bool = false;
 
 /// True once `ps_sim` ports every move of `gen`'s dex a team can carry
 /// (`ps_sim::mods::ported`; like its own derivation, Struggle and the

@@ -728,13 +728,15 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
 
     async fn run_gen3(&self, seed: u64, six: bool) {
         if self.port.engine() == Engine::Ps {
-            // Until `ps_sim` ports every Gen 3 move, a Gen 3 team would lose
-            // the moves it has not; the legacy engine plays instead.
-            if runner::ps_ports_every_move(3) {
+            // Gen 3 moves to the PS engine at its cut-over (G3-8,
+            // `runner::GEN3_ON_PS`), and only with every move ported (a team
+            // would lose the moves that are not); the legacy engine plays
+            // until then.
+            if runner::GEN3_ON_PS && runner::ps_ports_every_move(3) {
                 self.run_ps(3, seed, six).await;
                 return;
             }
-            self.port.line_out("Gen 3: the PS engine has not ported every move yet; using the legacy engine.");
+            self.port.line_out("Gen 3: the PS engine is not switched on for Gen 3 yet; using the legacy engine.");
         }
         let Some(mut battle) = runner::gen3::drafted_battle(seed, six) else {
             self.port.line_out("Gen 3: could not draft teams.");

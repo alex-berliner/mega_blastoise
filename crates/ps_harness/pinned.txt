@@ -201,3 +201,13 @@
 3 wide 15  # G3-M2 a move's own condition has its bare name as fullname: Ingrain's heal is `[from] Ingrain`, not `[from] move: Ingrain`
 3 wide 47  # G3-M2 the same fullname slip on Spikes' entry damage (`[from] Spikes`)
 3 wide 22  # G3-M2 Rapid Spin's `self` moveHit runs TryHit on the `self` object, which has only onHit (the slip panics as unported, so check's --allow-unported shows it as an unported count)
+
+
+# G3-M1: the power and damage callbacks. Each entry fails with one slip
+# of the unverified draft this batch started from put back (a mutant
+# build per slip; the real build passes all four); like the other wide
+# entries they draw new teams whenever `ported(3)` grows.
+3 wide 114  # G3-M1 Jump Kick's crash on a miss: `target.runImmunity('Fighting')` true crashes (the draft had it inverted)
+3 wide 190  # G3-M1 Low Kick prints `BP: N`
+3 wide 9  # G3-M1 Revenge prints `BP doubled for getting hit by p1a: NAME`
+3 wide 253  # G3-M1 Present's heal case is the move in flight's `move.heal` (`-fail|MON|heal` on a full target)
