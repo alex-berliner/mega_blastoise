@@ -80,6 +80,12 @@ pub enum OledCmd {
     EventFlash { player: u8, text: [u8; 48], len: u8 },
     /// "<mon> — waiting… / tap to unready" after this player locked a move.
     ShowWaiting { player: u8 },
+    /// The same locked-in screen for a seat whose choice was forced and
+    /// committed with the prompt (Recharge, a lock such as Thrash, a last
+    /// mon that can only Fight): nothing to take back, so no "tap to
+    /// cancel", and the forced move is named when the seat's menu is that
+    /// one move.
+    ShowForced { player: u8 },
     /// Opponent still choosing.
     ShowWaitingForOpponent { player: u8 },
     /// Forced-switch party picker (uses the PartyUpdate snapshot).
@@ -138,6 +144,7 @@ impl OledCmd {
             | OledCmd::LobbyState { player, .. }
             | OledCmd::EventFlash { player, .. }
             | OledCmd::ShowWaiting { player }
+            | OledCmd::ShowForced { player }
             | OledCmd::ShowWaitingForOpponent { player }
             | OledCmd::ShowSwitchScreen { player }
             | OledCmd::ShowInvalidSelection { player, .. }
@@ -372,7 +379,10 @@ pub enum Screen<'a> {
     /// End-of-battle draw. Names of BOTH last mons (each seat's own and the
     /// opponent's), so the renderer can paint both sprites under one title.
     Draw { own_name: &'a str, foe_name: &'a str },
-    Waiting { mon: &'a str, bob: bool, spd: SpeedCmp },
+    /// Locked in. `forced` is `Some` when the choice was forced (no take
+    /// back), holding the forced move's name ("" when the menu was not one
+    /// named move).
+    Waiting { mon: &'a str, bob: bool, spd: SpeedCmp, forced: Option<&'a str> },
     WaitingForOpponent { mon: &'a str, bob: bool },
     Switch(&'a [PartySlotData]),
     Invalid(InvalidReason),
@@ -469,8 +479,10 @@ where
         // shows a "DRAW!" line (the device-side recap), so seat-2 still
         // reads a real recap from the recoloured draw function.
         Screen::Draw { .. } => render_win_screen(display, "DRAW!"),
-        Screen::Waiting { mon, bob, spd } => {
-            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, "tap to cancel", *spd)
+        Screen::Waiting { mon, bob, spd, forced } => {
+            // A forced choice cannot be cancelled: its line names the move.
+            let line = forced.unwrap_or("tap to cancel");
+            render_waiting_screen(display, mon, if *bob { -2 } else { 0 }, line, *spd)
         }
         Screen::WaitingForOpponent { mon, bob } => {
             render_waiting_for_opponent(display, mon, if *bob { -2 } else { 0 })
@@ -524,7 +536,8 @@ enum View {
     EventFlash,
     Win,
     Draw,
-    Waiting,
+    /// Locked in; `forced` = the choice was forced ([`OledCmd::ShowForced`]).
+    Waiting { forced: bool },
     WaitingForOpponent,
     Switch,
     Invalid(InvalidReason),
@@ -673,7 +686,7 @@ impl OledController {
                     p.view,
                     View::Battle
                         | View::ActionSelect { .. }
-                        | View::Waiting
+                        | View::Waiting { .. }
                         | View::WaitingForOpponent
                 );
             }
@@ -830,7 +843,11 @@ impl OledController {
                 if both { OledRedraw::Both } else { OledRedraw::for_player(player) }
             }
             OledCmd::ShowWaiting { .. } => {
-                self.player_mut(player).view = View::Waiting;
+                self.player_mut(player).view = View::Waiting { forced: false };
+                OledRedraw::for_player(player)
+            }
+            OledCmd::ShowForced { .. } => {
+                self.player_mut(player).view = View::Waiting { forced: true };
                 OledRedraw::for_player(player)
             }
             OledCmd::ShowWaitingForOpponent { .. } => {
@@ -987,7 +1004,18 @@ impl OledController {
                     foe_name: foe.name_str(),
                 }
             }
-            View::Waiting => Screen::Waiting { mon: p.battle_mon(), bob: p.bob_up, spd },
+            View::Waiting { forced } => Screen::Waiting {
+                mon: p.battle_mon(),
+                bob: p.bob_up,
+                spd,
+                // The prompt's MovesUpdate left the forced move as the
+                // seat's only slot (the runner names Recharge, a lock,
+                // Struggle and Gen 1's Fight that way).
+                forced: forced.then(|| match p.moves.as_slice() {
+                    [only] => only.name.as_str(),
+                    _ => "",
+                }),
+            },
             View::WaitingForOpponent => {
                 Screen::WaitingForOpponent { mon: p.battle_mon(), bob: p.bob_up }
             }
@@ -1042,5 +1070,58 @@ impl OledController {
                 elapsed_ms: p.move_flash_ms,
             },
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use alloc::string::{String, ToString};
+
+    fn slot(name: &str) -> MoveSlot {
+        MoveSlot {
+            name: name.to_string(),
+            type_name: "Normal".to_string(),
+            category: "Physical".to_string(),
+            power: Some(90),
+            accuracy: Some(100),
+            pp: 20,
+            max_pp: 32,
+        }
+    }
+
+    fn forced(ctl: &OledController, player: u8) -> Option<String> {
+        match ctl.screen(player) {
+            Screen::Waiting { forced, .. } => forced.map(|s| s.to_string()),
+            other => panic!("not locked in: {}", other.name()),
+        }
+    }
+
+    /// A forced seat is locked in (`LOCKED_IN`, what the probe and the
+    /// device's press routing key on), naming the forced move when the
+    /// prompt left it as the seat's only slot; a chosen move is plain
+    /// locked in.
+    #[test]
+    fn the_forced_screen_names_the_one_move() {
+        let mut ctl = OledController::new();
+        ctl.apply(OledCmd::MovesUpdate { player: 1, moves: alloc::vec![slot("Thrash")] });
+        ctl.apply(OledCmd::RestoreScreen { player: 1 });
+        assert_eq!(ctl.screen(1).name(), "MOVES");
+        ctl.apply(OledCmd::ShowForced { player: 1 });
+        assert_eq!(ctl.screen(1).name(), "LOCKED_IN");
+        assert!(!ctl.screen(1).is_choosing());
+        assert_eq!(forced(&ctl, 1).as_deref(), Some("Thrash"));
+
+        // A forced choice the menu cannot name (four slots up): no name.
+        ctl.apply(OledCmd::MovesUpdate {
+            player: 2,
+            moves: alloc::vec![slot("Tackle"), slot("Growl"), slot("Ember"), slot("Leer")],
+        });
+        ctl.apply(OledCmd::ShowForced { player: 2 });
+        assert_eq!(forced(&ctl, 2).as_deref(), Some(""));
+
+        ctl.apply(OledCmd::ShowWaiting { player: 2 });
+        assert_eq!(ctl.screen(2).name(), "LOCKED_IN");
+        assert_eq!(forced(&ctl, 2), None);
     }
 }

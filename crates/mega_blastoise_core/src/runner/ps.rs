@@ -19,8 +19,10 @@ use alloc::vec::Vec;
 use core::future::Future;
 
 use embassy_futures::select::{select, Either};
-use ps_client::{slot_options, BattleView, SeatOptions};
-use ps_protocol::{Choice, Command, FormatSpec, Name, PackedTeam, Request, SideId};
+use ps_client::{slot_options, BattleView, KnownMove, MoveSlot, SeatOptions};
+use ps_protocol::{
+    Choice, Command, FormatSpec, MoveNum, Name, PackedTeam, PokemonIdent, Request, RequestMoveName, SideId,
+};
 
 use crate::battle_effects::BoardEffects;
 use crate::battle_input::{ActivePrompt, InputBus};
@@ -184,7 +186,7 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
         let mut prompt_events: Vec<Vec<BoardEvent>> = Vec::new();
         if opening && !requests.is_empty() {
             opening = false;
-            prompt_events = requests.iter().map(|r| view.apply_request(r)).collect();
+            prompt_events = requests.iter().map(|r| prompt_events_for(&mut view, r)).collect();
         }
         for msg in &lines {
             for ev in view.apply(msg) {
@@ -192,7 +194,7 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
             }
         }
         if prompt_events.len() != requests.len() {
-            prompt_events = requests.iter().map(|r| view.apply_request(r)).collect();
+            prompt_events = requests.iter().map(|r| prompt_events_for(&mut view, r)).collect();
         }
         if ended {
             return;
@@ -252,6 +254,57 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
             let _ = transport.send(&Command::Choose { side: seat.side, choice });
         }
     }
+}
+
+/// The view's prompt events for `req`, with a single-move request's menu
+/// cut down to that move. PS offers one move without PP (Recharge, a lock
+/// such as Thrash or a charging move, Struggle, Gen 1's `Fight` for a
+/// frozen, asleep or partially trapped mon; `getMoveRequestData`), and the
+/// seat's options say so ([`slot_options`]: one move, or a forced `move 0`).
+/// The view names Recharge itself; for the others it repeats the mon's four
+/// moves, which would show a menu of moves the request does not offer. The
+/// seat's screen shows the one move it does, named.
+fn prompt_events_for(view: &mut BattleView, req: &Request) -> Vec<BoardEvent> {
+    let mut events: Vec<BoardEvent> = view.apply_request(req).into_iter().collect();
+    let Some(slot) = single_move_slot(view, req) else { return events };
+    for ev in events.iter_mut() {
+        if let BoardEvent::MovesUpdate { moves, .. } = ev {
+            *moves = alloc::vec![slot.clone()];
+        }
+    }
+    events
+}
+
+/// The one move of a single-move request, as the board's move slot: the
+/// mon's own slot for a move it knows (its PP and type), else the move
+/// from the dex (Struggle), or the synthetic `Recharge` / `Fight` button.
+fn single_move_slot(view: &BattleView, req: &Request) -> Option<MoveSlot> {
+    let Request::Move(r) = req else { return None };
+    let a = r.active.first()?;
+    if a.moves.len() != 1 || a.moves[0].pp.is_some() {
+        return None;
+    }
+    let (mv, ty, power) = match a.moves[0].name {
+        RequestMoveName::Recharge => return Some(BattleView::recharge_slot()),
+        RequestMoveName::Fight => {
+            return Some(MoveSlot { name: String::from("Fight"), ..BattleView::recharge_slot() })
+        }
+        RequestMoveName::Move(mv) => (mv, None, None),
+        RequestMoveName::HiddenPower { ty, power } => {
+            (view.dex().move_id("hiddenpower").map(|m| MoveNum(m.0)).unwrap_or_default(), Some(ty), Some(power))
+        }
+        RequestMoveName::WithPower { mv, power } => (mv, None, Some(power)),
+    };
+    let maxpp = view.dex().moves.get(mv.0 as usize).map_or(0, |d| d.pp);
+    let named = view.move_slot(&KnownMove { mv, ty, power, pp: maxpp, maxpp });
+    let side = req.side();
+    let own = side
+        .pokemon
+        .iter()
+        .find(|p| p.active)
+        .and_then(|p| view.mon(PokemonIdent::inactive(side.id, p.ident.slot)))
+        .and_then(|m| m.moves.iter().map(|k| view.move_slot(k)).find(|s| s.name == named.name));
+    Some(own.unwrap_or(named))
 }
 
 /// The device-grammar answer as a PS choice. The collector only lets a

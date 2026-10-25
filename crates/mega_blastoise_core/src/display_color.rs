@@ -1060,11 +1060,28 @@ pub fn render_locked<D>(d: &mut D, chosen: Option<&str>, ctx: &HalfCtx<'_>)
 where
     D: DrawTarget<Color = Rgb565>,
 {
-    play_frame(d, ctx.seat);
-    battle_field(d, ctx, true);
     // A committed seat's one remaining move, said out loud: without this the
     // waiting screen reads as "nothing you can do now".
-    hint(d, "B TAKE IT BACK");
+    locked_screen(d, chosen, "B TAKE IT BACK", ctx);
+}
+
+/// This player's move was forced (Recharge, a lock such as Thrash, a last
+/// mon that can only Fight) and is already in: the locked screen, naming
+/// the move, with no take-back hint, because there is nothing to take back.
+pub fn render_forced<D>(d: &mut D, forced: Option<&str>, ctx: &HalfCtx<'_>)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    locked_screen(d, forced, "MOVE IS FORCED", ctx);
+}
+
+fn locked_screen<D>(d: &mut D, chosen: Option<&str>, hint_text: &str, ctx: &HalfCtx<'_>)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    play_frame(d, ctx.seat);
+    battle_field(d, ctx, true);
+    hint(d, hint_text);
     // Same field, and the bottom third becomes the narration box instead of
     // the move menu — which is exactly what the games do between choices.
     draw_message_box(d, LEFT, MENU_Y, CONTENT_W, 36);
@@ -1734,6 +1751,7 @@ mod frame_tests {
 
         check("render_choice", |f| render_choice(f, &moves, &c));
         check("render_locked", |f| render_locked(f, Some("Sleep Powder"), &c));
+        check("render_forced", |f| render_forced(f, Some("Recharge"), &c));
         check("render_party", |f| render_party(f, &party, &c, false));
         check("render_stats", |f| render_stats(f, &party[0], 1));
         // render_playback is deliberately absent: the shared scene has no

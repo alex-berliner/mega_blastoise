@@ -123,13 +123,20 @@ fn switch_answers_name_team_slots_and_choices_name_request_positions() {
 #[test]
 fn locked_recharging_and_trapped_seats() {
     let (mut codec, mut view) = setup();
-    let locked = request(&mut codec, &move_request("{\"moves\":[{\"move\":\"Body Slam\",\"id\":\"bodyslam\"}]}"));
+    // A hard lock (PS `getMoveRequestData`: `getLockedMove`) is trapped.
+    let locked = request(
+        &mut codec,
+        &move_request("{\"moves\":[{\"move\":\"Body Slam\",\"id\":\"bodyslam\"}],\"trapped\":true}"),
+    );
     let ev = view.apply_request(&locked);
     assert!(matches!(ev.last(), Some(BoardEvent::Prompt { kind: PromptKind::ChooseMove, .. })));
     assert_eq!(slot_options(&view, &locked).unwrap().auto.as_deref(), Some("move 0"));
     assert_eq!(choice_string(&locked, "move 0").as_deref(), Some("move 1"));
 
-    let recharge = request(&mut codec, &move_request("{\"moves\":[{\"move\":\"Recharge\",\"id\":\"recharge\"}]}"));
+    let recharge = request(
+        &mut codec,
+        &move_request("{\"moves\":[{\"move\":\"Recharge\",\"id\":\"recharge\"}],\"trapped\":true}"),
+    );
     let ev = view.apply_request(&recharge);
     match &ev[..] {
         [BoardEvent::MovesUpdate { moves, .. }, BoardEvent::Prompt { .. }] => {
@@ -304,4 +311,35 @@ fn a_transformed_mon_shows_the_copied_species_and_moves() {
     let own: Vec<_> = view.mon(growlithe).unwrap().moves.iter().map(|k| k.mv).collect();
     assert_eq!(own.len(), 2);
     assert_eq!(own[1], ps_protocol::MoveNum(ps_dex::GEN1.move_id("bodyslam").unwrap().0));
+}
+
+/// Gen 1's `Fight` (frozen, asleep, partially trapped), Struggle and a
+/// partial-trapping lock come without `trapped` (PS `getMoveRequestData`):
+/// the seat may still switch, so the one move is a choice, not forced. With
+/// no bench mon to come in it is forced after all.
+#[test]
+fn a_single_move_is_forced_only_when_no_switch_is_open() {
+    let (mut codec, mut view) = setup();
+    let fight = "{\"moves\":[{\"move\":\"Fight\",\"id\":\"fight\"}]}";
+    let req = request(&mut codec, &move_request(fight));
+    view.apply_request(&req);
+    let s = slot_options(&view, &req).unwrap();
+    assert!(s.auto.is_none() && !s.trapped, "Charizard can still come in");
+    assert_eq!((s.n_moves, s.usable[0]), (1, true));
+    assert_eq!(choice_string(&req, "move 0").as_deref(), Some("move 1"));
+    assert_eq!(choice_string(&req, "switch 0").as_deref(), Some("switch 3"));
+
+    let struggle = "{\"moves\":[{\"move\":\"Struggle\",\"id\":\"struggle\",\"target\":\"randomNormal\",\"disabled\":false}]}";
+    let req = request(&mut codec, &move_request(struggle));
+    view.apply_request(&req);
+    let s = slot_options(&view, &req).unwrap();
+    assert!(s.auto.is_none());
+    assert_eq!((s.n_moves, s.usable[0]), (1, true));
+
+    // The last mon standing: nothing to switch to.
+    let req = request(&mut codec, &move_request(fight).replace("268/268", "0 fnt"));
+    view.apply_request(&req);
+    let s = slot_options(&view, &req).unwrap();
+    assert_eq!(s.party_ok, [false; 6]);
+    assert_eq!(s.auto.as_deref(), Some("move 0"));
 }

@@ -225,7 +225,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         // apply_effects — screen commands and the seat's locked flag must
         // move together or a seat wedges (see the probe war stories).
         match &cmd {
-            OledCmd::ShowWaiting { player } => {
+            OledCmd::ShowWaiting { player } | OledCmd::ShowForced { player } => {
                 self.st.borrow_mut().session.set_locked(*player, true);
             }
             OledCmd::RestoreScreen { player }

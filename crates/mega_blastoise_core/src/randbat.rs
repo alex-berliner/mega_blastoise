@@ -81,6 +81,15 @@ pub fn draw_two_randbat_teams(seed: u64, count: usize) -> (Vec<MonData>, Vec<Mon
 
 // ── Teams for the PS engine ──────────────────────────────────────────────────
 
+/// An index below `n` from the next draw, the way the device takes it: the
+/// RP2350 and wasm32 have a 32-bit `usize`, so `draw as usize` keeps the low
+/// 32 bits there and all 64 on the host. Taking the low 32 bits everywhere
+/// makes one seed draw the same team on the pico, the web build and the
+/// host (the pico is the source of truth).
+fn pick(rng: &mut u64, n: usize) -> usize {
+    xorshift64(rng) as u32 as usize % n
+}
+
 /// Whether `ps_sim` has ported `kind:id` for `gen` (`ps_sim::mods::ported`).
 fn ps_ported(gen: u8, kind: &str, id: &str) -> bool {
     ps_sim::mods::ported(gen)
@@ -124,7 +133,7 @@ pub fn draw_ps_team(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> ps_pr
     let mut indices: Vec<usize> = (0..n).collect();
     let mut team = PackedTeam::new();
     for i in 0..take {
-        let j = i + (xorshift64(&mut rng) as usize % (n - i));
+        let j = i + pick(&mut rng, n - i);
         indices.swap(i, j);
         let e = &RANDBAT_POOL[indices[i]];
         let Some(species) = dex.species_id(&id(e.species)) else { continue };
@@ -147,9 +156,9 @@ pub fn draw_ps_team(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> ps_pr
         let mut tries = 0;
         while moves.len() < want && !pool.is_empty() && tries < 64 {
             tries += 1;
-            let pick = pool[xorshift64(&mut rng) as usize % pool.len()];
-            if !moves.contains(&pick) {
-                moves.push(pick);
+            let m = pool[pick(&mut rng, pool.len())];
+            if !moves.contains(&m) {
+                moves.push(m);
             }
         }
         for m in moves.iter().take(ps_protocol::MAX_MOVES) {
@@ -167,4 +176,43 @@ pub fn draw_ps_team(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> ps_pr
 /// it. Returns `[p1, p2]`.
 pub fn draw_two_ps_teams(dex: &'static ps_dex::Dex, seed: u64, count: usize) -> [ps_protocol::PackedTeam; 2] {
     [draw_ps_team(dex, seed, count), draw_ps_team(dex, seed.wrapping_add(TEAM_SEED_SALT), count)]
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn names(team: &ps_protocol::PackedTeam) -> Vec<&str> {
+        team.iter().map(|s| s.name.as_str()).collect()
+    }
+
+    /// One seed, one pair of teams, on every target. The expected teams are
+    /// what the web build (wasm32, a 32-bit `usize` like the RP2350) printed
+    /// for these seeds' 3-on-3 Gen 1 battles; seed 1 is the UI probe's.
+    /// Before [`pick`] the host kept all 64 bits of each draw and drew
+    /// other teams.
+    #[test]
+    fn a_seed_draws_the_devices_teams_on_the_host() {
+        let cases: [(u64, [&str; 3], [&str; 3]); 3] = [
+            (1, ["Nidoran-M", "Zapdos", "Omastar"], ["Sandshrew", "Fearow", "Clefable"]),
+            (2, ["Dragonair", "Beedrill", "Fearow"], ["Doduo", "Dragonair", "Dodrio"]),
+            (7777, ["Drowzee", "Articuno", "Venusaur"], ["Lapras", "Psyduck", "Arcanine"]),
+        ];
+        for (seed, white, red) in cases {
+            let [p1, p2] = draw_two_ps_teams(&ps_dex::GEN1, seed, 3);
+            assert_eq!(names(&p1), white, "seed {seed}, White");
+            assert_eq!(names(&p2), red, "seed {seed}, Red");
+        }
+    }
+
+    /// The draw reads the low 32 bits of each xorshift step on every target.
+    #[test]
+    fn pick_keeps_the_low_32_bits() {
+        let mut a = 0x1234_5678_9abc_def0u64;
+        let mut b = a;
+        for n in [7usize, 151, 1000, 65_537] {
+            let raw = xorshift64(&mut b);
+            assert_eq!(pick(&mut a, n), (raw & 0xffff_ffff) as usize % n);
+        }
+    }
 }

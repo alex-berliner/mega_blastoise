@@ -77,8 +77,9 @@ pub struct SeatOptions {
     /// Per team slot: alive and benched.
     pub party_ok: [bool; 6],
     pub forced_switch: bool,
-    /// A choice already made for the player, in the device grammar: a
-    /// locked move, Struggle or Recharge is `move 0`.
+    /// A choice already made for the player, in the device grammar: one
+    /// move without PP and no switch open (a hard lock, or a last mon on
+    /// Fight or Struggle) is `move 0`.
     pub auto: Option<String>,
     /// By team slot.
     pub party: Vec<PartyMon>,
@@ -132,11 +133,19 @@ pub fn slot_options(view: &BattleView, req: &Request) -> Option<SeatOptions> {
         Request::Move(r) => {
             if let Some(a) = r.active.first() {
                 let n = a.moves.len().min(4);
-                // A locked move, Struggle or Recharge: one move without PP.
-                let locked = n == 1 && a.moves[0].pp.is_none();
+                // One move without PP: Recharge, a locked move, Struggle or
+                // Gen 1's Fight. It is forced only when the seat cannot
+                // switch either: PS sets `trapped` on a hard lock
+                // (`getLockedMove`: Recharge, Thrash, a charging move, Rage),
+                // while a semi-lock (Gen 1's Bide, a partial-trapping move),
+                // Struggle and Fight (frozen, asleep, partially trapped)
+                // leave the switch open (`getMoveRequestData`), unless no
+                // bench mon can come in.
+                let single = n == 1 && a.moves[0].pp.is_none();
+                let can_switch = s.party_ok.iter().any(|&ok| ok);
                 if n == 0 {
                     s.auto = Some(String::from("pass"));
-                } else if locked {
+                } else if single && (a.trapped || !can_switch) {
                     s.auto = Some(String::from("move 0"));
                 } else {
                     s.n_moves = n;

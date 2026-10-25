@@ -24,6 +24,8 @@
 pub mod gen1;
 pub mod gen3;
 pub mod ps;
+#[cfg(test)]
+mod forced;
 
 /// Idle delay (ms) at lobby start before the demo battle begins automatically.
 pub const LOBBY_DEMO_DELAY_MS: u64 = 15_000;

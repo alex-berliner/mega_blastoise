@@ -345,7 +345,8 @@ enum SlotState {
     Stats { team_idx: u8, page: u8, next_flip: u64 },
     /// Invalid-selection screen is up; restores at `until`.
     Invalid { until: u64, back: InvalidBack },
-    /// Choice locked in (waiting screen shown, unless auto).
+    /// Choice locked in (the waiting screen, or the forced one for a
+    /// non-AI auto slot).
     Committed,
     /// Concealed move menu, opened by TAPPING the attack action button;
     /// tapping that button again closes back to the action select.
@@ -444,6 +445,12 @@ impl ChoiceCollector {
                 if !s.is_ai {
                     out[i] = c.clone();
                     st[i] = SlotState::Committed;
+                    // And the seat SAYS so: the forced locked-in screen,
+                    // naming the move, instead of a move menu whose presses
+                    // go nowhere. (The legacy runners left the menu up.)
+                    if i < n_real {
+                        fx.push(Effect::Oled(OledCmd::ShowForced { player: s.player_num }));
+                    }
                 }
             }
         }
@@ -2514,5 +2521,106 @@ mod tests {
         fx.clear();
         c.typed_line("p2 1", 0, &mut fx);
         assert!(err_containing(&fx, "no pending prompt"));
+    }
+
+    // ── Forced moves ────────────────────────────────────────────────────
+
+    /// A seat whose move is forced, as the PS runner distils one: one move
+    /// without PP and no switch open (Recharge, Thrash, a charging move,
+    /// Rage, a last mon on Fight) comes over as `auto = "move 0"`.
+    fn forced_prompt(player_id: &str) -> SlotOptions {
+        let mut s = turn_prompt(player_id, 0);
+        s.auto = Some(String::from("move 0"));
+        s
+    }
+
+    #[test]
+    fn a_forced_seat_shows_the_forced_screen_at_once() {
+        let mut fx = Vec::new();
+        let c = ChoiceCollector::new(alloc::vec![forced_prompt("p1"), turn_prompt("p2", 4)], &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowForced { player: 1 })));
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::ShowForced { player: 2 })));
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::ShowWaiting { .. })));
+        assert_eq!(c.st[0], SlotState::Committed);
+        assert_eq!(c.st[1], SlotState::Choosing);
+        assert_eq!(c.out[0], "move 0");
+    }
+
+    /// The forced screen says there is nothing to take back, and there is
+    /// not: taps, holds, B and typed lines all leave the choice alone.
+    #[test]
+    fn a_forced_seat_ignores_presses_and_lines() {
+        let mut fx = Vec::new();
+        let mut c = ChoiceCollector::new(alloc::vec![forced_prompt("p1"), turn_prompt("p2", 4)], &mut fx);
+        fx.clear();
+        for ev in [
+            PadEvent::TapMove { player: 1, slot: 0 },
+            PadEvent::TapSwitch { player: 1, idx: 1 },
+            PadEvent::HoldMove { player: 1, slot: 0 },
+            PadEvent::HoldEnd { player: 1 },
+            PadEvent::HoldSwitch { player: 1, idx: 1 },
+            PadEvent::Cancel { player: 1 },
+        ] {
+            c.pad_event(ev, 100, &mut fx);
+        }
+        assert!(fx.is_empty(), "{:?}", fx.len());
+        assert_eq!((c.st[0], c.out[0].as_str()), (SlotState::Committed, "move 0"));
+        c.typed_line("p1 2", 100, &mut fx);
+        assert!(err_containing(&fx, "forced"));
+        assert_eq!(c.out[0], "move 0");
+    }
+
+    /// The other seat keeps every rule: its long press, its commit, its
+    /// unready, and the both-ready grace once it is in.
+    #[test]
+    fn the_other_seat_keeps_long_press_unready_and_grace() {
+        let mut fx = Vec::new();
+        let mut c = ChoiceCollector::new(alloc::vec![forced_prompt("p1"), turn_prompt("p2", 4)], &mut fx);
+        assert!(!c.tick(0, &mut fx), "p2 is still choosing");
+        fx.clear();
+        c.pad_event(PadEvent::HoldMove { player: 2, slot: 1 }, 10, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowMoveDetail { player: 2, slot: 1, .. })));
+        c.pad_event(PadEvent::HoldEnd { player: 2 }, 20, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: 2 })));
+        fx.clear();
+        c.pad_event(PadEvent::TapMove { player: 2, slot: 2 }, 30, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowWaiting { player: 2 })));
+        assert!(!c.tick(40, &mut fx), "grace just started");
+        c.pad_event(PadEvent::Cancel { player: 2 }, 500, &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::RestoreScreen { player: 2 })));
+        assert!(!c.tick(40 + UNREADY_GRACE_MS, &mut fx), "p2 took it back");
+        c.pad_event(PadEvent::TapMove { player: 2, slot: 3 }, 1100, &mut fx);
+        assert!(!c.tick(1100, &mut fx), "a fresh grace");
+        assert!(!c.tick(1100 + UNREADY_GRACE_MS - 1, &mut fx));
+        assert!(c.tick(1100 + UNREADY_GRACE_MS, &mut fx));
+        let ch = c.take_choices();
+        assert_eq!(ch[0], (String::from("p1"), String::from("move 0")));
+        assert_eq!(ch[1], (String::from("p2"), String::from("move 3")));
+    }
+
+    #[test]
+    fn two_forced_seats_skip_the_grace() {
+        let mut fx = Vec::new();
+        let mut c = ChoiceCollector::new(alloc::vec![forced_prompt("p1"), forced_prompt("p2")], &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowForced { player: 1 })));
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowForced { player: 2 })));
+        assert!(c.tick(0, &mut fx));
+    }
+
+    /// Concealed controls hide nothing on a forced seat (`set_concealed` is
+    /// a no-op for auto slots), and an AI seat is not "forced": it keeps
+    /// its think delay and its own screen.
+    #[test]
+    fn forced_screen_in_concealed_mode_but_not_for_the_ai() {
+        let mut fx = Vec::new();
+        let mut p1 = forced_prompt("p1");
+        p1.set_concealed(7);
+        let mut p2 = turn_prompt("p2", 4);
+        p2.set_ai_choice(String::from("move 1"));
+        let c = ChoiceCollector::new(alloc::vec![p1, p2], &mut fx);
+        assert!(has_oled(&fx, |o| matches!(o, OledCmd::ShowForced { player: 1 })));
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::ShowActionSelect { .. })));
+        assert!(!has_oled(&fx, |o| matches!(o, OledCmd::ShowForced { player: 2 })));
+        assert_eq!(c.st[1], SlotState::Choosing, "the AI is still thinking");
     }
 }

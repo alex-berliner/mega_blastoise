@@ -148,7 +148,10 @@ pub fn render_seat<D>(
             _ => dc::render_choice(d, moves, &ctx),
         },
 
-        Screen::Waiting { .. } => dc::render_locked(d, ui.chosen, &ctx),
+        Screen::Waiting { forced: None, .. } => dc::render_locked(d, ui.chosen, &ctx),
+        Screen::Waiting { forced: Some(name), .. } => {
+            dc::render_forced(d, Some(name).filter(|n| !n.is_empty()), &ctx)
+        }
         Screen::WaitingForOpponent { .. } => dc::render_locked(d, None, &ctx),
         Screen::Switch(party) => dc::render_party(d, party, &ctx, true),
         Screen::Invalid(reason) => dc::render_invalid(d, reason, player),
