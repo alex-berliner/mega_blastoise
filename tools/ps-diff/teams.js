@@ -12,7 +12,7 @@
 //   'wide'    - 1-6 mons per side, 1-4 distinct moves each, level 40-100,
 //               IVs 0-31, EVs <= 510 with rotating-start stat order. Gen 3
 //               adds items and abilities; gen 1 has neither. The pool is:
-//                 * --self: the whole showdown_fuzz.rs space (no
+//                 * --self: the whole wide space (no
 //                   whitelist) -- it's the harness's own self-test, so the
 //                   only thing it has to be consistent about is that PS
 //                   runs the same draws both times.
@@ -29,10 +29,10 @@
 //
 // Source of truth for the random-battle generator and the packed format
 // is PS 0.11.11 (tools/ps-diff/node_modules/pokemon-showdown). The wide
-// generator is a clean-room port of crates/mega_blastoise_test/tests/
-// showdown_fuzz.rs's `Fuzz::new` + species/nature/IV/EV/item/ability
-// draws, so a diff against the Rust side lays pitfalls at the same
-// joints the original fuzz did.
+// generator is a clean-room port of the legacy fuzz suite's `Fuzz::new` +
+// species/nature/IV/EV/item/ability draws (that suite went with the legacy
+// Gen 3 engine in G3-9), so a diff against the Rust side lays pitfalls at
+// the same joints the original fuzz did.
 
 const fs = require('fs');
 const path = require('path');
@@ -95,12 +95,13 @@ function buildFromFile({ path: filePath }) {
   return { p1: teams[0], p2: teams[1], packed: [Teams.pack(teams[0]), Teams.pack(teams[1])] };
 }
 
-/// The carried corpus: every `*.json` under `dir` (written by
-/// `scripts/carried-dump.sh` through showdown_fuzz.rs's `FUZZ_DUMP`), each
-/// holding the team pairs of one old-engine pinned entry as PS sets. Files
-/// in name order, cases in file order; a pair that an earlier file already
-/// holds (a `case=` entry inside a whole-seed one) is played once, under its
-/// first name. Returns [{ name, p1, p2, packed }], name `<file>#<case>`.
+/// The carried corpus: every `*.json` under `dir` (written by the legacy
+/// fuzz suite's `FUZZ_DUMP` and dumped by the now-deleted
+/// `scripts/carried-dump.sh`), each holding the team pairs of one old-engine
+/// pinned entry as PS sets. Files in name order, cases in file order; a pair
+/// that an earlier file already holds (a `case=` entry inside a whole-seed
+/// one) is played once, under its first name. Returns
+/// [{ name, p1, p2, packed }], name `<file>#<case>`.
 function readCarried(dir) {
   if (!fs.existsSync(dir)) throw new Error(`no carried corpus at ${dir}`);
   const files = fs.readdirSync(dir).filter((f) => f.endsWith('.json')).sort();
@@ -168,7 +169,7 @@ function makeWideTeam({ gen, prng, focus, ported, self }) {
     if (setMoves.length === 0) {
       // Every move was filtered out for this species: skip; the team shrinks
       // by one in that case, which is a known shortcoming of the wide
-      // generator and matches what showdown_fuzz.rs does when a species
+      // generator and matches what the legacy fuzz suite did when a species
       // does not learn any ported move.
       continue;
     }
@@ -177,7 +178,8 @@ function makeWideTeam({ gen, prng, focus, ported, self }) {
     for (const s of ['hp', 'atk', 'def', 'spa', 'spd', 'spe']) {
       ivs[s] = Math.floor(prng.random() * 32);
     }
-    // EVs: rotating stat start, total <= 510. Same shape as showdown_fuzz.rs.
+    // EVs: rotating stat start, total <= 510. Same shape as the legacy fuzz
+    // suite's.
     const evs = { hp: 0, atk: 0, def: 0, spa: 0, spd: 0, spe: 0 };
     let budget = 510;
     const start = Math.floor(prng.random() * 6);
@@ -196,7 +198,7 @@ function makeWideTeam({ gen, prng, focus, ported, self }) {
     if (gen === 3) {
       // Empty most of the time (60%), else a pick from itemPool. The draw
       // ALWAYS happens so the generator stream is independent of the
-      // species draw -- matching showdown_fuzz.rs.
+      // species draw -- matching the legacy fuzz suite.
       const empty = prng.random() * 100 < 60;
       if (!empty && itemPool.length) {
         item = pickFromArr(prng, itemPool);
@@ -292,7 +294,7 @@ const NATURES = [
 ];
 
 /// Gen 1's status pool (sleep and freeze stall on clocks the engines pin
-/// differently during the wide run; the original showdown_fuzz.rs leaves
+/// differently during the wide run; the legacy fuzz suite leaves
 /// them off too).
 const WIDE_STATUSES = {
   1: [null, null, null, 'brn', 'psn', 'par'],

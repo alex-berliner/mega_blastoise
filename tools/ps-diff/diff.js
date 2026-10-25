@@ -34,7 +34,7 @@
 //
 // Battle loop:
 //   - `--teams random` -> PS's own genNrandombattle generator.
-//   - `--teams wide`   -> the showdown_fuzz wide fuzz space; limited to
+//   - `--teams wide`   -> the wide fuzz space; limited to
 //                         the species/moves/items/abilities list from
 //                         `ps_sim_cli --ported <gen>` when run against
 //                         the rust side, otherwise the whole gen.
@@ -687,9 +687,8 @@ function makeChooser(choiceSeed, script) {
 
 /// Drive a single PS BattleStream with the given envelope and random
 /// legal choices. Gen 1's truncation is the formatid's `Cartridge Trunc`
-/// rule (`rules.js`; the old harness's `cartridgeTrunc` restore in
-/// `tools/showdown-parity/harness.js`, as a rule). Returns the joined log
-/// and the choice PRNG call count (caller uses this for diagnostics).
+/// rule (`rules.js`, which is where the rule now lives). Returns the joined
+/// log and the choice PRNG call count (caller uses this for diagnostics).
 async function drivePS({ cmds, choiceSeed, script }) {
   rules.install();
   if (RNG_TRACE) installRngTrace();

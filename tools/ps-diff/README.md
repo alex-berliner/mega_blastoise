@@ -193,10 +193,10 @@ the battle `unported: <id>` like any other effect.
 
 `crates/ps_harness/carried/gen1/*.json` and `carried/gen3/*.json` carry
 the old engines' pinned corpora over to this harness. Each file is one
-`fuzz_gen1_battles` (or `fuzz_gen3_battles`) battle entry of
-`crates/mega_blastoise_test/pinned_seeds.txt` as it stood before G1-10 and
-G3-9 (which delete those engines, their suites and those entries), named the way
-`scripts/pinned-seeds.sh` names its logs
+`fuzz_gen1_battles` (or `fuzz_gen3_battles`) battle entry of the legacy
+pinned corpus (`crates/mega_blastoise_test/pinned_seeds.txt`, as it stood
+before G1-10 and G3-9, which deleted those engines, their suites and those
+entries), named the way the legacy corpus named its logs
 (`fuzz_gen1_battles_w<wide>_s<seed>[_c<case>][_only].json`), holding every
 case's two teams (one case with `case=`) as PS sets: a header line naming
 the run (`suite`, `gen`, `seed`, `wide`, `fuzz_n`, `case`, `only`), then one
@@ -206,16 +206,16 @@ apply them, nor the old suites' scripted rolls. Gen 1 sets name
 `noability` (an empty ability unpacks to the species' later-gen one); gen
 3 sets name their ability, `noability` for the old suite's "none", and
 spell out what the old harness left implicit (Hardy, every IV 31, no EVs:
-`teamMon` in `tools/showdown-parity/harness.js`). The gen 3 dex carries
+the legacy harness's `teamMon`). The gen 3 dex carries
 `noability` for that (PS marks it `Past`; a custom game takes it).
 
 The files came from the fuzz suite itself: `FUZZ_DUMP=<path>` made
 `fuzz_gen1_battles` (and `fuzz_gen3_battles`) play every case's own side (the
 generator stream unchanged) and write the teams instead of asking the
 reference, and `scripts/carried-dump.sh` dumped every entry. Both went with
-the legacy Gen 1 engine in G1-10, so the corpus is frozen: it can no longer
-be re-dumped, and new findings go to the protocol diff's own pinned list,
-`crates/ps_harness/pinned.txt`.
+the legacy Gen 1 engine in G1-10 and the legacy Gen 3 engine in G3-9, so the
+corpus is frozen: it can no longer be re-dumped, and new findings go to the
+protocol diff's own pinned list, `crates/ps_harness/pinned.txt`.
 
 `--carried genN` (PS against itself without `--ps-cli`, like `--pinned`)
 reads the files in name order and plays each distinct team pair (a `case=`

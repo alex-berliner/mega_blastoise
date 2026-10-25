@@ -6,11 +6,13 @@ pass R, as 43 tasks, each sized for one worker run (one headless session,
 about 2 hours, own worktree, no commits, leaves `WORKER_REPORT.md`).
 
 Conventions used below:
-- `PS/` is `tools/showdown-parity/node_modules/pokemon-showdown/` (0.11.11).
-  Workers read the TypeScript (`PS/sim/*.ts`, `PS/data/**/*.ts`); `PS/dist/` is
-  what actually runs. For any effect, read the RESOLVED definition, not the
-  base file: `node tools/ps-diff/show-effect.js <gen> <kind> <id>` (task P1-3
-  generalises `show-ability.js` into it).
+- `PS/` is `tools/ps-diff/node_modules/pokemon-showdown/` (the only PS install
+  left; the old `tools/showdown-parity` one went with the legacy engines in
+  G3-9). Workers read the TypeScript (`PS/sim/*.ts`, `PS/data/**/*.ts`);
+  `PS/dist/` is what actually runs. For any effect, read the RESOLVED
+  definition, not the base file:
+  `node tools/ps-diff/show-effect.js <gen> <kind> <id>` (task P1-3
+  generalises the old `show-ability.js` into it).
 - Tier `C2` is Claude 2 (Opus). Tier `MM` is MiniMax M3 or Hyper.
 - `||` marks tasks that may run in parallel with the listed ones once their
   own dependencies are met.
@@ -77,8 +79,9 @@ Regression sweeps:
   ported gen.
 - Full sweep (phase exits, before a cut-over or deletion, after the re-sync,
   weekly while porting): diff 20,000 per ported gen with both team generators,
-  the pinned lists, `scripts/pinned-seeds.sh` for the old engines while they
-  exist, and `scripts/sim-budget.sh`.
+  the pinned lists, `scripts/sim-budget.sh`. (`scripts/pinned-seeds.sh` for
+  the old engines went with them in G1-10 and G3-9; the carried corpus
+  replaces it.)
 
 ## 2. Parity gates
 

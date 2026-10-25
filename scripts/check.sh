@@ -42,9 +42,6 @@ echo "── coverage-allow.txt resolves against the source ──"
 python3 -I scripts/coverage-allow.py --check
 
 if [[ "${1:-}" != "--fast" ]]; then
-  echo "── pinned seeds (the legacy Gen 3 engine's corpus) ──"
-  scripts/pinned-seeds.sh
-
   echo "── protocol-diff harness: per-gen sweeps + pinned corpus ──"
   # Smoke run: --self mode, 20 per gen for random and wide. Validates
   # the harness's own self-test against a PS-vs-PS run; no PS-cli
@@ -91,10 +88,8 @@ if [[ "${1:-}" != "--fast" ]]; then
 
   echo "── wasm build + headless seat probe ──"
   (cd crates/mega_blastoise_web && wasm-pack build --target web --dev >/dev/null 2>&1)
-  # The default engine (PS for both generations).
+  # The one engine: PS, for both generations.
   scripts/ui-probe.sh --skip-build
-  # The legacy Gen 3 engine, until G3-9 deletes it.
-  scripts/ui-probe.sh --skip-build --engine legacy
 fi
 
 echo "check: OK"

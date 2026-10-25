@@ -6,8 +6,7 @@ Everything published from this repo (the game, its UI notes, the hardware's 3D v
 
 Layout:
 - `crates/`: the Rust workspace. `ps_sim`, `ps_client`, `ps_dex`, `ps_protocol` (the Showdown
-  port: server, client, dex and protocol), `battle_types` and `gen3_battle` (the legacy Gen 3 engine),
-  `ps_harness` (the protocol diff), `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (firmware), `mega_blastoise_test` (PC),
+  port: server, client, dex and protocol), `ps_harness` (the protocol diff), `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (firmware), `mega_blastoise_test` (PC),
   and `mega_blastoise_web` (its own wasm workspace, the browser build).
 - `firmware/bringup/`: standalone bring-up tools (`rp2350_blink`, `esp32_reset`).
 - `hardware/`: the boards and cases ([index](./hardware/README.md)). `docs/`: notes, including `docs/architecture/`. `scripts/`: dev scripts.
@@ -30,7 +29,7 @@ The host binary is **interactive only**: stdin battle with the same **typed `Boa
 | Mode | Command | What it does |
 |------|-----------|----------------|
 | **Interactive** (default) | `cargo run -p mega-blastoise-test`<br>`cargo run -p mega-blastoise-test --release` | A Gen 1 battle on the PS engine over stdin (`1`-`4` a move, `s1`-`s6` a switch, when prompted). |
-| **Automated tests** | `cargo test -p mega-blastoise-test` | Runs Rust tests (board-event parsing, scripted effect pipeline, host input stubs and full automated PS battles, the legacy Gen 3 parity suites). Pass/fail exit status. |
+| **Automated tests** | `cargo test -p mega-blastoise-test` | Runs Rust tests (board-event parsing, scripted effect pipeline, host input stubs and full automated PS battles). Pass/fail exit status. |
 
 Firmware (`mega-blastoise-fw`) has no CLI modes; flash and run as usual (see below).
 

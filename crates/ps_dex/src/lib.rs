@@ -7,8 +7,8 @@
 //! tables: [`GEN1`] and [`GEN3`], with `u16` ids in PS's iteration order
 //! (design section 4 of `docs/architecture/showdown-split-plan.md`). The
 //! [`Type`] enum that used to live in `crates/battle_types` lives here;
-//! `battle_types` re-exports it until the Gen 3 engine, its last user, is
-//! deleted.
+//! the shim crate went with the last of its users (the legacy Gen 3 engine)
+//! in G3-9.
 //!
 //! To read an effect's resolved definition, handler source included:
 //! `node tools/ps-diff/show-effect.js <gen> <kind> <id>`.

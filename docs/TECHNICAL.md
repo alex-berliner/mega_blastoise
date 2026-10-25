@@ -10,10 +10,9 @@ For project overview and hardware, see [DESIGN.md](./archive/v1/DESIGN.md) (the 
 
 ```
 mega_blastoise/
-  crates/ps_sim/                   # no_std port of the Pokemon Showdown server (Gen 1, Gen 3 in progress)
+  crates/ps_sim/                   # no_std port of the Pokemon Showdown server (Gen 1 and Gen 3)
   crates/ps_client/                # no_std client: reads the PS protocol into board events
   crates/ps_dex/, crates/ps_protocol/  # the dex tables and the protocol types
-  crates/gen3_battle/              # the legacy Gen 3 engine, until ps_sim ports Gen 3
   crates/mega_blastoise_core/      # no_std shared library: engine glue, event bus
   crates/mega_blastoise_fw/        # RP2350 (Pico 2) firmware for the stripboard v2 board
   crates/mega_blastoise_test/      # PC host binary for development and testing
@@ -25,7 +24,7 @@ mega_blastoise/
 
 ## Battle Engine
 
-Battles run on `ps_sim`, a `no_std` port of the Pokémon Showdown simulator, read by `ps_client` (see `docs/architecture/showdown-split-plan.md`). Gen 1 plays on it; Gen 3 stays on the legacy `gen3_battle` engine until its port is complete. The firmware is purely presentation and input.
+Battles run on `ps_sim`, a `no_std` port of the Pokémon Showdown simulator, read by `ps_client` (see `docs/architecture/showdown-split-plan.md`). Both generations play on it; the legacy per-generation engines are gone (G1-10 took Gen 1's, G3-9 Gen 3's). The firmware is purely presentation and input.
 
 Both compile directly for the RP2350.
 
@@ -33,7 +32,7 @@ Both compile directly for the RP2350.
 
 ## Data Storage
 
-Pokémon stats, move definitions and type charts are baked into flash at compile time: `ps_dex` is generated from Showdown's own data, and `gen3_battle`'s build script reads its vendored JSON. There is no SD card or file system.
+Pokémon stats, move definitions and type charts are baked into flash at compile time: `ps_dex` is generated from Showdown's own data. There is no SD card or file system.
 
 ---
 

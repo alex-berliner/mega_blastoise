@@ -22,7 +22,7 @@
 // ported ability. Choices are random legal ones from PS's request: mostly
 // moves, sometimes a switch, now and then an invalid choice or an undo.
 // Gen 1 runs with `cartridgeTrunc`, the one PS-side adaptation the
-// harnesses make (tools/showdown-parity/harness.js).
+// harnesses make (`rules.js`).
 //
 // Format: as tools/ps-diff/battle-fixtures.js (`#battle`, commands,
 // `>update` blocks, requests by FNV-1a 64 hash, `#end`), gzipped. The full

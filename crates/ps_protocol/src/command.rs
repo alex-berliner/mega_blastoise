@@ -495,9 +495,9 @@ impl FormatSpec {
         Self { base, custom_rules: BoundedVec::new() }
     }
 
-    /// The gen 1 format the harness plays (`formatFor(1)` in
-    /// `tools/showdown-parity/harness.js`). `Cartridge Trunc` is in every
-    /// Gen 1 format's ruleset, so it is on.
+    /// The gen 1 format the harness plays (`rules.js` installs the same
+    /// custom rules). `Cartridge Trunc` is in every Gen 1 format's ruleset,
+    /// so it is on.
     pub fn gen1_harness() -> Self {
         let mut f = Self::new(FormatId::Gen1CustomGame);
         // Two rules into a capacity of four cannot fail.

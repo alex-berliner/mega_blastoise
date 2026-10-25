@@ -14,7 +14,8 @@
 // Each handler is printed with the mod its function comes from (the
 // furthest-up mod in the chain whose data holds that same function), so an
 // `inherit: true` override shows which parts are gen-specific.
-// Generalises tools/showdown-parity/show-ability.js.
+// Generalises the legacy harness's `show-ability.js` (which went with the
+// legacy engines in G3-9).
 
 const { Dex } = require('pokemon-showdown/dist/sim');
 
