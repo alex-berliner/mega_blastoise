@@ -84,6 +84,10 @@ pub enum Pseudo {
     Recoil,
     /// `'drain'` (fullname `Drain`): `spreadDamage`'s drain heal.
     Drain,
+    /// `{id: 'confused', effectType: 'Move', type: '???'}`: the effect of
+    /// confusion's self-hit damage (`spreadDamage` writes `[from]
+    /// confusion` for it).
+    Confused,
 }
 
 impl Pseudo {
@@ -92,6 +96,7 @@ impl Pseudo {
         match self {
             Pseudo::Recoil => "recoil",
             Pseudo::Drain => "drain",
+            Pseudo::Confused => "confused",
         }
     }
 }
@@ -144,6 +149,7 @@ impl EffectType {
             EffectId::Species(_) => EffectType::Pokemon,
             EffectId::Rule(Rule::Format) => EffectType::Format,
             EffectId::Rule(_) => EffectType::Rule,
+            EffectId::Pseudo(Pseudo::Confused) => EffectType::Move,
             EffectId::Pseudo(_) => EffectType::Condition,
         }
     }

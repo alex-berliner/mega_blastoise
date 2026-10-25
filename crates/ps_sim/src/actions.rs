@@ -67,6 +67,11 @@ pub enum FakeMove {
     /// `recharge` (a `LockMove` answer; gen 1's `commitChoices` turns it
     /// back into the move, so only later gens run it).
     Recharge,
+    /// `getDamage(source, target, basePower)`'s move for a number: `new
+    /// Dex.Move({basePower, type: '???', category: 'Physical', willCrit:
+    /// false})` with `hit` 0 (confusion's self-hit). Its `critRatio` is the
+    /// data default, 1.
+    BasePower,
 }
 
 /// PS's `ActiveMove`: the dex move, copied per use, with the fields the
@@ -527,7 +532,8 @@ impl Battle {
         if target_damage != 0 {
             self.mon_mut(target).hurt_this_turn = Some(self.mon(target).hp);
         }
-        let is_move = matches!(effect, EffectId::Move(_));
+        // `effect.effectType === 'Move'`: confusion's self-hit is a move.
+        let is_move = matches!(effect, EffectId::Move(_) | EffectId::Pseudo(Pseudo::Confused));
         if let (Some(s), true) = (source, is_move) {
             self.mon_mut(s).last_damage = target_damage as u16;
         }
@@ -535,6 +541,22 @@ impl Battle {
         let health = self.health(target);
         let kw = match effect {
             EffectId::Move(_) | EffectId::None => Kw::NONE,
+            // `case 'partiallytrapped'`: `[from]` the trapping move's
+            // fullname, `[partiallytrapped]`.
+            EffectId::Condition(c) if self.dex.condition_def(c).key.as_str() == "partiallytrapped" => {
+                crate::mods::gen3::conditions::partiallytrapped::damage_kw(self, target)
+            }
+            // `case 'confused'`: `[from] confusion`.
+            EffectId::Pseudo(Pseudo::Confused) => Kw::from(Arg::new(ArgValue::Word(Word::Confusion))),
+            // A weather's fullname is its name (`[from] Sandstorm`); the
+            // weather's damage has no source.
+            EffectId::Condition(c) if self.effect_type(effect) == crate::effect::EffectType::Weather => {
+                let from = crate::mods::gen3::conditions::weather_from(self, c);
+                match source {
+                    Some(s) if s != target => Kw::from_of(from, self.ident(s)),
+                    _ => Kw::from(from),
+                }
+            }
             EffectId::Pseudo(Pseudo::Recoil) => {
                 let from = Arg::new(ArgValue::Word(Word::Recoil));
                 match source {
@@ -557,9 +579,10 @@ impl Battle {
                 // effect.fullname === 'tox' ? 'psn' : effect.fullname`,
                 // then `[from] ${name}`, plus `[of] ${source}` when the
                 // source is another Pokemon (the `effectType === 'Ability'`
-                // half cannot hold for a condition). Only the statuses
-                // are ported; `partiallytrapped` and `confused` have
-                // their own cases in PS.
+                // half cannot hold for a condition). The statuses here;
+                // weathers and `partiallytrapped` are above, and the
+                // other conditions that deal damage (Leech Seed, Curse,
+                // Nightmare) are their ports' to add.
                 let name = self.dex.condition_def(c).name.as_str();
                 let name = if name == "tox" { "psn" } else { name };
                 let Some(status) = ps_protocol::Status::parse(name) else {
@@ -923,6 +946,7 @@ impl Battle {
             FakeMove::NoMove => ActionMove::NoMove,
             FakeMove::CannotMove => ActionMove::CannotMove,
             FakeMove::Recharge => ActionMove::Recharge,
+            FakeMove::BasePower => panic!("getDamage's number move is no action move"),
         }
     }
 
@@ -936,6 +960,11 @@ impl Battle {
     pub(crate) fn move_from(&self, effect: EffectId) -> Arg {
         match effect {
             EffectId::Move(m) => Arg::new(ArgValue::Move(MoveNum(m.0))),
+            // `runMove`'s `sourceEffect` for a locked move: the condition's
+            // name is its id.
+            EffectId::Condition(c) if self.dex.condition_def(c).name.as_str() == "lockedmove" => {
+                Arg::new(ArgValue::Word(Word::LockedMove))
+            }
             other => panic!("unported: |move| [from] {other:?}"),
         }
     }

@@ -1265,6 +1265,8 @@ texts! {
     HealInterrupted => "heal interrupted" (),
     // PS: sim/pokemon.ts setStatus
     ImmuneToStatus => "immune to status" (),
+    // PS: sim/pokemon.ts addVolatile
+    ImmuneToVolatileStatus => "immune to volatile status" (),
     // PS: sim/battle.ts runEvent, singleEvent (`eventid`)
     HandlerSuppressedByAirLock => "{} handler suppressed by Air Lock" (Word),
     // PS: data/moves.ts attract volatileStatus onStart
@@ -1322,6 +1324,9 @@ texts! {
     // scripts.ts) -------------------------------------------------------
     DesyncClauseActivated => "Desync Clause Mod activated!" (),
     HintDefenseDivZero => "Pokemon Showdown avoids division by zero by rounding defense up to 1. In game, the battle would have crashed." (),
+    // PS: data/conditions.ts futuremove.onEnd (`${move.name} did not hit because the target is ...`)
+    HintFutureMoveTargetFainted => "{} did not hit because the target is fainted." (Move),
+    HintFutureMoveTargetUser => "{} did not hit because the target is the user." (Move),
     HintGen1BoostAt999 => "In Gen 1, boosting a stat at 999 will apply a -1 drop afterwards, and the stat remains at 999." (),
     HintGen1CannotMoveSleep => "In Gen 1, if a Pokémon spends a turn partially trapped and switches to a Pokémon that is asleep, the sleep counter will not decrease until you select a move with a different Pokémon." (),
     HintGen1Counter => "In Gen 1, from the Counter user's perspective, Counter uses the last announced move by the target's team to determine if it will succeed." (),

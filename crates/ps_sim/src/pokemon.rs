@@ -17,12 +17,12 @@
 //! PS: sim/pokemon.ts eatItem, useItem, takeItem, setItem, clearItem,
 //! setAbility, clearAbility, getWeight.
 
-use ps_dex::{AbilityId, ItemId};
+use ps_dex::{AbilityId, ItemId, MoveId};
 use ps_protocol::{AbilityNum, Arg, ArgValue, ItemNum, Kw, KwFlags, MoveNum, Msg};
 
 use crate::effect::{EffectId, EventId};
 use crate::relay::Relay;
-use crate::state::{Battle, Holder, MonRef, Staleness, StateRef};
+use crate::state::{Battle, Holder, MonRef, Staleness, StateRef, Trapped};
 
 /// PS's `RESTORATIVE_BERRIES` (sim/pokemon.ts), by item name.
 const RESTORATIVE_BERRIES: [&str; 9] =
@@ -62,6 +62,47 @@ impl Battle {
         match source_effect {
             EffectId::Item(i) => self.mon(m).item != i && source == Some(m),
             _ => false,
+        }
+    }
+
+    /// PS `pokemon.tryTrap(isHidden)`.
+    // PS: sim/pokemon.ts tryTrap
+    pub fn try_trap(&mut self, m: MonRef, is_hidden: bool) -> bool {
+        let Some(trapped) = self.dex.condition_id("trapped") else { return false };
+        if !self.run_status_immunity(m, trapped, false) {
+            return false;
+        }
+        if self.mon(m).trapped.truthy() && is_hidden {
+            return true;
+        }
+        self.mon_mut(m).trapped = if is_hidden { Trapped::Hidden } else { Trapped::Yes };
+        true
+    }
+
+    /// PS `pokemon.hasMove(moveid)` (a typed Hidden Power is
+    /// `hiddenpower`).
+    // PS: sim/pokemon.ts hasMove
+    pub fn has_move(&self, m: MonRef, mv: MoveId) -> bool {
+        if mv.is_none() {
+            return false;
+        }
+        let base = |id: MoveId| {
+            let p = self.dex.move_def(id).placeholder_for;
+            if p.is_none() { id } else { p }
+        };
+        let want = base(mv);
+        self.mon(m).move_slots.iter().any(|s| !s.id.is_none() && base(s.id) == want)
+    }
+
+    /// PS `pokemon.disableMove(moveid, isHidden, sourceEffect)`.
+    /// `disabledSource` is not kept: only the request's error text reads
+    /// it, and the request here says `disabled` alone.
+    // PS: sim/pokemon.ts disableMove
+    pub fn disable_move(&mut self, m: MonRef, mv: MoveId, is_hidden: bool, _source_effect: EffectId) {
+        for slot in self.mon_mut(m).move_slots.iter_mut() {
+            if slot.id == mv && slot.disabled != 1 {
+                slot.disabled = if is_hidden { 2 } else { 1 };
+            }
         }
     }
 

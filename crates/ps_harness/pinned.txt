@@ -107,3 +107,12 @@
 1 wide 1004914 math  # G1-7 Wrap at -1 PP, the last move: PS offers Struggle
 1 wide 1006883 math  # G1-7 Bind at -1 PP shows `"pp":-1` and `disabled`
 1 wide 1008774 math  # G1-7 Fire Spin at -1 PP shows `"pp":-1` and `disabled`
+# G3-1: the gen 3 statuses, confusion, flinch, the trapping, lock and
+# recharge volatiles and the four weathers (moves that only start them
+# joined the gen 3 ported pool). Each entry fails with its bug put back
+# (checked with a mutant build per bug); like the other wide entries they
+# draw new teams whenever `ported(3)` grows.
+3 wide 150  # G3-1 tox's damage is `max(floor(baseMaxhp / 16), 1) * stage` (`clampIntRange` floors); was 1 HP high
+3 wide 257  # G3-1 tox's floored damage, a second team
+3 wide 13  # G3-1 the sandstorm/hail -damage line's `[from] Sandstorm` (crashed); also a confusion self-hit
+3 wide 12  # G3-1 confusion's self-hit: getDamage of a typeless number move runs `BasePower` without an onEffect handler (crashed)

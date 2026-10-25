@@ -739,9 +739,12 @@ impl Battle {
         };
 
         let id = self.mv(mv).id;
-        let def = self.dex.move_def(id);
+        // A fake move (`getDamage`'s number move) has the data defaults:
+        // `critRatio` 1, `willCrit` false.
+        let def = (!id.is_none()).then(|| self.dex.move_def(id));
+        let flag = |name: &str| def.is_some_and(|d| d.bools.has(name));
         let effect = self.mv(mv).effect();
-        let crit_ratio = i32::from(def.crit_ratio);
+        let crit_ratio = def.map_or(1, |d| i32::from(d.crit_ratio));
         let crit_ratio =
             match self.run_event(EventId::ModifyCritRatio, Holder::Mon(source), Some(target), effect, Some(Relay::Int(crit_ratio))) {
                 Relay::Int(n) => n,
@@ -756,9 +759,11 @@ impl Battle {
         };
 
         // `moveHit.crit = move.willCrit || false`, rolled when `willCrit` is
-        // undefined (no gen 1-3 move sets it).
-        let mut crit = def.bools.has("willCrit");
-        if !crit && crit_ratio != 0 {
+        // undefined (no gen 1-3 dex move sets it; the number move's is
+        // `false`).
+        let will_crit = if def.is_some() { flag("willCrit").then_some(true) } else { Some(false) };
+        let mut crit = will_crit.unwrap_or(false);
+        if will_crit.is_none() && crit_ratio != 0 {
             crit = self.prng.random_chance(1, crit_mult[crit_ratio as usize]);
         }
         if crit {
@@ -766,13 +771,22 @@ impl Battle {
         }
         self.mv_mut(mv).crit = crit;
 
-        // After the crit roll.
-        let base_power =
-            match self.run_event_full(EventId::BasePower, Holder::Mon(source), Some(target), effect, Some(Relay::Int(base_power)), true, false) {
-                Relay::Int(n) => n,
-                r if !r.truthy() => 0,
-                other => panic!("BasePower answered {other:?}"),
-            };
+        // After the crit roll. `onEffect`: the move's own `onBasePower`
+        // (a fake move object is an effect with no handlers).
+        let on_effect = !effect.is_none();
+        let base_power = match self.run_event_full(
+            EventId::BasePower,
+            Holder::Mon(source),
+            Some(target),
+            effect,
+            Some(Relay::Int(base_power)),
+            on_effect,
+            false,
+        ) {
+            Relay::Int(n) => n,
+            r if !r.truthy() => 0,
+            other => panic!("BasePower answered {other:?}"),
+        };
         if base_power == 0 {
             return DamageStep::Done(MoveResult::Int(0));
         }
@@ -790,8 +804,8 @@ impl Battle {
         let mut atk_boosts = self.mon(attacker).boosts[attack_stat as usize];
         let mut def_boosts = self.mon(defender).boosts[defense_stat as usize];
 
-        let mut ignore_negative_offensive = def.bools.has("ignoreNegativeOffensive");
-        let mut ignore_positive_defensive = def.bools.has("ignorePositiveDefensive");
+        let mut ignore_negative_offensive = flag("ignoreNegativeOffensive");
+        let mut ignore_positive_defensive = flag("ignorePositiveDefensive");
         if crit {
             ignore_negative_offensive = true;
             ignore_positive_defensive = true;
@@ -823,7 +837,7 @@ impl Battle {
         };
 
         if self.gen <= 4 && defense_stat == Stat::Def {
-            let name = def.name.as_str();
+            let name = def.map_or("", |d| d.name.as_str());
             if name == "Explosion" || name == "Self-Destruct" {
                 defense = (defense / 2).max(1);
             }

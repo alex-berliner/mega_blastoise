@@ -1486,16 +1486,50 @@ impl Battle {
         source: Option<MonRef>,
         source_effect: EffectId,
     ) -> Relay {
-        let def = self.dex.condition_def(status);
-        if self.mon(m).hp == 0 && !def.affects_fainted {
+        self.add_volatile_key(m, EffectId::Condition(status), source, source_effect)
+    }
+
+    /// The volatile PS's `pokemon.addVolatile(move.id)` adds: the move's own
+    /// condition where the data has one (`dig`, `fly`), else a condition
+    /// PS makes from the bare id (`dex.conditions.getByID('solarbeam')`,
+    /// `exists: false`, no handlers), keyed here by the move itself
+    /// ([`EffectId::Move`]; such a volatile never answers an event).
+    pub fn move_volatile_key(&self, mv: MoveId) -> EffectId {
+        let id = ps_protocol::to_id::<40>(self.dex.move_def(mv).name.as_str()).unwrap_or_default();
+        match self.dex.condition_id(id.as_str()) {
+            Some(c) => EffectId::Condition(c),
+            None => EffectId::Move(mv),
+        }
+    }
+
+    /// A volatile's `status.id` as a debug line's argument.
+    fn volatile_id_word(&self, key: EffectId) -> ps_protocol::Word {
+        let id = match key {
+            EffectId::Condition(c) => self.dex.condition_def(c).key.as_str(),
+            _ => "",
+        };
+        ps_protocol::Word::parse(id).unwrap_or_else(|| panic!("unported: the volatile id {key:?} as a debug argument"))
+    }
+
+    /// PS `addVolatile(status, ...)` of a condition or a move-keyed
+    /// handler-less volatile ([`Battle::move_volatile_key`]).
+    // PS: sim/pokemon.ts addVolatile
+    pub fn add_volatile_key(
+        &mut self,
+        m: MonRef,
+        key: EffectId,
+        source: Option<MonRef>,
+        source_effect: EffectId,
+    ) -> Relay {
+        let def = key.condition().map(|c| self.dex.condition_def(c));
+        if self.mon(m).hp == 0 && !def.is_some_and(|d| d.affects_fainted) {
             return Relay::FAIL;
         }
         let (source, source_effect) = self.default_source(source, source_effect);
         let source = source.unwrap_or(m);
-        let key = EffectId::Condition(status);
         if let Some(st) = self.mon(m).volatiles.get(key) {
             let serial = st.serial;
-            if self.registry.handler(key, Prefix::None, EventId::Restart).is_none() {
+            if self.registry.handler(key, Prefix::None, EventId::Restart).is_none() || def.is_none() {
                 return Relay::FAIL;
             }
             return self.single_event(
@@ -1509,7 +1543,21 @@ impl Battle {
                 None,
             );
         }
-        if !self.run_status_immunity(m, status, false) {
+        let immune = match key {
+            EffectId::Condition(status) => !self.run_status_immunity(m, status, false),
+            // `runStatusImmunity(id)` of an id the type chart does not know:
+            // only the `Immunity` event can refuse it.
+            _ if self.mon(m).fainted => true,
+            _ => {
+                let r = self.run_event(EventId::Immunity, Holder::Mon(m), None, EffectId::None, Some(Relay::Effect(key)));
+                if !r.truthy() {
+                    self.debug(ps_protocol::Text::new(ps_protocol::TextId::ArtificialStatusImmunity));
+                }
+                !r.truthy()
+            }
+        };
+        if immune {
+            self.debug(ps_protocol::Text::new(ps_protocol::TextId::ImmuneToVolatileStatus));
             if !self.move_status(source_effect).is_none() {
                 let mon = self.ident(m);
                 self.add(Msg::Immune { mon, kw: Kw::default() });
@@ -1524,16 +1572,23 @@ impl Battle {
             Some(Relay::Effect(key)),
         );
         if !result.truthy() {
+            // `this.battle.debug('add volatile [' + status.id + '] interrupted')`.
+            let id = self.volatile_id_word(key);
+            self.debug(ps_protocol::Text::with1(ps_protocol::TextId::AddVolatileInterrupted, ps_protocol::TextArg::word(id)));
             return result;
         }
         let mut st = self.init_effect_state(true, Holder::Mon(m));
         st.source = Some(source);
         st.source_slot = Some(self.slot_of(source));
         st.source_effect = source_effect;
-        if let Some(d) = def.duration {
+        if let Some(d) = def.and_then(|d| d.duration) {
             st.duration = d as i8;
         }
         self.mon_mut(m).volatiles.insert(key, st);
+        let Some(status) = key.condition() else {
+            // No handlers: `Start` answers `true`.
+            return Relay::TRUE;
+        };
         if let Some(d) = self.duration_callback(status, Holder::Mon(m), Some(source), source_effect) {
             if let Some(s) = self.mon_mut(m).volatiles.get_mut(key) {
                 s.duration = d;
@@ -1562,13 +1617,21 @@ impl Battle {
     /// PS `removeVolatile(status)`.
     // PS: sim/pokemon.ts removeVolatile
     pub fn remove_volatile(&mut self, m: MonRef, status: ConditionId) -> bool {
+        self.remove_volatile_key(m, EffectId::Condition(status))
+    }
+
+    /// PS `removeVolatile(status)` of a condition or a move-keyed volatile
+    /// ([`Battle::move_volatile_key`]; it has no `End` handler).
+    // PS: sim/pokemon.ts removeVolatile
+    pub fn remove_volatile_key(&mut self, m: MonRef, key: EffectId) -> bool {
         if self.mon(m).hp == 0 {
             return false;
         }
-        let key = EffectId::Condition(status);
         let Some(st) = self.mon(m).volatiles.get(key) else { return false };
         let serial = st.serial;
-        self.single_event(EventId::End, key, StateRef::Volatile(m, key), serial, Holder::Mon(m), None, EffectId::None, None);
+        if key.condition().is_some() {
+            self.single_event(EventId::End, key, StateRef::Volatile(m, key), serial, Holder::Mon(m), None, EffectId::None, None);
+        }
         // `delete this.volatiles[id]` removes the key whatever End did; if
         // End re-added it, that newer state is what goes.
         if let Some(gone) = self.mon_mut(m).volatiles.remove(key) {

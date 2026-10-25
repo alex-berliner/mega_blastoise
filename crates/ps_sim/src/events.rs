@@ -434,7 +434,9 @@ impl Battle {
             self.push_listener(out, f, status, cb, StateRef::Status(m), End::ClearStatus(m), holder);
         }
         for (id, st) in mon.volatiles.iter() {
-            let cb = self.get_callback(holder, id, f.prefix, f.event);
+            // A move-keyed volatile is a condition PS made from a bare move
+            // id (`Battle::move_volatile_key`): no handlers.
+            let cb = if matches!(id, EffectId::Move(_)) { None } else { self.get_callback(holder, id, f.prefix, f.event) };
             if cb.is_some() || (f.duration && st.duration != 0) {
                 self.push_listener(out, f, id, cb, StateRef::Volatile(m, id), End::RemoveVolatile(m), holder);
             }
