@@ -29,7 +29,7 @@ import scad  # noqa: E402  (which OpenSCAD, which backend)
 PARTS = os.path.join(HERE, "site", "parts")
 MODEL = os.path.join(PARTS, "model.json")
 INPUTS = ["board/battler.kicad_pcb", "case/case.scad", "viewer/pieces.scad", "viewer/build.py"]
-PIECES = ["cell", "speaker", "panel", "silicone", "caps", "screws", "decks"]
+PIECES = ["cell", "speaker", "panel", "silicone", "caps", "screws"]
 
 
 def git(*args):
@@ -109,8 +109,7 @@ def build():
         model["case_h"], model["z_board"] = float(m.group(1)), float(m.group(2))
         model["z"][p] = write_stl(read_stl(os.path.join(tmp, p + ".stl")), os.path.join(PARTS, p + ".stl"))
 
-    # the printed shell: the tub as exported, the top piece turned back over from its print pose
-    # (the decks are rendered in place by pieces.scad)
+    # the printed shell: the tub as exported, the one-piece top turned back over from its print pose
     tub = read_stl(os.path.join(REF, "case", "tub.stl"))
     model["z"]["tub"] = write_stl(tub, os.path.join(PARTS, "tub.stl"))
     top = read_stl(os.path.join(REF, "case", "top.stl"))

@@ -10,6 +10,5 @@ if (piece == "silicone") {
   for (c = ss_centres) at(c, z_top_cu) linear_extrude(dome_h) rrect(ss_mem[0], ss_mem[1], 2);   // Start/Select
 }
 if (piece == "caps") caps();
-if (piece == "decks") for (sy = [-1, 1]) deck(sy);                      // in place (the print pose is face down)
 if (piece == "screws") for (s = pins) at(s, 0) { cylinder(d = 4, h = 1, $fn = 32); cylinder(d = 2, h = screw_cb[1] + screw_l, $fn = 24); }
 echo(str("VIEWER ", case_h, " ", z_board));
