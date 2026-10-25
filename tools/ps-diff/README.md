@@ -340,3 +340,113 @@ of effect ids. Gen 1 lists `move:<id>` for every handler-free move and
 ensuring `pinned.txt` parses, `ps_sim_cli --ported` matches the contract
 on gens 1/3 and exits 2 on others, and that the driver-side
 divergence-writing path lands the `ps-diff-*.log` it claims.
+
+## The continuous sweep (V-2)
+
+`scripts/ps-sweep.sh` is the background sweep: a loop for tmux on the
+worker machine that plays protocol-diff batches of fresh seeds against
+PS, forever, and files every failure into a bucket named after the first
+differing line. It is the lane that finds the rare handlers the random
+gate sweeps miss.
+
+```
+tmux new -d -s ps-sweep 'scripts/ps-sweep.sh --n 2000 --jobs 8 --nice 19'
+scripts/ps-sweep.sh --once                # one round, then stop
+scripts/ps-sweep.sh --rounds 3            # three rounds, then stop
+scripts/ps-sweep.sh status                # print the one-line status
+scripts/ps-sweep.sh status --ack          # print it, advance the read cursor
+scripts/ps-sweep.sh build                 # rebuild the private binary only
+```
+
+The sweep builds its own copy of `ps_sim_cli` from the tip of the
+integration worktree (`--repo`, default `/root/wt/ps-split`), rebuilds
+when the tip moves, and runs the driver from that same repo, so the PS
+side, the Rust side and the dex all come from one commit. The repo is
+only ever read: the sources are copied into a private workspace
+(`<state>/src`) and built into a private target dir (`<state>/target`),
+and the binary is copied to `<state>/bin/ps_sim_cli` before every batch.
+
+The state lives outside every worktree, in `--state-dir` (default
+`/root/pv/sweep`):
+
+| Path | What |
+|---|---|
+| `counter` | the next seed. It only ever grows, so a restart never replays a seed |
+| `status` | the one-line status (below) |
+| `buckets.tsv` | the ledger: one row per bucket (count, first round, last seed, lanes) |
+| `counters.tsv` | per lane: battles, diffs, crashes, unported, ps_crashes |
+| `unported.tsv` | per lane and per effect id: how many battles stopped there |
+| `<date>/<bucket>/` | the failures: the `ps-diff-*.log` files and `repro.txt` |
+| `src/`, `target/`, `bin/` | the private build |
+| `log` | the sweep's own round log |
+
+### The four lanes
+
+One round plays four lanes, 2,000 battles each, every lane with its own
+fresh block of seeds:
+
+| Lane | Command |
+|---|---|
+| `gen1-wide` | `--gen 1 --teams wide` |
+| `gen3-wide` | `--gen 3 --teams wide` |
+| `gen1-random` | `--gen 1 --teams random --allow-unported` |
+| `gen3-random` | `--gen 3 --teams random --allow-unported` |
+
+The wide lanes draw only from `ps_sim_cli --ported`, so they should see
+no unported stop; an unported stop there means the ported list is out of
+date. The random lanes use PS's own random-battle teams, which carry
+effects that are not ported yet, so most of those battles stop early.
+Those stops are progress data, not failures: they are counted per effect
+id in `unported.tsv` and in the status line. Only a diff and a crash
+make a bucket. A battle where PS itself throws and `ps_sim` stops too is
+a PS bug both sides share: the harness counts it as `ps_crashes`, and the
+sweep does not bucket it.
+
+### The status line
+
+One line, rewritten after every lane:
+
+```
+ps-sweep: ts=<utc> round=<n> tip=<sha> counter=<next seed> battles=<n> \
+diffs=<n> crashes=<n> unported=<n> unported_ids=<id:count,...> \
+lanes=<lane:battles/diffs/crashes/unported,...> buckets_total=<n> \
+buckets_new=<n> buckets_new_list=<name,...> ps_crashes=<n> leaked=<n> \
+disk_mb=<n>
+```
+
+`buckets_new` counts the buckets first seen after the last read cursor.
+The cursor moves only when the reader asks for it
+(`scripts/ps-sweep.sh status --ack`), so a bucket is reported as new
+exactly once and never lost if nobody reads it.
+
+### The buckets
+
+A bucket is named after the first differing line, the way G1-7's table
+lists them: `gen<gen>-<teams>-<kind>-<slug>`, where `kind` is the PS
+line's kind (`move`, `request`, `damage`, `faint`, ...) and `slug` is
+the rest of the line with every number replaced by `n`. A crash gets the
+kind `crash` and the slug of the error's first line. Each bucket holds
+up to five `ps-diff-*.log` files (the divergence report with both logs)
+and a `repro.txt` with the seed, the tip and the command that replays
+it. The command points at the binary of the tip that failed
+(`bin/ps_sim_cli-<tip>`, kept next to the current one) and writes its
+divergence log outside the repo:
+
+```
+seed 1000220 gen 1 teams wide lane gen1-wide tip 8fdaac4
+  node /root/wt/ps-split/tools/ps-diff/diff.js --ps-cli \
+    /root/pv/sweep/bin/ps_sim_cli-8fdaac4 --gen 1 --n 1 --seed 1000220 \
+    --teams wide --jobs 1 --scratch /root/pv/sweep/scratch/repro
+```
+
+### Planted bugs and hygiene
+
+`--tamper-line K` passes the driver's own tamper hook to the batch, so
+a planted divergence shows up as a bucket. The driver does not forward
+the flag to its `--jobs` children, so a tampered lane runs with one job.
+
+The sweep kills every `ps_sim_cli` that outlives its batch (by PID, never
+by pattern kill) and counts the ones it had to kill in `leaked`. The
+failure buckets are capped (`--max-disk-mb`, default 512) and each
+bucket keeps at most five logs (`--max-per-bucket`); the oldest go
+first.
