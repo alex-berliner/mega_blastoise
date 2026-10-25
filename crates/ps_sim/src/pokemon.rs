@@ -197,7 +197,12 @@ impl Battle {
         self.add(Msg::EndItem { mon, item: ItemNum(item.0), kw: Kw::flags(KwFlags::EAT) });
 
         let serial = self.mon(m).item_state.serial;
-        self.single_event(EventId::Eat, EffectId::Item(item), StateRef::Item(m), serial, Holder::Mon(m), source, source_effect, None);
+        // PS `pokemon.eatItem` returns false if `singleEvent('Eat', ...)`
+        // answers false (a flavor berry's `onEat: false`): the `-enditem
+        // [eat]` line is already printed above.
+        if !self.single_event(EventId::Eat, EffectId::Item(item), StateRef::Item(m), serial, Holder::Mon(m), source, source_effect, None).truthy() {
+            return false;
+        }
         self.run_event(EventId::EatItem, Holder::Mon(m), source, source_effect, relay);
 
         if RESTORATIVE_BERRIES.contains(&name) {

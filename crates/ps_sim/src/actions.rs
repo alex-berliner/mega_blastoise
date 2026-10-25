@@ -677,7 +677,8 @@ impl Battle {
                     Kw::NONE
                 }
             }
-            // `case 'leechseed': case 'rest'`: silent.
+            // PS `battle.heal`: `case 'leechseed': case 'rest': this.add('-heal',
+            // target, target.getHealth, '[silent]')`.
             EffectId::Condition(_) if self.effect_key(effect) == "leechseed" => Kw::flags(KwFlags::SILENT),
             // The default case of an effect that is not a move: `[from]
             // FULLNAME`, with `[of] SOURCE` when someone else is the source

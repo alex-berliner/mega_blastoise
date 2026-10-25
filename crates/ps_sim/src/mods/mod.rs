@@ -36,8 +36,10 @@ use ps_dex::{ConditionId, Dex, MoveId};
 /// every move [`move_is_ported`] accepts but Struggle (no team carries it;
 /// the pipeline uses it when nothing else is left) and Hidden Power's typed
 /// placeholders (their move is `hiddenpower`), and every species (PS species
-/// have no handlers). Gen 3's also has every ability [`is_ported`] accepts;
-/// gen 1 has no abilities (its dex's No Ability is not listed). The
+/// have no handlers). Gen 3's also has every ability [`is_ported`] accepts
+/// and every item [`item_is_ported`] accepts (an item with no handlers, a
+/// Poke Ball or an evolution stone, is ported as it is); gen 1 has neither
+/// (its dex's No Ability is not listed, and it has no items). The
 /// `ported_lists_are_the_dex_derivation` test derives each list from the dex
 /// and the registry and fails, printing the new list, when they differ.
 ///
@@ -147,6 +149,23 @@ pub fn move_is_ported(dex: &Dex, registry: &Registry, m: MoveId) -> bool {
     (0..dex.moves.len()).map(|i| MoveId(i as u16)).filter(|&c| dex.move_def(c).flags.has("metronome")).all(|c| move_is_ported(dex, registry, c))
 }
 
+/// Conditions an item's handlers add, which its data does not name: Lansat
+/// Berry's `onEat` adds `focusenergy`.
+// PS: data/items.ts lansatberry onEat
+pub fn item_conditions(dex: &Dex, i: ps_dex::ItemId) -> impl Iterator<Item = ConditionId> {
+    let adds = match dex.item_def(i).name.as_str() {
+        "Lansat Berry" => "focusenergy",
+        _ => "",
+    };
+    (!adds.is_empty()).then(|| dex.condition_id(adds)).flatten().into_iter()
+}
+
+/// An item whose use reaches no unported effect: it is ported and so is
+/// every condition it adds ([`item_conditions`]).
+pub fn item_is_ported(dex: &Dex, registry: &Registry, i: ps_dex::ItemId) -> bool {
+    is_ported(dex, registry, EffectId::Item(i)) && item_conditions(dex, i).all(|c| is_ported(dex, registry, EffectId::Condition(c)))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -211,6 +230,15 @@ mod tests {
             }
             if is_ported(dex, registry, EffectId::Ability(a)) {
                 out.push(format!("ability:{}", PsId(dex.ability_def(a).name.as_str())));
+            }
+        }
+        for i in 0..dex.items.len() {
+            let it = ps_dex::ItemId(i as u16);
+            if dex.gen < 3 {
+                break;
+            }
+            if item_is_ported(dex, registry, it) {
+                out.push(format!("item:{}", PsId(dex.item_def(it).name.as_str())));
             }
         }
         for s in dex.species.iter().filter(|s| s.num > 0) {

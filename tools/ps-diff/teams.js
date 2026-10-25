@@ -229,30 +229,56 @@ function makeWideTeam({ gen, prng, focus, ported, self }) {
       status: stPick,
     });
   }
-  if (focus && focus.length) {
-    // A focus id names a move, or (gen 3) an ability or an item the team
-    // must carry. A move-only focus draws exactly as before.
-    const dex = Dex.mod(`gen${gen}`);
-    const kindOf = (id) => {
-      if (dex.moves.get(id).exists) return 'move';
-      if (gen === 3 && dex.abilities.get(id).exists) return 'ability';
-      if (gen === 3 && dex.items.get(id).exists) return 'item';
-      throw new Error(`--focus ${id}: no such move, ability or item in gen ${gen}`);
-    };
-    const hit = set.some((m) => m.moves.some((mv) => focus.includes(mv))
-      || focus.includes(m.ability) || focus.includes(m.item));
+  const { moves: focusMoves, abilities: focusAbilities, items: focusItems } = splitFocus(gen, focus);
+  if (focusMoves.length) {
+    // A team that carries none of the focus moves gets one: a random move
+    // of a random mon. A moves-only focus draws exactly as it always has.
+    const hit = set.some((m) => m.moves.some((mv) => focusMoves.includes(mv)));
     if (!hit && set.length && set[0].moves.length) {
-      const want = focus[Math.floor(prng.random() * focus.length)];
+      const want = focusMoves[Math.floor(prng.random() * focusMoves.length)];
       const idx = Math.floor(prng.random() * set.length);
-      const kind = kindOf(want);
-      if (kind === 'move') {
-        set[idx].moves[Math.floor(prng.random() * set[idx].moves.length)] = want;
-      } else {
-        set[idx][kind] = want;
-      }
+      set[idx].moves[Math.floor(prng.random() * set[idx].moves.length)] = want;
+    }
+  }
+  if (focusAbilities.length && gen !== 1) {
+    // Gen 3: an ability id becomes a random mon's ability (custom games do
+    // not validate the set).
+    const hit = set.some((m) => focusAbilities.includes(m.ability));
+    if (!hit && set.length) {
+      const want = focusAbilities[Math.floor(prng.random() * focusAbilities.length)];
+      set[Math.floor(prng.random() * set.length)].ability = want;
+    }
+  }
+  if (focusItems.length && gen !== 1) {
+    const hit = set.some((m) => focusItems.includes(m.item));
+    if (!hit && set.length) {
+      const want = focusItems[Math.floor(prng.random() * focusItems.length)];
+      set[Math.floor(prng.random() * set.length)].item = want;
     }
   }
   return set;
+}
+
+/// Split the `--focus` ids into moves, abilities and items. `move:<id>`,
+/// `ability:<id>` and `item:<id>` name the kind; a bare id is a move when
+/// the gen's dex has that move, else (gen 3) an ability when it has that
+/// ability, else an item when it has that item, else a move (the old
+/// moves-only reading). A moves-only focus draws exactly what it drew
+/// before abilities and items could be named.
+function splitFocus(gen, focus) {
+  const out = { moves: [], abilities: [], items: [] };
+  if (!focus) return out;
+  const dex = Dex.mod(`gen${gen}`);
+  for (const f of focus) {
+    if (f.startsWith('move:')) { out.moves.push(f.slice(5)); continue; }
+    if (f.startsWith('ability:')) { out.abilities.push(f.slice(8)); continue; }
+    if (f.startsWith('item:')) { out.items.push(f.slice(5)); continue; }
+    if (dex.moves.get(f).exists) out.moves.push(f);
+    else if (gen !== 1 && dex.abilities.get(f).exists) out.abilities.push(f);
+    else if (dex.items.get(f).exists) out.items.push(f);
+    else out.moves.push(f);
+  }
+  return out;
 }
 
 const NATURES = [
@@ -338,7 +364,7 @@ module.exports = {
   readTargeted,
   buildPair,
   readCarried,
-  _internals: { makeWideTeam, buildRandom, buildWide },
+  _internals: { makeWideTeam, buildRandom, buildWide, splitFocus },
   // Public surface used by diff.js and the cargo tests in
   // crates/ps_harness/tests/protocol_diff.rs.
   NATURES, WIDE_STATUSES,

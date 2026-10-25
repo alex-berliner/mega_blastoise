@@ -122,7 +122,7 @@
 # entries they draw new teams whenever `ported(3)` grows.
 3 wide 4  # G3-M3 non-Ghost Curse: ModifyMove's `target = 'self'` re-targets from the move object; the boosts come in onTryHit's key order (spe, atk, def); also G3-A2 Pressure's switch-in `-ability|...|[silent]` is a one-sided `addSplit` (`|split|pN`, the line, an empty line)
 3 wide 42  # G3-M3 Helping Hand in singles: `|move|MON|Helping Hand|null|[notarget]` (`${target}` of null)
-3 wide 145  # G3-M3 choosing an Imprison-disabled move: the re-sent request marks it disabled with `disabledSource: ''`
+3 wide 145  # G3-M3 choosing an Imprison-disabled move: the re-sent request marks it disabled with `disabledSource: ''`; also G3-I2 White Herb checks its holder (`effectState.target`), not the onAnyAfterMove event's target
 3 wide 2  # G3-M3 Yawn's sleep with its user benched: a benched Pokemon has no slot conditions (crashed)
 3 wide 322  # G3-M3 Grudge's `pp = 0` lands on the shared base move slot, so it survives a switch
 
@@ -133,3 +133,10 @@
 3 wide 294  # G3-A2 Damp's `cant|...|[of] USER` with the move line `[still]`, its target blanked (`attrLastMove('[still]')`, not a bare flag)
 3 wide 3  # G3-A2 Trace's `side.randomFoe()` costs a PRNG call (`sample`) even with one foe
 3 wide 1115  # G3-A2 Synchronize passes bad poison back as regular poison
+
+# G3-I2: the gen 3 berries and herbs, and every handler-free item, joined
+# the gen 3 ported pool (wide teams hold an item 40% of the time). Each
+# entry fails with its bug put back (a mutant build per bug).
+3 wide 5  # G3-I2 a berry's -heal line is `[from] item: Mago Berry` (battle.heal's default case); was plain
+3 wide 20  # G3-I2 Leppa Berry's `-activate|MON|item: Leppa Berry|MOVE|[consumed]`; also Wiki Berry's `[from] item:` heal
+3 wide 189  # G3-I2 White Herb on the holder after the foe's stat drop, a second team

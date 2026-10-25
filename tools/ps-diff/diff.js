@@ -58,8 +58,10 @@
 //     a sentinel `|tampered|mark|line=<K>|` written into it. The diff
 //     is the regression the cargo test pins at a known line.
 //   * `--focus <ids>` makes every team carry at least one of those ids
-//     among its moves (or, in gen 3, as a mon's ability or item). Used by
-//     the cargo test for replay.
+//     among its moves (in gen 3 also as a mon's ability or held item;
+//     teams.js `splitFocus`: `move:`/`ability:`/`item:` prefixes, a bare id
+//     is a move when the dex has that move, else an ability, else an item).
+//     Used by the cargo test for replay.
 //   * `--hits <file>` is passed on to every `ps_sim_cli` (a `hit-count`
 //     build): it writes its per-handler hit counts there, `{pid}`
 //     replaced by its process id and start time.

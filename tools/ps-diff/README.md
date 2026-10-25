@@ -131,10 +131,25 @@ both drivers, no second chance to drift independently.
     id replaces a random move of a random mon; in gen 3 an ability or
     item id becomes that mon's ability or item (custom games do not
     validate the set). A move-only focus draws as it always has.
+  Gen 3 items: 60% of mons hold none, the rest one drawn from the
+  `item:` lines. `ps_sim_cli --ported 3` lists every item `item_is_ported`
+  accepts: each handler PS's data gives it is registered, or it has
+  none (Poke Balls, evolution stones, fossils, Quick Claw, which gen 3
+  reads in `getActionSpeed`), so unfocused wide teams carry those too.
+  An item whose handlers add a condition is listed once that condition
+  is ported too (`item_conditions` in `ps_sim/src/mods/mod.rs`: Lansat
+  Berry waits for `focusenergy`).
 - `file:<path>` -- `buildFromFile` reads the file as PS packed teams
-  (one per line), unpacking with PS's own `Teams.unpack`. A `focus`
-  filter on `--focus ids` makes every team carry at least one of
-  those ids among its moves.
+  (one per line), unpacking with PS's own `Teams.unpack`.
+
+`--focus ids` (wide teams) makes every team carry at least one of the
+move ids among its moves and, in gen 3, at least one of the item ids as
+a held item (`splitFocus` in `teams.js`). `move:<id>` and `item:<id>`
+name the kind; a bare id is a move when the gen's dex has that move,
+else an item when it has that item (so `--focus sitrusberry,lumberry`
+puts those berries on the teams). A moves-only focus draws exactly what
+it drew before item ids were accepted. An unported focus item stops
+the battle `unported: <id>` like any other effect.
 
 ## Carried corpus
 

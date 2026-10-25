@@ -38,9 +38,10 @@
 //!
 //! `--handlers <gen>` prints every handler the gen's registry holds, one
 //! per line: `kind:id`, the handler key (`onResidual`,
-//! `basePowerCallback`) and the ported moves whose data can reach it, comma
-//! separated (the `--focus` ids `scripts/ps-coverage.sh` prints for an
-//! under-hit handler; `-` when the data names none).
+//! `basePowerCallback`) and the ported moves whose data can reach it (an
+//! item: the item itself), comma separated (the `--focus` ids
+//! `scripts/ps-coverage.sh` prints for an under-hit handler; `-` when the
+//! data names none).
 //!
 //! `--hits FILE` (built with the `hit-count` feature) writes the handler
 //! calls of every battle played to FILE, rewritten after each battle and at
@@ -176,6 +177,7 @@ const HANDLER_ADDED: &[(u8, &str, &[&str])] = &[
 /// the moves that name a condition (`ps_sim::mods::move_conditions`), the
 /// moves of [`HANDLER_ADDED`], and for Sleep and Freeze Clause Mod (whose
 /// `onSetStatus` sees every status) the moves that inflict `slp` / `frz`.
+/// An item's focus is the item itself (`--focus` takes item ids).
 /// Empty when none can (gen 1's `trapped`: no gen 1 move adds it).
 fn focus_moves(gen: u8, dex: &'static ps_dex::Dex, id: EffectId) -> Vec<String> {
     if let EffectId::Condition(c) = id {
@@ -183,6 +185,10 @@ fn focus_moves(gen: u8, dex: &'static ps_dex::Dex, id: EffectId) -> Vec<String> 
         if let Some((_, _, moves)) = HANDLER_ADDED.iter().find(|(g, k, _)| *g == gen && *k == key) {
             return moves.iter().map(|m| m.to_string()).collect();
         }
+    }
+    if let EffectId::Item(i) = id {
+        // teams.js `splitFocus` reads an item id as an item focus.
+        return vec![format!("{}", ps_sim::mods::PsId(dex.item_def(i).name.as_str()))];
     }
     let ported: BTreeSet<&str> = ps_sim::mods::ported(gen).iter().filter_map(|e| e.strip_prefix("move:")).collect();
     let cond = match id {
