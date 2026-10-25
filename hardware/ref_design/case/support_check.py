@@ -1,7 +1,8 @@
 #!/usr/bin/env python3
 """Where did the slicer put supports? Read from a sliced Bambu Studio project's own G-code.
 
-    python3 case/support_check.py plate.3mf [object ...]     # objects that must get none
+    python3 case/support_check.py plate.3mf [object ...] [--designed object ...]
+        # objects that must get none; objects that may have support filament under them (the top and its coupons)
 
 The one-piece top prints on support (2026-10-25): tree supports with the interface layers, the ones that touch the
 part, in the second filament (Bambu Support For PLA) and the body in PLA. So besides "no support inside the outline of a
@@ -173,7 +174,9 @@ def check(path, no_support, designed=()):
 
 
 if __name__ == "__main__":
-    lines, bad, _, filament = check(sys.argv[1], set(sys.argv[2:]))
+    args = sys.argv[2:]
+    designed = set(args[args.index("--designed") + 1:]) if "--designed" in args else set()
+    lines, bad, _, filament = check(sys.argv[1], set(args[:args.index("--designed")] if "--designed" in args else args), designed)
     print("\n".join(lines))
     if bad or filament:
         sys.exit("; ".join(([f"support on {', '.join(bad)}"] if bad else []) + filament))
