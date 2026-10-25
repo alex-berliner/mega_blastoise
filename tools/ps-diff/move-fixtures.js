@@ -287,6 +287,17 @@ function choose(battle, rec, side, rng) {
   if (!locked && sw.length && (rng() < 0.12 || !moves.length)) choice = `switch ${pick(rng, sw)}`;
   else choice = moves.length ? `move ${pick(rng, moves)}` : 'default';
   send(choice);
+  // A `maybeTrapped` Pokemon (a foe's Magnet Pull, Arena Trap or Shadow
+  // Tag might hold it) finds out it is trapped when PS rejects the switch
+  // and re-sends the request with `trapped`: it picks a move then. (No
+  // draw unless that happens, so earlier fixtures replay unchanged.)
+  if (choice.startsWith('switch') && /trapped/.test(battle.getSide(side).choice.error)) {
+    const again = [];
+    (rec.requests[side].active[0].moves || []).forEach((m, i) => {
+      if (!m.disabled) again.push(i + 1);
+    });
+    send(again.length ? `move ${pick(rng, again)}` : 'default');
+  }
 }
 
 function play(battle, rec, rng) {

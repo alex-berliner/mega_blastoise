@@ -535,7 +535,7 @@ impl GenScripts for Gen3Scripts {
                     accuracy = Some(30.0 + f64::from(b.mon(pokemon).level - b.mon(target).level));
                 } else {
                     let mon = b.ident(target);
-                    b.add(Msg::Immune { mon, kw: Kw::flags(KwFlags::OHKO) });
+                    b.add(Msg::Immune { mon, what: None, kw: Kw::flags(KwFlags::OHKO) });
                     return MoveResult::False;
                 }
             }
@@ -565,13 +565,13 @@ impl GenScripts for Gen3Scripts {
                 return MoveResult::False;
             } else if natural_immunity {
                 let mon = b.ident(target);
-                b.add(Msg::Immune { mon, kw: Kw::NONE });
+                b.add(Msg::Immune { mon, what: None, kw: Kw::NONE });
                 return MoveResult::False;
             }
         } else {
             if natural_immunity {
                 let mon = b.ident(target);
-                b.add(Msg::Immune { mon, kw: Kw::NONE });
+                b.add(Msg::Immune { mon, what: None, kw: Kw::NONE });
             } else {
                 b.attr_last_move(KwFlags::MISS);
                 let source = b.ident(pokemon);

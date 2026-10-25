@@ -65,6 +65,69 @@ impl Battle {
         }
     }
 
+    /// PS `side.foes()` (also `pokemon.foes()` and, in singles,
+    /// `pokemon.adjacentFoes()`): the foe side's active Pokemon with HP.
+    // PS: sim/side.ts foes, sim/pokemon.ts foes, adjacentFoes
+    pub fn foes(&self, side: u8) -> ([MonRef; 1], usize) {
+        self.allies(1 - side)
+    }
+
+    /// PS `side.randomFoe()`: `battle.sample(foes)`, one PRNG call when
+    /// there is a foe.
+    // PS: sim/side.ts randomFoe
+    pub fn random_foe(&mut self, side: u8) -> Option<MonRef> {
+        let (foes, n) = self.foes(side);
+        if n == 0 {
+            return None;
+        }
+        Some(*self.prng.sample(&foes[..n]))
+    }
+
+    /// PS `pokemon.setType(newType, enforce)` of one type. Stellar,
+    /// Arceus and Silvally (gens 4+) and Terastallization are not in gen 3,
+    /// so only the assignment is left; `addedType`, `knownType` and
+    /// `apparentType` are not kept (types are always known here).
+    // PS: sim/pokemon.ts setType
+    pub fn set_type(&mut self, m: MonRef, t: ps_dex::Type, _enforce: bool) -> bool {
+        assert!(self.gen <= 3, "unported: setType's gen {} refusals", self.gen);
+        self.mon_mut(m).types = crate::relay::TypeList([t, ps_dex::Type::None]);
+        true
+    }
+
+    /// PS `pokemon.formeChange(speciesId, source, isPermanent, abilitySlot,
+    /// message)` for a temporary forme change (Forecast): `setSpecies`, then
+    /// the `-formechange` line, `[from] ability: NAME` when an ability did
+    /// it. `message` is the line's flag (`[msg]`), written before `[from]`.
+    // PS: sim/pokemon.ts formeChange
+    pub fn forme_change(
+        &mut self,
+        m: MonRef,
+        species: ps_dex::SpeciesId,
+        source: EffectId,
+        is_permanent: bool,
+        message: KwFlags,
+    ) -> bool {
+        // The permanent branch (`detailschange`, Megas, Primals, the
+        // ability slot) has no gen 3 caller.
+        assert!(!is_permanent, "unported: a permanent formeChange");
+        // `setSpecies` returns the species: no gen 1-3 `ModifySpecies`
+        // handler can clear it.
+        self.set_species(m, species, false);
+        if self.gen <= 2 {
+            return true;
+        }
+        let mon = self.ident(m);
+        let num = ps_protocol::SpeciesNum(species.0);
+        let kw = match source {
+            EffectId::Ability(_) => {
+                Kw { from: Some(self.effect_fullname(source)), of: None, flags: message | KwFlags::FLAGS_FIRST }
+            }
+            _ => Kw::flags(message),
+        };
+        self.add(Msg::FormeChange { mon, species: num, kw });
+        true
+    }
+
     /// PS `pokemon.tryTrap(isHidden)`.
     // PS: sim/pokemon.ts tryTrap
     pub fn try_trap(&mut self, m: MonRef, is_hidden: bool) -> bool {
@@ -318,7 +381,7 @@ impl Battle {
                 None => Kw::from(from),
             };
             let old = (!old_ability.is_none()).then_some(AbilityNum(old_ability.0));
-            self.add(Msg::Ability { mon, ability: AbilityNum(ability.0), old, boost: false, kw });
+            self.add(Msg::Ability { mon, ability: AbilityNum(ability.0), old, boost: false, kw, split: None });
         }
         if !ability.is_none() && self.gen > 3 && (!is_transform || old_ability != ability || self.gen <= 4) {
             self.single_event(EventId::Start, EffectId::Ability(ability), StateRef::Ability(m), st.serial, Holder::Mon(m), source, EffectId::None, None);

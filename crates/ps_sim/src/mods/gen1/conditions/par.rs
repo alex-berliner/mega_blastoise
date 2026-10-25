@@ -29,7 +29,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     }
     let mon = b.ident(pokemon);
     let reason = Arg::new(ArgValue::Status(Status::Par));
-    b.add(Msg::Cant { mon, reason, mv: None });
+    b.add(Msg::Cant { mon, reason, mv: None, kw: Kw::NONE });
     b.remove_volatile(pokemon, conditions::BIDE);
     if b.remove_volatile(pokemon, conditions::TWOTURNMOVE)
         && b.has_volatile_key(pokemon, "invulnerability")

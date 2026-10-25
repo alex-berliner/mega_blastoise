@@ -679,6 +679,16 @@ impl Battle {
             }
             // `case 'leechseed': case 'rest'`: silent.
             EffectId::Condition(_) if self.effect_key(effect) == "leechseed" => Kw::flags(KwFlags::SILENT),
+            // The default case of an effect that is not a move: `[from]
+            // FULLNAME`, with `[of] SOURCE` when someone else is the source
+            // (Water Absorb, Volt Absorb).
+            EffectId::Ability(_) | EffectId::Item(_) => {
+                let from = self.effect_fullname(effect);
+                match source {
+                    Some(s) if s != target => Kw::from_of(from, self.ident(s)),
+                    _ => Kw::from(from),
+                }
+            }
             other => panic!("unported: the -heal line of {other:?}"),
         };
         self.add(Msg::Heal { mon, health, kw });
@@ -817,7 +827,7 @@ impl Battle {
             }
             _ => Kw::NONE,
         };
-        self.add(Msg::Immune { mon, kw });
+        self.add(Msg::Immune { mon, what: None, kw });
         false
     }
 

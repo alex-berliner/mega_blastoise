@@ -27,7 +27,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let pokemon = a.target.mon()?;
     let mon = b.ident(pokemon);
     let reason = Arg::new(ArgValue::Status(Status::Frz));
-    b.add(Msg::Cant { mon, reason, mv: None });
+    b.add(Msg::Cant { mon, reason, mv: None, kw: Kw::NONE });
     b.mon_mut(pokemon).last_move = MoveId::NONE;
     Some(Relay::FAIL)
 }

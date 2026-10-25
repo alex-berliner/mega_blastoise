@@ -24,7 +24,7 @@ use crate::state::Battle;
 fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let pokemon = a.target.mon()?;
     let mon = b.ident(pokemon);
-    b.add(Msg::Cant { mon, reason: Arg::word(Word::PartiallyTrapped), mv: None });
+    b.add(Msg::Cant { mon, reason: Arg::word(Word::PartiallyTrapped), mv: None, kw: ps_protocol::Kw::NONE });
     Some(Relay::FAIL)
 }
 

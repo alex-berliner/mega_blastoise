@@ -163,6 +163,14 @@ pub fn encode_log(msgs: &[Msg], dex: &dyn DexNames, names: &dyn BattleNames) -> 
                         out.push(enc(&Msg::Hint { text: *text, split: None }));
                         out.push(String::new());
                     }
+                    Msg::Ability { .. } => {
+                        let mut secret = *m;
+                        if let Msg::Ability { split, .. } = &mut secret {
+                            *split = None;
+                        }
+                        out.push(enc(&secret));
+                        out.push(String::new());
+                    }
                     _ => {
                         out.push(enc(&with_health(m, Health::secret)));
                         out.push(enc(&with_health(m, Health::shared)));
@@ -254,7 +262,7 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, dex.species_name(*species));
         }
-        Msg::Cant { mon, reason, mv } => {
+        Msg::Cant { mon, reason, mv, kw: _ } => {
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, &arg_pos_str(*reason, dex));
             if let Some(m) = mv {
@@ -302,7 +310,12 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
         Msg::Crit(mon) | Msg::SuperEffective(mon) | Msg::Resisted(mon) => {
             push_arg(buf, &mon_str(*mon, names));
         }
-        Msg::Immune { mon, kw: _ } => push_arg(buf, &mon_str(*mon, names)),
+        Msg::Immune { mon, what, kw: _ } => {
+            push_arg(buf, &mon_str(*mon, names));
+            if let Some(w) = what {
+                push_arg(buf, &arg_pos_str(*w, dex));
+            }
+        }
         Msg::Miss { source, target } => {
             push_arg(buf, &mon_str(*source, names));
             if let Some(t) = target {
@@ -396,7 +409,7 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, dex.item_name(*item));
         }
-        Msg::Ability { mon, ability, old, boost, kw: _ } => {
+        Msg::Ability { mon, ability, old, boost, kw: _, split: _ } => {
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, dex.ability_name(*ability));
             if let Some(old) = old {
@@ -633,7 +646,16 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
         "-crit" => Ok(Msg::Crit(parse_mon(arg(args, 0)?, names)?)),
         "-supereffective" => Ok(Msg::SuperEffective(parse_mon(arg(args, 0)?, names)?)),
         "-resisted" => Ok(Msg::Resisted(parse_mon(arg(args, 0)?, names)?)),
-        "-immune" => Ok(Msg::Immune { mon: parse_mon(arg(args, 0)?, names)?, kw: parse_kwargs(&args[1..], dex, names)? }),
+        "-immune" => {
+            let mon = parse_mon(arg(args, 0)?, names)?;
+            // A second argument that is not a kwarg: the effect it is immune
+            // to (Own Tempo: `-immune|MON|confusion|[from] ability: Own Tempo`).
+            let (what, i) = match args.get(1).copied().filter(|s| !s.starts_with('[')) {
+                Some(s) => (Some(parse_arg_simple(s, dex)?.0), 2),
+                None => (None, 1),
+            };
+            Ok(Msg::Immune { mon, what, kw: parse_kwargs(&args[i..], dex, names)? })
+        }
         "-miss" => Ok(Msg::Miss { source: parse_mon(arg(args, 0)?, names)?, target: parse_opt_mon(arg_opt(args, 1), names) }),
         "-fail" => {
             let mon = parse_mon(arg(args, 0)?, names)?;
@@ -752,7 +774,7 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
                 }
                 i = 3;
             }
-            Ok(Msg::Ability { mon, ability, old, boost, kw: parse_kwargs(&args[i..], dex, names)? })
+            Ok(Msg::Ability { mon, ability, old, boost, kw: parse_kwargs(&args[i..], dex, names)?, split: None })
         }
         "-endability" => Ok(Msg::EndAbility { mon: parse_mon(arg(args, 0)?, names)?, kw: parse_kwargs(&args[1..], dex, names)? }),
         "-formechange" => {
@@ -804,10 +826,13 @@ fn decode_major(kind: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battl
         "cant" => {
             let mon = parse_mon(arg(args, 0)?, names)?;
             let reason = parse_arg_simple(arg(args, 1)?, dex)?.0;
-            let mv = if let Some(_) = args.get(2) {
-                Some(parse_detail_arg(arg(args, 2)?, dex)?.0)
-            } else { None };
-            Ok(Msg::Cant { mon, reason, mv })
+            // A third argument that is not a kwarg is the move (Damp:
+            // `cant|MON|ability: Damp|Explosion|[of] SOURCE`).
+            let (mv, i) = match args.get(2).copied().filter(|s| !s.starts_with('[')) {
+                Some(s) => (Some(parse_detail_arg(s, dex)?.0), 3),
+                None => (None, 2),
+            };
+            Ok(Msg::Cant { mon, reason, mv, kw: parse_kwargs(args.get(i..).unwrap_or(&[]), dex, names)? })
         }
         "faint" => Ok(Msg::Faint(parse_mon(arg(args, 0)?, names)?)),
         other => Err(CodecError::UnknownKind(other.to_string())),
@@ -1121,6 +1146,11 @@ fn parse_kwargs(args: &[&str], dex: &dyn DexNames, names: &mut Battle) -> Result
         if let Some(rest) = s.strip_prefix("[from] ") {
             if let Ok((a, _)) = parse_arg_simple(rest, dex) {
                 kw.from = Some(a);
+                // A flag before `[from]` (Forecast's `[msg]|[from] ability:
+                // Forecast`) is written first again.
+                if kw.flags.0 & !KwFlags::FLAGS_FIRST.0 != 0 {
+                    kw.flags.insert(KwFlags::FLAGS_FIRST);
+                }
             }
             continue;
         }

@@ -33,7 +33,7 @@
 //! | `\|drag\|MON\|DETAILS\|HP` | [`Msg::Drag`] | split pair |
 //! | `\|detailschange\|MON\|DETAILS` | [`Msg::DetailsChange`] | no HP in PS 0.11.11 |
 //! | `\|-formechange\|MON\|SPECIES` | [`Msg::FormeChange`] | `[msg]` precedes `[from]` |
-//! | `\|cant\|MON\|REASON\|MOVE` | [`Msg::Cant`] | |
+//! | `\|cant\|MON\|REASON\|MOVE` | [`Msg::Cant`] | `[of]` (Damp) |
 //! | `\|faint\|MON` | [`Msg::Faint`] | |
 //! | `\|-damage\|MON\|HP` | [`Msg::Damage`] | split pair |
 //! | `\|-heal\|MON\|HP` | [`Msg::Heal`] | split pair; `[wisher] NAME` |
@@ -51,7 +51,7 @@
 //! | `\|-crit\|MON` | [`Msg::Crit`] | |
 //! | `\|-supereffective\|MON` | [`Msg::SuperEffective`] | |
 //! | `\|-resisted\|MON` | [`Msg::Resisted`] | |
-//! | `\|-immune\|MON` | [`Msg::Immune`] | `[ohko]`, `[from]` |
+//! | `\|-immune\|MON\|WHAT` | [`Msg::Immune`] | `[ohko]`, `[from]`; `WHAT` only for Own Tempo |
 //! | `\|-miss\|SRC\|TGT` | [`Msg::Miss`] | gen 1 has no target |
 //! | `\|-fail\|MON\|WHAT\|WHAT2` | [`Msg::Fail`] | |
 //! | `\|-block\|MON\|EFFECT\|MOVE\|ATTACKER` | [`Msg::Block`] | |
@@ -67,7 +67,7 @@
 //! | `\|-sideend\|SIDE\|EFFECT` | [`Msg::SideEnd`] | |
 //! | `\|-item\|MON\|ITEM` | [`Msg::Item`] | |
 //! | `\|-enditem\|MON\|ITEM` | [`Msg::EndItem`] | `[eat]`; `[silent]` before `[from]` for Trick |
-//! | `\|-ability\|MON\|ABILITY\|OLD` | [`Msg::Ability`] | `OLD` is Trace's old ability, or Intimidate's `boost` |
+//! | `\|-ability\|MON\|ABILITY\|OLD` | [`Msg::Ability`] | `OLD` is Trace's old ability, or Intimidate's `boost`; may be a one-sided split (Pressure) |
 //! | `\|-endability\|MON` | [`Msg::EndAbility`] | |
 //! | `\|-transform\|MON\|TARGET` | [`Msg::Transform`] | |
 //! | `\|-mustrecharge\|MON` | [`Msg::MustRecharge`] | |
@@ -80,7 +80,7 @@
 //! | `\|-nothing` | [`Msg::Nothing`] | gen 2 data's Splash, inherited by gen 1 |
 //! | `\|-message\|TEXT` | [`Msg::Message`] | |
 //! | `\|-hint\|TEXT` | [`Msg::Hint`] | may be a one-sided split |
-//! | `\|split\|pN` | (none) | an encoding detail of [`Health`] and [`Msg::Hint`] |
+//! | `\|split\|pN` | (none) | an encoding detail of [`Health`], [`Msg::Hint`] and [`Msg::Ability`] |
 //! | `\|request\|JSON` | (none) | [`crate::Request`], sent as `sideupdate` |
 //!
 //! Not covered (unused by gens 1 and 3 singles): `poke`, `clearpoke`,
@@ -176,7 +176,8 @@ pub enum Msg {
     /// (`par`), a word (`flinch`, `recharge`, `nopp`), a move (`Focus Punch`,
     /// `Disable`, `Attract`), an ability effect (`ability: Truant`). The move is
     /// a name (`Focus Punch`) or, after `nopp`, an id (`hydropump`).
-    Cant { mon: PokemonIdent, reason: Arg, mv: Option<Arg> },
+    /// Damp's line carries `[of] SOURCE` in `kw`.
+    Cant { mon: PokemonIdent, reason: Arg, mv: Option<Arg>, kw: Kw },
     /// `|faint|MON`
     Faint(PokemonIdent),
 
@@ -217,8 +218,9 @@ pub enum Msg {
     SuperEffective(PokemonIdent),
     /// `|-resisted|MON`
     Resisted(PokemonIdent),
-    /// `|-immune|MON`, with `[ohko]` or `[from] ability: Wonder Guard` in `kw`.
-    Immune { mon: PokemonIdent, kw: Kw },
+    /// `|-immune|MON`, with `[ohko]` or `[from] ability: Wonder Guard` in `kw`;
+    /// `|-immune|MON|WHAT` names the effect (Own Tempo: `confusion`).
+    Immune { mon: PokemonIdent, what: Option<Arg>, kw: Kw },
     /// `|-miss|SOURCE` (gen 1) or `|-miss|SOURCE|TARGET`.
     Miss { source: PokemonIdent, target: Option<PokemonIdent> },
     /// `|-fail|MON`, `|-fail|MON|WHAT`, `|-fail|MON|WHAT|WHAT2`
@@ -284,8 +286,10 @@ pub enum Msg {
     /// `|-ability|MON|ABILITY`, then a third argument: the old ability's name
     /// when `old` is set (PS `setAbility`: `-ability|MON|NEW|OLD|[from]
     /// ability: Trace|[of] SOURCE`), or `boost` when `boost` is (Intimidate).
-    /// PS never writes both; `old` wins if both are set.
-    Ability { mon: PokemonIdent, ability: AbilityNum, old: Option<AbilityNum>, boost: bool, kw: Kw },
+    /// PS never writes both; `old` wins if both are set. With `split:
+    /// Some(side)` PS sent it with `addSplit(side, ['-ability', ...])`
+    /// (Pressure): `|split|pN`, the line, then an empty line.
+    Ability { mon: PokemonIdent, ability: AbilityNum, old: Option<AbilityNum>, boost: bool, kw: Kw, split: Option<SideId> },
     /// `|-endability|MON`
     EndAbility { mon: PokemonIdent, kw: Kw },
 
@@ -387,7 +391,7 @@ impl Msg {
             | Msg::Damage { mon, health, .. }
             | Msg::Heal { mon, health, .. }
             | Msg::SetHp { mon, health, .. } => health.split.then_some(mon.side),
-            Msg::Hint { split, .. } => *split,
+            Msg::Hint { split, .. } | Msg::Ability { split, .. } => *split,
             _ => None,
         }
     }
@@ -477,6 +481,7 @@ impl Msg {
             | Msg::ClearBoost { kw, .. }
             | Msg::ClearNegativeBoost { kw, .. }
             | Msg::CopyBoost { kw, .. }
+            | Msg::Cant { kw, .. }
             | Msg::Immune { kw, .. }
             | Msg::Fail { kw, .. }
             | Msg::Block { kw, .. }
@@ -519,6 +524,7 @@ impl Msg {
             | Msg::ClearBoost { kw, .. }
             | Msg::ClearNegativeBoost { kw, .. }
             | Msg::CopyBoost { kw, .. }
+            | Msg::Cant { kw, .. }
             | Msg::Immune { kw, .. }
             | Msg::Fail { kw, .. }
             | Msg::Block { kw, .. }
@@ -654,7 +660,8 @@ words! {
     Trapped => "trapped",
     TypeChange => "typechange",
     Unboost => "unboost",
-    // PS: sim/pokemon.ts addVolatile (`add volatile [yawn] interrupted`)
+    // PS: sim/pokemon.ts addVolatile (`add volatile [yawn] interrupted`:
+    // Insomnia, Vital Spirit)
     Yawn => "yawn",
 }
 
@@ -1263,6 +1270,8 @@ texts! {
     DisableDisablingMove => "Disable: disabling move {} in slot {}" (Move, Int),
     // PS: data/abilities.ts serenegrace onModifyMove
     DoublingSecondaryChance => "doubling secondary chance" (),
+    // PS: data/mods/gen4/abilities.ts flashfire.condition.onModifyDamagePhase1
+    FlashFireBoost => "Flash Fire boost" (),
     // PS: sim/battle-actions.ts runMoveEffects
     HealInterrupted => "heal interrupted" (),
     // PS: sim/pokemon.ts setStatus
@@ -1576,7 +1585,7 @@ mod tests {
             Msg::Drag { mon: m, details: d, health: h, from: None },
             Msg::DetailsChange { mon: m, details: d, kw: k },
             Msg::FormeChange { mon: m, species: SpeciesNum(2), kw: k },
-            Msg::Cant { mon: m, reason: Arg::status(Status::Par), mv: None },
+            Msg::Cant { mon: m, reason: Arg::status(Status::Par), mv: None, kw: Kw::NONE },
             Msg::Faint(m),
             Msg::damage(m, h),
             Msg::heal(m, h),
@@ -1594,7 +1603,7 @@ mod tests {
             Msg::Crit(f),
             Msg::SuperEffective(f),
             Msg::Resisted(f),
-            Msg::Immune { mon: f, kw: Kw::flags(KwFlags::OHKO) },
+            Msg::Immune { mon: f, what: None, kw: Kw::flags(KwFlags::OHKO) },
             Msg::Miss { source: m, target: None },
             Msg::fail(m),
             Msg::Block { mon: f, effect: a, mv: None, attacker: None, kw: k },
@@ -1619,7 +1628,7 @@ mod tests {
             Msg::SideEnd { side: SideId::P1, effect: a, kw: k },
             Msg::Item { mon: m, item: ItemNum(1), kw: k },
             Msg::EndItem { mon: m, item: ItemNum(1), kw: Kw::flags(KwFlags::EAT) },
-            Msg::Ability { mon: m, ability: AbilityNum(1), old: None, boost: true, kw: k },
+            Msg::Ability { mon: m, ability: AbilityNum(1), old: None, boost: true, kw: k, split: None },
             Msg::EndAbility { mon: m, kw: k },
             Msg::Message(t),
             Msg::Hint { text: t, split: None },

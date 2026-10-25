@@ -70,7 +70,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
         return None;
     }
     let mon = b.ident(pokemon);
-    b.add(Msg::Cant { mon, reason: Arg::new(ArgValue::Status(Status::Slp)), mv: None });
+    b.add(Msg::Cant { mon, reason: Arg::new(ArgValue::Status(Status::Slp)), mv: None, kw: Kw::NONE });
     let sleep_usable = match a.effect {
         EffectId::Move(m) => b.dex.move_def(m).bools.has("sleepUsable"),
         _ => false,

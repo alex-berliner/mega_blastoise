@@ -16,6 +16,7 @@ pub mod curse;
 pub mod destinybond;
 pub mod disable;
 pub mod encore;
+pub mod flashfire;
 pub mod flinch;
 pub mod followme;
 pub mod foresight;

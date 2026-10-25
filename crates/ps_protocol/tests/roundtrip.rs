@@ -280,6 +280,40 @@ fn kecleon_typechange_round_trips() {
     assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
 }
 
+/// The gen 3 ability lines with a shape of their own: Damp's `cant` with
+/// `[of]`, Own Tempo's `-immune` naming confusion, Forecast's
+/// `-formechange` with `[msg]` before `[from]`, Intimidate's `boost`.
+#[test]
+fn gen3_ability_lines_round_trip() {
+    let mut state = CodecState::new(load_names());
+    for line in [
+        "|cant|p1a: Golduck|ability: Damp|Explosion|[of] p2a: Electrode",
+        "|cant|p1a: Slaking|ability: Truant",
+        "|-immune|p1a: Slowbro|confusion|[from] ability: Own Tempo",
+        "|-immune|p1a: Vaporeon|[from] ability: Water Absorb",
+        "|-formechange|p1a: Castform|Castform-Rainy|[msg]|[from] ability: Forecast",
+        "|-ability|p1a: Gyarados|Intimidate|boost",
+        "|-ability|p2a: Gardevoir|Intimidate|Trace|[from] ability: Trace|[of] p1a: Gyarados",
+    ] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+}
+
+/// Pressure's `addSplit(side, ['-ability', ...])`: the line goes to its side
+/// only, and the shared form is an empty line.
+#[test]
+fn a_one_sided_ability_line_is_a_split() {
+    let mut state = CodecState::new(load_names());
+    let line = "|-ability|p1a: Zapdos|Pressure|[silent]";
+    let mut msg = decode_line(line, &mut state).unwrap();
+    if let Msg::Ability { split, .. } = &mut msg {
+        *split = Some(ps_protocol::SideId::P1);
+    }
+    let log = ps_protocol::text::encode_log(&[msg], state.dex(), state.battle());
+    assert_eq!(log, format!("|split|p1\n{line}\n"));
+}
+
 /// `Psychic` names a type and a move. A Mimic, Disable or Spite detail is the
 /// move (as `ps_sim` sends it typed); only a `typechange` detail is the type.
 #[test]

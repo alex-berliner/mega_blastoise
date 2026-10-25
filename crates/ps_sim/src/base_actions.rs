@@ -169,7 +169,7 @@ impl Battle {
             if S::deduct_pp(self, pokemon, id, 0) == 0 && !is_struggle(self, mv) {
                 let mon = self.ident(pokemon);
                 let mv_arg = Arg::new(ArgValue::Move(MoveNum(self.mv(mv).id.0)));
-                self.add(Msg::Cant { mon, reason: Arg::new(ArgValue::Word(Word::NoPp)), mv: Some(mv_arg) });
+                self.add(Msg::Cant { mon, reason: Arg::new(ArgValue::Word(Word::NoPp)), mv: Some(mv_arg), kw: Kw::NONE });
                 self.clear_active_move(true);
                 self.mon_mut(pokemon).move_this_turn_result = Some(Relay::FAIL);
                 return;
@@ -983,7 +983,7 @@ impl Battle {
                             if let (crate::effect::EffectType::Ability, EffectId::Ability(a)) = (effect_type, effect) {
                                 if !boosted {
                                     let ability = ps_protocol::AbilityNum(a.0);
-                                    self.add(Msg::Ability { mon, ability, old: None, boost: true, kw: Kw::NONE });
+                                    self.add(Msg::Ability { mon, ability, old: None, boost: true, kw: Kw::NONE, split: None });
                                     boosted = true;
                                 }
                             }

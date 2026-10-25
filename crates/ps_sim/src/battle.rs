@@ -1377,9 +1377,12 @@ impl Battle {
                 if self.trap_immunity_passes(m) {
                     self.run_event(EventId::MaybeTrapPokemon, Holder::Mon(m), None, EffectId::None, None);
                 }
-                // Gens 3+ ask each foe's other abilities (`FoeMaybeTrapPokemon`)
-                // unless the format is hackmons-like: neither custom game
-                // has `obtainableabilities`, so every slot is skipped.
+                // Canceling switches would leak information if a foe might
+                // have a trapping ability: gens 3+ ask each slot of the foe
+                // species' abilities (`FoeMaybeTrapPokemon`).
+                if self.gen > 2 {
+                    self.foe_maybe_trap_abilities(m);
+                }
 
                 if self.mon(m).fainted {
                     continue;
@@ -1414,6 +1417,52 @@ impl Battle {
     fn trap_immunity_passes(&mut self, m: MonRef) -> bool {
         let types = self.get_types(m);
         !types.as_slice().iter().any(|&t| self.dex.typechart.special_code("trapped", t) == 3)
+    }
+
+    /// The ability-slot part of `endTurn`'s trap check (gens 3+): every
+    /// ability slot of each foe's species answers `FoeMaybeTrapPokemon`
+    /// through `singleEvent` with a fresh state, unless the format is
+    /// hackmons-like (`+hackmons`, or no Obtainable Abilities, and no
+    /// generated team: the custom games). PS compares the slot's NAME with
+    /// the foe's ability ID to skip the ability the `runEvent` already
+    /// asked; they never match, so the current ability is asked again.
+    /// Gen 3 has no hidden abilities and our formats ban none.
+    // PS: sim/battle.ts endTurn
+    pub(crate) fn foe_maybe_trap_abilities(&mut self, pokemon: MonRef) {
+        let random_team = matches!(self.format_spec.base, FormatId::Gen1RandomBattle | FormatId::Gen3RandomBattle);
+        if !random_team {
+            return;
+        }
+        let (foes, n) = self.foes(pokemon.side);
+        for &source in &foes[..n] {
+            let species = self.dex.species_def(self.mon(source).species);
+            for slot in 0..2 {
+                let Some(name) = species.ability(slot) else { continue };
+                if !self.trap_immunity_passes(pokemon) {
+                    continue;
+                }
+                let id = ps_protocol::to_id::<40>(name).unwrap_or_default();
+                let ability = self.dex.ability_id(id.as_str()).unwrap_or_else(|| panic!("no ability {name}"));
+                let effect = EffectId::Ability(ability);
+                // `singleEvent('FoeMaybeTrapPokemon', ...)` calls the
+                // `onFoeMaybeTrapPokemon` key.
+                let Some(h) = self.registry.handler(effect, crate::effect::Prefix::Foe, EventId::MaybeTrapPokemon) else {
+                    self.require_handler_ported(effect, crate::effect::Prefix::Foe, EventId::MaybeTrapPokemon);
+                    continue;
+                };
+                self.single_event_with(
+                    EventId::MaybeTrapPokemon,
+                    effect,
+                    StateRef::Scratch,
+                    0,
+                    Holder::Mon(pokemon),
+                    Some(source),
+                    EffectId::None,
+                    None,
+                    Some(h),
+                );
+            }
+        }
     }
 
     /// Gen 1's end-of-turn partial trapping cleanup in `endTurn`. The

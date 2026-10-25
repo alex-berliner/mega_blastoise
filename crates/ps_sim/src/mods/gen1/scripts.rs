@@ -485,7 +485,7 @@ impl GenScripts for Gen1Scripts {
             b.single_event(EventId::TryImmunity, effect, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
         if hit_result == Relay::FAIL {
             let mon = b.ident(target);
-            b.add(Msg::Immune { mon, kw: Kw::NONE });
+            b.add(Msg::Immune { mon, what: None, kw: Kw::NONE });
             return MoveResult::False;
         }
 
@@ -501,7 +501,7 @@ impl GenScripts for Gen1Scripts {
         // OHKO moves only hit a target no faster than the user.
         if b.mv(mv).ohko && b.get_stat(target, Stat::Spe, false, false) > b.get_stat(pokemon, Stat::Spe, false, false) {
             let mon = b.ident(target);
-            b.add(Msg::Immune { mon, kw: Kw::flags(KwFlags::OHKO) });
+            b.add(Msg::Immune { mon, what: None, kw: Kw::flags(KwFlags::OHKO) });
             return MoveResult::False;
         }
 

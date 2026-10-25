@@ -43,7 +43,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     }
     if b.prng.random_chance(1, 4) {
         let mon = b.ident(pokemon);
-        b.add(Msg::Cant { mon, reason: Arg::new(ArgValue::Status(Status::Par)), mv: None });
+        b.add(Msg::Cant { mon, reason: Arg::new(ArgValue::Status(Status::Par)), mv: None, kw: ps_protocol::Kw::NONE });
         return Some(Relay::FAIL);
     }
     None

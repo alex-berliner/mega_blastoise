@@ -67,7 +67,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let effect = Arg::new(ArgValue::MoveEffect(MoveNum(moves::ATTRACT.0)));
     b.add(Msg::Activate { mon: Some(mon), effect, a: None, b: None, kw: Kw { of: Some(of), ..Kw::NONE } });
     if b.prng.random_chance(1, 2) {
-        b.add(Msg::Cant { mon, reason: attract_arg(), mv: None });
+        b.add(Msg::Cant { mon, reason: attract_arg(), mv: None, kw: Kw::NONE });
         return Some(Relay::FAIL);
     }
     None

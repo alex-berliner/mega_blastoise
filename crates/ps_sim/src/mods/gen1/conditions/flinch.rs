@@ -30,7 +30,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     }
     let mon = b.ident(pokemon);
     let reason = Arg::new(ArgValue::Word(Word::Flinch));
-    b.add(Msg::Cant { mon, reason, mv: None });
+    b.add(Msg::Cant { mon, reason, mv: None, kw: ps_protocol::Kw::NONE });
     Some(Relay::FAIL)
 }
 

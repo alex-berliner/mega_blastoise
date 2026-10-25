@@ -127,6 +127,10 @@ both drivers, no second chance to drift independently.
     A gen 3 mon whose species has no ported ability draws one from
     the ported pool: a packed empty ability is not "none", PS's
     `Teams.unpack` turns it into the species' first ability.
+  - `--focus ids`: a team that carries none of the ids gets one: a move
+    id replaces a random move of a random mon; in gen 3 an ability or
+    item id becomes that mon's ability or item (custom games do not
+    validate the set). A move-only focus draws as it always has.
 - `file:<path>` -- `buildFromFile` reads the file as PS packed teams
   (one per line), unpacking with PS's own `Teams.unpack`. A `focus`
   filter on `--focus ids` makes every team carry at least one of

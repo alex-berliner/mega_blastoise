@@ -230,11 +230,26 @@ function makeWideTeam({ gen, prng, focus, ported, self }) {
     });
   }
   if (focus && focus.length) {
-    const hit = set.some((m) => m.moves.some((mv) => focus.includes(mv)));
+    // A focus id names a move, or (gen 3) an ability or an item the team
+    // must carry. A move-only focus draws exactly as before.
+    const dex = Dex.mod(`gen${gen}`);
+    const kindOf = (id) => {
+      if (dex.moves.get(id).exists) return 'move';
+      if (gen === 3 && dex.abilities.get(id).exists) return 'ability';
+      if (gen === 3 && dex.items.get(id).exists) return 'item';
+      throw new Error(`--focus ${id}: no such move, ability or item in gen ${gen}`);
+    };
+    const hit = set.some((m) => m.moves.some((mv) => focus.includes(mv))
+      || focus.includes(m.ability) || focus.includes(m.item));
     if (!hit && set.length && set[0].moves.length) {
       const want = focus[Math.floor(prng.random() * focus.length)];
       const idx = Math.floor(prng.random() * set.length);
-      set[idx].moves[Math.floor(prng.random() * set[idx].moves.length)] = want;
+      const kind = kindOf(want);
+      if (kind === 'move') {
+        set[idx].moves[Math.floor(prng.random() * set[idx].moves.length)] = want;
+      } else {
+        set[idx][kind] = want;
+      }
     }
   }
   return set;

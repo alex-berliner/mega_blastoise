@@ -378,13 +378,31 @@ fn opening_is_handler_free(f: &Fixture) -> bool {
 /// Stream, Trace...) or a trap that shows in the request (Magnet Pull,
 /// Arena Trap, Shadow Tag).
 fn lead_has_unported_opening_ability(b: &Battle) -> bool {
+    lead_has_opening_ability(b, false)
+}
+
+/// A lead's ability has a handler that acts in the opening (see
+/// [`lead_has_unported_opening_ability`]); `ported` picks the leads whose
+/// ability the registry carries, or those whose ability it lacks.
+fn lead_has_opening_ability(b: &Battle, ported: bool) -> bool {
     (0..2u8).any(|s| {
+        // The set's ability: the battle has started, and Trace may have
+        // replaced it already.
         let m = b.active_at(s, 0).unwrap();
-        let a = b.mon(m).ability;
+        let a = b.mon(m).base_ability;
         !a.is_none()
-            && b.registry.get(EffectId::Ability(a)).is_none()
+            && b.registry.get(EffectId::Ability(a)).is_some() == ported
             && b.dex.ability_def(a).handlers.iter().any(|h| {
-                matches!(h.name(), "onStart" | "onSwitchIn" | "onFoeTrapPokemon" | "onFoeMaybeTrapPokemon")
+                matches!(
+                    h.name(),
+                    "onStart"
+                        | "onSwitchIn"
+                        | "onAfterEntryHazard"
+                        | "onFoeTrapPokemon"
+                        | "onFoeMaybeTrapPokemon"
+                        | "onAnyTrapPokemon"
+                        | "onAnyMaybeTrapPokemon"
+                )
             })
     })
 }
@@ -425,26 +443,38 @@ fn opening_matches_ps_gen3() {
     let mut skipped_ability = 0;
     let mut compared = 0;
     let mut with_forme = 0;
+    let mut with_ability = 0;
     let mut tally = Tally::default();
     for f in load(3).iter().filter(|f| f.kind == "prefix") {
         if lead_has_unported_opening_ability(&setup(&f.chunks[0].commands)) {
             skipped_ability += 1;
             continue;
         }
-        // Everything else in the opening is handler-free.
-        assert!(opening_is_handler_free(f), "gen 3 #{}: an opening line no lead ability explains", f.index);
+        // Everything else in the opening is handler-free, or a ported lead
+        // ability's.
+        let b = setup(&f.chunks[0].commands);
+        assert!(
+            opening_is_handler_free(f) || lead_has_opening_ability(&b, true),
+            "gen 3 #{}: an opening line no lead ability explains",
+            f.index
+        );
+        with_ability += usize::from(lead_has_opening_ability(&b, true));
         replay(f, &mut tally).unwrap_or_else(|e| panic!("{e}"));
         compared += 1;
         with_forme += usize::from(team_has_cosmetic_forme(f));
     }
     std::eprintln!(
-        "gen 3 openings: {compared} match ({with_forme} with an Unown forme), {skipped_ability} wait for lead abilities"
+        "gen 3 openings: {compared} match ({with_forme} with an Unown forme, {with_ability} with a ported lead ability), {skipped_ability} wait for lead abilities"
     );
     assert_eq!(compared + skipped_ability, 60);
-    assert_eq!(compared, 46);
+    // Every lead ability of the corpus that acts in the opening is ported
+    // (G3-A2: Intimidate, Pressure, Trace, the weather abilities, the
+    // trapping abilities).
+    assert_eq!(compared, 60);
+    assert_eq!(with_ability, 14);
     // An `Unown-X` details string in the requests (and the switch line
     // when it leads).
-    assert_eq!(with_forme, 3);
+    assert_eq!(with_forme, 5);
     assert_eq!(tally.move_requests, 2 * compared);
 }
 

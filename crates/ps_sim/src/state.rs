@@ -443,6 +443,9 @@ pub struct Pokemon {
     /// Gen 1's `subFainted` (`null` is false): the last hit broke this
     /// Pokemon's Substitute.
     pub sub_fainted: bool,
+    /// `truantTurn`: Truant's loafing turn is next (set by its `SwitchIn`
+    /// and `Residual`; never cleared on a switch-out, as in PS).
+    pub truant_turn: bool,
 }
 
 impl Pokemon {
@@ -521,6 +524,7 @@ impl Pokemon {
         active_move_actions: 0,
         previously_switched_in: 0,
         sub_fainted: false,
+        truant_turn: false,
     };
 
     /// `getStatus()` as an effect.
@@ -1418,7 +1422,7 @@ impl Battle {
             self.debug(ps_protocol::Text::new(ps_protocol::TextId::NaturalStatusImmunity));
             if message {
                 let mon = self.ident(m);
-                self.add(Msg::Immune { mon, kw: Kw::default() });
+                self.add(Msg::Immune { mon, what: None, kw: Kw::default() });
             }
             return false;
         }
@@ -1433,7 +1437,7 @@ impl Battle {
             self.debug(ps_protocol::Text::new(ps_protocol::TextId::ArtificialStatusImmunity));
             if message && immunity != Relay::Null {
                 let mon = self.ident(m);
-                self.add(Msg::Immune { mon, kw: Kw::default() });
+                self.add(Msg::Immune { mon, what: None, kw: Kw::default() });
             }
             return false;
         }
@@ -1441,7 +1445,7 @@ impl Battle {
     }
 
     /// `(sourceEffect as Move)?.status`: the status a move inflicts.
-    fn move_status(&self, effect: EffectId) -> ConditionId {
+    pub(crate) fn move_status(&self, effect: EffectId) -> ConditionId {
         match effect {
             EffectId::Move(mv) => self.dex.move_def(mv).status,
             _ => ConditionId::NONE,
@@ -1646,7 +1650,7 @@ impl Battle {
             self.debug(ps_protocol::Text::new(ps_protocol::TextId::ImmuneToVolatileStatus));
             if !self.move_status(source_effect).is_none() {
                 let mon = self.ident(m);
-                self.add(Msg::Immune { mon, kw: Kw::default() });
+                self.add(Msg::Immune { mon, what: None, kw: Kw::default() });
             }
             return Relay::FAIL;
         }
@@ -1785,7 +1789,7 @@ impl Battle {
                     self.debug(ps_protocol::Text::new(ps_protocol::TextId::ImmuneToStatus));
                     if !self.move_status(source_effect).is_none() {
                         let mon = self.ident(m);
-                        self.add(Msg::Immune { mon, kw: Kw::default() });
+                        self.add(Msg::Immune { mon, what: None, kw: Kw::default() });
                     }
                     return Relay::FAIL;
                 }

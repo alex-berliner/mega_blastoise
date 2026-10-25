@@ -120,8 +120,16 @@
 # G3-M3: the volatile-control batch (Disable to Follow Me). Each entry fails
 # with its bug put back (a mutant build per bug); like the other wide
 # entries they draw new teams whenever `ported(3)` grows.
-3 wide 4  # G3-M3 non-Ghost Curse: ModifyMove's `target = 'self'` re-targets from the move object; the boosts come in onTryHit's key order (spe, atk, def)
+3 wide 4  # G3-M3 non-Ghost Curse: ModifyMove's `target = 'self'` re-targets from the move object; the boosts come in onTryHit's key order (spe, atk, def); also G3-A2 Pressure's switch-in `-ability|...|[silent]` is a one-sided `addSplit` (`|split|pN`, the line, an empty line)
 3 wide 42  # G3-M3 Helping Hand in singles: `|move|MON|Helping Hand|null|[notarget]` (`${target}` of null)
 3 wide 145  # G3-M3 choosing an Imprison-disabled move: the re-sent request marks it disabled with `disabledSource: ''`
 3 wide 2  # G3-M3 Yawn's sleep with its user benched: a benched Pokemon has no slot conditions (crashed)
 3 wide 322  # G3-M3 Grudge's `pp = 0` lands on the shared base move slot, so it survives a switch
+
+# G3-A2: the switch-in, weather, immunity and trapping abilities. The
+# focused sweeps found no ps_sim divergence once the port ran, so each
+# entry is a wide seed that fails with one plausible slip put back
+# (checked with a mutant build per slip; the real build passes all four).
+3 wide 294  # G3-A2 Damp's `cant|...|[of] USER` with the move line `[still]`, its target blanked (`attrLastMove('[still]')`, not a bare flag)
+3 wide 3  # G3-A2 Trace's `side.randomFoe()` costs a PRNG call (`sample`) even with one foe
+3 wide 1115  # G3-A2 Synchronize passes bad poison back as regular poison

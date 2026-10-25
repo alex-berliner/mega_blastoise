@@ -97,7 +97,7 @@ fn on_before_move(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
         return None;
     }
     let mon = b.ident(pokemon);
-    b.add(Msg::Cant { mon, reason: disable_arg(), mv: Some(Arg::new(ArgValue::Move(MoveNum(id.0)))) });
+    b.add(Msg::Cant { mon, reason: disable_arg(), mv: Some(Arg::new(ArgValue::Move(MoveNum(id.0)))), kw: Kw::NONE });
     b.remove_volatile(pokemon, conditions::TWOTURNMOVE);
     Some(Relay::FAIL)
 }
