@@ -84,11 +84,27 @@ P1S_OBJECT_SETTINGS = {"overhang_ladder_TUNED": {
     "overhang_2_4_speed": "30,30", "overhang_3_4_speed": "15,15", "bridge_flow": "0.85"}}
 
 
-def mark_presets(project, plate, extra=()):
-    """Name the plate's process preset in a Bambu project and list the settings it changes (extra: more that it sets)."""
+# Two-filament plates (the top's interface in Bambu Support For PLA): the flush at each change, tried on 1_case. The purge goes into
+# the support (flush_into_support, on in the profile too: it made no difference to the weights), not into the objects or their
+# infill: there the flush of the support filament printed it as walls and infill of the part, which support_check.py's rule
+# (the support filament is interface and tower only) refuses. So what is left is the multiplier on the flush volumes (a project
+# setting: 230 mm3 from PLA to the support filament and 700 back, the profile's, at 1): 0.7, in Alex's 0.6 to 0.8. Narrowing the
+# prime tower (35 to 25 mm) changed nothing, so it stays TOWER_W: the tower's weight is the flush's
+P1S_FLUSH = {"flush_into_support": "1", "flush_into_infill": "0", "flush_into_objects": "0"}
+P1S_FLUSH_MULTIPLIER = "0.7"
+# Elephant's foot compensation (the top's sharp screen edge and the tub's back edge sit on the bed): Alex's first-layer test
+# (2026-10-22, the printer tests' 8_first_layer_*, PLAN.md) found 0.15 left a lip and 0.25 didn't, so it stays the preset's 0.25
+# and isn't lowered to the 0.1 to 0.15 tried for this list. (The U1's template has 0.15 until a U1 print shows a lip.)
+P1S_ELEPHANT_FOOT = "0.25"
+
+
+def mark_presets(project, plate, extra=(), project_cfg=None):
+    """Name the plate's process preset in a Bambu project and list the settings it changes (extra: more that it sets;
+    project_cfg: project settings, not the preset's, that it gets as they are)."""
     with zipfile.ZipFile(project) as z:
         files = {n: z.read(n) for n in z.namelist()}
     cfg = json.loads(files["Metadata/project_settings.config"])
+    cfg.update(project_cfg or {})
     own = print_package.PLATE_SETTINGS.get(plate, {})
     preset = P1S_PRESETS[own.get("layer_height", "0.20")]
     print_package.mark_presets(cfg, SYSTEM, preset, set(own) | set(extra), P1S_PRESET)
@@ -96,6 +112,33 @@ def mark_presets(project, plate, extra=()):
     with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
         for k, v in files.items():
             z.writestr(k, v)
+
+
+def fine_layers(project, same):
+    """Give the objects with a slope or round rising from the bed their fine layers (print_package.FINE_LAYERS), as Bambu
+    Studio's own height range modifier; all of a plate's objects the same if it has a prime tower (same)."""
+    with zipfile.ZipFile(project) as z:
+        files = {n: z.read(n) for n in z.namelist()}
+    import re
+    names = re.findall(r'<object id="\d+">\s*<metadata key="name" value="([^"]+?)\.stl"',
+                       files["Metadata/model_settings.config"].decode())
+    ids = dict(enumerate(names, 1))          # (the ranges file counts its objects from 1, whatever their ids)
+    xml = print_package.layer_ranges_xml(ids, same)
+    if xml:
+        files["Metadata/layer_config_ranges.xml"] = xml.encode()
+        with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
+            for k, v in files.items():
+                z.writestr(k, v)
+
+
+def applied(project, own):
+    """Fail unless the unsliced project has each of the plate's own settings as set: a name Bambu Studio doesn't know is dropped
+    without a word."""
+    with zipfile.ZipFile(project) as z:
+        cfg = json.loads(z.read("Metadata/project_settings.config"))
+    bad = [k for k, v in own.items() if k not in cfg or not print_package.same(cfg[k], v)]
+    if bad:
+        sys.exit(f"{project}: Bambu Studio didn't take {', '.join(f'{k}={own[k]} (it has {cfg.get(k)})' for k in bad)}")
 
 
 def layout(parts, plate=""):
@@ -158,10 +201,10 @@ def slice_plate(name, parts, supported, tmp):
     two = print_package.has_top(parts)             # a top: the support filament is loaded, with a prime tower
     if two:
         own.update(TOWER_KEYS)
+    if print_package.case_plate(plate_name):       # the case kit's print quality; the printer tests keep the preset's
+        own.update(print_package.CASE_SETTINGS, elefant_foot_compensation=P1S_ELEPHANT_FOOT, **(P1S_FLUSH if two else {}))
     if own:                                        # the plate's own settings (a layer height, the tower) over the profile's
         cfg = json.load(open(process))
-        if any(k not in cfg for k in own if k not in TOWER_KEYS):
-            sys.exit(f"{name}: {', '.join(k for k in own if k not in cfg)} isn't a setting in the P1S process")
         process = os.path.join(work, "process.json")
         json.dump(dict(cfg, **own), open(process, "w"), indent=4)
     subprocess.run([os.environ["BAMBU_STUDIO"],
@@ -180,7 +223,11 @@ def slice_plate(name, parts, supported, tmp):
     own_objs = {obj: own for obj, own in own_objs.items() if own}
     if own_objs:
         own_settings(project, own_objs)
-    mark_presets(project, plate_name, set(TOWER_KEYS) if two else ())
+    if print_package.case_plate(plate_name):
+        fine_layers(project, two)
+    applied(project, own)
+    project_cfg = {"flush_multiplier": [P1S_FLUSH_MULTIPLIER]} if two and print_package.case_plate(plate_name) else {}
+    mark_presets(project, plate_name, set(own), project_cfg)
     cmd = [os.environ["BAMBU_STUDIO"], "--slice", "0", "--export-3mf", name + ".3mf",
            "--outputdir", os.path.join(work, "out"), project]
     subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
@@ -193,7 +240,7 @@ def slice_plate(name, parts, supported, tmp):
         return None
     plate = result["sliced_plates"][0]
     out = os.path.join(work, "out", name + ".3mf")
-    mark_presets(out, plate_name, set(TOWER_KEYS) if two else ())      # the slice writes the list empty again
+    mark_presets(out, plate_name, set(own), project_cfg)      # the slice writes the list empty again
     on_plate = json.loads(zipfile.ZipFile(out).read("Metadata/plate_1.json"))["bbox_objects"]
     on_plate = [o for o in on_plate if "wipe_tower" not in str(o.get("name", ""))]       # (the prime tower counts as an object)
     if len(on_plate) != len(parts):

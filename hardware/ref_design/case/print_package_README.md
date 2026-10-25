@@ -80,9 +80,10 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 | `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the ends; 5.6 along the sides, the keys' tabs 6.7) | `1_case`, `5_unit` |
 | `top.stl` | 77.4 x 132.7 x 6.9 (face down: the screen face on the bed, the ends 1.85 above it) | `1_case`, `5_unit` |
 
-`1_case` (the tub and the top) is 47.1 g of PLA and 6.9 g of support filament, with 9 filament changes, in 2 h 10 min; `5_unit` (the
-tub, the top, the board mock and the dummies on one plate, which fits both beds) is 73.2 g and 6.9 g in 2 h 57 min. The weights include the
-purge (the flush at each change and the prime tower: 7.4 g of PLA and 2.0 g of support filament on `1_case`).
+`1_case` (the tub and the top) is 48.6 g of PLA and 5.8 g of support filament, with 17 filament changes, in 3 h 04 min; `5_unit` (the
+tub, the top, the board mock and the dummies on one plate, which fits both beds) is 75.2 g and 5.8 g in 4 h 18 min. The weights include the
+purge (the flush at each change and the prime tower: 9.1 g of PLA and 2.9 g of support filament on `1_case`). Those are with the print
+settings below; before them (2026-10-25, 2 walls, 200 mm/s outer wall, 0.20 mm layers) `1_case` was 47.1 g and 6.9 g in 2 h 10 min.
 
 To assemble (every part goes in straight down; `docs/assembly.md` has the full steps):
 1. Pull the supports off the top. It lies face down on a flat bench, on its screen face; the ends stand 1.85 mm off the bench, so the
@@ -106,6 +107,50 @@ before it comes away.
 Check that the tub goes on straight down without force and comes off by hand; that with the tub on and no screws the case lifts by
 its ends without anything coming loose and nothing rocks; that the seam round the case is an even thin line with the outsides flush;
 and that the finish where the support interface touched the top is what you want (print `coupon_buttons_top` first).
+
+## Print settings (2026-10-25)
+
+The case plates (every plate but the printer tests in `overhang_kit.zip`, which ask what the preset does) are sliced with these over
+the slicers' 0.20 mm Standard. Each is a named, commented setting: `CASE_SETTINGS`, `FINE_LAYERS` and `layer_ranges_xml` in
+`print_package.py` (the same names and values for the P1S and the U1), `P1S_FLUSH*` and `P1S_ELEPHANT_FOOT` in `print_package_p1s.py`.
+The P1S plates are sliced and measured; the U1's projects get the same settings but can't be sliced here (Orca's command line crashes
+on a U1 preset), so their numbers are the P1S's.
+
+| Setting | Was | Now | Why |
+|---|---|---|---|
+| Outer wall speed | 200 mm/s (U1: 200, 500) | **100** | the outer wall is the surface, so it runs slow; 60 was tried (below) |
+| Inner wall speed | 300 / 400 | unchanged | it can't show, and PLA's 21 mm3/s melt limit holds it anyway |
+| Small perimeters | none (threshold 0) | loops under 15 mm at 50 % | the screw pilots, counterbores and round openings |
+| Walls | 2 | **3** | the fits and the thin top are all walls |
+| Infill | 15 % grid | 15 % **gyroid** | no crossings to bump the walls |
+| Wall order | inner, outer | **inner, outer, inner** | the outer wall is held between two walls, so the fits keep their size; the support interface's surface is a bottom surface, which a wall order doesn't touch (support_check passes, interface extrusion 101 m before, 115 m now with the finer layers) |
+| Seam | aligned | **back** | the long walls show no seam line; it sits at the +Y end of each part, on a plate's back |
+| Elephant's foot | P1S 0.25 (U1 0.15) | **unchanged** | Alex's first-layer test (2026-10-22) found 0.15 left a lip on the tub's edge and 0.25 didn't, so it isn't lowered to the 0.1 to 0.15 asked for; `overhang_kit.zip`'s `8_first_layer_*` plates answer it again |
+| Layer height | 0.20 | **0.12 over the first 4.5 mm** of the top (and the coupons cut from it), **2.5 mm** of the tub, 0.20 above | the DS curve and side rounds rise from the bed and a 0.20 mm layer steps them 0.35 mm; Bambu Studio's and Orca's own per-object height ranges (`Metadata/layer_config_ranges.xml`), as adaptive layer height isn't in a project. 0.10 mm costs another 16 min on `1_case` |
+| Flush multiplier (P1S, two filaments) | 1 | **0.7** | the profile's flush is 230 mm3 from PLA to the support filament and 700 back; 0.6 to 0.8 was asked for, the middle is kept (0.6 would be about 0.5 g less purge, but a white support filament left in a dark PLA shows) |
+| Brim, mouse ears | auto brim (none was drawn) | unchanged | the first layer is 2465 mm2 for the top (a 77 x 133 mm frame) and 8924 mm2 for the tub, 6.9 mm tall: nothing to lift |
+
+What the slicer wouldn't take: a plate with a prime tower needs every object on it at the same layer height ranges (Bambu Studio:
+"The prime tower is only supported if all objects have the same variable layer height"), so on `0_buttons_end`, `1_case`,
+`4_fit_coupons` and `5_unit` the tub and every other object get the top's 0.12 mm to 4.5 mm too. The fine layers are the
+cost: each layer of the top's slope carries support interface in the second filament, so the changes go from 9 to 17 and the plate
+takes 45 min longer on `1_case` (the same plate with only 0.20 mm layers: 46.0 g, 6.4 g, 9 changes, 2 h 19 min). To drop them, empty
+`FINE_LAYERS` in `print_package.py`. Flushing into the objects' infill (`flush_into_infill`, `flush_into_objects`) made the support
+filament print part of the walls and infill, which the build refuses, so they stay off; `flush_into_support` is on in the profile
+already and made no difference to the weights; a narrower prime tower (25 mm instead of 35) changed nothing either, so it stays 35.
+
+The outer wall at 60 and at 100 mm/s, P1S, the other settings as above (`print_package_p1s.py`, 2026-10-25):
+
+| Plate | | PLA | Support filament | Purge (PLA + support) | Changes | Time |
+|---|---|---|---|---|---|
+| `1_case` | before | 47.1 g | 6.9 g | 7.4 + 2.0 g | 9 | 2 h 10 min |
+| | outer wall 60 | 48.6 g | 5.8 g | 9.1 + 2.9 g | 17 | 3 h 23 min |
+| | **outer wall 100** | 48.6 g | 5.8 g | 9.1 + 2.9 g | 17 | **3 h 04 min** |
+| `5_unit` | before | 73.2 g | 6.9 g | 7.4 + 2.0 g | 9 | 2 h 57 min |
+| | outer wall 60 | 75.2 g | 5.8 g | 9.1 + 2.9 g | 17 | 4 h 46 min |
+| | **outer wall 100** | 75.2 g | 5.8 g | 9.1 + 2.9 g | 17 | **4 h 18 min** |
+
+60 costs 19 min on `1_case` and 28 min on `5_unit` over 100. 100 is kept (half the old speed, for 19 to 28 min less than 60; no print has compared the two finishes yet); to print at 60, set `outer_wall_speed` in `CASE_SETTINGS` and rebuild.
 
 ## What to check, and what to change
 

@@ -143,9 +143,9 @@ band, 77.4 x 61, on the bench: the ends stand 1.85 off it, so the caps, which st
 Face down, the screen face is the first layer; the ends' faces stand 1.85 up from it, and they, the slopes and the side rounds
 hang over the bed and print on the support interface. Slicing the top on a P1S (Bambu Studio 2.08, 0.20 mm, 2026-10-25): about
 27 g of PLA (with its purge) and 6 to 7 g of support filament, the supports only from the bed up to 2.2 mm, under the ends' faces,
-the slope and the outer rounds. The kits (`print_package_README.md`) have the plates: `1_case` (tub and top) is 47.1 g of PLA, 6.9 g of
-support filament, 9 filament changes and 2 h 10 min on a P1S; `5_unit` (the whole unit and its dummies, one plate on both
-printers) is 73.2 g and 2 h 57 min. `support_check.py` reads the G-code and fails the build if any part other than the top and the
+the slope and the outer rounds. The kits (`print_package_README.md`) have the plates: `1_case` (tub and top) is 48.6 g of PLA, 5.8 g of
+support filament, 17 filament changes and 3 h 04 min on a P1S (3 walls, 0.12 mm layers over the first 4.5 mm); `5_unit` (the whole unit and its dummies, one plate on both
+printers) is 75.2 g and 4 h 18 min. `support_check.py` reads the G-code and fails the build if any part other than the top and the
 coupons cut from it has support under it, or if the support filament prints anything but interface and the prime tower.
 
 ## The checks

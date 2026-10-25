@@ -166,6 +166,56 @@ TESTS_ORDER = {"1_first_layer_020": "8_first_layer_020", "2_overhang_settings": 
 # each plate's own settings over the project's (the slicers' names; the same in Orca and Bambu Studio)
 PLATE_SETTINGS = {plate: {"layer_height": h} for plate, h in LAYERS.items()}
 PLATE_SETTINGS.update({f"8_first_layer_0{l}": {"initial_layer_print_height": f"0.{l}"} for l in ("20", "12")})
+# The case kit's print quality (Alex's list, 2026-10-25), over the slicers' 0.20 mm Standard on every case plate (not the printer
+# tests, TEST_PLATES, which ask what the preset does). The names and values are the same in Orca and Bambu Studio (two values
+# where a setting has one per extruder variant); the filament change's own settings are each printer's script's.
+CASE_SETTINGS = {
+    # the outer wall slow for the finish (the P1S profile's is 200, the U1's 200 and 500; 60 and 100 were compared, see
+    # print_package_README.md), the inner wall left at the profile's 300 mm/s and up: faster than the outer wall, where it can't
+    # show, and PLA's 21 mm3/s limits it anyway
+    "outer_wall_speed": ["100", "100"],
+    # three walls (was 2): the fits (the tongue in its groove, the button holes) and the thin top's walls are all walls, so a third
+    # wall makes them stiffer and truer than infill would; the fill stays 15 %, now gyroid (was grid): no crossings to bump the
+    # walls, and it's the stronger one per gram in every direction
+    "wall_loops": "3", "sparse_infill_pattern": "gyroid", "sparse_infill_density": "15%",
+    # inner wall, outer wall, inner wall (was inner, outer): the outer wall is printed between two walls that hold it, so it
+    # keeps its size at the fits and has no bulge from the inner wall pushing it; the support interface's surface is the outer
+    # wall's, which a wall order doesn't touch
+    "wall_sequence": "inner-outer-inner wall",
+    # the seam at the back of each object (was aligned: a line wherever the layers lined up, down the long walls): the back of a
+    # plate is the end of a part, and the visible long walls stay clean
+    "seam_position": "back",
+    # small perimeters (the screw pilots and counterbores, round openings: loops shorter than 15 mm) at half
+    # the outer wall's speed (was: no loop counted as small, threshold 0)
+    "small_perimeter_speed": ["50%", "50%"], "small_perimeter_threshold": ["15", "15"],
+}
+# Variable layer height where the surface rises from the bed in a slope or round, whose steps a 0.20 mm layer makes visible (a
+# face 30 degrees from the bed steps 0.35 mm a layer): 0.12 mm layers over the first FINE_LAYERS[object] mm (the top's DS Lite
+# curve and side rounds rise for 4.5 mm face down, the tub's back round for 2.5 mm), 0.20 above. Bambu Studio's and Orca's own
+# per-object height range modifiers (Metadata/layer_config_ranges.xml), as adaptive layer height isn't a setting of a project. The
+# coupons cut from the top and the tub follow the part they are cut from; measured as the sloped face area by height above the bed.
+# A plate with a prime tower gives every object the same range (the tower needs one layer height profile)
+FINE_LAYER = "0.12"
+FINE_LAYERS = {**{o: 4.5 for o in ("top", "usb_top", "seam_top", "buttons_top")},
+               **{o: 2.5 for o in ("tub_print", "usb_tub", "seam_tub", "buttons_tub")}}
+
+
+def case_plate(plate):
+    """Is it a plate of the case kit (given the case settings), not one of the printer tests?"""
+    return plate.removesuffix("_a").removesuffix("_b") not in TEST_PLATES
+
+
+def layer_ranges_xml(ids, same=False):
+    """Metadata/layer_config_ranges.xml: the fine layer height over each object's first FINE_LAYERS mm; ids: {object's number in the project, from 1: name}.
+    same: every object of the plate gets the highest range of them (Bambu Studio won't slice a prime tower unless all the
+    plate's objects have the same variable layer height). None if no object of the plate has one."""
+    top = max((FINE_LAYERS[n] for n in ids.values() if n in FINE_LAYERS), default=0)
+    ranges = {i: (top if same else FINE_LAYERS.get(n, 0)) for i, n in ids.items()}
+    objs = "".join(f' <object id="{i}">\n  <range min_z="0" max_z="{h}">\n   <option opt_key="layer_height">{FINE_LAYER}'
+                   f'</option>\n  </range>\n </object>\n' for i, h in ranges.items() if h)
+    return f'<?xml version="1.0" encoding="utf-8"?>\n<objects>\n{objs}</objects>\n' if objs else None
+
+
 # each object's own settings (kept as they are: a project lists no preset for an object's)
 OBJECT_SETTINGS = {f"first_layer_L{l}_E{e}": {"elefant_foot_compensation": f"0.{e}"}
                    for l in ("20", "12") for e in ("15", "25")}
@@ -292,7 +342,7 @@ def mark_presets(cfg, system_dir, preset, keys=(), base=None):
     listed = set(cfg.get("different_settings_to_system", [""])[0].split(";")) - {""}
     diff = {k for k in system if k not in PRESET_META and k in cfg and not same(system[k], cfg[k])}
     diff |= {k for k in process - set(system) if k not in PRESET_META and k in cfg}
-    diff |= {k for k in listed | set(keys) if k in process}
+    diff |= {k for k in listed | set(keys) if k in process or k in cfg and k not in PRESET_META}   # (a setting the preset leaves at its default isn't in its file)
     cfg["print_settings_id"] = preset
     cfg["different_settings_to_system"][0] = ";".join(sorted(diff))
     return sorted(diff)
@@ -419,6 +469,9 @@ def build(plate, parts, z, supported):
     files["3D/_rels/3dmodel.model.rels"] = ('<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns='
                                             '"http://schemas.openxmlformats.org/package/2006/relationships">\n'
                                             + "\n".join(rels) + "\n</Relationships>")
+    ranges = layer_ranges_xml({i: n for i, (n, _) in enumerate(parts, 1)}, has_top(parts)) if case_plate(plate) else None
+    if ranges:
+        files["Metadata/layer_config_ranges.xml"] = ranges
     cfg = z.read("Metadata/model_settings.config").decode()
     plate_xml = cfg[cfg.index("  <plate>"):cfg.index("  </plate>")]
     plate_xml = plate_xml[:plate_xml.index("    <model_instance>")] + "\n".join(instances) + "\n"
@@ -438,7 +491,8 @@ def build(plate, parts, z, supported):
                 pla_in_slot_1(cfg)
                 support_in_slot_2(cfg)
                 tower = {"enable_prime_tower": "1", "prime_tower_width": str(TOWER_W), "prime_tower_brim_width": "3"} if has_top(parts) else {}
-                for k, v in dict(SUPPORT, enable_support="0", **tower, **PLATE_SETTINGS.get(plate, {})).items():   # supports per object
+                case = dict(CASE_SETTINGS) if case_plate(plate) else {}      # (the print quality of the case kit)
+                for k, v in dict(SUPPORT, enable_support="0", **tower, **PLATE_SETTINGS.get(plate, {}), **case).items():   # supports per object
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
@@ -448,7 +502,7 @@ def build(plate, parts, z, supported):
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                 mark_presets(cfg, U1_SYSTEM, U1_PLATE_PRESETS.get(plate, U1_PRESET),
-                             set(SUPPORT) | set(tower) | {"wipe_tower_x", "wipe_tower_y"} | set(PLATE_SETTINGS.get(plate, {})), U1_PRESET)
+                             set(SUPPORT) | set(tower) | {"wipe_tower_x", "wipe_tower_y"} | set(PLATE_SETTINGS.get(plate, {})) | set(case), U1_PRESET)
                 data = json.dumps(cfg, indent=4).encode()
             if n == "_rels/.rels":
                 data = re.sub(rb'\s*<Relationship Target="/Metadata/[^"]+\.png"[^>]*/>', b"", data)
