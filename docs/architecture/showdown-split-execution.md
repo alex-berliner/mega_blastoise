@@ -715,10 +715,11 @@ relay runs `ps_sim` and speaks the same protocol `ps_client` already reads.
   bare `hubshouse.duckdns.org` name (the WireGuard endpoint). The router's
   ddns service already keeps DuckDNS current.
 - Alex's side, by hand or through the infra session after he approves: a
-  router forward of TCP 443 to box (or another external port if the router
-  admin page owns 443), and the Caddy and docker change under `/srv/infra`
-  (needs `claude-admin`). The worker writes the exact request, never edits
-  the router or Caddy itself.
+  router forward of TCP 8443 to box:8443 (a dedicated port, decided
+  2026-10-25, so no other Caddy name such as qbittorrent.* is exposed), a
+  Caddy site `relay.hubshouse.duckdns.org:8443` and the docker service under
+  `/srv/infra` (needs `claude-admin`). The worker writes the exact request,
+  never edits the router or Caddy itself.
 - On demand and time-boxed: Alex (or one command) starts the container, it
   stops itself after an hour (`restart: no`), and the Caddy route and router
   forward stay in place but answer 502 while it is down. Docker sandbox:
