@@ -174,8 +174,8 @@ Next:
       are now the strip between the clusters under the band's end), the wall under the side rounds is a build stage
       (`check_wall`: 0.708 slope, 0.669 sides and ends, 3D 0.666), every printed part manifold. Print kits: two filaments
       (PLA in slot 1, Bambu Support For PLA in slot 2, the top's supports' interface only; a prime tower), `1_case` is the
-      tub and the top (P1S: 48.6 g PLA, 5.8 g support filament, 17 changes, 3 h 04, with the print settings of 2026-10-25 in print_package_README.md), `5_unit` one whole unit on one plate
-      (75.2 g, 4 h 18), `1_case_decks` is gone. To check on the first print: the finish on the support interface, the
+      tub and the top (P1S: 49.7 g PLA, 5.8 g support filament, 21 changes, 4 h 27, with the print settings of 2026-10-25 in print_package_README.md), `5_unit` one whole unit on one plate
+      (75.6 g, 6 h 22), `1_case_decks` is gone. To check on the first print: the finish on the support interface, the
       top's warp (133 mm, 0.7 skirts), the caps and silicone going in from behind, the keys and grip ribs (case/SHELL.md,
       "Open questions"). docs/bom.md said M2 x 8: it is M2 x 6 (`screw_l`)
 - [x] Row 4, metal snap domes under Start/Select: the board has them (SW20-SW23); the case has

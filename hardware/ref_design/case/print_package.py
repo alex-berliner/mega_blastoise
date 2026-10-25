@@ -90,9 +90,10 @@ TOP_SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_sty
 # where the prime tower stands on a plate with a top (its coordinates: x, y from the bed's front left): the corner the
 # packing reaches last, so the parts (which pack from one corner, in rows) don't have to move for it. The U1's parts pack
 # from the front left, the P1S's from the back left (print_package_p1s.layout), so the tower is at the back right of the U1's bed
-# and the front right of the P1S's. 35 wide and about 50 deep with its brim
+# and the front right of the P1S's. 35 wide and about 50 deep with its brim. The P1S's is at x 200, not 210 (2026-10-25): with 0.08 mm
+# layers it flushes more per layer and sliced at 210 the G-code left the bed
 TOWER_W, TOWER_D = 35, 50
-TOWER_AT = {"U1": (223.0, 206.0), "P1S": (210.0, 8.0)}
+TOWER_AT = {"U1": (223.0, 206.0), "P1S": (200.0, 8.0)}
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
 TOP_STL = os.path.join(HERE, "top.stl")
@@ -170,10 +171,10 @@ PLATE_SETTINGS.update({f"8_first_layer_0{l}": {"initial_layer_print_height": f"0
 # tests, TEST_PLATES, which ask what the preset does). The names and values are the same in Orca and Bambu Studio (two values
 # where a setting has one per extruder variant); the filament change's own settings are each printer's script's.
 CASE_SETTINGS = {
-    # the outer wall slow for the finish (the P1S profile's is 200, the U1's 200 and 500; 60 and 100 were compared, see
-    # print_package_README.md), the inner wall left at the profile's 300 mm/s and up: faster than the outer wall, where it can't
-    # show, and PLA's 21 mm3/s limits it anyway
-    "outer_wall_speed": ["100", "100"],
+    # the outer wall slow for the finish (the P1S profile's is 200, the U1's 200 and 500) and the inner wall at 120 (the profile's
+    # 300 and up, which PLA's 21 mm3/s melt limit capped anyway): Alex's 60 and 120, 2026-10-25. 100 and the profile's inner wall
+    # were compared (print_package_README.md)
+    "outer_wall_speed": ["60", "60"], "inner_wall_speed": ["120", "120"],
     # three walls (was 2): the fits (the tongue in its groove, the button holes) and the thin top's walls are all walls, so a third
     # wall makes them stiffer and truer than infill would; the fill stays 15 %, now gyroid (was grid): no crossings to bump the
     # walls, and it's the stronger one per gram in every direction
@@ -190,12 +191,12 @@ CASE_SETTINGS = {
     "small_perimeter_speed": ["50%", "50%"], "small_perimeter_threshold": ["15", "15"],
 }
 # Variable layer height where the surface rises from the bed in a slope or round, whose steps a 0.20 mm layer makes visible (a
-# face 30 degrees from the bed steps 0.35 mm a layer): 0.12 mm layers over the first FINE_LAYERS[object] mm (the top's DS Lite
+# face 30 degrees from the bed steps 0.35 mm a layer): 0.08 mm layers over the first FINE_LAYERS (0.08 is the P1S profile's min_layer_height, the lowest it takes)[object] mm (the top's DS Lite
 # curve and side rounds rise for 4.5 mm face down, the tub's back round for 2.5 mm), 0.20 above. Bambu Studio's and Orca's own
 # per-object height range modifiers (Metadata/layer_config_ranges.xml), as adaptive layer height isn't a setting of a project. The
 # coupons cut from the top and the tub follow the part they are cut from; measured as the sloped face area by height above the bed.
 # A plate with a prime tower gives every object the same range (the tower needs one layer height profile)
-FINE_LAYER = "0.12"
+FINE_LAYER = "0.08"
 FINE_LAYERS = {**{o: 4.5 for o in ("top", "usb_top", "seam_top", "buttons_top")},
                **{o: 2.5 for o in ("tub_print", "usb_tub", "seam_tub", "buttons_tub")}}
 
