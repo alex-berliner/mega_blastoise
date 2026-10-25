@@ -114,7 +114,7 @@ pub fn damage_kw(b: &Battle, target: crate::state::MonRef) -> Kw {
         Some(EffectId::Move(m)) => m,
         other => panic!("partiallytrapped damage without the volatile's move: {other:?}"),
     };
-    Kw { from: Some(Arg::new(ArgValue::MoveEffect(MoveNum(m.0)))), of: None, flags: KwFlags::PARTIALLYTRAPPED }
+    Kw { from: Some(Arg::new(ArgValue::MoveEffect(MoveNum(m.0)))), of: None, flags: KwFlags::PARTIALLYTRAPPED, repeat_miss: 0 }
 }
 
 pub static DEF: EffectDef = EffectDef::new(&[

@@ -9,8 +9,9 @@
 //! and gen 4's `modifyDamage`, `hitStepAccuracy` and
 //! `hitStepInvulnerabilityEvent`, which gen 3's own overrides replace or
 //! never reach: gen 3's `useMoveInner` calls its `tryMoveHit` for every
-//! target type, so base `trySpreadMoveHit` and its `hitStep*` steps never
-//! run in gen 3. Gens 5 to 8 override no actions. Everything else is base
+//! target type, so base `trySpreadMoveHit` and its `hitStep*` steps run
+//! only for a future move's hit (`futuremove`'s `onEnd`,
+//! [`Gen3Scripts::try_spread_move_hit`]). Gens 5 to 8 override no actions. Everything else is base
 //! (`crate::base_actions`): `runMove`, `useMove`, `moveHit` with
 //! `spreadMoveHit`, `getDamage`, `deductPP`, `boost`, `clearBoosts`.
 //!
@@ -250,6 +251,286 @@ impl Battle {
     }
 }
 
+impl Gen3Scripts {
+    /// Base `trySpreadMoveHit` with gen 3's step order and gen 4's
+    /// `hitStepInvulnerabilityEvent` and `hitStepAccuracy`, which gen 3
+    /// inherits: the only caller in gen 3 is a future move's hit
+    /// (`futuremove`'s `onEnd`, `notActive` true), since gen 3's
+    /// `useMoveInner` calls its own `tryMoveHit`. One target (singles).
+    // PS: sim/battle-actions.ts trySpreadMoveHit
+    pub fn try_spread_move_hit(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef, not_active: bool) -> bool {
+        // One target: no `spreadHit`.
+        if not_active {
+            b.set_active_move(Some(mv), Some(pokemon), Some(target));
+        }
+        let effect = b.mv(mv).effect();
+        let own = b.mv(mv).handler_effect();
+
+        let mut hit_result = b.single_event(EventId::Try, own, StateRef::Scratch, 0, Holder::Mon(pokemon), Some(target), effect, None);
+        if hit_result.truthy() {
+            hit_result =
+                b.single_event(EventId::PrepareHit, own, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
+        }
+        if hit_result.truthy() {
+            hit_result = b.run_event(EventId::PrepareHit, Holder::Mon(pokemon), Some(target), effect, None);
+        }
+        if !hit_result.truthy() {
+            if hit_result == Relay::FAIL {
+                let mon = b.ident(pokemon);
+                b.add(Msg::Fail { mon, what: None, what2: None, kw: Kw::NONE });
+                b.attr_last_move_still();
+            }
+            return hit_result == Relay::NotFail;
+        }
+
+        // Gens 5 and earlier swap steps 1 and 2 (type immunity before
+        // `TryHit`); gen 4's further swap is gen 4 only.
+        let steps: [fn(&mut Battle, MonRef, MonRef, MoveRef) -> MoveResult; 6] = [
+            Self::hit_step_invulnerability_event,
+            Self::hit_step_type_immunity,
+            Self::hit_step_try_hit_event,
+            Self::hit_step_try_immunity,
+            Self::hit_step_accuracy,
+            // `hitStepBreakProtect` and `hitStepStealBoosts`: no gen 3 move
+            // `breaksProtect` or `stealsBoosts`.
+            Self::hit_step_move_hit_loop,
+        ];
+        let mut targets = Some(target);
+        let mut at_least_one_failure = false;
+        for step in steps {
+            let Some(t) = targets else { break };
+            let hit_result = step(b, t, pokemon, mv);
+            if !(hit_result.truthy() || hit_result == MoveResult::Int(0)) {
+                targets = None;
+            }
+            at_least_one_failure = at_least_one_failure || hit_result == MoveResult::False;
+            // No `smartTarget` in gen 3.
+        }
+
+        // `move.hitTargets` is read by nothing in gen 3.
+        let move_result = targets.is_some();
+        if !move_result && !at_least_one_failure {
+            b.mon_mut(pokemon).move_this_turn_result = Some(Relay::Null);
+        }
+        move_result
+    }
+
+    /// Gen 4's `hitStepInvulnerabilityEvent`.
+    // PS: data/mods/gen4/scripts.ts hitStepInvulnerabilityEvent
+    fn hit_step_invulnerability_event(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {
+        let effect = b.mv(mv).effect();
+        let hit_result = b.run_event(EventId::Invulnerability, Holder::Mon(target), Some(pokemon), effect, None);
+        if hit_result == Relay::FAIL {
+            b.attr_last_move(KwFlags::MISS);
+            let source = b.ident(pokemon);
+            let tgt = b.ident(target);
+            b.add(Msg::Miss { source, target: Some(tgt) });
+        }
+        MoveResult::from_relay(hit_result)
+    }
+
+    /// `hitStepTypeImmunity`: `ignoreImmunity` is set on every move object
+    /// (`new Dex.Move` defaults it).
+    // PS: sim/battle-actions.ts hitStepTypeImmunity
+    fn hit_step_type_immunity(b: &mut Battle, target: MonRef, _pokemon: MonRef, mv: MoveRef) -> MoveResult {
+        // `runImmunity(move, !move.smartTarget)`.
+        MoveResult::from_bool(b.run_immunity(target, Some(mv), true))
+    }
+
+    /// `hitStepTryHitEvent`.
+    // PS: sim/battle-actions.ts hitStepTryHitEvent
+    fn hit_step_try_hit_event(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {
+        let effect = b.mv(mv).effect();
+        let hit_result = b.run_event(EventId::TryHit, Holder::Mon(target), Some(pokemon), effect, None);
+        // `!hitResults.includes(true) && hitResults.includes(false)`.
+        if hit_result == Relay::FAIL {
+            let mon = b.ident(pokemon);
+            b.add(Msg::Fail { mon, what: None, what2: None, kw: Kw::NONE });
+            b.attr_last_move_still();
+        }
+        if hit_result != Relay::NotFail && !hit_result.truthy() {
+            return MoveResult::False;
+        }
+        MoveResult::from_relay(hit_result)
+    }
+
+    /// `hitStepTryImmunity` (powder and Prankster immunities are gens 6
+    /// and 7).
+    // PS: sim/battle-actions.ts hitStepTryImmunity
+    fn hit_step_try_immunity(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {
+        let effect = b.mv(mv).effect();
+        let own = b.mv(mv).handler_effect();
+        if !b.single_event(EventId::TryImmunity, own, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None).truthy() {
+            let mon = b.ident(target);
+            b.add(Msg::Immune { mon, what: None, kw: Kw::NONE });
+            return MoveResult::False;
+        }
+        MoveResult::True
+    }
+
+    /// Gen 4's `hitStepAccuracy`: the stages, `ModifyAccuracy`, `Accuracy`
+    /// and the roll (OHKO moves by level).
+    // PS: data/mods/gen4/scripts.ts hitStepAccuracy
+    fn hit_step_accuracy(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {
+        b.active_target = Some(target);
+        let effect = b.mv(mv).effect();
+        let mut accuracy = b.mv(mv).accuracy_x256.map(|a| f64::from(a) / 256.0);
+        if b.mv(mv).ohko {
+            // Bypasses the accuracy modifiers.
+            if !b.is_semi_invulnerable(target) {
+                if b.mon(pokemon).level < b.mon(target).level {
+                    let mon = b.ident(target);
+                    b.add(Msg::Immune { mon, what: None, kw: Kw::flags(KwFlags::OHKO) });
+                    return MoveResult::False;
+                }
+                accuracy = Some(30.0 + f64::from(b.mon(pokemon).level - b.mon(target).level));
+            }
+        } else {
+            accuracy = b.gen3_stage_accuracy(pokemon, target, mv);
+            accuracy = b.number_event(EventId::ModifyAccuracy, target, Some(pokemon), effect, accuracy, false);
+        }
+        let always_hit = b.mv(mv).fake != crate::actions::FakeMove::Data && b.dex.move_def(b.mv(mv).id).bools.has("alwaysHit");
+        if always_hit {
+            accuracy = None;
+        } else {
+            accuracy = b.number_event(EventId::Accuracy, target, Some(pokemon), effect, accuracy, false);
+        }
+        if let Some(acc) = accuracy {
+            if !b.accuracy_roll(acc) {
+                b.attr_last_move(KwFlags::MISS);
+                let source = b.ident(pokemon);
+                let tgt = b.ident(target);
+                b.add(Msg::Miss { source, target: Some(tgt) });
+                return MoveResult::False;
+            }
+        }
+        MoveResult::True
+    }
+
+    /// `hitStepMoveHitLoop`: each hit's `spreadMoveHit`, then the hit
+    /// count, recoil, `gotAttacked` and the secondary events. One target.
+    // PS: sim/battle-actions.ts hitStepMoveHitLoop
+    fn hit_step_move_hit_loop(b: &mut Battle, target: MonRef, pokemon: MonRef, mv: MoveRef) -> MoveResult {
+        let effect = b.mv(mv).effect();
+        let own = b.mv(mv).handler_effect();
+        let data = b.mv(mv).hit_data();
+        let id = b.mv(mv).id;
+        let mut damage = MoveResult::Int(0);
+        let mut total_damage = 0;
+        b.mon_mut(pokemon).last_damage = 0;
+        let target_hits = match b.mv(mv).multihit {
+            None => 1,
+            Some([lo, hi]) if lo == hi => u32::from(lo),
+            Some([2, 5]) => *b.prng.sample(&[2u32, 2, 2, 3, 3, 3, 4, 5]),
+            Some([lo, hi]) => b.prng.random_range(u32::from(lo), u32::from(hi) + 1),
+        };
+        let mut null_damage = true;
+        let mut move_damage = MoveResult::Undefined;
+        // Sleep Talk can only be used asleep: no recursive check.
+        let plain = b.mv(mv).fake == crate::actions::FakeMove::Data;
+        let bools = |b: &Battle, name: &str| !plain && b.dex.move_def(id).bools.has(name);
+        let source_sleep_usable = match b.mv(mv).source_effect {
+            EffectId::Move(m) => b.dex.move_def(m).bools.has("sleepUsable"),
+            _ => false,
+        };
+        let is_sleep_usable = bools(b, "sleepUsable") || source_sleep_usable;
+        let mut targets_copy = crate::base_actions::HitTarget::Mon(target);
+        let mut hit = 1;
+        while hit <= target_hits {
+            if damage == MoveResult::False {
+                break;
+            }
+            if hit > 1 && b.mon(pokemon).status == conditions::SLP && !is_sleep_usable {
+                break;
+            }
+            if b.mon(target).hp == 0 {
+                break;
+            }
+            let am = b.mv_mut(mv);
+            am.hit = hit as u8;
+            am.last_hit = hit == target_hits;
+            targets_copy = crate::base_actions::HitTarget::Mon(target);
+            // No `smartTarget` in gen 3.
+
+            if bools(b, "multiaccuracy") && hit > 1 {
+                let mut accuracy = b.gen3_stage_accuracy(pokemon, target, mv);
+                accuracy = b.number_event(EventId::ModifyAccuracy, target, Some(pokemon), effect, accuracy, false);
+                if !bools(b, "alwaysHit") {
+                    accuracy = b.number_event(EventId::Accuracy, target, Some(pokemon), effect, accuracy, false);
+                    if let Some(acc) = accuracy {
+                        if !b.accuracy_roll(acc) {
+                            break;
+                        }
+                    }
+                }
+            }
+
+            let (md, t) = b.spread_move_hit::<Self>(targets_copy, pokemon, mv, data, false, false);
+            move_damage = md;
+            targets_copy = t;
+            if move_damage == MoveResult::False {
+                break;
+            }
+            null_damage = false;
+            // Each hit's damage counts on its own (Counter, Mirror Coat).
+            damage = MoveResult::Int(if move_damage == MoveResult::True { 0 } else { move_damage.or_zero() });
+            total_damage += damage.or_zero();
+            b.each_event(EventId::Update, EffectId::None, None);
+            if b.mon(pokemon).hp == 0 {
+                hit += 1;
+                break;
+            }
+            hit += 1;
+        }
+        // `hit` is one more than the hits made.
+        if hit == 1 {
+            return MoveResult::False;
+        }
+        if null_damage {
+            damage = MoveResult::False;
+        }
+        if b.mv(mv).multihit.is_some() {
+            let mon = b.ident(target);
+            b.add(Msg::HitCount { mon, count: (hit - 1) as u8 });
+        }
+
+        if total_damage != 0 {
+            b.apply_recoil_damage(total_damage, mv, pokemon);
+        }
+
+        if let Some(t) = targets_copy.mon() {
+            if pokemon != t {
+                b.got_attacked(t, id, move_damage, pokemon);
+            }
+        }
+
+        if b.mv(mv).ohko && b.mon(target).hp == 0 {
+            b.add(Msg::Ohko);
+        }
+
+        if !(damage.truthy() || damage == MoveResult::Int(0)) {
+            return damage;
+        }
+
+        b.each_event(EventId::Update, EffectId::None, None);
+
+        if !b.suppressing_secondaries() {
+            // `afterMoveSecondaryEvent(targetsCopy.filter(val => !!val))`.
+            if let Some(t) = targets_copy.mon() {
+                b.single_event(EventId::AfterMoveSecondary, own, StateRef::Scratch, 0, Holder::Mon(t), Some(pokemon), effect, None);
+                b.run_event(EventId::AfterMoveSecondary, Holder::Mon(t), Some(pokemon), effect, None);
+            }
+            // `move.totalDamage` is always a number with one target.
+            if b.mon(target).hp != 0 {
+                let before = i32::from(b.mon(target).hurt_this_turn.unwrap_or(0)) + total_damage;
+                b.run_event(EventId::EmergencyExit, Holder::Mon(target), Some(pokemon), EffectId::None, Some(Relay::Int(before)));
+            }
+        }
+
+        damage
+    }
+}
+
 impl GenScripts for Gen3Scripts {
     // PS: sim/battle-actions.ts runMove
     fn run_move(b: &mut Battle, mv: ActionMove, pokemon: MonRef, target_loc: i8, source_effect: EffectId) {
@@ -466,12 +747,16 @@ impl GenScripts for Gen3Scripts {
         let mut natural_immunity = false;
         let mut acc_pass = true;
         let effect = b.mv(mv).effect();
+        // The move's own handlers: none on a plain `moveData` object
+        // (Bide's unleash), whose hits carry only its fixed damage.
+        let own = b.mv(mv).handler_effect();
+        let data = b.mv(mv).hit_data();
         let id = b.mv(mv).id;
         let def = b.dex.move_def(id);
 
         // `singleEvent('PrepareHit', ...) && runEvent('PrepareHit', ...)`.
         let mut hit_result =
-            b.single_event(EventId::PrepareHit, effect, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
+            b.single_event(EventId::PrepareHit, own, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
         if hit_result.truthy() {
             hit_result = b.run_event(EventId::PrepareHit, Holder::Mon(pokemon), Some(target), effect, None);
         }
@@ -484,7 +769,7 @@ impl GenScripts for Gen3Scripts {
             return MoveResult::False;
         }
 
-        if !b.single_event(EventId::Try, effect, StateRef::Scratch, 0, Holder::Mon(pokemon), Some(target), effect, None).truthy() {
+        if !b.single_event(EventId::Try, own, StateRef::Scratch, 0, Holder::Mon(pokemon), Some(target), effect, None).truthy() {
             return MoveResult::False;
         }
 
@@ -500,7 +785,7 @@ impl GenScripts for Gen3Scripts {
                 }
                 return MoveResult::False;
             }
-            return Self::move_hit(b, Some(target), pokemon, mv, MoveData::Move, false, false);
+            return Self::move_hit(b, Some(target), pokemon, mv, data, false, false);
         }
 
         let hit_result = b.run_event(EventId::Invulnerability, Holder::Mon(target), Some(pokemon), effect, None);
@@ -513,13 +798,14 @@ impl GenScripts for Gen3Scripts {
             return MoveResult::False;
         }
 
-        // `move.ignoreImmunity` is never undefined: the dex sets it.
+        // `move.ignoreImmunity === undefined` (a plain `moveData` object):
+        // `category === 'Status'`, which the object's field already is.
 
         if !b.run_immunity(target, Some(mv), false) {
             natural_immunity = true;
         } else {
             let hit_result =
-                b.single_event(EventId::TryImmunity, effect, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
+                b.single_event(EventId::TryImmunity, own, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
             if hit_result == Relay::FAIL {
                 natural_immunity = true;
             }
@@ -584,7 +870,7 @@ impl GenScripts for Gen3Scripts {
         let mut total_damage = MoveResult::Int(0);
         let mut damage;
         b.mon_mut(pokemon).last_damage = 0;
-        if let Some([lo, hi]) = def.multihit() {
+        if let Some([lo, hi]) = b.mv(mv).multihit {
             // A fixed count is a number in PS (no PRNG call).
             let hits = if lo == hi {
                 u32::from(lo)
@@ -623,7 +909,7 @@ impl GenScripts for Gen3Scripts {
                     }
                 }
 
-                let move_damage = Self::move_hit(b, Some(target), pokemon, mv, MoveData::Move, false, false);
+                let move_damage = Self::move_hit(b, Some(target), pokemon, mv, data, false, false);
                 if move_damage == MoveResult::False {
                     break;
                 }
@@ -645,7 +931,7 @@ impl GenScripts for Gen3Scripts {
             let mon = b.ident(target);
             b.add(Msg::HitCount { mon, count: i as u8 });
         } else {
-            damage = Self::move_hit(b, Some(target), pokemon, mv, MoveData::Move, false, false);
+            damage = Self::move_hit(b, Some(target), pokemon, mv, data, false, false);
             total_damage = damage;
         }
 
@@ -667,7 +953,7 @@ impl GenScripts for Gen3Scripts {
 
         b.each_event(EventId::Update, EffectId::None, None);
 
-        b.single_event(EventId::AfterMoveSecondary, effect, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
+        b.single_event(EventId::AfterMoveSecondary, own, StateRef::Scratch, 0, Holder::Mon(target), Some(pokemon), effect, None);
         b.run_event(EventId::AfterMoveSecondary, Holder::Mon(target), Some(pokemon), effect, None);
 
         damage

@@ -72,6 +72,17 @@ pub enum FakeMove {
     /// false})` with `hit` 0 (confusion's self-hit). Its `critRatio` is the
     /// data default, 1.
     BasePower,
+    /// A handler-less move object PS builds from a plain `moveData`: Bide's
+    /// unleash (`tryMoveHit(target, pokemon, {id: 'bide', damage, ...})`), a
+    /// future move's hit (`new Dex.Move(data.moveData)`) and its damage roll
+    /// (`getDamage(source, target, {name, basePower, ...})`). `id` is the
+    /// data's `id` (`MoveId::NONE` when it has none), so `move.id` checks
+    /// and names see it, but none of the move's own handlers answer for it
+    /// ([`ActiveMove::handler_effect`]). Its only payload is `damage` (a
+    /// hit passes [`MoveData::Damage`]); the fields PS sets on the object
+    /// (`type`, `category`, `accuracy`, `basePower`, `ignoreImmunity`) are
+    /// the [`ActiveMove`]'s. Its `critRatio` is undefined (0).
+    Data,
 }
 
 /// PS's `ActiveMove`: the dex move, copied per use, with the fields the
@@ -123,6 +134,14 @@ pub struct ActiveMove {
     /// with its boosts' key order, which decides the order of the boost
     /// lines (`for (boostName in boost)`); `None` reads the dex's `self`.
     pub self_effect: Option<(&'static ps_dex::SelfEffect, &'static [u8])>,
+    /// `multihit`: the dex's, or Beat Up's count of allies
+    /// (`move.multihit = move.allies.length`; 0 is `None`).
+    pub multihit: Option<[u8; 2]>,
+    /// Beat Up's `move.allies`: the side's healthy Pokemon (team indexes,
+    /// in `side.pokemon` order), the first `allies_len` of them; each hit's
+    /// `ModifySpA` shifts the first off.
+    pub allies: [u8; 6],
+    pub allies_len: u8,
 }
 
 impl ActiveMove {
@@ -150,6 +169,9 @@ impl ActiveMove {
         volatile_status_deleted: false,
         on_hit_deleted: false,
         self_effect: None,
+        multihit: None,
+        allies: [0; 6],
+        allies_len: 0,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -173,6 +195,7 @@ impl ActiveMove {
             ignore_defensive: def.bools.has("ignoreDefensive"),
             ignore_ability: def.bools.has("ignoreAbility"),
             damage: def.damage(),
+            multihit: def.multihit(),
             ..ActiveMove::EMPTY
         }
     }
@@ -183,6 +206,27 @@ impl ActiveMove {
             EffectId::None
         } else {
             EffectId::Move(self.id)
+        }
+    }
+
+    /// The effect whose own handlers answer for this move object
+    /// (`singleEvent(..., move, ...)`, its callbacks): none for a
+    /// [`FakeMove::Data`] object, which PS builds without handlers.
+    pub fn handler_effect(&self) -> EffectId {
+        if self.fake == FakeMove::Data {
+            EffectId::None
+        } else {
+            self.effect()
+        }
+    }
+
+    /// The `moveData` of a hit of this move object: the move itself, or a
+    /// [`FakeMove::Data`] object's bare fixed damage.
+    pub fn hit_data(&self) -> MoveData {
+        match (self.fake, self.damage) {
+            (FakeMove::Data, Some(FixedDamage::Hp(n))) => MoveData::Damage(i32::from(n)),
+            (FakeMove::Data, other) => panic!("a plain moveData hit without fixed damage ({other:?})"),
+            _ => MoveData::Move,
         }
     }
 
@@ -488,7 +532,12 @@ impl Battle {
     // PS: sim/battle.ts attrLastMove
     pub fn attr_last_move(&mut self, flag: KwFlags) {
         let Some(i) = self.last_move_line else { return };
-        if let Msg::Move { kw, .. } = &mut self.log.as_mut_slice()[i as usize] {
+        // `addMove` wrote a `|move|` or an `|-anim|` line.
+        if let Msg::Move { kw, .. } | Msg::Anim { kw, .. } = &mut self.log.as_mut_slice()[i as usize] {
+            // PS appends the text again: a second `[miss]` is counted.
+            if flag == KwFlags::MISS && kw.flags.contains(flag) {
+                kw.repeat_miss += 1;
+            }
             kw.flags.insert(flag);
         }
     }
@@ -861,7 +910,7 @@ impl Battle {
             // type string is no Pokemon.
             let r = self.single_event(
                 EventId::Effectiveness,
-                am.effect(),
+                am.handler_effect(),
                 crate::state::StateRef::Scratch,
                 0,
                 Holder::Mon(m),
@@ -943,7 +992,8 @@ impl Battle {
         let handlers = match data {
             MoveData::Move => {
                 let effect = self.mv(mv).effect();
-                return self.single_event(event, effect, StateRef::Scratch, 0, target, source, effect, relay);
+                let own = self.mv(mv).handler_effect();
+                return self.single_event(event, own, StateRef::Scratch, 0, target, source, effect, relay);
             }
             MoveData::Secondary(s) => s.handlers,
             MoveData::SelfEffect(s) => s.handlers,
@@ -957,7 +1007,7 @@ impl Battle {
     /// `damageCallback`, `basePowerCallback`) directly, as PS does
     /// (`move.xCallback.call(this.battle, ...)`); `None` without one.
     pub(crate) fn move_callback(&mut self, mv: MoveRef, event: EventId, target: MonRef, source: Option<MonRef>) -> Option<Relay> {
-        let effect = self.mv(mv).effect();
+        let effect = self.mv(mv).handler_effect();
         let h = self.registry.handler(effect, Prefix::None, event)?;
         #[cfg(feature = "hit-count")]
         self.count_hit(effect, h);
@@ -994,6 +1044,7 @@ impl Battle {
             FakeMove::CannotMove => ActionMove::CannotMove,
             FakeMove::Recharge => ActionMove::Recharge,
             FakeMove::BasePower => panic!("getDamage's number move is no action move"),
+            FakeMove::Data => panic!("a plain moveData object is no action move"),
         }
     }
 

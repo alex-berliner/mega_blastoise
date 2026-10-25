@@ -11,10 +11,13 @@
 //!
 //! PS: data/conditions.ts futuremove
 
+use crate::actions::{ActiveMove, FakeMove};
 use crate::effect::{EffectDef, EventArgs, EventId, Handler};
+use crate::mods::gen3::scripts::Gen3Scripts;
 use crate::relay::Relay;
 use crate::state::Battle;
 use ps_dex::gen3::conditions;
+use ps_dex::{FixedDamage, MoveTarget, Type};
 use ps_protocol::{Arg, ArgValue, Kw, MoveNum, Msg, Text, TextArg, TextArgValue, TextId};
 
 /// `this.effectState.targetSlot`: side, then position.
@@ -80,14 +83,35 @@ fn on_end(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     }
     let mon = b.ident(target);
     b.add(Msg::EndEffect { mon, effect: Arg::new(ArgValue::MoveEffect(MoveNum(m.0))), kw: Kw::NONE });
-    // Infiltrator and Normalize (gen 6) do not apply. `const hitMove = new
-    // this.dex.Move(data.moveData); this.actions.trySpreadMoveHit([target],
-    // data.source, hitMove, true)`, then Life Orb (gen 5), `activeMove =
-    // null` and `checkWin()`: gen 3 reaches base `trySpreadMoveHit` and its
-    // `hitStep*` only here, with a handler-less move object built from
-    // `moveData`, and only Future Sight and Doom Desire (G3-M4) add this
-    // condition. The hit is theirs to port.
-    panic!("unported: trySpreadMoveHit of a future move ({:?})", b.dex.move_def(m).name.as_str())
+    // Infiltrator and Normalize are gen 6. `const hitMove = new
+    // this.dex.Move(data.moveData)`: `{id, name, accuracy, basePower: 0,
+    // damage, category, flags, effectType: 'Move', type: '???'}`, with the
+    // `Dex.Move` defaults (`ignoreImmunity` false for a damaging move, no
+    // `target`) and no handlers. The data's `accuracy` and `category` are
+    // the dex move's (Future Sight 90 and Special, Doom Desire 85 and
+    // Physical).
+    let def = b.dex.move_def(m);
+    let damage = b.effect_state().data[MOVE_DAMAGE];
+    let hit_move = b.new_active_move(ActiveMove {
+        id: m,
+        fake: FakeMove::Data,
+        type_: Type::None,
+        category: def.category,
+        target: MoveTarget::Normal,
+        accuracy_x256: match def.accuracy() {
+            ps_dex::Accuracy::Always => None,
+            ps_dex::Accuracy::Percent(p) => Some(u16::from(p) * 256),
+        },
+        ignore_immunity: false,
+        damage: Some(FixedDamage::Hp(damage as u16)),
+        ..ActiveMove::EMPTY
+    });
+    let source = source.expect("futuremove without a source");
+    Gen3Scripts::try_spread_move_hit(b, target, source, hit_move, true);
+    // Life Orb's `AfterMoveSecondarySelf` is gen 5.
+    b.active_move = None;
+    b.check_win(None);
+    None
 }
 
 pub static DEF: EffectDef = EffectDef::new(&[

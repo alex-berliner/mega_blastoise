@@ -140,3 +140,12 @@
 3 wide 5  # G3-I2 a berry's -heal line is `[from] item: Mago Berry` (battle.heal's default case); was plain
 3 wide 20  # G3-I2 Leppa Berry's `-activate|MON|item: Leppa Berry|MOVE|[consumed]`; also Wiki Berry's `[from] item:` heal
 3 wide 189  # G3-I2 White Herb on the holder after the foe's stat drop, a second team
+
+# G3-M4: multi-turn and delayed moves (Bide, Uproar, Rollout, Ice Ball,
+# Fury Cutter, Rage, Charge, Focus Punch, the two-turn moves, Future
+# Sight, Doom Desire, Stockpile, Spit Up, Swallow, Pursuit, Beat Up).
+# Each entry fails with its bug put back (a mutant build per bug).
+3 wide 127  # G3-M4 a future move's benched user as an event source: `slotConditions[position]` past the active slots is no slot (crashed)
+3 wide 17  # G3-M4 a benched future-move user as an event source, a second team (crashed)
+3 wide 166  # G3-M4 a future move's miss appends a second `[miss]` to the turn's last `|move|` line (PS appends text; flags deduped)
+3 wide 894  # G3-M4 the second `[miss]` on another Pokemon's `|move|` line, a second team

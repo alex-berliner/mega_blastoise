@@ -476,7 +476,7 @@ impl Battle {
         // A benched Pokemon's `position` is its team index, past the active
         // slots: `for (const id in side.slotConditions[pokemon.position])`
         // iterates `undefined`, which is nothing (gen 3 Yawn's `setStatus`
-        // with a source that has switched out asks it for `onSource`).
+        // with a source that has switched out asks it for `onSource`; a future move's benched user as the hit's source).
         let Some(slot_conditions) = side.slot_conditions.get(pos as usize) else { return };
         for (id, st) in slot_conditions.iter() {
             let cb = self.get_callback(holder, id, f.prefix, f.event);

@@ -259,8 +259,9 @@ pub enum Msg {
     MustRecharge(PokemonIdent),
     /// `|-prepare|MON|MOVE` or `|-prepare|MON|MOVE|TARGET`
     Prepare { mon: PokemonIdent, mv: MoveNum, target: Option<PokemonIdent> },
-    /// `|-anim|MON|MOVE|TARGET`
-    Anim { mon: PokemonIdent, mv: MoveNum, target: Option<PokemonIdent> },
+    /// `|-anim|MON|MOVE|TARGET`; `addMove` writes it, so `attrLastMove`
+    /// may add flags (Solar Beam in the sun, then `[miss]`).
+    Anim { mon: PokemonIdent, mv: MoveNum, target: Option<PokemonIdent>, kw: Kw },
     /// `|-transform|MON|TARGET`
     Transform { mon: PokemonIdent, into: PokemonIdent, kw: Kw },
 
@@ -466,6 +467,7 @@ impl Msg {
     pub fn kw(&self) -> Option<&Kw> {
         match self {
             Msg::Move { kw, .. }
+            | Msg::Anim { kw, .. }
             | Msg::DetailsChange { kw, .. }
             | Msg::FormeChange { kw, .. }
             | Msg::Damage { kw, .. }
@@ -509,6 +511,7 @@ impl Msg {
     pub fn kw_mut(&mut self) -> Option<&mut Kw> {
         match self {
             Msg::Move { kw, .. }
+            | Msg::Anim { kw, .. }
             | Msg::DetailsChange { kw, .. }
             | Msg::FormeChange { kw, .. }
             | Msg::Damage { kw, .. }
@@ -898,8 +901,11 @@ impl KwFlags {
     pub const FATIGUE: KwFlags = KwFlags(1 << 11);
     pub const CONSUMED: KwFlags = KwFlags(1 << 12);
     pub const INTERRUPT: KwFlags = KwFlags(1 << 13);
-    /// Control: [`Kw::of`] is Wish's `[wisher] NAME` (the nickname alone),
-    /// not `[of] MON`.
+    /// Control: [`Kw::of`] is a nickname alone, not `[of] MON`: Wish's
+    /// `[wisher] NAME`, or together with [`KwFlags::FLAGS_FIRST`] (a line
+    /// with no flags, where that bit changes nothing else) `[of] NAME`
+    /// (Beat Up's `-activate|MON|move: Beat Up|[of] NAME`,
+    /// [`Kw::of_nickname`]).
     pub const WISHER: KwFlags = KwFlags(1 << 14);
     /// Control: the flags come before `[from]` / `[of]` (PS writes
     /// `-formechange|...|[msg]|[from] ...` and `-enditem|...|[silent]|[from] move: Trick`).
@@ -964,6 +970,11 @@ pub struct Kw {
     pub from: Option<Arg>,
     pub of: Option<PokemonIdent>,
     pub flags: KwFlags,
+    /// `[miss]` flags past the first, rendered last: each
+    /// `attrLastMove('[miss]')` appends one to the `|move|` line, and a
+    /// future move's miss at the end of the turn lands on the turn's last
+    /// `|move|` line, which may have its own already.
+    pub repeat_miss: u8,
 }
 
 /// One rendered kwarg, in [`Kw::encode_order`].
@@ -975,12 +986,14 @@ pub enum KwPart {
     Of(PokemonIdent),
     /// `[wisher] NAME`
     Wisher(PokemonIdent),
+    /// `[of] NAME`: the nickname alone.
+    OfNickname(PokemonIdent),
     /// A valueless flag, its text from [`KwFlags::RENDERED`].
     Flag(&'static str),
 }
 
 impl Kw {
-    pub const NONE: Kw = Kw { from: None, of: None, flags: KwFlags(0) };
+    pub const NONE: Kw = Kw { from: None, of: None, flags: KwFlags(0), repeat_miss: 0 };
 
     /// `[from] EFFECT`
     pub fn from(effect: Arg) -> Kw {
@@ -989,7 +1002,13 @@ impl Kw {
 
     /// `[from] EFFECT|[of] MON`
     pub fn from_of(effect: Arg, of: PokemonIdent) -> Kw {
-        Kw { from: Some(effect), of: Some(of), flags: KwFlags(0) }
+        Kw { from: Some(effect), of: Some(of), ..Kw::NONE }
+    }
+
+    /// `[of] NAME`, the nickname alone (PS writes `'[of] ' +
+    /// pokemon.name`).
+    pub fn of_nickname(of: PokemonIdent) -> Kw {
+        Kw { of: Some(of), flags: KwFlags::WISHER.union(KwFlags::FLAGS_FIRST), ..Kw::NONE }
     }
 
     /// Only flags.
@@ -1004,7 +1023,7 @@ impl Kw {
     }
 
     pub fn is_empty(&self) -> bool {
-        self.from.is_none() && self.of.is_none() && self.flags.0 & !KwFlags::FLAGS_FIRST.0 == 0
+        self.from.is_none() && self.of.is_none() && self.flags.0 & !KwFlags::FLAGS_FIRST.0 == 0 && self.repeat_miss == 0
     }
 
     /// Calls `f` on each kwarg in the order PS writes them.
@@ -1017,7 +1036,9 @@ impl Kw {
             f(KwPart::From(from));
         }
         if let Some(of) = self.of {
-            if self.flags.contains(KwFlags::WISHER) {
+            if self.flags.contains(KwFlags::WISHER.union(KwFlags::FLAGS_FIRST)) {
+                f(KwPart::OfNickname(of));
+            } else if self.flags.contains(KwFlags::WISHER) {
                 f(KwPart::Wisher(of));
             } else {
                 f(KwPart::Of(of));
@@ -1025,6 +1046,9 @@ impl Kw {
         }
         if !flags_first {
             self.each_flag(&mut f);
+        }
+        for _ in 0..self.repeat_miss {
+            f(KwPart::Flag("[miss]"));
         }
     }
 
@@ -1260,6 +1284,8 @@ texts! {
     BeforeTurnCallback => "before turn callback: {}" (MoveId),
     // PS: data/mods/gen1/moves.ts bide.condition.onBeforeMove
     BideNoDamage => "Bide failed because no damage was stored" (),
+    // PS: data/moves.ts charge condition onBasePower
+    ChargeBoost => "charge boost" (),
     // PS: data/abilities.ts compoundeyes onSourceModifyAccuracy
     CompoundEyesAccuracy => "compoundeyes - enhancing accuracy" (),
     // PS: sim/battle-actions.ts getSpreadDamage
@@ -1292,6 +1318,10 @@ texts! {
     NegatingDefBoost => "Negating (sp)def boost/penalty." (),
     NotAGen1Mechanic => "not a gen 1 mechanic" (),
     NothingToLeechInto => "Nothing to leech into" (),
+    // PS: data/moves.ts pursuit basePowerCallback
+    PursuitDamageBoost => "Pursuit damage boost" (),
+    // PS: data/mods/gen3/moves.ts pursuit condition onFoeBeforeSwitchOut
+    PursuitStart => "Pursuit start" (),
     // PS: data/conditions.ts raindance onWeatherModifyDamage
     RainFireSuppress => "rain fire suppress" (),
     RainWaterBoost => "rain water boost" (),
@@ -1301,6 +1331,8 @@ texts! {
     RemovingDestinyBond => "removing Destiny Bond before attack" (),
     // PS: data/moves.ts grudge condition onBeforeMove
     RemovingGrudge => "removing Grudge before attack" (),
+    // PS: data/moves.ts rage condition onBeforeMove
+    RemovingRage => "removing Rage before attack" (),
     // PS: data/mods/gen1/scripts.ts getDamage
     ScreenDoublingDef => "Screen doubling (Sp)Def" (),
     // PS: sim/pokemon.ts setStatus (`status.id`)
@@ -1317,6 +1349,8 @@ texts! {
     // PS: data/abilities.ts swarm / torrent onModifyAtk, onModifySpA
     SwarmBoost => "Swarm boost" (),
     TorrentBoost => "Torrent boost" (),
+    // PS: data/moves.ts solarbeam onBasePower
+    WeakenedByWeather => "weakened by weather" (),
     // PS: sim/battle.ts spreadDamage
     WeatherImmunity => "weather immunity" (),
     // PS: data/abilities.ts wonderguard onTryHit (`move.id`)
@@ -1425,7 +1459,9 @@ mod tests {
         assert_eq!(size_of::<Option<Arg>>(), 3);
         assert_eq!(size_of::<PokemonIdent>(), 3);
         assert_eq!(size_of::<Option<PokemonIdent>>(), 3);
-        assert_eq!(size_of::<Kw>(), 8);
+        // 8 plus `repeat_miss` and padding; every `Msg` with a `Kw` still fits
+        // 24 (`msg_fits_24_bytes`).
+        assert_eq!(size_of::<Kw>(), 10);
         assert_eq!(size_of::<Health>(), 10);
         assert_eq!(size_of::<TextArg>(), 5);
         // Three arguments (the three-rule custom-rules box); `Msg` stays 24.
@@ -1544,7 +1580,7 @@ mod tests {
 
         // -heal|MON|HP|[from] move: Wish|[wisher] NAME
         let mut parts = 0;
-        Kw { from: Some(Arg::move_effect(MoveNum(9))), of: Some(of), flags: KwFlags::WISHER }
+        Kw { from: Some(Arg::move_effect(MoveNum(9))), of: Some(of), flags: KwFlags::WISHER, repeat_miss: 0 }
             .encode_order(|p| {
                 if parts == 1 {
                     assert_eq!(p, KwPart::Wisher(of));
@@ -1552,6 +1588,25 @@ mod tests {
                 parts += 1;
             });
         assert_eq!(parts, 2);
+
+        // -activate|MON|move: Beat Up|[of] NAME
+        let ally = PokemonIdent::inactive(SideId::P2, 3);
+        let mut seen = None;
+        Kw::of_nickname(ally).encode_order(|p| seen = Some(p));
+        assert_eq!(seen, Some(KwPart::OfNickname(ally)));
+
+        // `|move|...|[still]|[miss]|[miss]`: a repeated `[miss]` comes last.
+        let kw = Kw { repeat_miss: 1, ..Kw::flags(KwFlags::STILL.union(KwFlags::MISS)) };
+        let mut flags = [""; 3];
+        let mut n = 0;
+        kw.encode_order(|p| {
+            if let KwPart::Flag(t) = p {
+                flags[n] = t;
+                n += 1;
+            }
+        });
+        assert_eq!(flags, ["[still]", "[miss]", "[miss]"]);
+        assert!(!Kw { repeat_miss: 1, ..Kw::NONE }.is_empty());
     }
 
     #[test]
@@ -1618,7 +1673,7 @@ mod tests {
             Msg::SingleMove { mon: m, effect: a, kw: k },
             Msg::MustRecharge(m),
             Msg::Prepare { mon: m, mv: MoveNum(3), target: None },
-            Msg::Anim { mon: m, mv: MoveNum(3), target: Some(f) },
+            Msg::Anim { mon: m, mv: MoveNum(3), target: Some(f), kw: Kw::flags(KwFlags::MISS) },
             Msg::Transform { mon: m, into: f, kw: k },
             Msg::Weather { weather: Weather::RainDance, kw: Kw::flags(KwFlags::UPKEEP) },
             Msg::FieldStart { effect: a, kw: k },

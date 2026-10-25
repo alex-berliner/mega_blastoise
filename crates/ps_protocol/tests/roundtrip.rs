@@ -300,6 +300,27 @@ fn gen3_ability_lines_round_trip() {
     }
 }
 
+/// Lines a gen 3 future move, Solar Beam in the sun and Beat Up write: a
+/// second `[miss]` on a `|move|` line (the future hit's miss lands on the
+/// turn's last one), `[miss]` on an `|-anim|` line, and Beat Up's `[of]`
+/// with the ally's nickname alone.
+#[test]
+fn attr_last_move_lines_and_beat_up_round_trip() {
+    let mut state = CodecState::new(load_names());
+    for line in [
+        "|switch|p1a: Bob|Snorlax, L50|100/100",
+        "|switch|p1a: Sneasel|Sneasel|100/100",
+        "|move|p2a: Kakuna|Rock Blast|p1a: Sneasel|[miss]|[miss]",
+        "|move|p2a: Spearow|Dig||[still]|[miss]",
+        "|-anim|p2a: Linoone|Solar Beam|p1a: Sneasel|[miss]",
+        "|-anim|p2a: Linoone|Solar Beam|p1a: Sneasel",
+        "|-activate|p1a: Sneasel|move: Beat Up|[of] Bob",
+    ] {
+        let msg = decode_line(line, &mut state).unwrap();
+        assert_eq!(encode_msg(&msg, state.dex(), state.battle()), line);
+    }
+}
+
 /// Pressure's `addSplit(side, ['-ability', ...])`: the line goes to its side
 /// only, and the shared form is an empty line.
 #[test]

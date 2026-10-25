@@ -120,7 +120,7 @@ impl Battle {
         let num = ps_protocol::SpeciesNum(species.0);
         let kw = match source {
             EffectId::Ability(_) => {
-                Kw { from: Some(self.effect_fullname(source)), of: None, flags: message | KwFlags::FLAGS_FIRST }
+                Kw { from: Some(self.effect_fullname(source)), of: None, flags: message | KwFlags::FLAGS_FIRST, repeat_miss: 0 }
             }
             _ => Kw::flags(message),
         };

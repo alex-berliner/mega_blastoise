@@ -9,22 +9,32 @@
 //! data/conditions.ts.
 
 pub mod attract;
+pub mod beatup;
+pub mod bide;
+pub mod bounce;
 pub mod brn;
+pub mod charge;
 pub mod choicelock;
 pub mod confusion;
 pub mod curse;
 pub mod destinybond;
+pub mod dig;
 pub mod disable;
+pub mod dive;
 pub mod encore;
 pub mod flashfire;
 pub mod flinch;
+pub mod fly;
+pub mod focuspunch;
 pub mod followme;
 pub mod foresight;
 pub mod frz;
+pub mod furycutter;
 pub mod futuremove;
 pub mod grudge;
 pub mod hail;
 pub mod helpinghand;
+pub mod iceball;
 pub mod imprison;
 pub mod leechseed;
 pub mod lockedmove;
@@ -35,10 +45,15 @@ pub mod par;
 pub mod partiallytrapped;
 pub mod perishsong;
 pub mod psn;
+pub mod pursuit;
+pub mod rage;
 pub mod raindance;
+pub mod rollout;
 pub mod sandstorm;
+pub mod semi_invulnerable;
 pub mod slp;
 pub mod stall;
+pub mod stockpile;
 pub mod substitute;
 pub mod sunnyday;
 pub mod taunt;
@@ -46,9 +61,10 @@ pub mod torment;
 pub mod tox;
 pub mod trapped;
 pub mod twoturnmove;
+pub mod uproar;
 pub mod yawn;
 
-use ps_dex::{ConditionId, Type};
+use ps_dex::{ConditionId, MoveCategory, Type};
 use ps_protocol::{Arg, ArgValue, Kw, Msg, Status, Weather};
 
 use crate::effect::{EffectId, EventArgs};
@@ -90,6 +106,18 @@ pub fn event_move_type(b: &Battle, a: &EventArgs) -> Type {
             _ => b.dex.move_def(m).type_,
         },
         _ => Type::None,
+    }
+}
+
+/// The move an event runs for, as its handler sees `move.category`: the
+/// move in flight (Hidden Power and Beat Up change theirs), else the dex's.
+pub fn event_move_category(b: &Battle, a: &EventArgs) -> Option<MoveCategory> {
+    match a.effect {
+        EffectId::Move(m) => Some(match b.active_move() {
+            Some(am) if am.id == m => am.category,
+            _ => b.dex.move_def(m).category,
+        }),
+        _ => None,
     }
 }
 

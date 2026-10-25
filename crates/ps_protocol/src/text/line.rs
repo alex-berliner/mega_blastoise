@@ -382,7 +382,7 @@ fn push_positional_args(msg: &Msg, dex: &dyn DexNames, names: &dyn BattleNames, 
             push_arg(buf, &arg_pos_str(*effect, dex));
         }
         Msg::MustRecharge(mon) => push_arg(buf, &mon_str(*mon, names)),
-        Msg::Prepare { mon, mv, target } | Msg::Anim { mon, mv, target } => {
+        Msg::Prepare { mon, mv, target } | Msg::Anim { mon, mv, target, kw: _ } => {
             push_arg(buf, &mon_str(*mon, names));
             push_arg(buf, dex.move_name(*mv));
             if let Some(t) = target {
@@ -436,6 +436,7 @@ fn push_kwargs(kw: Option<&Kw>, dex: &dyn DexNames, names: &dyn BattleNames, buf
         KwPart::From(a) => push_arg(buf, &arg_kw_str(a, dex, names)),
         KwPart::Of(mon) => push_arg(buf, &format!("[of] {}", mon_str(mon, names))),
         KwPart::Wisher(mon) => push_arg(buf, &format!("[wisher] {}", nickname_only(mon, names))),
+        KwPart::OfNickname(mon) => push_arg(buf, &format!("[of] {}", nickname_only(mon, names))),
         KwPart::Flag(text) => push_arg(buf, text),
     });
 }
@@ -743,7 +744,11 @@ fn decode_minor(k: &str, args: &[&str], dex: &dyn DexNames, names: &mut Battle) 
             let mon = parse_mon(arg(args, 0)?, names)?;
             let mv = parse_move_name(arg(args, 1)?, dex)?;
             let target = if let Some(s) = args.get(2).copied() { if !s.is_empty() { Some(parse_mon(s, names)?) } else { None } } else { None };
-            if k == "-prepare" { Ok(Msg::Prepare { mon, mv, target }) } else { Ok(Msg::Anim { mon, mv, target }) }
+            if k == "-prepare" {
+                Ok(Msg::Prepare { mon, mv, target })
+            } else {
+                Ok(Msg::Anim { mon, mv, target, kw: parse_kwargs(args.get(3..).unwrap_or(&[]), dex, names)? })
+            }
         }
         "-transform" => Ok(Msg::Transform { mon: parse_mon(arg(args, 0)?, names)?, into: parse_mon(arg(args, 1)?, names)?, kw: parse_kwargs(&args[2..], dex, names)? }),
         "-weather" => Ok(Msg::Weather { weather: parse_weather(arg(args, 0)?)?, kw: parse_kwargs(&args[1..], dex, names)? }),
@@ -1137,6 +1142,9 @@ fn parse_kwargs(args: &[&str], dex: &dyn DexNames, names: &mut Battle) -> Result
         let mut matched = false;
         for (flag, text) in KwFlags::RENDERED.iter().copied() {
             if *s == text {
+                if flag == KwFlags::MISS && kw.flags.contains(flag) {
+                    kw.repeat_miss += 1;
+                }
                 kw.flags.insert(flag);
                 matched = true;
                 break;
@@ -1157,6 +1165,18 @@ fn parse_kwargs(args: &[&str], dex: &dyn DexNames, names: &mut Battle) -> Result
         if let Some(rest) = s.strip_prefix("[of] ") {
             if let Ok(m) = parse_mon(rest, names) {
                 kw.of = Some(m);
+            } else {
+                // `[of] NICKNAME` (Beat Up's ally): the first side with that
+                // nickname; either renders the same text.
+                for s_idx in 0..2 {
+                    let side = crate::ident::SideId::from_index(s_idx).unwrap();
+                    if let Some(slot) = names.find_nickname_side(side, rest) {
+                        let of = crate::ident::PokemonIdent { side, slot, active: false };
+                        kw.of = Some(of);
+                        kw.flags.insert(Kw::of_nickname(of).flags);
+                        break;
+                    }
+                }
             }
             continue;
         }

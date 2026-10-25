@@ -368,7 +368,8 @@ impl Battle {
         let pokemon_original_hp = self.mon(pokemon).hp;
         if let (Some((t, d)), false, false) = (damaged, is_secondary, is_self) {
             // `onAfterHit` (gens 1-4: before `DamagingHit`).
-            if self.registry.handler(effect, crate::effect::Prefix::None, EventId::AfterHit).is_some() && self.mon(pokemon).hp != 0 {
+            let own = self.mv(mv).handler_effect();
+            if self.registry.handler(own, crate::effect::Prefix::None, EventId::AfterHit).is_some() && self.mon(pokemon).hp != 0 {
                 self.move_data_event(EventId::AfterHit, data, mv, Holder::Mon(t), Some(pokemon), None);
             }
             if self.gen < 5 {
@@ -624,7 +625,7 @@ impl Battle {
         match data {
             // `delete move.onHit` (gen 3 Curse).
             MoveData::Move if event == EventId::Hit && self.mv(mv).on_hit_deleted => false,
-            MoveData::Move => self.registry.handler(self.mv(mv).effect(), crate::effect::Prefix::None, event).is_some(),
+            MoveData::Move => self.registry.handler(self.mv(mv).handler_effect(), crate::effect::Prefix::None, event).is_some(),
             MoveData::Secondary(s) => !s.handlers.is_empty(),
             MoveData::SelfEffect(s) => !s.handlers.is_empty(),
             MoveData::Damage(_) => false,
@@ -717,12 +718,18 @@ impl Battle {
     // PS: sim/battle-actions.ts getDamage
     pub fn base_get_damage(&mut self, source: MonRef, target: MonRef, mv: MoveRef, data: MoveData, suppress: bool) -> DamageStep {
         // A secondary or `self` effect has no type, no fixed damage and no
-        // base power: `undefined`.
-        if !matches!(data, MoveData::Move) {
+        // base power: `undefined`. A plain `moveData` object's hit (Bide's,
+        // a future move's) is the move object itself, with its type and
+        // fixed damage.
+        if !matches!(data, MoveData::Move | MoveData::Damage(_)) {
             return DamageStep::Done(MoveResult::Undefined);
         }
         if !self.run_immunity(target, Some(mv), !suppress) {
             return DamageStep::Done(MoveResult::False);
+        }
+        if let MoveData::Damage(n) = data {
+            // No `ohko` or `damageCallback` on such an object.
+            return DamageStep::Done(MoveResult::Int(n));
         }
         if self.mv(mv).ohko {
             let hp = if self.gen == 3 { self.mon(target).hp } else { self.mon(target).maxhp };
@@ -753,11 +760,14 @@ impl Battle {
 
         let id = self.mv(mv).id;
         // A fake move (`getDamage`'s number move) has the data defaults:
-        // `critRatio` 1, `willCrit` false.
-        let def = (!id.is_none()).then(|| self.dex.move_def(id));
+        // `critRatio` 1, `willCrit` false. A plain `moveData` object (a
+        // future move's damage roll) has no `critRatio` (`|| 0`) and says
+        // `willCrit: false`.
+        let plain = self.mv(mv).fake == FakeMove::Data;
+        let def = (!id.is_none() && !plain).then(|| self.dex.move_def(id));
         let flag = |name: &str| def.is_some_and(|d| d.bools.has(name));
         let effect = self.mv(mv).effect();
-        let crit_ratio = def.map_or(1, |d| i32::from(d.crit_ratio));
+        let crit_ratio = if plain { 0 } else { def.map_or(1, |d| i32::from(d.crit_ratio)) };
         let crit_ratio =
             match self.run_event(EventId::ModifyCritRatio, Holder::Mon(source), Some(target), effect, Some(Relay::Int(crit_ratio))) {
                 Relay::Int(n) => n,
@@ -786,7 +796,7 @@ impl Battle {
 
         // After the crit roll. `onEffect`: the move's own `onBasePower`
         // (a fake move object is an effect with no handlers).
-        let on_effect = !effect.is_none();
+        let on_effect = !self.mv(mv).handler_effect().is_none();
         let base_power = match self.run_event_full(
             EventId::BasePower,
             Holder::Mon(source),

@@ -1091,6 +1091,11 @@ impl Battle {
     // PS: sim/battle.ts runAction
     pub fn run_action(&mut self, action: Action) -> bool {
         let original_hp = action.pokemon.map(|m| self.mon(m).hp);
+        // Every action ends with `clearActiveMove()` (below), so no
+        // `ActiveMove` outlives one: the arena starts empty. A switch
+        // (Pursuit) or the residual (a future move's hit) makes move
+        // objects outside `runMove`.
+        self.move_count = 0;
         match action.choice {
             ActionKind::Start => {
                 for s in 0..2u8 {
