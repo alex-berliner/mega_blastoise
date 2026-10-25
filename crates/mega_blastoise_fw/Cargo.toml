@@ -25,6 +25,11 @@ embedded-hal-async = "1"
 # Heap allocator
 embedded-alloc = "0.5"
 
+# The budget bench (`src/bin/sim_bench.rs`, task P2-4) drives the battle
+# server directly. The firmware already links both through core.
+ps_sim = { path = "../ps_sim" }
+ps_protocol = { path = "../ps_protocol" }
+
 embassy-usb = { version = "0.6", features = ["defmt"] }
 embassy-futures = "0.1"
 
@@ -43,4 +48,7 @@ board_v2 = ["dep:pio", "dep:fixed"]
 # Semi-transparent held-button overlay on the panel (debug aid).
 input-debug = []
 mem-profile = []
+# `sim_bench` with the battles compiled out: the flash baseline
+# `scripts/sim-budget.sh` subtracts.
+sim-bench-baseline = []
 trace = ["mega-blastoise-core/trace"]

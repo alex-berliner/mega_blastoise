@@ -1201,6 +1201,8 @@ dependencies = [
  "fixed",
  "mega-blastoise-core",
  "pio",
+ "ps_protocol",
+ "ps_sim",
  "rtt-target",
 ]
 
