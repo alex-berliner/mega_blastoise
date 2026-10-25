@@ -865,6 +865,41 @@ impl Battle {
         d
     }
 
+    /// PS `battle.checkMoveBypassesProtect(move, attacker, defender,
+    /// blockStatus)`: true when the move is not stopped by Protect.
+    ///
+    /// `move.flags['protect']` marks the moves Protect stops; the
+    /// `HitProtect` event lets an effect (none in gens 1-3) let a move
+    /// through anyway.
+    // PS: sim/battle.ts checkMoveBypassesProtect
+    pub fn check_move_bypasses_protect(
+        &mut self,
+        move_id: MoveId,
+        attacker: MonRef,
+        defender: MonRef,
+        block_status: bool,
+    ) -> bool {
+        let def = self.dex.move_def(move_id);
+        let category = match self.active_move() {
+            Some(am) if am.id == move_id => am.category,
+            _ => def.category,
+        };
+        if (category != ps_dex::MoveCategory::Status || block_status) && def.flags.has("protect") {
+            // `this.runEvent('HitProtect', attacker, defender, move)`.
+            let r = self.run_event(
+                EventId::HitProtect,
+                Holder::Mon(attacker),
+                Some(defender),
+                EffectId::Move(move_id),
+                None,
+            );
+            if r.truthy() {
+                return false;
+            }
+        }
+        true
+    }
+
     /// PS `directDamage(damage, target, source, effect)`.
     // PS: sim/battle.ts directDamage
     pub fn direct_damage(

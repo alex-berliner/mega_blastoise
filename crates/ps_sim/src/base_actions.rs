@@ -628,7 +628,12 @@ impl Battle {
             MoveData::Move if event == EventId::Hit && self.mv(mv).on_hit_deleted => false,
             MoveData::Move => self.registry.handler(self.mv(mv).handler_effect(), crate::effect::Prefix::None, event).is_some(),
             MoveData::Secondary(s) => !s.handlers.is_empty(),
-            MoveData::SelfEffect(s) => !s.handlers.is_empty(),
+            // PS's `moveData.onHit` of the `self` object: the dex says
+            // whether it has one; `move_data_event` finds the port (in the
+            // move's `self_def`) or stops as unported.
+            MoveData::SelfEffect(s) => {
+                s.handlers.iter().any(|h| crate::effect::parse_handler_key(h.name()) == Some((crate::effect::Prefix::None, event)))
+            }
             MoveData::Damage(_) => false,
         }
     }

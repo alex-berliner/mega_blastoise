@@ -13,7 +13,7 @@ use crate::state::Battle;
 use ps_dex::gen3::conditions;
 
 /// `this.effectState.trueDuration`.
-const TRUE_DURATION: usize = 0;
+pub const TRUE_DURATION: usize = 0;
 
 /// `onResidual(target)`: a sleeping Pokemon drops the lock (no End, so no
 /// confusion); the true duration counts down.

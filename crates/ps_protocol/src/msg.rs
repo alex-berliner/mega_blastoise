@@ -1372,10 +1372,16 @@ texts! {
     Instafaint => "instafaint: {}" (Nickname),
     // PS: data/mods/gen4/abilities.ts liquidooze onSourceTryHeal (`effect.id`)
     LiquidOozeHeal => "Heal is occurring: {} <- {} :: {}" (Mon, Mon, EffectId),
+    // PS: data/moves.ts safeguard.condition.onSetStatus
+    InterruptingSetStatus => "interrupting setStatus" (),
     // PS: data/mods/gen3/items.ts laxincense onModifyAccuracy
     LaxIncenseAccuracy => "lax incense - decreasing accuracy" (),
+    // PS: data/mods/gen4/moves.ts lightscreen.condition.onAnyModifyDamagePhase1
+    LightScreenWeaken => "Light Screen weaken" (),
     // PS: sim/battle-actions.ts runMoveEffects
     MoveFailedNothing => "move failed because it did nothing" (),
+    // PS: data/mods/gen4/moves.ts mudsport.condition.onAnyBasePower
+    MudSportWeaken => "Mud Sport weaken" (),
     // PS: sim/pokemon.ts runStatusImmunity
     NaturalStatusImmunity => "natural status immunity" (),
     // PS: sim/battle-actions.ts getDamage (crit ignores boosts)
@@ -1392,6 +1398,8 @@ texts! {
     // PS: data/conditions.ts raindance onWeatherModifyDamage
     RainFireSuppress => "rain fire suppress" (),
     RainWaterBoost => "rain water boost" (),
+    // PS: data/mods/gen4/moves.ts reflect.condition.onAnyModifyDamagePhase1
+    ReflectWeaken => "Reflect weaken" (),
     // PS: data/moves.ts attract condition onUpdate (`${pokemon}`)
     RemovingAttractVolatileOn => "Removing Attract volatile on {}" (Mon),
     // PS: data/moves.ts destinybond condition onBeforeMove
@@ -1420,6 +1428,8 @@ texts! {
     // PS: data/abilities.ts swarm / torrent onModifyAtk, onModifySpA
     SwarmBoost => "Swarm boost" (),
     TorrentBoost => "Torrent boost" (),
+    // PS: data/mods/gen4/moves.ts watersport.condition.onAnyBasePower
+    WaterSportWeaken => "Water Sport weaken" (),
     // PS: data/moves.ts solarbeam onBasePower
     WeakenedByWeather => "weakened by weather" (),
     // PS: sim/battle.ts spreadDamage

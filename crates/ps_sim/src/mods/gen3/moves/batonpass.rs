@@ -33,5 +33,6 @@ fn self_on_hit(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     None
 }
 
-pub static DEF: EffectDef =
-    EffectDef::with_self(&[Handler::on(EventId::Hit, on_hit)], &[Handler::on(EventId::Hit, self_on_hit)]);
+static SELF: EffectDef = EffectDef::new(&[Handler::on(EventId::Hit, self_on_hit)]);
+
+pub static DEF: EffectDef = EffectDef::with_self(&[Handler::on(EventId::Hit, on_hit)], &SELF);

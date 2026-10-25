@@ -1,9 +1,11 @@
 //! Gen 3 moves with handlers, one file per move.
 
+pub mod aromatherapy;
 pub mod assist;
 pub mod attract;
 pub mod batonpass;
 pub mod beatup;
+pub mod bellydrum;
 pub mod bide;
 pub mod block;
 pub mod bounce;
@@ -14,11 +16,13 @@ pub mod counter;
 pub mod covet;
 pub mod curse;
 pub mod destinybond;
+pub mod detect;
 pub mod dig;
 pub mod disable;
 pub mod dive;
 pub mod doomdesire;
 pub mod dreameater;
+pub mod endure;
 pub mod fakeout;
 pub mod fly;
 pub mod focuspunch;
@@ -26,6 +30,8 @@ pub mod followme;
 pub mod foresight;
 pub mod furycutter;
 pub mod futuresight;
+pub mod haze;
+pub mod healbell;
 pub mod helpinghand;
 pub mod hiddenpower;
 pub mod iceball;
@@ -39,13 +45,20 @@ pub mod mimic;
 pub mod mindreader;
 pub mod mirrorcoat;
 pub mod mirrormove;
+pub mod moonlight;
+pub mod morningsun;
 pub mod naturepower;
 pub mod odorsleuth;
+pub mod painsplit;
 pub mod perishsong;
+pub mod protect;
 pub mod psychup;
 pub mod pursuit;
+pub mod rapidspin;
 pub mod razorwind;
 pub mod recycle;
+pub mod refresh;
+pub mod rest;
 pub mod roleplay;
 pub mod rollout;
 pub mod sketch;
@@ -58,10 +71,12 @@ pub mod solarbeam;
 pub mod spiderweb;
 pub mod spite;
 pub mod spitup;
+pub mod splash;
 pub mod stockpile;
 pub mod struggle;
 pub mod substitute;
 pub mod swallow;
+pub mod synthesis;
 pub mod teleport;
 pub mod thief;
 pub mod transform;
@@ -266,5 +281,29 @@ pub fn steal_item_after_hit(b: &mut Battle, a: &EventArgs, mv: ps_dex::MoveId, e
     None
 }
 
+/// `onHit(pokemon)` of Moonlight, Morning Sun and Synthesis: two thirds
+/// of the maximum HP in the sun, a quarter of the base maximum HP in rain,
+/// sand or hail, half otherwise (Desolate Land and Primordial Sea are gen
+/// 6).
+// PS: data/mods/gen4/moves.ts moonlight.onHit, morningsun.onHit,
+// synthesis.onHit
+fn weather_heal(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
+    let pokemon = a.target.mon()?;
+    let (maxhp, base_maxhp) = (i32::from(b.mon(pokemon).maxhp), i32::from(b.mon(pokemon).base_maxhp));
+    let (hp, den) = if b.is_weather(&[conditions::SUNNYDAY]) {
+        (maxhp * 2, 3)
+    } else if b.is_weather(&[conditions::RAINDANCE, conditions::SANDSTORM, conditions::HAIL]) {
+        (base_maxhp, 4)
+    } else {
+        (base_maxhp, 2)
+    };
+    // `this.heal(x)` with a fractional `x`: `heal` makes anything in
+    // (0, 1] one and truncates the rest, so a positive `x` below 1 heals 1.
+    b.heal((hp / den).max(1), None, None, EffectId::None);
+    None
+}
+
 #[cfg(test)]
 mod item_counter_tests;
+#[cfg(test)]
+mod tests_protect;

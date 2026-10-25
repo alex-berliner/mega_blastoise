@@ -36,6 +36,12 @@ impl Battle {
             EffectId::Move(m) => Arg::new(ArgValue::MoveEffect(MoveNum(m.0))),
             EffectId::Item(i) => Arg::new(ArgValue::ItemEffect(ItemNum(i.0))),
             EffectId::Ability(a) => Arg::new(ArgValue::AbilityEffect(AbilityNum(a.0))),
+            // A move's own condition (`Moves.x.condition`) is built with
+            // the move's name and no `fullname`, so its fullname is the
+            // bare name (`Ingrain`).
+            EffectId::Condition(c) if self.condition_move(c).is_some() => {
+                Arg::new(ArgValue::Move(MoveNum(self.condition_move(c).expect("checked").0)))
+            }
             other => panic!("unported: the fullname of {other:?}"),
         }
     }

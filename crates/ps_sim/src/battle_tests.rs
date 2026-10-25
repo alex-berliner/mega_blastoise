@@ -724,11 +724,11 @@ fn unported_moves_panic() {
     b.step(&Command::Choose { side: SideId::P2, choice: ps_protocol::Choice::Move(1) }).unwrap();
 }
 
-/// The same in gen 3: Rest has an `onHit` handler.
+/// The same in gen 3: Facade has an `onBasePower` handler.
 #[test]
-#[should_panic(expected = "unported: rest")]
+#[should_panic(expected = "unported: facade")]
 fn unported_moves_panic_gen3() {
-    let team = "Snorlax|||illuminate|rest||85,85,85,85,85,85|M||||";
+    let team = "Snorlax|||illuminate|facade||85,85,85,85,85,85|M||||";
     let cmds = [
         String::from(r#"start {"formatid":"gen3customgame","seed":[1,2,3,4]}"#),
         format!(r#"player p1 {{"name":"Player 1","team":"{team}"}}"#),

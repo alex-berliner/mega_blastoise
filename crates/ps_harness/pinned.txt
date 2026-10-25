@@ -192,3 +192,12 @@
 3 wide 209  # G3-I1r2 Focus Band rolls before it checks the damage (60 plays other teams now)
 3 wide 2071  # G3-I1r3 Shield Dust filters King's Rock's added flinch (the ModifySecondaries mask covers the dex's secondaries, then the added one)
 3 wide 9700069  # G3-I1r4 Shell Bell reads the event's own move, not `activeMove`: Nature Power's Swift heals once
+# G3-M2: protection, side conditions and healing. Each entry fails with its
+# bug put back (a mutant build per bug); like the other wide entries they
+# draw new teams whenever `ported(3)` grows. Re-picked after the rebase onto
+# G3-M6 and G3-I1 (the old seeds drew other teams).
+3 wide 1964  # G3-M2 Reflect / Light Screen read the move being calculated, not the active move: Future Sight rolls its damage on a plain moveData object with no id
+3 wide 2254  # G3-M2 the same screens slip, in another team draw
+3 wide 15  # G3-M2 a move's own condition has its bare name as fullname: Ingrain's heal is `[from] Ingrain`, not `[from] move: Ingrain`
+3 wide 47  # G3-M2 the same fullname slip on Spikes' entry damage (`[from] Spikes`)
+3 wide 22  # G3-M2 Rapid Spin's `self` moveHit runs TryHit on the `self` object, which has only onHit (the slip panics as unported, so check's --allow-unported shows it as an unported count)

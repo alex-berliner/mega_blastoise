@@ -169,7 +169,7 @@ fn ps_sim_cli_init_block() {
     // with handlers, unported), the second is left waiting for choices.
     // Every gen 1 move has a port, so the unported battle is a gen 3 one.
     let team = |mv: &str| format!("Pikachu|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||50|");
-    let team3 = "Snorlax|||illuminate|rest||85,85,85,85,85,85|M||||";
+    let team3 = "Snorlax|||illuminate|facade||85,85,85,85,85,85|M||||";
     let start = ">start {\"formatid\":\"gen1customgame\",\"seed\":[0,0,0,0]}\n";
     let start3 = ">start {\"formatid\":\"gen3customgame\",\"seed\":[0,0,0,0]}\n";
     let player = |side: &str, name: &str, team: &str| format!(">player {side} {{\"name\":\"{name}\",\"team\":\"{team}\"}}\n");
@@ -206,7 +206,7 @@ fn ps_sim_cli_init_block() {
         "|teamsize|p1|1",
         "|start\n|split|p1\n|switch|p1a: Snorlax|Snorlax, M|",
         "sideupdate\np1\n|request|{\"active\":",
-        "\nunported\nrest\n",
+        "\nunported\nfacade\n",
         "|player|p2|d||",
         "|gen|1",
         "|switch|p1a: Pikachu|Pikachu, L50|",
@@ -214,7 +214,7 @@ fn ps_sim_cli_init_block() {
     for line in &needs {
         assert!(s.contains(line), "ps_sim_cli output missing `{line}`:\n{s}");
     }
-    let second = s.split("\nunported\nrest\n").nth(1).unwrap();
+    let second = s.split("\nunported\nfacade\n").nth(1).unwrap();
     assert!(second.contains("|start\n"), "the second battle did not start:\n{second}");
 }
 

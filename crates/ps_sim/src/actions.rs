@@ -684,14 +684,13 @@ impl Battle {
                     _ => Kw::from(from),
                 }
             }
-            // The default branch for the conditions of Leech Seed, Curse
-            // and Nightmare: `[from]` the condition's fullname (its move's
-            // name), `[of]` the source when it is another Pokemon (the
-            // seeder; Curse and Nightmare damage from the residual, which
-            // passes no source).
-            EffectId::Condition(_) if matches!(self.effect_key(effect), "leechseed" | "curse" | "nightmare") => {
-                let mv = self.dex.move_id(self.effect_key(effect)).expect("the condition's move in the dex");
-                let from = Arg::new(ArgValue::Move(MoveNum(mv.0)));
+            // The default branch for a move's own condition (Leech Seed,
+            // Curse, Nightmare, Spikes): `[from]` the condition's fullname
+            // (its move's name), `[of]` the source when it is another
+            // Pokemon (the seeder; Curse, Nightmare and Spikes damage from
+            // an event with no source).
+            EffectId::Condition(c) if self.condition_move(c).is_some() => {
+                let from = self.effect_fullname(effect);
                 match source {
                     Some(s) if s != target => Kw::from_of(from, self.ident(s)),
                     _ => Kw::from(from),
@@ -796,6 +795,9 @@ impl Battle {
         let final_damage = self.heal_mon(target, damage);
         let mon = self.ident(target);
         let health = self.health(target);
+        // PS `battle.heal`'s switch: `case 'wish': break;` writes no line
+        // (the Wish condition writes its own).
+        let mut line = true;
         let kw = match effect {
             EffectId::Pseudo(Pseudo::Drain) => {
                 let from = Arg::new(ArgValue::Word(Word::Drain));
@@ -817,10 +819,16 @@ impl Battle {
             // PS `battle.heal`: `case 'leechseed': case 'rest': this.add('-heal',
             // target, target.getHealth, '[silent]')`.
             EffectId::Condition(_) if self.effect_key(effect) == "leechseed" => Kw::flags(KwFlags::SILENT),
+            // `case 'wish': break;`: the condition's own `onEnd` writes
+            // the line.
+            EffectId::Condition(_) if self.effect_key(effect) == "wish" => {
+                line = false;
+                Kw::NONE
+            }
             // The default case of an effect that is not a move: `[from]
             // FULLNAME`, with `[of] SOURCE` when someone else is the source
-            // (Water Absorb, Volt Absorb).
-            EffectId::Ability(_) | EffectId::Item(_) => {
+            // (Water Absorb, Volt Absorb, Ingrain).
+            EffectId::Ability(_) | EffectId::Item(_) | EffectId::Condition(_) => {
                 let from = self.effect_fullname(effect);
                 match source {
                     Some(s) if s != target => Kw::from_of(from, self.ident(s)),
@@ -829,9 +837,32 @@ impl Battle {
             }
             other => panic!("unported: the -heal line of {other:?}"),
         };
-        self.add(Msg::Heal { mon, health, kw });
+        if line {
+            self.add(Msg::Heal { mon, health, kw });
+        }
         self.run_event(EventId::Heal, Holder::Mon(target), source, effect, Some(Relay::Int(final_damage)));
         MoveResult::Int(final_damage)
+    }
+
+    /// PS `pokemon.sethp(d)`: the HP becomes `d` (truncated, at least 1 and
+    /// at most the maximum HP), and the change in HP is returned.
+    // PS: sim/pokemon.ts sethp
+    pub fn set_hp(&mut self, m: MonRef, hp: i32) -> i32 {
+        let mon = self.mon(m);
+        if mon.hp == 0 {
+            return 0;
+        }
+        let mut hp = self.trunc.int(i64::from(hp), 0) as i32;
+        if hp < 1 {
+            hp = 1;
+        }
+        let maxhp = i32::from(mon.maxhp);
+        if hp > maxhp {
+            hp = maxhp;
+        }
+        let old = i32::from(mon.hp);
+        self.mon_mut(m).hp = hp as u16;
+        hp - old
     }
 
     /// PS `pokemon.heal(d)`: the HP actually healed (0 for PS's `false`).
@@ -1065,7 +1096,7 @@ impl Battle {
     }
 
     /// Runs a `moveData`'s own handler: the move's through `singleEvent`; a
-    /// `self` effect's through the move's `self` slot in the registry; a
+    /// `self` effect's through the move's `self_def` in the registry; a
     /// secondary has none ported (its handlers are not in any registry), so
     /// the relay comes back.
     #[allow(clippy::too_many_arguments)]
@@ -1157,7 +1188,7 @@ impl Battle {
     /// `[from] EFFECT` of a `|move|` line: `dex.conditions.get(sourceEffect).name`.
     /// The move whose own condition `c` is, when the two share a name
     /// (`magiccoat`, `snatch`).
-    fn condition_move(&self, c: ps_dex::ConditionId) -> Option<MoveId> {
+    pub(crate) fn condition_move(&self, c: ps_dex::ConditionId) -> Option<MoveId> {
         let def = self.dex.condition_def(c);
         self.dex.move_id(def.key.as_str()).filter(|&m| self.dex.move_def(m).name.as_str() == def.name.as_str())
     }
