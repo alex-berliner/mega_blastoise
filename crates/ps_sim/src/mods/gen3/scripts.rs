@@ -154,10 +154,22 @@ impl Battle {
         Some(accuracy)
     }
 
-    /// `this.battle.randomChance(accuracy, 100)` of a JS number:
-    /// `random(100) < accuracy`.
+    /// PS `this.battle.randomChance(accuracy, 100)`: `random(100) <
+    /// accuracy`, with `accuracy` a JS number.
+    ///
+    /// The traced twin below makes the same roll through
+    /// `Prng::random_chance_f`, so the trace records the
+    /// `random_chance(accuracy, 100)` PS makes; the plain one is what
+    /// the device builds.
+    #[cfg(not(feature = "rng-trace"))]
     fn accuracy_roll(&mut self, accuracy: f64) -> bool {
         f64::from(self.prng.random_n(100)) < accuracy
+    }
+
+    /// The traced twin of `accuracy_roll` (feature `rng-trace`).
+    #[cfg(feature = "rng-trace")]
+    fn accuracy_roll(&mut self, accuracy: f64) -> bool {
+        self.prng.random_chance_f(accuracy, 100)
     }
 
     /// Gen 3's `modifyDamage`: burn, the phase 1 modifiers, weather, `+ 2`,

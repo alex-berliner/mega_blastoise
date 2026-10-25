@@ -359,6 +359,69 @@ from `ps_sim_cli`, the process dying, a timeout, an exception during
 drain) land in the same dir under `ps-diff-<seed>-crash.log` with the
 rust side's partial log, and set the run's exit code.
 
+## The PRNG trace
+
+`PS_RNG_TRACE=1` turns the PRNG trace on. Every PRNG call of both sides
+is recorded with its index, its method, its arguments, its result and
+the call site, and a divergence report writes the two traces side by
+side around the first call where they differ. The trace never changes
+what a battle does: PS's PRNG methods are wrapped (the wrappers call
+the originals) and `ps_sim`'s trace is compiled in.
+
+The PS side (in `diff.js`): `PRNG.prototype.random`, `randomChance`,
+`sample` and `shuffle` are wrapped, and the underlying RNG's `next` is
+wrapped too (a direct `next()` is a call of its own; the `next` inside
+a `random()` belongs to that `random`). One entry per public call:
+
+| Method | Arguments | Result |
+|---|---|---|
+| `random` | none, `[n]` or `[m, n]` (the overload PS picks) | the number |
+| `random_chance` | `[numerator, denominator]` | true / false |
+| `sample` | `[length]` | the index it picked |
+| `shuffle` | `[length, start, end]` | the indices it picked |
+| `next` | none | the 32-bit draw |
+
+The call site is the first stack frame outside `prng.js` (the frames of
+`diff.js` itself are the tracing, so they are skipped); the report also
+prints the `origin`, the first frame outside `prng.js` and `battle.js`
+as well: the code that asked the battle for a number.
+
+The `ps_sim` side: the `rng-trace` feature of `ps_sim` (off by
+default; the firmware never enables it) records the same calls in
+`Prng::trace`, with the caller location from `#[track_caller]`. The
+feature is propagated through `ps_harness`, so a traced binary is
+
+```
+cargo build -p ps_harness --features rng-trace --bin ps_sim_cli
+```
+
+`ps_sim_cli --rng-trace` then sends the battle's calls as an
+`rngtrace` message (one JSON line, before the battle's `end`):
+
+```
+rngtrace
+{"calls":[{"args":[0,2],"index":0,"method":"random","result":0,"site":"crates/ps_sim/src/queue.rs:423"}, ...]}
+```
+
+`diff.js` passes `--rng-trace` to `ps_sim_cli` when `PS_RNG_TRACE=1` is
+set, and reads the `rngtrace` message. A divergence report then ends
+with the two traces side by side:
+
+```
+--- PRNG trace (first differing call: 5) ---
+  #  | PS (pokemon-showdown) | ps_sim (rust)
+     4 | random_chance args=[191,256] result=true site=dist/sim/battle.js:213 origin=dist/data/mods/gen1/scripts.js:414 | random_chance args=[191,256] result=true site=crates/ps_sim/src/mods/gen1/scripts.rs:552
+>>   5 | random args=[] result=0.4077296678442508 site=diff.js (injected extra random) | shuffle args=[2,0,2] result=[0] site=crates/ps_sim/src/events.rs:103
+     6 | shuffle args=[2,0,2] result=[1] site=dist/sim/battle.js:288 origin=dist/sim/pokemon.js:1267 | random args=[1,8] result=4 site=crates/ps_sim/src/mods/gen1/conditions/slp.rs:34
+```
+
+`PS_RNG_TRACE_EXTRA=N` is the test hook: the PS side draws one extra
+`random()` before the call at index N (the extra call is the call at
+index N), so the report shows where the two sides' PRNG streams part
+ways. `crates/ps_harness/tests/rng_trace.rs` plays one Gen 1 battle
+with it and checks that the report names the injected call's index and
+both call sites.
+
 ## Unported effects
 
 When `ps_sim` reaches an effect with no port it panics `unported: <id>`;

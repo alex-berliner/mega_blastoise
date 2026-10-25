@@ -62,6 +62,20 @@
 // summary line and does not fail the run; a PS throw that ps_sim plays
 // through is a crash.
 //
+// PRNG trace:
+//   - `PS_RNG_TRACE=1` wraps PS's PRNG methods (the results do not
+//     change) and records every call: its index, its method, its
+//     arguments, its result and the call site (the first stack frame
+//     outside `prng.js`). The `ps_sim` side records the same thing
+//     through its `rng-trace` feature: the driver passes `--rng-trace`
+//     to `ps_sim_cli`, which sends the battle's calls as an `rngtrace`
+//     message. When the two sides diverge, the two traces are written
+//     side by side around the first differing call, with both call
+//     sites.
+//   - `PS_RNG_TRACE_EXTRA=N` (a test hook) makes the PS side draw one
+//     extra `random()` before the call at index N, so the trace shows
+//     where the two sides' PRNG streams part ways.
+//
 // Important behaviour:
 //   * `--jobs N` (default 14) splits a run into N node child processes
 //     by seed range. Each child prints its own summary line; the parent
@@ -98,6 +112,311 @@ const DEFAULT_TIMEOUT_MS = 30000;
 const DEFAULT_JOBS = 14;
 // Battle seeds per carried team pair.
 const CARRIED_SEEDS = 20;
+
+// ---- the PRNG trace --------------------------------------------------------
+//
+// `PS_RNG_TRACE=1` turns the trace on. PS's PRNG methods are wrapped
+// (without changing what they return) and every call is recorded with
+// its index, its method, its arguments, its result and the call site
+// (the first stack frame outside `prng.js`). The `ps_sim` side records
+// the same thing through the `rng-trace` feature of `ps_sim`: the
+// driver passes `--rng-trace` to `ps_sim_cli`, which sends the battle's
+// calls as an `rngtrace` message. When the two sides diverge, the two
+// traces are lined up and written side by side.
+const RNG_TRACE = process.env.PS_RNG_TRACE === '1';
+
+// The test hook `PS_RNG_TRACE_EXTRA=N`: the PS side draws one extra
+// `random()` before the call at index N (the extra call is recorded as
+// the call at index N), so the trace shows where the two sides' PRNG
+// streams part ways.
+const RNG_TRACE_EXTRA = (() => {
+  const raw = process.env.PS_RNG_TRACE_EXTRA;
+  if (raw === undefined || raw === '') return null;
+  const n = parseInt(raw, 10);
+  return Number.isFinite(n) && n >= 0 ? n : null;
+})();
+
+// The traced state of one PRNG instance: its calls, the nesting depth
+// (a `random()` inside a `sample()` belongs to the `sample()`), and the
+// results of the nested calls.
+const rngTraceStates = new WeakMap();
+
+function rngTraceState(prng) {
+  let st = rngTraceStates.get(prng);
+  if (!st) {
+    st = { calls: [], depth: 0, nested: [], extraDone: false };
+    rngTraceStates.set(prng, st);
+  }
+  return st;
+}
+
+// The calls a PRNG instance made.
+function rngTraceOf(prng) {
+  if (!prng) return null;
+  const st = rngTraceStates.get(prng);
+  return st ? st.calls : null;
+}
+
+function isPrngFile(file) {
+  return /[\\/]prng\.(js|ts)$/.test(file);
+}
+
+function isBattleFile(file) {
+  return /[\\/]battle\.(js|ts)$/.test(file);
+}
+
+// A path inside the PS package, short: `sim/battle-actions.js`.
+function shortFile(file) {
+  const i = file.lastIndexOf('pokemon-showdown/');
+  return i >= 0 ? file.slice(i + 'pokemon-showdown/'.length) : file;
+}
+
+// One stack frame: the file and the line.
+function parseFrame(line) {
+  let m = line.match(/\(([^()]+):(\d+):(\d+)\)\s*$/);
+  if (m) return { file: m[1], line: parseInt(m[2], 10) };
+  m = line.match(/^\s*at\s+(.+):(\d+):(\d+)\s*$/);
+  if (m) return { file: m[1], line: parseInt(m[2], 10) };
+  return null;
+}
+
+// Where the call being traced was made: the first stack frame outside
+// `prng.js` (the frames of this file are the tracing itself, so they
+// are skipped too). `origin` is the first frame outside `prng.js` and
+// `battle.js` as well: the code that asked the battle for a number.
+function rngTraceSite() {
+  const frames = [];
+  for (const line of (new Error().stack || '').split('\n')) {
+    const f = parseFrame(line);
+    if (f) frames.push(f);
+  }
+  const usable = frames.filter((f) => f.file !== __filename && !isPrngFile(f.file));
+  const site = usable[0];
+  const origin = usable.find((f) => !isBattleFile(f.file)) || site;
+  const at = (f) => (f ? `${shortFile(f.file)}:${f.line}` : 'unknown');
+  return { site: at(site), origin: at(origin) };
+}
+
+// PS `PRNG.random`'s arguments, as the overload PS picks them:
+// `random()` takes none, `random(n)` one and `random(m, n)` two.
+function randomArgs(from, to) {
+  if (from === undefined) return [];
+  const f = Math.floor(from);
+  if (!to) return [f];
+  return [f, Math.floor(to)];
+}
+
+// Wraps PS's PRNG methods. The wrappers call the originals, so the
+// battles play out exactly as they do without the trace.
+function installRngTrace() {
+  if (PRNG.prototype.__psDiffRngTrace) return;
+  PRNG.prototype.__psDiffRngTrace = true;
+
+  const origRandom = PRNG.prototype.random;
+  const origRandomChance = PRNG.prototype.randomChance;
+  const origSample = PRNG.prototype.sample;
+  const origShuffle = PRNG.prototype.shuffle;
+
+  // The underlying RNG's `next()` (PS's `Gen5RNG.next` / `SodiumRNG.next`):
+  // a direct call is a call of its own; the ones inside a traced call
+  // belong to that call.
+  function instrumentRng(prng, st) {
+    const rng = prng.rng;
+    if (!rng || rng.__psDiffRngTrace) return;
+    rng.__psDiffRngTrace = true;
+    const origNext = rng.next;
+    rng.next = function () {
+      const outer = st.depth === 0;
+      const site = outer ? rngTraceSite() : null;
+      const value = origNext.call(this);
+      if (outer) {
+        st.calls.push({
+          index: st.calls.length, method: 'next', args: [], result: value,
+          site: site.site, origin: site.origin,
+        });
+      }
+      return value;
+    };
+  }
+
+  // The test hook: one extra `random()` before the call at index N.
+  function injectExtra(st, self) {
+    if (RNG_TRACE_EXTRA === null || st.extraDone) return;
+    if (st.calls.length !== RNG_TRACE_EXTRA) return;
+    st.extraDone = true;
+    const result = origRandom.call(self);
+    st.calls.push({
+      index: st.calls.length, method: 'random', args: [], result,
+      site: 'diff.js (injected extra random)', origin: 'diff.js (injected extra random)',
+      injected: true,
+    });
+  }
+
+  PRNG.prototype.random = function (from, to) {
+    const st = rngTraceState(this);
+    const outer = st.depth === 0;
+    const site = outer ? rngTraceSite() : null;
+    instrumentRng(this, st);
+    st.depth++;
+    let result;
+    try {
+      if (outer) injectExtra(st, this);
+      result = origRandom.call(this, from, to);
+    } finally {
+      st.depth--;
+    }
+    if (outer) {
+      st.calls.push({
+        index: st.calls.length, method: 'random', args: randomArgs(from, to), result,
+        site: site.site, origin: site.origin,
+      });
+    } else {
+      st.nested.push({ args: randomArgs(from, to), result });
+    }
+    return result;
+  };
+
+  PRNG.prototype.randomChance = function (numerator, denominator) {
+    const st = rngTraceState(this);
+    const outer = st.depth === 0;
+    const site = outer ? rngTraceSite() : null;
+    instrumentRng(this, st);
+    const mark = st.nested.length;
+    st.depth++;
+    let result;
+    try {
+      if (outer) injectExtra(st, this);
+      result = origRandomChance.call(this, numerator, denominator);
+    } finally {
+      st.depth--;
+    }
+    if (outer) {
+      st.nested.length = mark;
+      st.calls.push({
+        index: st.calls.length, method: 'random_chance', args: [numerator, denominator],
+        result: !!result, site: site.site, origin: site.origin,
+      });
+    }
+    return result;
+  };
+
+  PRNG.prototype.sample = function (items) {
+    const st = rngTraceState(this);
+    const outer = st.depth === 0;
+    const site = outer ? rngTraceSite() : null;
+    instrumentRng(this, st);
+    const mark = st.nested.length;
+    st.depth++;
+    let result;
+    try {
+      if (outer) injectExtra(st, this);
+      result = origSample.call(this, items);
+    } finally {
+      st.depth--;
+    }
+    if (outer) {
+      const nested = st.nested.slice(mark);
+      st.nested.length = mark;
+      const index = nested.length ? nested[nested.length - 1].result : null;
+      st.calls.push({
+        index: st.calls.length, method: 'sample', args: [items.length], result: index,
+        site: site.site, origin: site.origin,
+      });
+    }
+    return result;
+  };
+
+  PRNG.prototype.shuffle = function (items, start, end) {
+    const st = rngTraceState(this);
+    const outer = st.depth === 0;
+    const site = outer ? rngTraceSite() : null;
+    instrumentRng(this, st);
+    const mark = st.nested.length;
+    const from = start === undefined ? 0 : start;
+    const to = end === undefined ? items.length : end;
+    st.depth++;
+    let result;
+    try {
+      if (outer) injectExtra(st, this);
+      result = origShuffle.call(this, items, start, end);
+    } finally {
+      st.depth--;
+    }
+    if (outer) {
+      const nested = st.nested.slice(mark);
+      st.nested.length = mark;
+      st.calls.push({
+        index: st.calls.length, method: 'shuffle', args: [items.length, from, to],
+        result: nested.map((n) => n.result), site: site.site, origin: site.origin,
+      });
+    }
+    return result;
+  };
+}
+
+// Two traced values are the same when they are the same number, the
+// same list or the same thing.
+function sameTraceValue(a, b) {
+  if (typeof a === 'number' && typeof b === 'number') return a === b;
+  if (Array.isArray(a) && Array.isArray(b)) {
+    return a.length === b.length && a.every((x, i) => sameTraceValue(x, b[i]));
+  }
+  return a === b;
+}
+
+// Two traced calls are the same when their method, their arguments and
+// their result are the same.
+function sameTraceCall(x, y) {
+  if (!x || !y) return false;
+  if (x.method !== y.method) return false;
+  const ax = x.args || [];
+  const ay = y.args || [];
+  if (ax.length !== ay.length || !ax.every((v, i) => sameTraceValue(v, ay[i]))) return false;
+  return sameTraceValue(x.result, y.result);
+}
+
+// The first call where the two traces differ (-1 when they are the
+// same).
+function firstTraceDiff(a, b) {
+  const left = a || [];
+  const right = b || [];
+  const n = Math.min(left.length, right.length);
+  for (let i = 0; i < n; i++) {
+    if (!sameTraceCall(left[i], right[i])) return i;
+  }
+  if (left.length !== right.length) return n;
+  return -1;
+}
+
+// One traced call, as one line.
+function traceLine(call) {
+  if (!call) return '(no call)';
+  const args = (call.args || []).map((a) => JSON.stringify(a)).join(',');
+  const origin = call.origin && call.origin !== call.site ? ` origin=${call.origin}` : '';
+  return `${call.method} args=[${args}] result=${JSON.stringify(call.result)} site=${call.site}${origin}`;
+}
+
+// The two traces side by side around the first differing call.
+function traceSection(psTrace, rustTrace) {
+  const at = firstTraceDiff(psTrace, rustTrace);
+  const left = psTrace || [];
+  const right = rustTrace || [];
+  const lines = [];
+  if (at < 0) {
+    lines.push('--- PRNG trace ---');
+    lines.push(`  the two traces are the same (${left.length} calls)`);
+    return lines.join('\n') + '\n';
+  }
+  lines.push(`--- PRNG trace (first differing call: ${at}) ---`);
+  lines.push('  #  | PS (pokemon-showdown) | ps_sim (rust)');
+  const from = Math.max(0, at - 3);
+  const to = Math.min(Math.max(left.length, right.length), at + 4);
+  for (let i = from; i < to; i++) {
+    const mark = i === at ? '>>' : '  ';
+    lines.push(`${mark} ${String(i).padStart(3)} | ${traceLine(left[i])} | ${traceLine(right[i])}`);
+  }
+  return lines.join('\n') + '\n';
+}
 
 function parseArgs(argv) {
   const opts = {
@@ -368,6 +687,7 @@ function makeChooser(choiceSeed, script) {
 /// and the choice PRNG call count (caller uses this for diagnostics).
 async function drivePS({ cmds, choiceSeed, script }) {
   rules.install();
+  if (RNG_TRACE) installRngTrace();
   const stream = new BattleStream({ keepAlive: false });
   const choose = makeChooser(choiceSeed, script);
   let prngCalls = 0;
@@ -426,7 +746,8 @@ async function drivePS({ cmds, choiceSeed, script }) {
       try { stream.writeEnd(); } catch (_) {}
     }
   }
-  return { out: log.join('\n'), prngCalls };
+  const trace = RNG_TRACE && stream.battle ? rngTraceOf(stream.battle.prng) : null;
+  return { out: log.join('\n'), prngCalls, trace };
 }
 
 // `normaliseLines` keeps every line PS emits (including the standalone
@@ -474,7 +795,8 @@ function writeDivergence(scratch, rec) {
     + ctxAfter.map((l, i) => `  [${rec.at + 1 + i}] L: ${l}`).join('\n')
     + '\n'
     + `--- left ---\n${rec.left}\n`
-    + `--- right ---\n${rec.right}\n`);
+    + `--- right ---\n${rec.right}\n`
+    + (rec.psTrace || rec.rustTrace ? traceSection(rec.psTrace, rec.rustTrace) : ''));
 }
 
 /// A targeted battle names the PS lines it is there to reach (`expect`):
@@ -505,13 +827,16 @@ function writeError(scratch, rec, err) {
 // `unported` + the effect id, and `crash` + the panic message. The data of
 // every `update` / `sideupdate` goes in the log exactly as drivePS keeps
 // PS's, and each `|request|` is answered with the same choice PRNG.
-const MESSAGE_TYPES = new Set(['update', 'sideupdate', 'end', 'unported', 'crash']);
+const MESSAGE_TYPES = new Set(['update', 'sideupdate', 'end', 'unported', 'crash', 'rngtrace']);
 const TERMINAL_TYPES = new Set(['end', 'unported', 'crash']);
 
 class RustProc {
   constructor(psCli, hits) {
     this.psCli = psCli;
     this.args = hits ? ['--hits', hits] : [];
+    // The PRNG trace (`PS_RNG_TRACE=1`): `ps_sim_cli` sends the battle's
+    // PRNG calls as an `rngtrace` message.
+    if (RNG_TRACE) this.args.push('--rng-trace');
     this.child = null;
     this.battle = null;   // the battle being played (see runBattle)
   }
@@ -561,7 +886,18 @@ class RustProc {
     if (this.type === null) return;
     this.lines.push(line);
     const b = this.battle;
-    if (!b || this.type !== 'sideupdate' || this.lines.length !== 2) return;
+    if (!b) return;
+    if (this.type === 'rngtrace') {
+      // The battle's PRNG trace: one JSON line with the calls.
+      try {
+        const doc = JSON.parse(line);
+        b.rngTrace = Array.isArray(doc.calls) ? doc.calls : [];
+      } catch (_) {
+        b.rngTrace = [];
+      }
+      return;
+    }
+    if (this.type !== 'sideupdate' || this.lines.length !== 2) return;
     const side = this.lines[0];
     if (!/^p[12]$/.test(side)) return;
     if (line.startsWith('|error|')) {
@@ -617,6 +953,7 @@ class RustProc {
     clearTimeout(b.timer);
     b.resolve({
       out: b.log.join('\n'), prngCalls: b.prngCalls, status, detail, stderr: b.stderr,
+      rngTrace: b.rngTrace || null,
     });
   }
   /// Plays one battle: `cmds` are the `>start` / `>player` lines. Resolves
@@ -633,6 +970,7 @@ class RustProc {
         forces: forces ? forces.slice() : [],
         sent: 0,
         forced: false,
+        rngTrace: null,
         timer: setTimeout(() => this.kill('timeout'), timeoutMs),
       };
       this.type = null;
@@ -724,6 +1062,7 @@ async function runOneBattle(driverSeed, opts, scratch) {
           prngCallsA: a.prngCalls, prngCallsB: b.prngCalls,
           leftAt: aLines[at], rightAt: bLines[at],
           ctxBefore, ctxAfter,
+          psTrace: a.trace || null, rustTrace: null,
         });
       } else if (aLines.length === 0) {
         result.crash = 1;
@@ -764,9 +1103,11 @@ async function runOneBattle(driverSeed, opts, scratch) {
       writeDivergence(scratch, {
         seed: driverSeed, gen: opts.gen, teams: opts.teamsMode, trunc: opts.trunc, pair: opts.pairName, at,
         left: aLog, right: bLog,
-        prngCallsA: a.prngCalls, prngCallsB: bRun.prngCalls,
+        prngCallsA: a.trace ? a.trace.length : a.prngCalls,
+        prngCallsB: bRun.rngTrace ? bRun.rngTrace.length : bRun.prngCalls,
         leftAt: aLines[at], rightAt: bLines[at],
         ctxBefore, ctxAfter,
+        psTrace: a.trace || null, rustTrace: bRun.rngTrace || null,
       });
     }
     if (bRun.status === 'unported') {
@@ -1526,4 +1867,6 @@ if (require.main === module) {
 module.exports = {
   parseArgs, deriveSeeds, driverCommands, pickChoice,
   normaliseLines, firstDiff, runOneBattle, drivePS,
+  installRngTrace, firstTraceDiff, sameTraceCall, traceSection, traceLine,
+  RustProc,
 };

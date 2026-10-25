@@ -12,6 +12,9 @@ text = ["ps_sim/text", "ps_protocol/text"]
 # `ps_sim_cli --hits FILE`: per-handler hit counts (`ps_sim/hit-count`) for
 # `scripts/ps-coverage.sh`.
 hit-count = ["ps_sim/hit-count"]
+# `ps_sim_cli --rng-trace`: the battle's PRNG calls as an `rngtrace`
+# message (`ps_sim/rng-trace`), for the protocol diff's PRNG trace.
+rng-trace = ["ps_sim/rng-trace"]
 
 [[bin]]
 name = "ps_sim_cli"

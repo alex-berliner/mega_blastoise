@@ -33,6 +33,13 @@
 //! - `crash` and the panic message (on one line), for any other panic or
 //!   a command `ps_sim` cannot take.
 //!
+//! `--rng-trace` (a build with the `rng-trace` feature) adds one more
+//! message per battle, `rngtrace`, whose data is the battle's PRNG calls
+//! as JSON: the call index, the method, the arguments, the result and the
+//! caller location of every call. It comes before the battle's `end`
+//! (or `unported` / `crash`) message, and the protocol lines are the same
+//! with and without it.
+//!
 //! `--ported <gen>` prints `ps_sim::mods::ported(gen)`, one `kind:id` per
 //! line (gens 1 and 3; others exit 2).
 //!
@@ -112,17 +119,27 @@ fn main() {
         let nanos = std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).map(|d| d.as_nanos()).unwrap_or(0);
         hits_path = Some(path.replace("{pid}", &format!("{}-{nanos}", std::process::id())));
     }
+    let mut rng_trace = false;
+    if args.iter().any(|a| a == "--rng-trace") {
+        if !cfg!(feature = "rng-trace") {
+            eprintln!("ps_sim_cli: --rng-trace needs a build with `--features rng-trace`");
+            std::process::exit(2);
+        }
+        rng_trace = true;
+    }
     if args.iter().any(|a| a == "--help" || a == "-h") {
         eprintln!(
             "ps_sim_cli: ps_sim behind PS's BattleStream protocol\n  \
              Run on stdin/stdout; reads `>start` / `>player pN` / `>pN <choice>`.\n  \
              --ported <gen>   print the ported effect ids for `gen`, one per line.\n  \
              --handlers <gen> print the registered handlers for `gen` and their focus moves.\n  \
-             --hits FILE      write per-handler hit counts to FILE (`hit-count` builds)."
+             --hits FILE      write per-handler hit counts to FILE (`hit-count` builds).\n  \
+             --rng-trace      send the battle's PRNG calls as an `rngtrace` message\n                     \
+             (`rng-trace` builds)."
         );
         return;
     }
-    run_stream(hits_path);
+    run_stream(hits_path, rng_trace);
 }
 
 /// `--ported <gen>`: one `<kind>:<id>` per line.
@@ -340,9 +357,65 @@ fn message(out: &mut String, kind: &str, data: &str) {
     out.push('\n');
 }
 
+/// The `rngtrace` message: the battle's traced PRNG calls as JSON.
+#[cfg(feature = "rng-trace")]
+fn trace_message(b: &mut Battle) -> String {
+    let calls = b.prng.take_trace();
+    let mut out = String::new();
+    message(&mut out, "rngtrace", &encode_trace(&calls));
+    out
+}
+
+/// A build without the `rng-trace` feature has no trace to send.
+#[cfg(not(feature = "rng-trace"))]
+fn trace_message(_b: &mut Battle) -> String {
+    String::new()
+}
+
+/// The traced PRNG calls as JSON (feature `rng-trace`).
+#[cfg(feature = "rng-trace")]
+fn encode_trace(calls: &[ps_sim::prng::PrngCall]) -> String {
+    let items: Vec<serde_json::Value> = calls.iter().map(encode_call).collect();
+    serde_json::json!({ "calls": items }).to_string()
+}
+
+/// One traced call as JSON (feature `rng-trace`).
+#[cfg(feature = "rng-trace")]
+fn encode_call(call: &ps_sim::prng::PrngCall) -> serde_json::Value {
+    let args: Vec<serde_json::Value> = call.args.iter().map(encode_value).collect();
+    serde_json::json!({
+        "index": call.index,
+        "method": call.method,
+        "args": args,
+        "result": encode_value(&call.result),
+        "site": call.site.as_str(),
+    })
+}
+
+/// One traced argument or result as JSON (feature `rng-trace`).
+#[cfg(feature = "rng-trace")]
+fn encode_value(value: &ps_sim::prng::PrngValue) -> serde_json::Value {
+    use ps_sim::prng::PrngValue;
+    match value {
+        PrngValue::Int(i) => serde_json::Value::from(*i),
+        // A whole float reads as the integer it is (PS's numbers are the
+        // same either way).
+        PrngValue::Float(f) if f.fract() == 0.0 && f.is_finite() => {
+            serde_json::Value::from(*f as i64)
+        }
+        PrngValue::Float(f) => serde_json::Number::from_f64(*f)
+            .map(serde_json::Value::Number)
+            .unwrap_or(serde_json::Value::Null),
+        PrngValue::Bool(b) => serde_json::Value::Bool(*b),
+        PrngValue::Ints(list) => {
+            serde_json::Value::Array(list.iter().map(|i| serde_json::Value::from(*i)).collect())
+        }
+    }
+}
+
 /// PS `sendUpdates` as `BattleStream` messages, then `end` once the battle
 /// is over.
-fn flush(b: &mut Battle, ended_sent: &mut bool) -> String {
+fn flush(b: &mut Battle, ended_sent: &mut bool, rng_trace: bool) -> String {
     let mut c = Collect::default();
     b.send_updates(&mut c);
     let (dex, names) = (tables(b.dex), Names(b));
@@ -366,6 +439,9 @@ fn flush(b: &mut Battle, ended_sent: &mut bool) -> String {
     }
     if b.ended && !*ended_sent {
         *ended_sent = true;
+        if rng_trace {
+            out.push_str(&trace_message(b));
+        }
         let name = |s: usize| serde_json::to_string(b.sides[s].name.as_str()).unwrap();
         let winner = match b.winner {
             Some(Some(side)) => name(side.index()),
@@ -386,9 +462,24 @@ struct Stream {
     ended_sent: bool,
     /// The battle's hit counts are in the totals (`--hits`).
     counted: bool,
+    /// The battle's PRNG calls go out as an `rngtrace` message
+    /// (`--rng-trace`).
+    rng_trace: bool,
 }
 
 impl Stream {
+    /// The `rngtrace` message of the battle being played: its PRNG calls
+    /// as JSON. Empty when the run does not trace.
+    fn take_trace(&mut self) -> String {
+        if !self.rng_trace {
+            return String::new();
+        }
+        match self.battle.as_mut() {
+            Some(b) => trace_message(b),
+            None => String::new(),
+        }
+    }
+
     /// `--hits`: adds the battle's handler calls to the totals once (when it
     /// ends, stops early or is dropped) and rewrites the file.
     fn count_hits(&mut self) {
@@ -417,6 +508,8 @@ impl Stream {
     fn command(&mut self, line: &str) -> Result<String, String> {
         let rest = &line[1..];
         let (kind, arg) = rest.split_once(' ').unwrap_or((rest, ""));
+        // The trace of a battle that a `>start` replaces.
+        let mut pending = String::new();
         match kind {
             "start" => {
                 let v: serde_json::Value = serde_json::from_str(arg).map_err(|e| bad(format!(">start: {e}")))?;
@@ -448,6 +541,13 @@ impl Stream {
                 let mut b = Box::new(Battle::from_start(spec, seed, clock));
                 b.spill = Some(spill);
                 SPILLED.with(|s| s.borrow_mut().clear());
+                // The battle that was still running hands its trace over
+                // before it goes.
+                if self.rng_trace {
+                    if let Some(old) = self.battle.as_mut() {
+                        pending = trace_message(old);
+                    }
+                }
                 self.battle = Some(b);
                 self.ended_sent = false;
                 self.counted = false;
@@ -491,13 +591,17 @@ impl Stream {
             other => return Err(bad(format!("command >{other}"))),
         }
         let b = self.battle.as_mut().unwrap();
-        let text = flush(b, &mut self.ended_sent);
+        let text = flush(b, &mut self.ended_sent, self.rng_trace);
         if self.ended_sent {
             // Counted before the `end` is written, so the file is current
             // by the time the driver sees the battle over.
             self.count_hits();
         }
-        Ok(text)
+        if pending.is_empty() {
+            Ok(text)
+        } else {
+            Ok(format!("{pending}{text}"))
+        }
     }
 }
 
@@ -528,7 +632,7 @@ fn parse_choice(text: &str) -> Option<Choice> {
     })
 }
 
-fn run_stream(hits_path: Option<String>) {
+fn run_stream(hits_path: Option<String>, rng_trace: bool) {
     #[cfg(feature = "hit-count")]
     if let Some(path) = hits_path {
         let t = HitTotals { path, battles: BTreeMap::new(), calls: BTreeMap::new() };
@@ -554,6 +658,7 @@ fn run_stream(hits_path: Option<String>) {
     let stdin = io::stdin();
     let stdout = io::stdout();
     let mut stream = Stream::default();
+    stream.rng_trace = rng_trace;
     for line in stdin.lock().lines() {
         let Ok(line) = line else { break };
         if !line.starts_with('>') {
@@ -563,20 +668,24 @@ fn run_stream(hits_path: Option<String>) {
             Ok(Ok(text)) => text,
             Ok(Err(e)) => {
                 stream.count_hits();
+                let mut text = stream.take_trace();
                 stream.battle = None;
-                format!("crash\n{e}\n")
+                text.push_str(&format!("crash\n{e}\n"));
+                text
             }
             Err(_) => {
                 stream.count_hits();
+                let mut text = stream.take_trace();
                 stream.battle = None;
                 let msg = PANIC.with(|p| p.borrow_mut().take()).unwrap_or_default();
-                match msg.strip_prefix("unported: ") {
+                text.push_str(&match msg.strip_prefix("unported: ") {
                     Some(rest) => {
                         let id = rest.split(" at ").next().unwrap_or(rest);
                         format!("unported\n{id}\n")
                     }
                     None => format!("crash\n{}\n", msg.replace('\n', " | ")),
-                }
+                });
+                text
             }
         };
         if !text.is_empty() {

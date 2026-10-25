@@ -28,6 +28,14 @@
 //! An `OutcomeOverride` queue (forces the next N `next()` results without
 //! advancing the underlying RNG) is gated on `any(test, test-override)` so
 //! the firmware build contains no override symbols.
+//!
+//! The `rng-trace` feature records every public PRNG call in
+//! [`Prng::trace`]: its index, the method, the arguments, the result and
+//! the caller location (`file:line`, from `#[track_caller]`). The trace is
+//! what the protocol-diff harness compares against PS's own PRNG trace
+//! when the two sides diverge. The feature is off by default, so the
+//! firmware build carries neither the trace nor the `track_caller`
+//! metadata.
 
 #![cfg_attr(not(any(test, feature = "test-override")), allow(dead_code))]
 
@@ -35,8 +43,46 @@ extern crate alloc;
 
 #[cfg(any(test, feature = "test-override"))]
 use alloc::collections::VecDeque;
+#[cfg(feature = "rng-trace")]
+use alloc::vec::Vec;
 
 pub use ps_protocol::PrngSeed;
+
+/// One traced PRNG call (feature `rng-trace`).
+///
+/// The trace mirrors what PS's own PRNG does, one entry per public call:
+/// `random` (with the overload's arguments), `random_chance`, `sample`,
+/// `shuffle` and `next`. The `index` is the call's position in the
+/// battle's trace, so the two sides' traces can be lined up.
+#[cfg(feature = "rng-trace")]
+#[derive(Clone, Debug, PartialEq)]
+pub struct PrngCall {
+    /// The call's index in the trace (0-based).
+    pub index: u32,
+    /// The PRNG method: `random`, `random_chance`, `sample`, `shuffle` or
+    /// `next`.
+    pub method: &'static str,
+    /// The arguments the call was made with.
+    pub args: Vec<PrngValue>,
+    /// What the call returned.
+    pub result: PrngValue,
+    /// Where the call was made: `file:line` of the caller.
+    pub site: alloc::string::String,
+}
+
+/// A traced argument or result (feature `rng-trace`).
+#[cfg(feature = "rng-trace")]
+#[derive(Clone, Debug, PartialEq)]
+pub enum PrngValue {
+    /// An integer (a draw, an index, a bound).
+    Int(i64),
+    /// A float (`random()` without arguments).
+    Float(f64),
+    /// A boolean (`random_chance`).
+    Bool(bool),
+    /// A list of integers (the indices `shuffle` picked).
+    Ints(Vec<i64>),
+}
 
 /// 64-bit LCG seed, big-endian 16-bit limbs (`seed[0]` = MSB, `seed[3]` = LSB).
 pub type Seed = [u16; 4];
@@ -290,6 +336,14 @@ pub struct Prng {
     pub calls: u64,
     #[cfg(any(test, feature = "test-override"))]
     override_queue: VecDeque<u32>,
+    /// The traced calls (feature `rng-trace`).
+    #[cfg(feature = "rng-trace")]
+    trace: Vec<PrngCall>,
+    /// `true` while a traced call is in flight (feature `rng-trace`): a
+    /// nested call belongs to the outer one, so one logical call is one
+    /// trace entry.
+    #[cfg(feature = "rng-trace")]
+    tracing: bool,
 }
 
 impl Prng {
@@ -306,6 +360,10 @@ impl Prng {
             calls: 0,
             #[cfg(any(test, feature = "test-override"))]
             override_queue: VecDeque::new(),
+            #[cfg(feature = "rng-trace")]
+            trace: Vec::new(),
+            #[cfg(feature = "rng-trace")]
+            tracing: false,
         }
     }
 
@@ -360,11 +418,22 @@ impl Prng {
     }
 
     /// PS: `Gen5RNG.next` (delegates after consulting the override).
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn next(&mut self) -> u32 {
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
         #[cfg(any(test, feature = "test-override"))]
         {
             if let Some(v) = self.override_queue.pop_front() {
                 self.calls = self.calls.saturating_add(1);
+                #[cfg(feature = "rng-trace")]
+                self.trace_end(
+                    outer,
+                    "next",
+                    alloc::vec![],
+                    PrngValue::Int(i64::from(v)),
+                    &core::panic::Location::caller(),
+                );
                 return v;
             }
         }
@@ -373,6 +442,14 @@ impl Prng {
             Rng::Sodium(r) => r.next(),
         };
         self.calls = self.calls.saturating_add(1);
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "next",
+            alloc::vec![],
+            PrngValue::Int(i64::from(v)),
+            &core::panic::Location::caller(),
+        );
         v
     }
 
@@ -380,8 +457,19 @@ impl Prng {
     ///
     /// IEEE 754 nearest rounding gives JS and Rust identical bits for any
     /// integer `next` in `[0, 2^32)`.
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn random(&mut self) -> f64 {
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
         let r = self.next();
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "random",
+            alloc::vec![],
+            PrngValue::Float(f64::from(r) / 4_294_967_296.0_f64),
+            &core::panic::Location::caller(),
+        );
         f64::from(r) / 4_294_967_296.0_f64
     }
 
@@ -390,9 +478,20 @@ impl Prng {
     /// Done in `u64` so the result is bit-exact for every `n` the
     /// ported moves ask for (largest is `2^16` today). For `n = 0` PS
     /// returns `0`; we mirror that.
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn random_n(&mut self, n: u32) -> u32 {
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
         let r = self.next();
         let product = (u64::from(r)) * u64::from(n);
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "random",
+            alloc::vec![PrngValue::Int(i64::from(n))],
+            PrngValue::Int(i64::from((product >> 32) as u32)),
+            &core::panic::Location::caller(),
+        );
         (product >> 32) as u32
     }
 
@@ -401,24 +500,83 @@ impl Prng {
     ///
     /// Requires `m <= n`. `m == n` returns `m` exactly (the floor term
     /// vanishes), matching PS.
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn random_range(&mut self, m: u32, n: u32) -> u32 {
         debug_assert!(m <= n, "PRNG::random_range requires m <= n");
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
         if m == n {
             // Still a registered call (PS makes one next() call). Match PS
             // exactly: count it because `random(m, m)` does consume a frame
             // in JS (it's just a multiplication by zero of the same `next`
             // value).
             let _ = self.next();
+            #[cfg(feature = "rng-trace")]
+            self.trace_end(
+                outer,
+                "random",
+                alloc::vec![PrngValue::Int(i64::from(m)), PrngValue::Int(i64::from(n))],
+                PrngValue::Int(i64::from(m)),
+                &core::panic::Location::caller(),
+            );
             return m;
         }
-        self.random_n(n - m) + m
+        let v = self.random_n(n - m) + m;
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "random",
+            alloc::vec![PrngValue::Int(i64::from(m)), PrngValue::Int(i64::from(n))],
+            PrngValue::Int(i64::from(v)),
+            &core::panic::Location::caller(),
+        );
+        v
     }
 
     /// PS: `PRNG.randomChance(numerator, denominator)` = `random(denominator)
     /// < numerator`. Numerator is non-negative; denominator is positive
     /// (PS asserts on its own).
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn random_chance(&mut self, numerator: u32, denominator: u32) -> bool {
-        self.random_n(denominator) < numerator
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
+        let v = self.random_n(denominator) < numerator;
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "random_chance",
+            alloc::vec![
+                PrngValue::Int(i64::from(numerator)),
+                PrngValue::Int(i64::from(denominator)),
+            ],
+            PrngValue::Bool(v),
+            &core::panic::Location::caller(),
+        );
+        v
+    }
+
+    /// PS: `PRNG.randomChance(numerator, denominator)` with a fractional
+    /// numerator: PS's `Battle#randomChance` takes a JS number, and the
+    /// Gen 3 accuracy roll passes one (`randomChance(accuracy, 100)`).
+    ///
+    /// The traced build only: the plain build rolls the accuracy without
+    /// it, so the device's code (and its size) stays as it was.
+    #[cfg(feature = "rng-trace")]
+    #[track_caller]
+    pub(crate) fn random_chance_f(&mut self, numerator: f64, denominator: u32) -> bool {
+        let outer = self.trace_begin();
+        let v = f64::from(self.random_n(denominator)) < numerator;
+        self.trace_end(
+            outer,
+            "random_chance",
+            alloc::vec![
+                PrngValue::Float(numerator),
+                PrngValue::Int(i64::from(denominator)),
+            ],
+            PrngValue::Bool(v),
+            &core::panic::Location::caller(),
+        );
+        v
     }
 
     /// PS: `PRNG.sample(items)` = `items[random(items.length)]`. We return
@@ -426,9 +584,20 @@ impl Prng {
     /// mutation instead of an extra copy.
     ///
     /// Panics on empty (PS throws `RangeError`).
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn sample<'a, T>(&mut self, items: &'a [T]) -> &'a T {
         assert!(!items.is_empty(), "PRNG::sample: empty slice");
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
         let idx = self.random_n(items.len() as u32) as usize;
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "sample",
+            alloc::vec![PrngValue::Int(items.len() as i64)],
+            PrngValue::Int(idx as i64),
+            &core::panic::Location::caller(),
+        );
         &items[idx]
     }
 
@@ -439,14 +608,89 @@ impl Prng {
     /// `start` and `end` are `usize` to mirror Rust slice conventions; the
     /// per-iteration cast is lossless because `items.len() <= usize::MAX`
     /// and our state caps well below `u32::MAX`.
+    #[cfg_attr(feature = "rng-trace", track_caller)]
     pub fn shuffle<T>(&mut self, items: &mut [T], mut start: usize, end: usize) {
+        #[cfg(feature = "rng-trace")]
+        let outer = self.trace_begin();
+        #[cfg(feature = "rng-trace")]
+        let first = start;
+        #[cfg(feature = "rng-trace")]
+        let mut picks: Vec<i64> = Vec::new();
         while start + 1 < end {
             let next_index = self.random_range(start as u32, end as u32) as usize;
+            #[cfg(feature = "rng-trace")]
+            picks.push(next_index as i64);
             if start != next_index {
                 items.swap(start, next_index);
             }
             start += 1;
         }
+        #[cfg(feature = "rng-trace")]
+        self.trace_end(
+            outer,
+            "shuffle",
+            alloc::vec![
+                PrngValue::Int(items.len() as i64),
+                PrngValue::Int(first as i64),
+                PrngValue::Int(end as i64),
+            ],
+            PrngValue::Ints(picks),
+            &core::panic::Location::caller(),
+        );
+    }
+}
+
+/// The PRNG call trace (feature `rng-trace`).
+#[cfg(feature = "rng-trace")]
+impl Prng {
+    /// The traced calls, in call order.
+    pub fn trace(&self) -> &[PrngCall] {
+        &self.trace
+    }
+
+    /// Takes the traced calls out of the PRNG: the harness drains them
+    /// when the battle ends.
+    pub fn take_trace(&mut self) -> Vec<PrngCall> {
+        // A panic inside a call leaves the nest flag up; the trace is
+        // drained anyway, so the next battle starts clean.
+        self.tracing = false;
+        core::mem::take(&mut self.trace)
+    }
+
+    /// Records one call: the next index, the method, the arguments, the
+    /// result and the caller location.
+    ///
+    /// Only the outermost call of a nest records: `random()` draws
+    /// through `next()`, and the draw belongs to the `random()`.
+    fn trace_begin(&mut self) -> bool {
+        let outer = !self.tracing;
+        self.tracing = true;
+        outer
+    }
+
+    /// Ends a traced call: the outermost one records the entry (index,
+    /// method, arguments, result and caller location); a nested one only
+    /// gives the flag back to its caller.
+    fn trace_end(
+        &mut self,
+        outer: bool,
+        method: &'static str,
+        args: Vec<PrngValue>,
+        result: PrngValue,
+        loc: &core::panic::Location<'static>,
+    ) {
+        if !outer {
+            return;
+        }
+        self.tracing = false;
+        let index = self.trace.len() as u32;
+        self.trace.push(PrngCall {
+            index,
+            method,
+            args,
+            result,
+            site: alloc::format!("{}:{}", loc.file(), loc.line()),
+        });
     }
 }
 
@@ -713,6 +957,71 @@ mod tests {
         let mut shuf = [1u32, 2, 3, 4, 5, 6];
         p.shuffle(&mut shuf, 0, 6);
         assert_eq!(p.calls, 11); // 6 prior + 5 shuffle frames.
+    }
+
+    #[cfg(feature = "rng-trace")]
+    #[test]
+    fn trace_records_every_public_call() {
+        let mut p = Prng::new([1, 2, 3, 4]);
+        let _ = p.random();
+        let _ = p.random_n(16);
+        let _ = p.random_range(2, 6);
+        let _ = p.random_chance(1, 16);
+        let arr: [u32; 3] = [10, 20, 30];
+        let _ = p.sample(&arr);
+        let mut shuf = [1u32, 2, 3, 4];
+        p.shuffle(&mut shuf, 0, 4);
+        let _ = p.next();
+
+        let trace = p.trace();
+        let methods: Vec<&str> = trace.iter().map(|c| c.method).collect();
+        assert_eq!(
+            methods,
+            ["random", "random", "random", "random_chance", "sample", "shuffle", "next"],
+            "one entry per public call",
+        );
+        for (i, call) in trace.iter().enumerate() {
+            assert_eq!(call.index as usize, i, "the calls are numbered in order");
+        }
+        assert_eq!(trace[0].args, alloc::vec![], "random() takes no arguments");
+        assert_eq!(trace[1].args, alloc::vec![PrngValue::Int(16)], "random(n)");
+        assert_eq!(
+            trace[2].args,
+            alloc::vec![PrngValue::Int(2), PrngValue::Int(6)],
+            "random(m, n)",
+        );
+        assert_eq!(
+            trace[3].args,
+            alloc::vec![PrngValue::Int(1), PrngValue::Int(16)],
+            "random_chance(numerator, denominator)",
+        );
+        assert_eq!(trace[4].args, alloc::vec![PrngValue::Int(3)], "sample(len)");
+        assert!(
+            matches!(trace[4].result, PrngValue::Int(_)),
+            "the sample's result is the index it picked",
+        );
+        assert_eq!(
+            trace[5].args,
+            alloc::vec![PrngValue::Int(4), PrngValue::Int(0), PrngValue::Int(4)],
+            "shuffle(len, start, end)",
+        );
+        assert!(
+            matches!(trace[5].result, PrngValue::Ints(_)),
+            "the shuffle's result is the indices it picked",
+        );
+        for call in trace.iter() {
+            assert!(
+                call.site.contains("prng.rs:"),
+                "the call site is the file and line of the caller: {}",
+                call.site,
+            );
+        }
+
+        // The trace can be taken out (the harness drains it when the
+        // battle ends).
+        let taken = p.take_trace();
+        assert_eq!(taken.len(), 7);
+        assert!(p.trace().is_empty());
     }
 
     #[cfg(any(test, feature = "test-override"))]

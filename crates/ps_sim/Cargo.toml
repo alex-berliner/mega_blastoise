@@ -20,6 +20,10 @@ test-override = []
 # Per-handler hit counts in `Battle::hits` (`hits.rs`) for the coverage
 # gate (`scripts/ps-coverage.sh`). Host-only; the firmware never enables it.
 hit-count = []
+# PRNG call tracing (`Prng::trace`): every public PRNG call with its
+# index, method, arguments, result and caller location. Off by default:
+# the firmware never enables it, so its release build is unchanged.
+rng-trace = []
 defmt = ["dep:defmt"]
 
 [dependencies]
