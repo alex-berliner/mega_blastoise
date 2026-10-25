@@ -334,7 +334,7 @@ ORDER (above), and DEF-47 stays FIXED, not CLOSED, until scripts/check.sh runs c
 
 ## (i) The gate today
 
-At the evidence commit after 4a86173 (14 PASS, 8 FAIL, 52 NOT_RUN, 100 NOT_BUILT, 2 CUT, 3
+At 78b777a and the evidence commit after it (14 PASS, 8 FAIL, 52 NOT_RUN, 100 NOT_BUILT, 2 CUT, 3
 RETIRED):
 
 ```

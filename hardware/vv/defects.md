@@ -335,7 +335,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the seeded-fault run that tested check_trace was never committed (DEF-28's rule).
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
-- Status: CLOSED (check_trace.py rewritten; VER-129 PASS 2026-10-25 at 4a86173: 47 seeded faults caught, 12 of them with git history)
+- Status: CLOSED (check_trace.py rewritten; VER-129 PASS 2026-10-25 at 78b777a: 47 seeded faults caught, 12 of them with git history)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
