@@ -201,15 +201,17 @@ z_seam = 2.55;
 // GUESS (Alex, 2026-10-21: best guess until 6_tests): 0.25; test_rings (0.2 to 0.5) settles it
 slide_fit = 0.25;
 seam_fit = slide_fit;                                   // the tongue's clearance to the skirts (and the tabs')
-deck_tongue_top = 6.7;    // the tongue's top under the decks' cores, 1.0 under their face: there the tongue leans
+deck_tongue_top = 6.6;    // the tongue's top under the decks' cores (6.7 until 2026-10-25, see core_lead), 1.1 under their face: there the tongue leans
                           // in as the face's round comes in, and its tip is chamfered. Along the side walls, under
                           // the decks' arms and the island's ear, it is lower: arm_tongue_top, below. It rises
-                          // from the seam: 4.15 tall since the seam came down (2.5 over the seam at 4.2; 1.5
+                          // from the seam: 4.05 tall since 2026-10-25 (4.15 since the seam came down; 2.5 over the seam at 4.2; 1.5
                           // before "The joints"; 7.2 along the top piece's sides until the island, 2026-10-23)
 deck_tongue_h = deck_tongue_top - z_seam;
 skirt_t = 0.7;            // the skirts' outer half is never thinner than this, outside the tongue's groove
 tongue_t = wall / 2 - seam_fit;                         // the tongue's thickness (0.75; its tip tapers)
 tongue_lead = 0.3;        // the tip's outer edge chamfered 45 degrees, a lead-in into the skirts
+core_lead = 0.45;         // the same chamfer on the cores' tongue (2026-10-25): the round's skirt over it is thin (wall under the one-piece
+                          // top's side round, SHELL.md), so the tongue's corner gives it room; the tip stays 0.3 thick (tip_min 0.25)
 seam_gap = 0.1;                                         // the skirts stop this short of the tub at the seam (and
                                                         // the grooves this far over the tongue's top), so the
                                                         // screws clamp the board, not the seam
@@ -944,7 +946,8 @@ eps = 0.01;               // how far a solid overlaps one it joins (the 0.01s el
 // nearer it than the wall does). The groove's inner side keeps seam_fit inside the tongue (it matters
 // in the decks' plates and the step's band, where the parts are solid there)
 function groove_in(z, H) = max(wall / 2, edge_in(H - z, face_r) + skirt_t);
-function tongue_out(z, H, zt) = max(groove_in(z, H) + seam_fit, wall / 2 + seam_fit + max(0, z - (zt - tongue_lead)));
+function lead_of(zt) = zt == z_deck_tongue ? core_lead : tongue_lead;
+function tongue_out(z, H, zt) = max(groove_in(z, H) + seam_fit, wall / 2 + seam_fit + max(0, z - (zt - lead_of(zt))));
 function tongue_in(z, H, zt) = min(groove_in(z, H) + seam_fit + tongue_t, wall + (zt - z));
 function groove_inner(z, H, zt) = tongue_in(min(z, zt), H, zt) + seam_fit;
 // [z, outer inset, inner inset] every 0.05 from z0 up to zt: the tongue's, and the groove's (to zt + seam_gap)
@@ -1035,9 +1038,9 @@ module post(sx, sy) scale([sx, sy, 1]) intersection() {
   }
   rr_loft([for (l = tongue_levels(deck_face, floor_t - 0.01, z_deck_tongue)) [l[0], l[1] + eps]]);   // inside the tongue's outside
 }
-module post_notch(sx, sy) scale([sx, sy, 1]) intersection() {
+module post_notch(sx, sy, uni = false) scale([sx, sy, 1]) intersection() {
   translate([post_c[0] - seam_fit, post_c[1], z_seam - 1]) cube([case_w, case_l, z_deck_tongue + seam_gap - z_seam + 1]);
-  rr_loft([for (l = groove_levels(deck_face, z_deck_tongue)) [l[0], l[1]]]);                    // inside the groove's outside
+  rr_loft([for (l = uni ? uni_groove_levels(z_deck_tongue) : groove_levels(deck_face, z_deck_tongue)) [l[0], l[1] - (uni ? eps : 0)]]);   // inside the groove's outside (the one-piece top's: filled, uni_groove_out)
 }
 // Grip ribs on the tongue's outside, standing grip_reach off it: 0.05 short of the skirt, as the board's
 // crush ribs are of the board, so a printed skirt (an inside face, which prints small) grips them. They
@@ -1667,9 +1670,33 @@ function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n =
          [[x, zb]]);
 module uni_in_limit() {
   rotate([90, 0, 0]) linear_extrude(2 * uni_edge, center = true) polygon(uni_isection(step_d));
-  uni_slope(inner = true);
-  mirror([0, 1, 0]) uni_slope(inner = true);
+  translate([0, 0.003, 0]) uni_slope(inner = true);      // (0.003 off uni_limit's loft, which ends at the same foot)
+  mirror([0, 1, 0]) translate([0, 0.003, 0]) uni_slope(inner = true);
   for (m = [0, 1]) mirror([0, m, 0]) translate([0, case_l, 0]) rotate([90, 0, 0]) linear_extrude(case_l - uni_foot + 0.01) polygon(uni_isection(0));
+}
+// The skirts' groove round the decks' ends (2026-10-25): its upper outer corner stood 0.47 under the round (the skirt is
+// skirt_t thick horizontally, and the round is 43 degrees there). The tub's tongue there has the chamfer core_lead (0.45)
+// at its tip and is 0.1 lower, and the groove's outer wall is filled to follow that chamfer 0.1 off it (normal to it:
+// uni_tip_clear), as a 45 degree ramp from where it leaves the groove's wall (0.25 off the tongue) up to the groove's
+// ceiling, which keeps seam_gap over the tongue's top. Along the whole ring, so the side walls and the ends alike
+uni_tip_clear = 0.1;
+uni_ramp_h = uni_tip_clear * sqrt(2);                    // that clearance measured across the case, on a 45 degree face
+function uni_groove_out(z, zt) = max(groove_in(z, deck_face), wall / 2 + seam_fit - uni_ramp_h + (z - (zt - core_lead)));
+function uni_groove_levels(zt) = [for (l = groove_levels(deck_face, zt)) [l[0], uni_groove_out(l[0], zt), l[2]]];
+module uni_skirt_groove() {
+  intersection() { ring_loft(uni_groove_levels(z_deck_tongue)); y_out(tongue_y - tongue_y_fit); }
+  skirt_groove(core = false);
+}
+// its checks: the filled wall keeps its skin (uni_groove_skin, square to the round) at every level, and keeps the
+// tongue's tip uni_tip_clear off (its chamfer: uni_ramp_h across, and its top's corner by distance) and, where the ramp isn't there, the groove's
+// own seam_fit
+uni_groove_skin = 0.65;
+for (l = uni_groove_levels(z_deck_tongue)) {
+  assert(uni_rskin(case_w / 2 - l[1], l[0], deck_face) >= uni_groove_skin, "the skirts' groove is too near the side round");
+  assert(let(g = tongue_out(min(l[0], z_deck_tongue), deck_face, z_deck_tongue) - l[1])
+         l[0] <= z_deck_tongue ? g >= uni_ramp_h - 1e-6 : norm([g, l[0] - z_deck_tongue]) >= uni_tip_clear - 1e-6,
+         "the filled groove runs into the tongue's chamfer");
+  assert(l[0] > z_deck_tongue - core_lead - uni_ramp_h || tongue_out(l[0], deck_face, z_deck_tongue) - l[1] >= seam_fit - 1e-6, "the groove's fit is gone below the chamfer");
 }
 // the distance from a point [x from the middle, z] in the section where the surface's face is at H, to the side round
 // (and to the flat face above the round's start)
@@ -1700,8 +1727,8 @@ module top_unibody() difference() {
       uni_outer();
       uni_cavity();
       // the groove the tub's tongue slides up, all round; the corner posts' notches and the keys' pockets
-      skirt_groove();
-      for (sx = [-1, 1], sy = [-1, 1]) post_notch(sx, sy);
+      uni_skirt_groove();
+      for (sx = [-1, 1], sy = [-1, 1]) post_notch(sx, sy, true);
       for (k = keys) key_pocket(k);
     }
     top_inner();

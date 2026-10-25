@@ -51,21 +51,32 @@ this file.
 
 *The wall under the side round (2026-10-25).* Measured square to the outer surface, in sections every 1 mm along both sides
 (`uni_wall.py`; the USB-C opening, which breaks through the round by design, left out): the band was 0.56 to 0.59 thick
-under the DS curve and 0.47 along the decks.
+under the DS curve and 0.47 along the decks (now 0.669, below).
 - **Under the slope: fixed, 0.71.** The inside's upper outer corner (the hollow's wall at the inner outline, up to its
   ceiling) stood under the round where the slope meets it (y 33 to 35). The cavity is now cut by the round's offset (the
   rounds' arcs at radius `face_r - uni_skin`, lifted with the slope as the outside is: `uni_in_limit`), so the wall is
   `uni_skin` (0.7) all along the round there. Added 2.1 mm3 in four corners (z 6.8 to 7.55, |y| to 36.2); nothing removed; the
   outside is identical (renders pixel for pixel, `images/unibody_wall_outside_*.png`); the band pass's fitcheck against the board is
   unchanged (no collisions; J2 0.36, SW18/19 0.47, J4 0.66 at the least). An assert on the slope's slices holds the relation.
-- **Along the decks (|y| over 35.2): not fixed, 0.467.** It is the groove's upper outer corner (z 6.8, over the tongue's
-  top, 1.44 in from the outline) against the round, which is 43 degrees there: the skirt is `skirt_t` thick *horizontally*
-  (0.7), 0.47 square to the surface. It is also so on the island case's decks. The tongue sits 0.1 under the corner (the
-  seam_gap) and leans in with the groove, 0.25 off it, so there is no room to fill without the tub: filling to a 0.1
-  clearance everywhere gives 0.55, to 0.05 gives 0.60; cutting a 0.6 chamfer off the tongue's top corner (a tub change)
-  with 0.1 gives 0.65; a groove that follows the round's normal offset (0.7 all along) fails the tongue-tip assert
-  (`tip_min`, 0.25) because the tongue's tip would be gone at 6.7, so it needs a lower, redesigned tongue. Lowering the
-  tongue's top alone gains little (6.1 gives 0.60). Left as is until Alex decides; `uni_wall.py` holds 0.467 so it can't get worse.
+- **Along the decks and round their ends: 0.467 -> 0.669 (Alex chose the tongue's chamfer, 2026-10-25).** The groove's upper
+  outer corner (z 6.8, over the tongue's top, 1.44 in from the outline) stood 0.47 under the round, which is 43 degrees there
+  (the skirt is `skirt_t` thick *horizontally*, 0.7; square to the surface 0.47; the island case's decks have the same corner).
+  The tongue sat 0.1 under it and leaned in with the groove, 0.25 off it, so there was no room to fill. Now **the tub's cores'
+  tongue is chamfered more at its tip** (`core_lead` 0.45, was `tongue_lead` 0.3: 45 degrees, `lead_of(zt)`; the arms' and the
+  keys' tongues keep 0.3) **and 0.1 lower** (`deck_tongue_top` 6.6, was 6.7: Alex's 0.6 chamfer would leave a tip 0.15 thick,
+  and `tip_min` keeps 0.25; the tip is 0.30 thick, 4.05 tall over the seam), and **the top's groove is filled to follow it** at
+  0.1 normal clearance (`uni_groove_out`: a 45 degree ramp 0.141 across, from where it leaves the groove's wall, 0.25 off the
+  tongue, up to the ceiling, which still keeps `seam_gap` over the tongue's top; the corner posts' notches follow it,
+  `post_notch(.., true)`). Slide fit 0.25, keys, grip ribs (their tops follow the tongue's 0.1 down), hooks' slots and
+  `tip_min` are as they were. Along the whole ring: the side walls and the ends alike, and the plan corners. Tub: 28 mm3 less
+  (the chamfer and the 0.1 round the whole tongue), nothing added; still manifold and no supports in its print pose
+  (`overhangs.py`, `check_manifold.py`); the island's deck and top follow `deck_tongue_top` (also manifold, no supports).
+  Measured (`uni_wall.py`, sections every 1 mm both sides, the end rounds at x -20 to 20, and a 3D check over the whole round
+  including the plan corners, which the sections are not square to): sides 0.669, ends 0.669, slope 0.708, 3D 0.663 (its
+  points are 0.1 apart). 0.7 would take the tongue top at 6.5 (0.72 by a 2D scan) or a longer chamfer than `tip_min` allows.
+  Asserted in `case.scad` (`uni_groove_skin` 0.65 at every groove level, the clearance to the tongue's chamfer and corner, and
+  the groove's own fit below it) and `uni_wall.py` (floors 0.66 / 0.699 / 3D 0.62). The board: fitcheck identical (no
+  collisions; J2 0.36, SW18/19 0.47, J4 0.66), `check_fit.py` PASS.
 
 ## The island (2026-10-23)
 
