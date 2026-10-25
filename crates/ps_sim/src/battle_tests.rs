@@ -945,6 +945,110 @@ fn battle_fits_the_ram_budget() {
     assert!(size <= 16 * 1024, "{size}");
 }
 
+// ---- the ActiveMove arena's longest chains (crate::actions::MOVE_CAP) ------
+
+/// A started battle of `format` with the real pipeline, its opening
+/// flushed.
+fn chain_battle(format: &str, p1: &str, p2: &str) -> Box<Battle> {
+    let cmds = [
+        format!(r#"start {{"formatid":"{format}","seed":[1,2,3,4]}}"#),
+        format!(r#"player p1 {{"name":"Player 1","team":"{p1}"}}"#),
+        format!(r#"player p2 {{"name":"Player 2","team":"{p2}"}}"#),
+    ];
+    let mut b = setup(&cmds);
+    b.move_hook = None;
+    b.lax_handlers = false;
+    flush(&mut b);
+    b
+}
+
+/// The forced `next()` that makes `sample` of an `n`-long list pick `i`
+/// (`random(n)` is `floor(next * n / 2^32)`).
+fn pick(i: usize, n: usize) -> u32 {
+    ((i as u64) << 32).div_ceil(n as u64) as u32
+}
+
+/// Metronome's pool (`flags.metronome`, sorted by `num`).
+fn metronome_pool(dex: &'static Dex) -> Vec<MoveId> {
+    let mut pool: Vec<MoveId> =
+        (0..dex.moves.len()).map(|i| MoveId(i as u16)).filter(|&m| dex.move_def(m).flags.has("metronome")).collect();
+    pool.sort_by_key(|&m| dex.move_def(m).num);
+    pool
+}
+
+/// Gen 1's unbounded chain, `k` turns of the cycle deep: Clefable's Mirror
+/// Move copies the foe's `lastMove`, Metronome; that Metronome rolls
+/// Mirror Move `k` times, each copying Metronome again, then Haze. Returns
+/// the battle and the action's log.
+fn gen1_mirror_metronome_cycle(k: usize) -> (Box<Battle>, String) {
+    use ps_dex::gen1::moves;
+    let set = |species: &str, mv: &str| format!("{species}|||NoAbility|{mv}||255,255,255,255,255,255||30,30,30,30,30,30||90|");
+    let mut b = chain_battle("gen1customgame@@@Sleep Clause Mod,Freeze Clause Mod", &set("Clefable", "mirrormove"), &set("Snorlax", "splash"));
+    let (p1, p2) = (b.active_at(0, 0).unwrap(), b.active_at(1, 0).unwrap());
+    // The foe's Metronome called a two-turn move: its charging turn left
+    // `lastMove` on Metronome.
+    b.mon_mut(p2).last_move = moves::METRONOME;
+    let pool = metronome_pool(b.dex);
+    let at = |m: MoveId| pool.iter().position(|&x| x == m).unwrap();
+    let mut forced: Vec<u32> = (0..k).map(|_| pick(at(moves::MIRRORMOVE), pool.len())).collect();
+    forced.push(pick(at(moves::HAZE), pool.len()));
+    b.prng.push_overrides(forced);
+    b.run_move(ActionMove::Move(moves::MIRRORMOVE), p1, 0, EffectId::None);
+    assert!(b.prng.override_is_empty(), "every forced roll used");
+    let log = flush(&mut b).into_iter().filter(|(h, _)| h == "update").map(|(_, body)| body).collect::<Vec<_>>().join("\n");
+    (b, log)
+}
+
+/// MOVE_CAP's gen 1 count: the cycle two turns deep (two Metronome rolls
+/// of Mirror Move, 1 in 163^2) makes 3 + 2 * 2 = 7 objects, the cap, and
+/// plays out; one turn (seed 6592751) makes 5.
+#[test]
+fn gen1_mirror_move_metronome_cycle_fits_the_arena() {
+    for k in 0..=2 {
+        let (b, log) = gen1_mirror_metronome_cycle(k);
+        assert_eq!(usize::from(b.move_count), 3 + 2 * k, "{log}");
+        assert_eq!(log.matches("|move|p1a: Clefable|Mirror Move|").count(), 1 + k, "{log}");
+        assert_eq!(log.matches("|move|p1a: Clefable|Metronome|p1a: Clefable|[from] Mirror Move").count(), 1 + k, "{log}");
+        assert_eq!(log.matches("|move|p1a: Clefable|Mirror Move|p1a: Clefable|[from] Metronome").count(), k, "{log}");
+        assert!(log.contains("|move|p1a: Clefable|Haze|p1a: Clefable|[from] Metronome\n"), "{log}");
+    }
+    assert_eq!(crate::actions::MOVE_CAP, 7);
+}
+
+/// Three turns of the cycle (1 in 163^3) would need a ninth object: the
+/// documented limit of [`crate::actions::MOVE_CAP`].
+#[test]
+#[should_panic(expected = "more than 7 ActiveMove objects in one action")]
+fn gen1_cycle_three_rolls_deep_overflows() {
+    gen1_mirror_metronome_cycle(3);
+}
+
+/// MOVE_CAP's gen 3 count, its longest chain: Encore turns the chosen
+/// Tackle into a new Metronome object, which rolls Assist, which draws
+/// the teammate's Nature Power, which calls Swift: 5 objects.
+#[test]
+fn gen3_longest_call_chain_fits_the_arena() {
+    use ps_dex::gen3::{conditions, moves};
+    let p1 = "Mew|||Synchronize|metronome,tackle||255,255,255,255,255,255||||90|]\
+              Smeargle|||OwnTempo|naturepower||255,255,255,255,255,255||||90|";
+    let p2 = "Snorlax|||Immunity|splash||255,255,255,255,255,255||||90|";
+    let mut b = chain_battle("gen3customgame", p1, p2);
+    let p1 = b.active_at(0, 0).unwrap();
+    b.mon_mut(p1).last_move = moves::METRONOME;
+    b.add_volatile(p1, conditions::ENCORE, None, EffectId::None);
+    let pool = metronome_pool(b.dex);
+    let assist = pool.iter().position(|&x| x == moves::ASSIST).unwrap();
+    // Metronome rolls Assist; Assist's pool is Nature Power alone.
+    b.prng.push_overrides([pick(assist, pool.len()), 0]);
+    b.run_move(ActionMove::Move(moves::TACKLE), p1, 1, EffectId::None);
+    assert!(b.prng.override_is_empty(), "every forced roll used");
+    let log = flush(&mut b).into_iter().filter(|(h, _)| h == "update").map(|(_, body)| body).collect::<Vec<_>>().join("\n");
+    assert_eq!(b.move_count, 5, "{log}");
+    assert!(log.contains("|move|p1a: Mew|Assist|p1a: Mew|[from] Metronome"), "{log}");
+    assert!(log.contains("|move|p1a: Mew|Nature Power|"), "{log}");
+    assert!(log.contains("|move|p1a: Mew|Swift|p2a: Snorlax|[from] Nature Power"), "{log}");
+}
+
 /// Replays `scripted_gen1.json` (`tools/ps-diff/scripted-fixtures.js`):
 /// short battles with fixed teams, seed and choices, written to reach one
 /// group of handlers each, against PS's whole log.

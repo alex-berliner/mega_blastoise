@@ -48,7 +48,48 @@ use crate::state::{Attacker, Battle, Holder, MonRef, StateRef};
 
 /// How many `ActiveMove` objects one action can make: the action's own,
 /// plus the moves it calls (Metronome, Mirror Move) and theirs.
-pub const MOVE_CAP: usize = 4;
+///
+/// The arena is not recycled within an action, and recycling would not
+/// lower the bound: every object of a call chain stays live until the
+/// chain unwinds (the outer pipelines still read theirs, and
+/// `battle.activeMove` is left on the innermost one), so the arena holds
+/// one object per nested `useMove` plus the few made beside the chain.
+/// The longest chains each gen's PS can build, counted the way the port
+/// makes objects (one per `useMove` call; PS's `useMoveInner` copies a
+/// move called by id once more, which the port folds into the caller's):
+///
+/// Gen 1 (no `OverrideAction` handler): the action's move (1); Bide's
+/// unleash or `nomove`'s Fissure add one beside it and call nothing.
+/// Metronome calls any of its 163 moves, Mirror Move the foe's
+/// `lastMove`; Metronome can call Mirror Move (`flags.metronome`), and
+/// Mirror Move calls Metronome when the foe's `lastMove` is Metronome
+/// (the foe's Metronome called a two-turn move, whose charging turn skips
+/// `moveUsed`). Nothing inside the chain changes the foe's `lastMove`, so
+/// the chain is a cycle with no bound in PS: Mirror Move, Metronome,
+/// then `k` times Mirror Move, Metronome (each a 1 in 163 Metronome
+/// roll), then the final move: 3 + 2k objects. Seed 6592751 (wide,
+/// cartridge) is k = 1: Clefable's Mirror Move, Metronome, Mirror Move,
+/// Metronome, Haze.
+///
+/// Gen 3 (Encore's `OverrideAction` replaces the action's move with a new
+/// object: 2 at the root). The callers form no cycle: Metronome calls
+/// Assist, Mirror Move or Nature Power; Assist calls Nature Power; Sleep
+/// Talk calls Nature Power; Mirror Move none of them (`noMirror`); Nature
+/// Power calls Swift. One object more comes from a called move's Magic
+/// Coat bounce, Snatch steal (the two flags never meet, and a Pokemon
+/// cannot both act and hold Snatch) or Future Sight's damage roll. The
+/// longest: Encore's object, Metronome, Assist, Nature Power, Swift (or
+/// Assist's move and its bounce, steal or roll): 5 objects. The residual
+/// makes 2 (both sides' future moves), a switch 1 (Pursuit).
+///
+/// 7 covers gen 3 and the gen 1 cycle up to k = 2. A deeper cycle (three
+/// Metronome rolls of Mirror Move in one chain, 1 in 163^3 = 4.3 million
+/// once the chain has started) stops the battle with the panic in
+/// [`Battle::new_active_move`], as PS itself stops on a deep enough
+/// chain (the JS stack). The cap also bounds the recursion of nested
+/// `useMove` calls, so a turn's stack stays bounded. Each slot is 88 B on
+/// the host; `Battle` is 16,176 B of its 16,384 B budget with 7.
+pub const MOVE_CAP: usize = 7;
 
 /// A reference to an [`ActiveMove`] in [`Battle::moves`].
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -550,7 +591,9 @@ impl Battle {
     /// Puts a new move object in the arena.
     pub fn new_active_move(&mut self, am: ActiveMove) -> MoveRef {
         let i = self.move_count as usize;
-        assert!(i < MOVE_CAP, "more than {MOVE_CAP} ActiveMove objects in one action");
+        // See [`MOVE_CAP`]: only gen 1's Metronome and Mirror Move cycle,
+        // three rolls deep, gets here.
+        assert!(i < MOVE_CAP, "more than {MOVE_CAP} ActiveMove objects in one action (a Metronome / Mirror Move cycle)");
         self.moves[i] = am;
         self.move_count += 1;
         MoveRef(i as u8)
