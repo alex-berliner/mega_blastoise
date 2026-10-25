@@ -663,6 +663,57 @@ Alex's device smoke battle
   scripts move to `tools/ps-diff` if still used), `pinned_seeds.txt` and
   `pinned-seeds.sh`. Accept as G1-10, both gens.
 
+### Phase N: online play through a relay (after G3-9)
+
+Two browsers play each other over the internet. Friends open the Pages link
+and type a room code; nothing to install. The relay is a small server that
+Alex hosts at a public `wss://` address (Pages is https, so plain `ws://`
+is blocked). Showdown's own servers, login and lobby are not involved: the
+relay runs `ps_sim` and speaks the same protocol `ps_client` already reads.
+
+**N-1 Relay server** · MM · depends: G3-9
+- New `crates/ps_relay` (std, tokio or a plain WebSocket crate, not in the
+  firmware build). One room per code, two seats, spectators optional. Per
+  room it owns one `ps_sim` `Battle`, takes `Command`s from each seat, and
+  sends each seat only its own `|request|` and the side-split protocol (PS's
+  per-side `sideupdate` and the spectator stream). Room reaper, a size cap,
+  a rate limit, no accounts.
+- Accept: two scripted clients play a full battle in both gens; a client
+  cannot see the other seat's request; a disconnected seat can rejoin with
+  its room code and seat token.
+
+**N-2 WebSocket transport** · C2 · depends: N-1
+- A `Transport` impl in the web crate over the browser WebSocket (raw IO
+  only). Reconnect with backoff, rejoin with the seat token. A `?relay=`
+  override for a local relay.
+- Accept: a headless test drives a battle against a local relay.
+
+**N-3 Single-seat mode in core** · C2 · depends: G3-8
+- The UI assumes two seats at one device. Online there is one local seat and
+  a hidden opponent. All of it lives in `oled_ctl` and `choice_collect`
+  (zero-drift rule); the web build shows the one seat at full size.
+  Opponent-thinking and disconnected states, a forfeit control, rematch.
+- Accept: the headless seat probe plays a battle in single-seat mode in both
+  gens with the same screens the two-seat mode shows for that seat.
+
+**N-4 Lobby screen** · MM · depends: N-2, N-3
+- Create room (shows the code and a share link), join by code, pick gen and
+  format (random battle both gens, truncation on for Gen 1), team preview if
+  the format has it.
+- Accept: two headless browsers meet through a local relay and finish a
+  battle.
+
+**N-5 Deploy and soak** · MM · depends: N-4
+- Dockerfile and a deploy note for one small host (Fly.io or a VPS, TLS in
+  front); a soak run of 200 scripted battles with random disconnects.
+- Accept: no leaked rooms or tasks after the soak; Alex plays one real
+  battle with a friend.
+
+Open choices for Alex: where to host the relay (a cheap VPS, Fly.io or a
+Cloudflare Worker with a Durable Object per room, which would need the
+relay logic in wasm); whether rooms are public by code only (default) or
+need a passphrase.
+
 ## 4. Order and critical path
 
 Counts: phase 0 one task (MM); phase 1 ten (5 C2, 5 MM); phase 2 four (2 C2,
@@ -699,3 +750,4 @@ other batches. With three concurrent runs the path is about 17 runs deep.
 - Hardware budgets: there is no RP2350 board for now. Budget checks at the phase exits use host proxies (struct and stack sizes, `cargo size` of the thumbv8m build, a cycle-count estimate) and stay soft gates until a board is available; the on-chip measurement tasks are deferred, not dropped.
 - `battler`: the git submodule is removed in G1-10, together with the last `battler-data` links. The battler repository itself is untouched.
 - Verification beyond the random sweep (2026-10-24): a coverage gate, a continuous background sweep, and public Showdown replays (human choices, exact seeds) as a corpus. Phase V; all three feed the phase gates.
+- Online play (2026-10-25): phase N, a small `ps_relay` server running `ps_sim` plus a WebSocket transport and a single-seat mode, instead of connecting to Showdown's servers. After G3-9.
