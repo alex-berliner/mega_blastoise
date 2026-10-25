@@ -549,6 +549,22 @@ checklist) · depends: G1-9, Alex's device smoke battle
   empty; check green; the Gen 1 diff gate re-run green (`--n 2000` plus pinned
   and carried); `sim-budget.sh` still within budget.
 
+**G1-7c ActiveMove pool overflow** · C2 · depends: G1-9
+- The continuous sweep (V-2) found a crash on the current tip: Gen 1 wide
+  seed 6592751 (`--trunc cartridge`, Electrode with Metronome against
+  Magneton) stops with `more than 4 ActiveMove objects in one action` at
+  `crates/ps_sim/src/actions.rs`. Reproduce with
+  `node tools/ps-diff/diff.js --ps-cli <ps_sim_cli> --gen 1 --n 1 --seed 6592751 --teams wide`.
+- Deliverable: find which PS call chain really creates that many ActiveMoves
+  at once (Metronome into Mirror Move, Counter, a recharge or two-turn move
+  and so on) and size or recycle the pool so no PS chain can overflow it, with
+  a bounded worst case. Keep `Battle` inside its size budget (the number in
+  `budget.rs`; say what it is now). A static analysis of the longest chain PS
+  can build is better than raising the number until the seed passes; the
+  answer goes in a code comment and a unit test with a hand-made chain.
+- Accept: the seed passes both rule sets; a 20,000-battle sweep per gen and
+  team mode is clean; check.sh green; the sweep's bucket for it closes.
+
 ### Phase R: re-sync to current Showdown
 
 **R-1 Re-sync survey** · C2 (judging which upstream changes matter) ·
