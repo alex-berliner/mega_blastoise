@@ -7,9 +7,15 @@ differ). Everything here is in `case.scad`; this file says why.
 
 **Experiment (2026-10-24, branch `ref-design-unibody` only): a one-piece top.** `part="top_unibody"` (face up) and
 `"top_unibody_down"` in `case.scad` are a mock-up of the island and both decks as one part, printed with Bambu Support
-For PLA as the support interface: true radii, an S (r 3.0 convex, r 1.5 concave) from the decks' face to the screen
-face all round, no joints. The island parts still build unchanged. Renders, sections, slices and the write-up are in
-that session's scratch folder (`jobs/unibody/REPORT.md`), not in this file.
+For PLA as the support interface: true radii, no joints. The island parts still build unchanged. Its first edge was an
+S (r 3.0 convex, r 1.5 concave). Since 2026-10-25 (Alex: "Look how the DS Lite screen is a sharp corner at the top and
+then slopes downward") the screen block's edge is the DS Lite's lower screen frame: a sharp top edge, a flat slope at
+30 degrees (the DS model's upper half), an r 1.0 foot, 3.47 run for the 1.85 step, plan corners r 1.0 at the top edge.
+The block is smaller (foot 4807 mm2, was 5279): its core's top edge runs just outside the panel's pocket (x 22.11,
+y 30.53), and it reaches out to the side walls only where the board's tall parts are: on the right a wing from the
+step to the USB-C ear (J4, the speaker), on the left the same turned round (J2 under the ear, J5 under the wing). The
+debug switches sit under the deck in a pocket (0.75 skin). Renders, sections, slices and the write-ups are in the
+sessions' scratch folders (`jobs/unibody/REPORT.md`, `jobs/dsedge/REPORT.md`), not in this file.
 
 ## The island (2026-10-23)
 
