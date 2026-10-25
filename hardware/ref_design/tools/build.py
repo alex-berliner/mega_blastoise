@@ -65,7 +65,7 @@ FAB_OUT = ["board/fab/gerbers/*", "board/fab/battler_gerbers.zip", "board/fab/ba
            "board/fab/battler_bottom.png", "board/fab/battler_iso.png", "board/fab/battler_schematic.pdf",
            "board/fab/battler_assembly.pdf"]
 FITKIT_STL = ["case/fitkit/*.stl"]
-CASE_STL = ["case/tub.stl", "case/top.stl", "case/deck.stl"]
+CASE_STL = ["case/tub.stl", "case/top.stl"]
 
 
 class Stage:
@@ -85,10 +85,13 @@ STAGES = [
     Stage("export", ".", [PY, "case/export.py", "--stl"],
           ["case/export.py", "case/case.scad", "tools/scad.py"],
           ["case/positions.json", "case/board.dxf", *CASE_STL], tools=("scad",),
-          about="case -> positions.json, board.dxf, tub/top/deck STLs (seat 2's deck checked against deck.stl)"),
+          about="case -> positions.json, board.dxf, tub/top STLs"),
     Stage("check_buttons", ".", [PY, "case/check_buttons.py"],
           ["case/check_buttons.py", "case/check_buttons.scad", "case/case.scad", "tools/scad.py"],
           check=True, tools=("scad",), about="button stacks against the shell"),
+    Stage("check_wall", ".", [PY, "case/check_wall.py"],
+          ["case/check_wall.py", "case/case.scad", "tools/scad.py"],
+          check=True, tools=("scad",), about="the top's wall under its side rounds (thinnest plastic, about 2 min)"),
     Stage("build_sch", "board", [PY, "tools/build_sch.py"],
           ["board/design.py", *(BOARD_TOOLS + f for f in ("build_sch.py", "schwrite.py", "sch_sheets.py",
                                                          "schdraw.py", "kisym.py")), *LIB],
@@ -141,7 +144,7 @@ STAGES = [
            "case/print/overhang_kit.zip"], kind="end",
           about="Snapmaker U1 print package"),
     Stage("print_p1s", ".", [PY, "case/print_package_p1s.py"],
-          ["case/print_package.py", "case/print_package_p1s.py", "case/overhangs.py", "case/print/p1s/*.json", "case/print/p1s/system/*.json",
+          ["case/print_package.py", "case/print_package_p1s.py", "case/support_check.py", "case/overhangs.py", "case/print/p1s/*.json", "case/print/p1s/system/*.json",
            "case/print_package_README.md", "case/print_tests_README.md", *CASE_STL, *FITKIT_STL],
           ["case/print/package_P1S/**", "case/print/mega_blastoise_print_P1S.zip", "case/print/tests_P1S/**",
            "case/print/overhang_kit.zip"], kind="end",

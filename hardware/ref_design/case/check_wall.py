@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
-"""The one-piece top's wall under its side rounds, measured square to the outer surface (section every 1 mm along the case,
+"""The top's wall under its side rounds, measured square to the outer surface (section every 1 mm along the case,
 both sides): the thinnest plastic between the round (beyond x 35.8, over z 4.5) and the inside, groove or opening.
 
-    python3 case/uni_wall.py
+    python3 case/check_wall.py           # a stage of tools/build.py (check_wall), about 2 minutes
 
-Renders top_unibody (the assembly frame) and prints the minimum over the slope and the band (must be >= 0.7: the inside's
-corner is cut by the round's offset, `uni_in_limit` in case.scad) and over the decks' sides and ends (the skirts' groove over
-the tub's tongue: 0.669 at its upper outer corner since the tongue's chamfer, `core_lead`; see SHELL.md), leaving out the
-USB-C opening (y -4 to 8, right side), which breaks through the round by design. Then the same in 3D, the whole round
+Renders the top (the assembly frame, case.scad's top()) and prints the minimum over the slope and the band (must be >= 0.7:
+the inside's corner is cut by the round's offset, `uni_in_limit` in case.scad) and over the ends' sides and ends (the skirts'
+groove over the tub's tongue: 0.669 at its upper outer corner since the tongue's chamfer, `core_lead`; see SHELL.md), leaving
+out the USB-C opening (y -4 to 8, right side), which breaks through the round by design. Then the same in 3D, the whole round
 including the plan corners (where a section isn't square to the surface): points on the outside against the nearest point
 of every other surface. Fails when any drops below its figure.
 """
@@ -22,7 +22,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
 import scad  # noqa: E402
 
-SLOPE_MIN, DECK_MIN, MESH_MIN = 0.699, 0.66, 0.62   # the slope and band (y within 35.2 of the middle); the decks and the ends; the 3D check (its points are 0.1 apart)
+SLOPE_MIN, DECK_MIN, MESH_MIN = 0.699, 0.66, 0.62   # the slope and band (y within 35.2 of the middle); the ends' sides and ends; the 3D check (its points are 0.1 apart)
 SLOPE_Y = 35.2                        # where the core grooves start (tongue_y - tongue_y_fit)
 
 
@@ -93,12 +93,12 @@ def main():
     import trimesh
     with tempfile.TemporaryDirectory() as tmp:
         src, stl = os.path.join(tmp, "t.scad"), os.path.join(tmp, "t.stl")
-        open(src, "w").write(f'include <{os.path.join(HERE, "case.scad")}>\ntop_unibody();\n')
+        open(src, "w").write(f'include <{os.path.join(HERE, "case.scad")}>\ntop();\n')
         r = subprocess.run([*scad.cmd(), "-o", stl, "-D", 'part="none"', src], capture_output=True, text=True)
         if r.returncode or "ERROR" in r.stderr:
             sys.exit(r.stderr[-1500:])
         m = trimesh.load(stl)
-    low = {"slope": (9, None), "decks": (9, None), "ends": (9, None)}
+    low = {"slope": (9, None), "sides": (9, None), "ends": (9, None)}
     ym = np.floor(m.bounds[1][1] - 0.3)
     for y, p in sections(m, np.arange(-ym, ym + 1e-9, 1.0)):
         for side in (1, -1):
@@ -107,7 +107,7 @@ def main():
             ws = list(round_walls(p, side))
             if ws:
                 d, x, z = min(ws)
-                k = "slope" if abs(y) < SLOPE_Y else "decks"
+                k = "slope" if abs(y) < SLOPE_Y else "sides"
                 if d < low[k][0]:
                     low[k] = (d, (y, side, round(x, 2), round(z, 2)))
     # the ends: sections across the case at x -20 to 20 (the plan corners are further out), the end rounds from y 63
@@ -119,9 +119,9 @@ def main():
                 if d < low["ends"][0]:
                     low["ends"] = (d, (x, side, round(y, 2), round(z, 2)))
     low["3d"] = mesh_min(m)
-    for k, floor in (("slope", SLOPE_MIN), ("decks", DECK_MIN), ("ends", DECK_MIN), ("3d", MESH_MIN)):
+    for k, floor in (("slope", SLOPE_MIN), ("sides", DECK_MIN), ("ends", DECK_MIN), ("3d", MESH_MIN)):
         print(f"{k:6s} min {low[k][0]:.3f} at (y or x, side, x or y, z) {low[k][1]}  (needs {floor})")
-    if low["slope"][0] < SLOPE_MIN or min(low["decks"][0], low["ends"][0]) < DECK_MIN or low["3d"][0] < MESH_MIN:
+    if low["slope"][0] < SLOPE_MIN or min(low["sides"][0], low["ends"][0]) < DECK_MIN or low["3d"][0] < MESH_MIN:
         sys.exit("FAIL: the wall under a side round is thinner than it was")
 
 

@@ -7,24 +7,22 @@ Each part's 3D model is exported on its own (kicad-cli pcb export stl
 the case allows at that spot:
 
   under the glass          top of part <= glass_limit above the board
-  side bezels, spines      <= bezel_limit (the island's underside)
-  around the clusters      <= retainer_limit (the decks come down to the cap flanges)
+  side bezels, the band    <= bezel_limit (the top's underside at the screen's height)
+  around the clusters      <= retainer_limit (the top comes down to the cap flanges)
   button decks             <= deck_limit (the ends step down so genuine caps stand proud; the
-                              band under the top piece's step walls too)
+                              band under the slope's wall too)
   the board's back         <= back_limit (the board rests on the tub's floor ribs)
   under a silicone piece   nothing at all (the clusters and the Start/Select membranes)
   the cell's hole          nothing reaching over it
   the speaker              nothing under it or its keep-out (it lies on the board's top: a racetrack
                            of speaker.size, plus speaker.keep)
-  screw bosses             nothing within the boss diameter (four on the top piece, one on each deck)
+  screw bosses             nothing within the boss diameter (four beside the glass, one at each end)
   crush ribs               nothing within 1 mm of the board's edge at a rib
   top's panel frame        its band round the panel: <= frame limit (it hangs lower)
-  round the island         its wall and wedge under the decks' lips, across the step, round the
-                           spines and along the side walls under the decks' arms: <= the decks'
-                           underside's limit (case.scad's JOINT echo line, 2026-10-23)
-  the arms' hooks         each hook's head (0.5 over the board, 0.2 in past its edge): nothing within
-                           0.3 of its footprint taller than its limit (case.scad's HOOKS echo line,
-                           2026-10-24); the nearest part to each is reported
+  the ends' strip          the strip between the clusters under the band's end, which positions.json's
+                           decks zones leave out and where the top has the ends' ceiling: <= the ends'
+                           limit, less U6, which has a pocket of its own (case.scad's TOP echo line,
+                           2026-10-25; the island's joint zones and the arms' hooks are gone)
   folded FPC, J3's range   nothing but J3 under the panel's FPC, over the whole range J3 may move
   edge parts               the USB-C face reaches the wall
   USB-C opening            J1's mouth (its model within 1 mm of its face) centred in the wall's
@@ -134,14 +132,14 @@ def extents(refs):
 
 def case_echo():
     """case.scad's lines for this check that aren't in positions.json: {"USBC": the USB-C opening and the
-    plug it is checked with, "JOINT": the joint round the island, "HOOKS": the arms' hooks' heads}, each None if missing."""
+    plug it is checked with, "TOP": the one-piece top's lower ceilings}, each None if missing."""
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "case.echo")
         subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', os.path.join(HERE, "case.scad")],
                        capture_output=True, text=True)
         text = open(out).read() if os.path.exists(out) else ""
     found = {}
-    for key in ("USBC", "JOINT", "HOOKS"):
+    for key in ("USBC", "TOP"):
         m = re.search(r'ECHO: "' + key + r' (\{.*\})"', text)
         found[key] = json.loads(m.group(1).replace('\\"', '"')) if m else None
     return found
@@ -173,17 +171,6 @@ def near_speaker(box):
         inside_rect(box, ((cx - r, cy - half), (cx + r, cy + half)))
 
 
-def rect_gap(box, rect):
-    """The horizontal gap between a part's box and a rectangle [[x0, y0], [x1, y1]] (0 if they overlap)."""
-    (x0, y0), (x1, y1) = rect
-    dx = max(0.0, min(x0, x1) - box[2], box[0] - max(x0, x1))
-    dy = max(0.0, min(y0, y1) - box[3], box[1] - max(y0, y1))
-    return math.hypot(dx, dy)
-
-
-HOOK_MARGIN = 0.3                               # a part this near a hook's head counts as under it
-
-
 def main():
     parts = refs()
     boxes = extents([r[0] for r in parts])
@@ -200,9 +187,9 @@ def main():
             notes.append(f"{ref}: no 3D model in this KiCad install, checked as its courtyard at {h} mm ({name})")
     glass = POS["glass"]
     echoed, under = case_echo(), []
-    joint = echoed["JOINT"]
-    if not joint:
-        problems.append("no JOINT line in case.scad's echo to check the joint round the island with")
+    ceilings = echoed["TOP"]
+    if not ceilings:
+        problems.append("no TOP line in case.scad's echo to check the one-piece top's ceilings with")
     for ref, box in sorted(boxes.items()):
         if box is None:
             notes.append(f"{ref}: no 3D model exported")
@@ -242,35 +229,24 @@ def main():
             limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
         frame = POS["frame"]                    # the top's panel frame hangs lower than the rest of it
         if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit:
-            limit, where = frame["limit"], "top piece's panel frame"
+            limit, where = frame["limit"], "top's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
-        for zone in (joint or {}).get("zones", []):   # the joint round the island
-            if inside_rect(box, zone):
-                under.append((ref, top))
-                if top > joint["limit"] + 1e-3:
-                    problems.append(f"{ref} is {top:.2f} mm tall under the joint round the island, which allows {joint['limit']:.2f}")
-                    break
+        if ceilings and any(inside_rect(box, z) for z in ceilings["strips"]):      # the strip between the clusters
+            pocket = any(within(box, p) for p in ceilings["pockets"])               # (U6 has its pocket)
+            cap = ceilings["pocket_limit"] if pocket else ceilings["limit"]
+            under.append((ref, top))
+            if top > cap + 1e-3:
+                problems.append(f"{ref} is {top:.2f} mm tall in the strip between the clusters under the top's ends, which allows {cap:.2f}"
+                                + (" (in a pocket)" if pocket else ""))
         for zone in POS["fpc_zones"]:
             if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
                 problems.append(f"{ref} is under the display's folded FPC")
         if ref.startswith("J3") and not within(box, POS["j3_zone"]):
             problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
-    hooks = echoed["HOOKS"]
-    if not hooks:
-        problems.append("no HOOKS line in case.scad's echo to check the arms' hooks with")
-    for i, zone in enumerate((hooks or {}).get("zones", [])):
-        near = sorted((rect_gap(b, zone), ref, b[5]) for ref, b in boxes.items() if b is not None and not flipped[ref])
-        for gap, ref, top in near:
-            if gap < HOOK_MARGIN and top > hooks["limit"] + 1e-3:
-                problems.append(f"{ref} is {top:.2f} mm tall {gap:.2f} from hook {i}'s head, which allows {hooks['limit']:.2f} within {HOOK_MARGIN}")
-        if near:
-            gap, ref, top = near[0]
-            notes.append(f"hook {i} (KiCad {zone[0][0]:.2f}..{zone[1][0]:.2f}, {min(zone[0][1], zone[1][1]):.2f}..{max(zone[0][1], zone[1][1]):.2f}): "
-                         f"the nearest part {ref}, {gap:.2f} away, {top:.2f} tall (its head's foot is {hooks['limit'] + 0.3:.2f} over the board)")
-    if joint:
-        notes.append(f"the joint round the island: {len({u[0] for u in under})} parts under it, the tallest "
-                     f"{max((u[1] for u in under), default=0):.2f} (it allows {joint['limit']:.2f})")
+    if ceilings:
+        notes.append(f"the strip between the clusters under the top's ends: {len({u[0] for u in under})} parts in it, the tallest "
+                     f"{max((u[1] for u in under), default=0):.2f} (it allows {ceilings['limit']:.2f}; {ceilings['pocket_limit']:.2f} in a pocket)")
     for ref, x, y in tht_leads():
         if not any(min(a[0], b[0]) <= x <= max(a[0], b[0]) and min(a[1], b[1]) <= y <= max(a[1], b[1])
                    for a, b in POS["rib_free"]):

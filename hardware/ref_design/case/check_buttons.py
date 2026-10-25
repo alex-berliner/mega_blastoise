@@ -1,13 +1,13 @@
 #!/usr/bin/env python3
 """Check that the D-pad, A/B/X/Y and Start/Select work with their silicone under the top shell.
 
-Renders case/check_buttons.scad: the pads must clear the shell (the top piece and the deck), every cap must sit at rest and press (A/B/X/Y and Start/Select straight down
+Renders case/check_buttons.scad: the pads must clear the shell (the one-piece top), every cap must sit at rest and press (A/B/X/Y and Start/Select straight down
 dome_travel, the D-pad rocked toward each of its 8 directions) without touching the shell, and at
 rest the caps may only touch the domes (no preload), and pressed caps must miss the pads' rims,
 the D-pad's collar and the A/B/X/Y centre square (pressed_silicone, the domes left out: a pressed
 cap squashes its dome).
 
-    python3 case/check_buttons.py                       # every check, both lids
+    python3 case/check_buttons.py                       # every check
     python3 case/check_buttons.py silicone_shell -D sil_rib_gap=0.5   # some checks, with a setting changed
 """
 import os

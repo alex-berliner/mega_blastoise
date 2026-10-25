@@ -3,18 +3,17 @@
 //
 //   part="layout"   coloured top view
 //   part="board"    board outline with its cable slots, 2D (DXF for Edge.Cuts)
-//   part="3d"       assembly; explode=<mm> lifts the island and the decks
-//   part="tub", "top", "deck"   printable parts (STL), each in its print pose (top: the island; the deck, printed twice)
-//   part="deck_seat2"   seat 2's deck as built, for the check that it is the deck turned round (export.py)
-//   part="top_unibody", "top_unibody_down"   the one-piece top (a mock-up), face up and face down; "3d_unibody" its assembly
+//   part="3d"       assembly; explode=<mm> lifts the top
+//   part="tub", "top"   printable parts (STL), each in its print pose (the top face down, on support filament)
+//   part="top_up"   the top face up, as it sits on the case (its skirts' tips on the bed)
 //
-// The shell (2026-10-21, case/SHELL.md; reshaped 2026-10-23, "The island"): two C-shaped decks (each a core
-// with the button faces at one end, and an arm along each side wall) make the case's whole face and sides at
-// the decks' height, down to a seam low on the walls where they meet the tub, the back. The raised screen
-// block is an island in the window the decks form, its edge a wedge under their lips, coming out to the
-// side walls only as an ear over the USB-C and its blank twin on the left wall (so the two decks are one part). Built upside down: caps and silicone into the decks, the decks
-// face down on two bars, the island into them from behind, the panel into its pocket, the board face down,
-// the tub over it all, six screws from the back.
+// The shell (2026-10-21, case/SHELL.md; the one-piece top since 2026-10-25): a tub, the back, and one top, the whole face
+// and sides. The top is a band at the screen's height across the case's full width, its two ends the DS Lite's lower
+// screen frame in section (a sharp top edge and one concave arc down to the ends), and the ends beyond it at the buttons'
+// height (the genuine caps stand 1.41 proud of them), all curving over the sides down to a seam low on the back's round
+// where the tub meets it. It prints face down, the slopes and rounds on Bambu Support For PLA interface (the second
+// filament), so its outside keeps to no overhang limit. Built upside down: caps and silicone into the top from behind, the
+// speaker into its pocket, the panel, the board, the tub over it all, six screws from the back.
 //
 // Frame: origin at the case centre, +Y towards seat 2 (seat 1 at -Y), z = 0 at
 // the bottom of the tub. KiCad frame in the echoes: centre (100,100), Y down.
@@ -158,60 +157,46 @@ piece_to_glass = 5;       // silicone piece to glass edge
 wall = 2.0;  board_clear = 0.5;
 corner_r = 4.3;           // plan corners: a DS Lite's 4.3 to 4.4 (8 felt round and toy-like, 2026-10-19)
 board_r = 5.5;            // the board's own corners (its KiCad outline): no longer follow the case's
-// The flattest a face may slope downwards in its print pose, in degrees from vertical: no part needs
-// supports. 45 until Alex's 6_tests ladder says how far each printer goes (one line, 2026-10-21).
-// GUESS (Alex, 2026-10-21: best guess until 6_tests): 45, the conservative limit; test_overhangs on
-// both printers settles it, and every round and the step to the decks follow it.
-// 60 on this branch (ref-design-cellcut-60, 2026-10-23): a variant, until the overhang test plates
-// (overhang_kit.zip) show both printers print a 60 degree face clean (case/SHELL.md, its first
-// section). overhangs.py reads it from here
+// The flattest a face may slope downwards in its print pose, in degrees from vertical, for the parts that print without
+// supports: the tub (the back's round and chamfer) and the top's skirts (back_levels). 60 on this branch
+// (ref-design-cellcut-60, 2026-10-23, a variant until the overhang test plates (overhang_kit.zip) show both printers print
+// a 60 degree face clean; case/SHELL.md). overhangs.py reads it from here. The top itself prints on support filament and
+// does not keep to it: its side rounds are true arcs and its slopes are the DS Lite's
 overhang = 60;
-// Every outside edge rounds over as far as that allows: an arc into the wall, and where the arc would
-// go flatter than `overhang` in the print pose, a tangent chamfer at `overhang` (the tub prints back
-// down, the top piece and the decks face down, so all their rounds end in a chamfer at the bed)
+// The tub's outside edge rounds over as far as `overhang` allows: an arc into the wall, and where the arc would go
+// flatter than `overhang` in the print pose, a tangent chamfer at `overhang` (the tub prints back down; the top's skirts
+// follow the same round down to the seam). The top's own rounds are true arcs: it prints on support filament
 back_r = 4.2;             // the back rolls into the walls through back_r, as a DS Lite's does (4.2 mm)
-face_r = 2.8;             // the decks' faces (and the island's over the USB-C) roll into the walls (Alex,
-                          // 2026-10-21, item 10: the top pieces curve over the sides, the tub no longer forms the
-                          // outer lip). 3.0 at 45 degrees; the 60 degree variant had to take it down to 2.4,
-                          // because the side's blend ran it down over the top piece's hollow and J4's pocket.
-                          // With the island (2026-10-23) the blend went and nothing hollow is under the side's
-                          // round any more, so it is 3.0 again, carried on to 60 (its top edge 2.20 in). 2.8 since
-                          // 2026-10-24 (Alex): the arms' flat face 0.40 wide at 60, was 0.25
+face_r = 2.8;             // the top's faces roll into the walls (Alex, 2026-10-21, item 10: the top curves over the sides, the
+                          // tub no longer forms the outer lip), as a true quarter arc since the one-piece top (2026-10-25);
+                          // 2.8 since 2026-10-24 (Alex)
 support_pitch = 12;       // the floor's support ribs under the board
-// The seam: the top pieces (the top piece and both decks) meet the tub flush, low on the back's round.
-// The tub's wall carries a tongue, the inner half of the wall standing up past the seam, and the top
-// pieces' skirts come down outside it (their outer half to the seam): they sit flush with the tub,
-// can't move inwards, and the seam has no straight path into the case. Six screws lock it all; the
-// snap hooks went (2026-10-21: PLA hooks snapped)
-// The joints (Alex, 2026-10-22, after printing this shell: the top pieces "need to flow better and
-// interlock", "the tub has a tall inner wall that the top piece slides farther down", tabs on the tub
-// wall into the top pieces, and the four parts must hold together before the screws, as the last
-// shell did): the tongue reaches 7.2 under the top piece and 6.7 under the decks (it was 1.5 tall), and it
-// carries the joints: tabs into pockets in the top piece, posts in the corners that push each deck
-// home (onto its wedges until 2026-10-23, now onto the end wall's foot), and grip ribs (case/SHELL.md, "The joints")
-// The seam came down onto the back's round (Alex, 2026-10-22, after the joints: the top pieces' walls
-// over most of the round, to a much lower ledge on the tub, the tub keeping its tongue): it was at the
-// round's end (back_r, 4.2). The skirts follow the round down to it, their inner faces still straight
-// down the tongue, so they slide straight on. 2.55 is as low as the skirts' tips stay skirt_t thick
-// with the tongue where it is (the round comes 0.30 in at their tips, 2.65; at a 2.5 seam it would be
-// 0.32 and the tips 0.68); beside the board's edge there is 0.25 to spare (asserted below)
+// The seam: the top meets the tub flush, low on the back's round. The tub's wall carries a tongue, the inner half of the
+// wall standing up past the seam, and the top's skirt comes down outside it (its outer half to the seam): they sit flush
+// with the tub, can't move inwards, and the seam has no straight path into the case. Six screws lock it all (the snap
+// hooks went, 2026-10-21: PLA hooks snapped). The tongue carries the joints (Alex, 2026-10-22: the parts "need to flow
+// better and interlock" and must hold together before the screws): tabs (keys) into pockets in the top, and grip ribs
+// (case/SHELL.md, "The joints")
+// The seam came down onto the back's round (Alex, 2026-10-22, after the joints: the top's walls over most of the round,
+// to a much lower ledge on the tub, the tub keeping its tongue): it was at the round's end (back_r, 4.2). The skirts
+// follow the round down to it, their inner faces still straight down the tongue, so they slide straight on. 2.55 is as
+// low as the skirts' tips stay skirt_t thick with the tongue where it is (the round comes 0.30 in at their tips, 2.65;
+// at a 2.5 seam it would be 0.32 and the tips 0.68); beside the board's edge there is 0.25 to spare (asserted below)
 z_seam = 2.55;
-// Printed part sliding on printed part, each side: the tub's tongue inside the skirts, the tabs in
-// their pockets. 0.15 was too tight for the old deck insert's ring round the lid's boss.
+// Printed part sliding on printed part, each side: the tub's tongue inside the skirts, the tabs in their pockets.
 // GUESS (Alex, 2026-10-21: best guess until 6_tests): 0.25; test_rings (0.2 to 0.5) settles it
 slide_fit = 0.25;
 seam_fit = slide_fit;                                   // the tongue's clearance to the skirts (and the tabs')
-deck_tongue_top = 6.6;    // the tongue's top under the decks' cores (6.7 until 2026-10-25, see core_lead), 1.1 under their face: there the tongue leans
-                          // in as the face's round comes in, and its tip is chamfered. Along the side walls, under
-                          // the decks' arms and the island's ear, it is lower: arm_tongue_top, below. It rises
-                          // from the seam: 4.05 tall since 2026-10-25 (4.15 since the seam came down; 2.5 over the seam at 4.2; 1.5
-                          // before "The joints"; 7.2 along the top piece's sides until the island, 2026-10-23)
+deck_tongue_top = 6.6;    // the tongue's top round the top's ends (6.7 until 2026-10-25, see core_lead), 1.1 under their face: there the
+                          // tongue leans in as the face's round comes in, and its tip is chamfered. Along the side walls, under
+                          // the band, it is lower: arm_tongue_top, below. It rises from the seam: 4.05 tall since 2026-10-25
+                          // (4.15 since the seam came down; 2.5 over the seam at 4.2; 1.5 before "The joints")
 deck_tongue_h = deck_tongue_top - z_seam;
 skirt_t = 0.7;            // the skirts' outer half is never thinner than this, outside the tongue's groove
 tongue_t = wall / 2 - seam_fit;                         // the tongue's thickness (0.75; its tip tapers)
 tongue_lead = 0.3;        // the tip's outer edge chamfered 45 degrees, a lead-in into the skirts
-core_lead = 0.45;         // the same chamfer on the cores' tongue (2026-10-25): the round's skirt over it is thin (wall under the one-piece
-                          // top's side round, SHELL.md), so the tongue's corner gives it room; the tip stays 0.3 thick (tip_min 0.25)
+core_lead = 0.45;         // the same chamfer on the ends' tongue (2026-10-25): the round's skirt over it is thin (wall under the top's
+                          // side round, SHELL.md), so the tongue's corner gives it room; the tip stays 0.3 thick (tip_min 0.25)
 seam_gap = 0.1;                                         // the skirts stop this short of the tub at the seam (and
                                                         // the grooves this far over the tongue's top), so the
                                                         // screws clamp the board, not the seam
@@ -272,65 +257,25 @@ ss_cell = 5.8;            // each square cell in it, round the pad's well (facep
 ss_cell_r = 0.3;
 cap_top = retainer_z + cap_h - flange_t;                // at rest
 // Stepped ends: the screen face is set by the panel stack, which leaves genuine caps below it. So
-// each end drops to a button deck where the caps stand as on a DS Lite, except a spine between the
-// clusters (J2 or J4 sits under it), which stops short of the end so Start and Select and the end
-// screw sit in the deck below it
+// each end drops to a button deck where the caps stand as on a DS Lite (the band across the case stays at the screen's
+// height; the strip between the clusters, the spine, is under the band's end), and Start and Select and the end screw sit
+// in the deck
 cap_proud = cap_h - flange_t - lip_t;                   // above the deck: 1.41, Pi Tin's 1.3 (1.85 until 2026-10-21,
                                                         // over a 1.16 lip from scans of aftermarket shells)
 deck_face = cap_top - cap_proud;                        // 3.90 over the board (the faceplate's face is 3.85 over it)
 z_deck_under = deck_face - top_t;                       // the deck's underside
-// The decks (Alex, 2026-10-21, items 14 and 15; C-shaped since 2026-10-23, "The island"): each end's deck (both
-// clusters and Start/Select) is its own part, as the inserts were, printed face down so neither it nor the
-// island needs supports. It reaches out to the case's outline and curves over the end and the sides itself,
-// down to the seam: its core (the end with the buttons) and two arms along the side walls at its own height,
-// out to where they meet the other deck's arm (the left wall) or the island's ear over the USB-C (the right
-// wall). The island (the screen block, its spines and the ear) sits in the window the two decks form round
-// it, and its edge, a 45 degree wedge, tucks under a lip on the decks' edges, so it can't come out of the
-// front. The tub's corner posts push each deck along the case onto the island's wedge (its place over the
-// buttons), and its own screw (the end screw, through the board into a boss on the deck) holds it on the
-// board. Two parts for a day (2026-10-23, the ear at J1 off the case's middle, the left arms meeting each other);
-// one part, printed twice, since the left wall got the ear's twin (2026-10-24): seat 2's deck is seat 1's turned round
-spine_w = 13.5;                                         // the spine's width at the deck
-// The step from the screen face down to each deck (Alex, 2026-10-21, item 13: a curve, not the 45
-// degree ridge): the same round as the outside edges, an arc of step_r that ends in a chamfer at
-// `overhang` at the screen face (face down that's where it leaves the bed). It reaches the deck
-// steep, a crease that hides the seam. Since the island (2026-10-23) it is the island's edge all round
-step_r = 3.0;
-step_d = case_h - deck_face;                            // the step's height (1.85)
-// The joint between the island and a deck across the case, the step's foot: clear of the panel's frame and FPC
-// fold. The step's arc ends step_foot over the deck and drops straight down from there to the joint
-joint_y = bay_l / 2 + 3.0;
-step_foot = 0.35;
-// how far in from the joint the step's face is at depth dd under the screen face: its arc, ending
-// step_foot over the deck, and under that straight down at the joint (0)
-function step_in(dd) = edge_in(min(dd, step_d - step_foot), step_r) - edge_in(step_d - step_foot, step_r);
-// The board's decks zone (positions.json, as it has been since 2026-10-22) starts joint_w inside the joint: across
-// the step and round the spines the island's wall is that thick, its inside where the old top piece's band's was
-joint_w = 2.55;
-deck_gap = 0.15;          // the joint's clearance: between the island's foot and the decks' edges, between the arms' ends
-                          // and the ear's and each other's (the inserts' 0.15, which slid on straight faces)
-// The island (2026-10-23, case/SHELL.md "The island"; Alex on where the screen block's side round came down
-// into the decks' (the side's blend): "This doesn't look good. It needs to blend and flow better. ... it needs
-// to look like one piece one flow, not two"): the case's side is the decks' profile from end to end, and the
-// screen block is an island on top of it, its foot isl_in in from the side outline, with one edge profile all
-// round, the step's (an offset loft of its plan, so the corners follow the same profile). What sets isl_in:
-// along the side walls, the board's parts taller than the decks allow (1.6 over the board) must be under the
-// island's inside, isl_wall in from its foot: J5 (2.9 tall, 3.585 from the outline), J2 and J4 (3.4,
-// 4.17 and 4.2) and the speaker's pocket (4.5). J5 sets it: 2.6 (the aim was 4 to 6; at 2.6 the island's
-// inside is 0.28 clear of it, case/check_fit.py's JOINT zones). J6 stood beside it at the same reach until it
-// went (2026-10-24, the routing levers), so that frees nothing here: J5 alone keeps 2.6
-isl_in = 2.6;
-isl_wall = 0.7;           // the island's wall along the sides, inside its foot (the skin over its inside's corner)
-isl_r = 3.0;  isl_fillet = 2.0;                         // its plan's corners at the foot: convex, concave
-// Its edge under the decks' face: straight down wedge_v from the face, then out under the deck at 45 degrees (the
-// deck's wedge into the top piece of 2026-10-22, the roles swapped) to the decks' underside, wedge_out under each
-// deck's lip. Face down the island's wedge is a 45 degree overhang and the decks' undercut faces up. deck_gap on
-// the vertical faces, none on the 45 degree ones: the tub's posts push each deck onto them
-wedge_v = 0.8;
-wedge_out = deck_face - wedge_v - z_deck_under;         // 1.2
-// the tongue's top under the arms and the ear: seam_gap under the decks' underside, so it passes under the
-// island's wedge (which comes down to the decks' underside) as the tub goes on: 3.03 over the seam (0.02 more:
-// the groove's top off the decks' underside's plane)
+// The ends (Alex, 2026-10-21, items 14 and 15): each end of the top (both clusters and Start/Select) is at deck_face, 1.85
+// under the screen face, so the genuine caps stand cap_proud proud of it. Since 2026-10-25 the top is one part: a band at
+// the screen's height across the whole width and an end at deck_face beyond it (case/SHELL.md; the island and the two
+// decks it replaced are in "Rejected" there)
+spine_w = 13.5;                                         // positions.json's decks zones (unchanged since 2026-10-22) leave this
+                                                        // strip between the clusters out: the board's tall parts under the
+                                                        // band's end (check_fit.py's TOP zones)
+step_d = case_h - deck_face;                            // the screen face over the ends (1.85)
+joint_y = bay_l / 2 + 3.0;                              // the old step's foot: clear of the panel's frame and FPC fold
+joint_w = 2.55;                                         // and its wall's width; the board's decks zone (positions.json) starts this far inside it
+// the tongue's top along the side walls: seam_gap under the ends' underside, 3.03 over the seam (0.02 more: the groove's top
+// off the ends' underside's plane)
 arm_tongue_top = z_deck_under - seam_gap - 0.02;
 // Start and Select (2026-10-19): each seat's DS Lite Start/Select membrane (it comes in the same
 // pad kit: one piece, two pills) between its clusters, near the case's end, Start on the
@@ -379,18 +324,18 @@ ss_buttons = [["SW20", "P1 select", [-ss_pitch / 2, -ss_y]], ["SW21", "P1 start"
 ss_centres = [[0, -ss_y], [0, ss_y]];
 
 // Six M2 screws, as the DS Lite closes: from the back through the tub's bosses and the board's holes,
-// clamping the board between the tub's bosses and the top pieces' (the first print's pins through the
+// clamping the board between the tub's bosses and the top's (the first print's pins through the
 // board's holes snapped, so they went; crush ribs centre the board and the screws line it up). Four
-// go into the top piece's bosses beside the glass, one into each deck's boss between its clusters.
+// go into the top's bosses beside the glass, one into each end's boss between its clusters.
 // The board goes in one way only: turned round, J1's receptacle hits the wall away from the USB-C
 // opening, and the end bosses are off the centre line
 // The side screws are the board's (placement.py SIDE_SCREWS; Alex, 2026-10-22: |y| <= 29, inside the
-// top piece, no shoulders): H1 and H2 at the seat-2 ends of the strips beside the cell's hole, H3 in
+// top, no shoulders): H1 and H2 at the seat-2 ends of the strips beside the cell's hole, H3 in
 // the right bezel between the speaker and J4, H4 in the left bezel between J2 and the LDO
 side_pins = [[32.5, 29.0], [-32.5, 29.0], [25.9, -21.95], [-33.0, -15.2]];
 pin_key = 3.0;            // the end bosses sit off the centre line (seat 1's board hole is there)
 pin_out = 1.4;            // and this much further out than the clusters
-// seat 2's end boss is seat 1's turned round (2026-10-20), so one deck fits both ends
+// seat 2's end boss is seat 1's turned round (2026-10-20)
 pins = concat(side_pins, [[pin_key, seat_y + pin_out], [-pin_key, -seat_y - pin_out]]);
 boss_d = 5.0;  hole_d = 2.2;
 // The tub's bosses under the board (0.7 tall, board_lift) are 6.0, except at H2 and H4, where 6.0
@@ -398,10 +343,10 @@ boss_d = 5.0;  hole_d = 2.2;
 // boss_d, 1.3 round the screw's 2.4 clearance (the head's counterbore is in the floor under them)
 tub_boss_d = [6.0, boss_d, 6.0, boss_d, 6.0, 6.0];
 // M2 x 6 self-tapping, wafer head (4 mm, 1 mm): M2 x 8 until the case got 3.8 mm thinner (2026-10-22),
-// when an 8 would have run past the decks' pilots
+// when an 8 would have run past the ends' pilots
 screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;  screw_l = 6;
 screw_engage = min(6.0, case_h - z_top_cu - 0.8);       // the pilot stops 0.8 under the face
-deck_engage = deck_face - z_top_cu - 0.6;               // and 0.6 under the deck's face (the screw's tip 0.1 short)
+deck_engage = deck_face - z_top_cu - 0.6;               // and 0.6 under the ends' face (the screw's tip 0.1 short)
 
 // edge parts, all on the right (+X) long edge. J1 slid 2 mm up its wall (towards seat 2) when the side
 // screws came back inward (2026-10-22, CELLCUT_FOR_CASE.md): its opening, tab, notch and slot follow usb_y
@@ -415,29 +360,23 @@ usb_r = 1.0;                                            // its corner radius: a 
 // test: the overmold-sized opening left a big gap round a port sunk 1.15 mm in the wall). To reach the
 // surface the board grows a tab under the receptacle (its face stays 1.35 past the board's edge, as
 // its footprint expects), which sits in a slot in the wall. The opening is split at the port's
-// centre: the upper half in the island's ear's skirt, the lower half in a tab of the tub that rises from
+// centre: the upper half in the top's wall, the lower half in a tab of the tub that rises from
 // the seam into a notch in the skirt (no roof over a hole, in either print pose). The seams round the
 // tab step halfway through the wall (usb_step), so they don't run straight through it (Alex,
 // 2026-10-20: light showed through them). The tab stays with the seam under the port (2026-10-22):
-// the receptacle stands 0.85 into the skirt, and the board goes onto the face-down top piece straight
-// down, so whatever lies under the receptacle's mouth in the wall can't be the top piece's
+// the receptacle stands 0.85 into the skirt, and the board goes onto the face-down top straight
+// down, so whatever lies under the receptacle's mouth in the wall can't be the top's
 usb_recess = 0.15;  usb_gap = 0.25;
 usb_hole = [usb_w + 2 * usb_gap, usb_h + 2 * usb_gap, usb_r + usb_gap];   // width, height, corner radius
 usb_step = 1.0;                                         // the step in the tab's seams, inside the wall's outer half
-usb_notch_w = 18.0;  usb_fit = 0.2;    // the notch in the ear's skirt, and the tub's tab's clearance in it
+usb_notch_w = 18.0;  usb_fit = 0.2;    // the notch in the top's skirt, and the tub's tab's clearance in it
 usb_front = case_w / 2 - usb_recess;                    // receptacle face
 usb_tab = usb_front - 1.35 - board_w / 2;              // the board's tab under it, past the board's edge
 usb_tab_w = 12.0;  usb_tab_fit = 0.3;
-// The ear (2026-10-23, case/SHELL.md "The island"): J1 stands in the right wall, its top 0.65 under the decks'
-// face and the opening's top 0.4 under it, so no side at the decks' height can hold it: over it the island comes
-// out to the wall at the screen's height, the old top piece's side, carrying the opening's upper half and the
-// notch over the tub's tab. Its foot runs along the wall over ear_y, centred on the port: the notch, and at each
-// end the ear's lap (into the arm's skirt) and its slot in the tongue, clear of the tub's tab (asserted)
-ear_y = [usb_y - 10.7, usb_y + 10.7];
-// and its twin on the left wall (2026-10-24, Alex): the right ear turned round about the case's vertical axis, blank
-// (no USB-C), so the arms end at an ear with its laps on both walls and the two decks are one part, printed twice
-ear_yl = [-ear_y[1], -ear_y[0]];
-function ear_of(sx) = sx > 0 ? ear_y : ear_yl;          // the ear on a side wall (sx: 1 right, -1 left)
+// J1 stands in the right wall, its top 0.65 under the ends' face and the opening's top 0.4 under it, so no side at the
+// ends' height could hold it; the band's side is at the screen's height there. The keys, grip ribs and the board
+// stay clear of the tab's notch along the wall (usb_zone)
+usb_zone = [usb_y - usb_notch_w / 2 - usb_fit, usb_y + usb_notch_w / 2 + usb_fit];
 // a USB-C plug (USB-IF Type-C compliance document rev 1.2): its shell 6.65 +-0.10 long from the
 // overmold's front, the overmold 12.35 x 6.5 at most. Mated, its tip is usb_mate inside the
 // receptacle's face (the receptacle's shell length, 6.20 in the Type-C spec)
@@ -453,19 +392,14 @@ pin_guide_d = 3.0;  pin_guide_z = 2.4;                  // the guides round the 
 // tub off), as the plug stands past the board's edge; no slot in the wall. J6 (UART) went on 2026-10-24
 swd_pos = [-32.6, 15.2];
 debug_h = 2.9;
-// how far out towards the side walls the board's parts that stand taller than the decks allow reach (|x|, their
-// 3D models as check_fit.py exports them, 2026-10-23): they must be under the island's inside (check_fit.py
-// checks every part against the JOINT zones; these are for case.scad's own asserts)
-side_tall = [["J5", 35.11, 2.9], ["J2", 34.53, 3.4], ["J4", 34.5, 3.4]];
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
 // bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
 // the hole's corner (placement.py), its leads down beside the cell's left end
 j2_pos = [-30.7, -7.24];  j2_h = 3.4;
 j2_plug = [[-32.8, -4.6], [-28.6, -1.6]];               // the mated plug's outline, corners
-// the spines (between each seat's clusters, at the screen face's height) keep their length: they
-// covered J2 and J4 until 2026-10-22; now seat 1's covers U6 (the backlight's op-amp, 1.75 tall, at
-// y -36.4, over the decks' 1.6) and seat 2's only U9 (1.2), so they could be shorter (not done: the
-// decks and positions.json stay as they are)
+// the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
+// backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
+// U9 (1.2)
 spine_end = 43.695 + joint_w;                           // the spine's end, its inside to 43.7
 
 // ---------------- checks ----------------
@@ -476,18 +410,18 @@ assert(cluster_spacing >= piece_d + 2, "a seat's two silicone pieces would touch
 assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
 assert(glass_side >= 9.7, "no room for USB-C beside the glass");
-// the cell in its hole: on the board, under the panel and the decks, and its pocket in the floor
+// the cell in its hole: on the board, under the panel and the ends, and its pocket in the floor
 assert(cell_hole[0][0] >= -board_w / 2 + 7 && cell_hole[1][0] <= board_w / 2 - 7, "the strips beside the cell's hole are too narrow");
 assert(cell_hole[1][0] - cell_hole[0][0] >= cell[0] + 1.0 && cell_hole[1][1] - cell_hole[0][1] >= cell[1] + 1.0,
        "a worst-case cell doesn't fit its hole");
-// (the fit kit's tuning slices render other silicone heights, which move the decks: tune skips the
-// checks of the decks against the cell and the screws)
+// (the fit kit's tuning slices render other silicone heights, which move the ends' face: tune skips the
+// checks of the ends against the cell and the screws)
 tune = false;
-assert(tune || cell_top <= glass_gap - 0.4 && cell_top <= z_deck_under - z_top_cu - 0.3 + 1e-6, "the cell's top runs into the panel or a deck");
+assert(tune || cell_top <= glass_gap - 0.4 && cell_top <= z_deck_under - z_top_cu - 0.3 + 1e-6, "the cell's top runs into the panel or the ends");
 assert(cell[2] - cell_top >= pcb_t + 0.5, "the cell doesn't reach through the board to the floor");
 assert(floor_t - cell_pocket >= 0.8, "the floor under the cell is too thin");
 assert(board_lift >= 0.7 - 1e-6, "the board rests on ribs too low to print");
-// the side screws' bosses (the tub's under the board, the top piece's on it) on the board, clear of
+// the side screws' bosses (the tub's under the board, the top's on it) on the board, clear of
 // the cell's hole and the board's edge
 for (i = [0:3]) let(s = pins[i], b = max(tub_boss_d[i], boss_d)) {
   assert(rect_dist(s, cell_hole) >= b / 2 + 1.0, "a side screw's boss runs into the cell's hole");
@@ -496,15 +430,15 @@ for (i = [0:3]) let(s = pins[i], b = max(tub_boss_d[i], boss_d)) {
 // the speaker in the right bezel, under its pocket, clear of the panel's frame, the cell and J4
 assert(spk_pos[0] - spk[0] / 2 - spk_keep >= (panel_w + panel_fit) / 2 + frame_wall + 0.3, "the speaker's pocket runs into the panel frame");
 assert(spk_pos[0] + spk[0] / 2 + spk_keep <= case_w / 2 - wall - 1.0, "the speaker's pocket runs into the side wall");
-assert(z_ceil + spk_pocket - z_top_cu >= spk_h_max + 0.15, "no room for the speaker under the top piece");
+assert(z_ceil + spk_pocket - z_top_cu >= spk_h_max + 0.15, "no room for the speaker under the top");
 assert(top_t - spk_pocket >= 1.2, "the face over the speaker is too thin");
 // (since 2026-10-22 its seat-2 end is 0.1 short of the hole's edge: it lies on the board, and its
 // pocket, over the ceiling, reaches 0.4 over the hole, far above the cell's top)
 assert(spk_pos[1] + spk[1] / 2 <= cell_hole[0][1] + 1e-6, "the speaker doesn't lie on the board");
 assert(spk_pos[1] - spk[1] / 2 - spk_keep >= j4_body[1][1], "the speaker runs into J4");
 assert(spk_pos[0] - spk[0] / 2 + grille_in >= (panel_w + panel_fit) / 2 + frame_wall + 2.0, "the grille runs into the screen's bezel");
-assert(j4_body[0][1] >= -(joint_y - joint_w), "J4 runs under the step's band");
-assert(z_ceil + j4_pocket - z_top_cu >= j4_h + 0.3, "no room for J4 and its plug under the top piece");
+assert(j4_body[0][1] >= -(joint_y - joint_w), "J4 runs under the band's end");
+assert(z_ceil + j4_pocket - z_top_cu >= j4_h + 0.3, "no room for J4 and its plug under the top");
 // USB-C: the opening centred on the receptacle's mouth (it stands on the board's top), usb_gap round
 // it, cut through the whole wall from inside the tub's round to past the outside, the receptacle's
 // face in the wall, and a mated plug's overmold off the wall (check_fit.py checks the same against
@@ -515,18 +449,17 @@ assert(usb_open_x[0] <= in_x - tub_round_in - 0.5 && usb_open_x[1] >= case_w / 2
 assert(usb_front > in_x && usb_front <= case_w / 2, "the USB-C receptacle's face isn't in the wall");
 assert(usb_recess <= plug_len_min - usb_mate - 0.1, "a mated USB-C plug's overmold runs into the wall");
 // the opening's lower half is the tub's tab's, which rises from the seam (under the opening it is 0.8
-// tall or more), and its upper half the top piece's: the receptacle (on the board, face down in the top
-// piece) goes into the notch from behind, past nothing of the top piece
+// tall or more), and its upper half the top's: the receptacle (on the board, face down in the top)
+// goes into the notch from behind, past nothing of the top
 assert(usb_zc - usb_hole[1] / 2 - z_seam >= 0.8 && usb_zc - usb_step - 0.1 >= usb_zc - usb_hole[1] / 2 + 0.3,
        "the tub's USB-C tab under the opening is too thin");
 assert(usb_front - (case_w / 2 - wall / 2) > 0 && z_seam < z_top_cu, "the USB-C notch isn't needed: drop the tab");
 // J2 and J5 under the left bezel
-assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or the debug connector touches the top piece");
+assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or the debug connector touches the top");
 assert(j2_plug[1][0] <= cell_hole[0][0] + 0.2, "J2's plug isn't at the hole's corner");
 // the debug switches (2026-10-24) in the left bezel below H4: their guides over them, the two side by side, clear
 // of J5, J2's plug, the cell's hole and the panel's frame (H4 and the other screws' bosses: below the side screws'
-// asserts). Along the left wall (the island's inside, the key at y -21, the hook at y -31.5, the grip ribs, the
-// deck's joint across the end): in the "the island" asserts
+// asserts). Along the left wall (the key at y -21, the grip ribs, the band's end): in the joints' asserts
 function pin_rect(p) = [p - pin_sw, p + pin_sw];
 assert(pin_guide_z >= pin_sw_h + 0.3 && z_ceil - z_top_cu - pin_guide_z >= 1.0, "a pinhole's guide lands on its switch or is too short");
 assert(pin_pos[0][0] == pin_pos[1][0] && abs(pin_pos[0][1] - pin_pos[1][1]) >= 2 * pin_sw[1] + 0.3 && abs(pin_pos[0][1] - pin_pos[1][1]) >= pin_guide_d + 0.6,
@@ -536,17 +469,15 @@ for (p = pin_pos) {
   assert(rect_dist(p, j2_plug) >= pin_sw[0] + 0.3 && rect_dist(p, j2_plug) >= pin_sw[1] + 0.3, "a debug switch runs into J2's plug");
   assert(rect_dist(p, cell_hole) >= max(pin_sw) + 1.0, "a debug switch runs into the cell's hole");
 }
-// the side screws in the top piece, beside the glass: clear of the panel's frame, inside the side
-// walls, under the whole screen face (not the step), clear of the joint's band (the decks' plates run on
-// under it) and of the speaker and J4 round H3
+// the side screws in the top, beside the glass: clear of the panel's frame, inside the side walls, under the whole
+// screen face (not the slope), clear of the band's end (the ends' plate runs on under it) and of the speaker and J4 round H3
 frame_rect = [[-(panel_w + panel_fit) / 2 - frame_wall, -(panel_l + panel_fit) / 2 - frame_wall],
               [(panel_w + panel_fit) / 2 + frame_wall, (panel_l + panel_fit) / 2 + frame_wall]];
 function racetrack_dist(p, c, w, l) = norm(p - [c[0], max(c[1] - (l - w) / 2, min(c[1] + (l - w) / 2, p[1]))]) - w / 2;
 for (s = side_pins) {
   assert(rect_dist(s, frame_rect) >= boss_d / 2 + 0.3, "a side boss runs into the panel frame");
   assert(abs(s[0]) + boss_d / 2 <= in_x - 1.0, "a side boss runs into the side wall");
-  assert(abs(s[1]) + boss_d / 2 + 0.5 <= joint_y - step_in(0), "a side boss runs under the step");
-  assert(abs(s[1]) + boss_d / 2 + 0.3 <= joint_y - joint_w + 1e-6, "a side boss runs into the joint's band");
+  assert(abs(s[1]) + boss_d / 2 + 0.3 <= joint_y - joint_w + 1e-6, "a side boss runs into the band's end");
   assert(racetrack_dist(s, spk_pos, spk[0] + 2 * spk_keep, spk[1] + 2 * spk_keep) >= boss_d / 2 + 0.3, "a side boss runs into the speaker's pocket");
   assert(rect_dist(s, j4_body) >= boss_d / 2 + 0.3 && rect_dist(s, j4_plug) >= boss_d / 2 + 0.3 - 1e-6, "a side boss runs into J4 or its plug");
 }
@@ -561,7 +492,7 @@ assert(z_top_cu + screw_engage <= case_h - 0.8 + 1e-6 && z_top_cu + deck_engage 
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(face_t >= 0.6 && face_t <= top_t, "face_t out of range");
-assert(retainer_z < z_ceil, "button retainer above the top piece");
+assert(retainer_z < z_ceil, "button retainer above the top");
 // the overhang limit and the rounds (case/SHELL.md): every round fits its wall
 assert(overhang >= 30 && overhang <= 80, "overhang out of range");
 // the board lies inside the tub's walls (the cell went into the board, 2026-10-22): its crush ribs
@@ -573,28 +504,17 @@ assert(tub_round_in <= board_clear - 0.3, "the tub's wall comes within 0.3 of th
 for (s = pins) assert(min(case_w / 2 - abs(s[0]), case_l / 2 - abs(s[1])) - back_in(0.1) - screw_cb[0] / 2 >= 0.5,
                       "a screw's counterbore comes within 0.5 of the tub's bottom edge");
 // the seam on the back's round (2026-10-22): the skirts' tips (at z_bot, where the round has come in
-// furthest over the skirts) skirt_t thick outside their grooves, at the top piece and the decks; and
+// furthest over the skirts) skirt_t thick outside their grooves, at the screen's height and the ends'; and
 // beside the board's edge, at every height the skirts cover, the skirt, its fit, the tongue and 0.25
 // to the board inside the round (the round comes in furthest at the skirts' tips)
 assert(z_seam <= back_r && z_seam >= back_r * (1 - sin(overhang)), "the seam isn't on the back's round");
 for (H = [case_h, deck_face]) assert(groove_in(z_bot, H) - back_in(z_bot) >= skirt_t - 1e-6, "a skirt's tip is too thin");
 assert(wall + board_clear - back_in(z_bot) >= skirt_t + seam_fit + tongue_t + 0.25, "no room beside the board's edge for a skirt and the tongue");
-// The joints (2026-10-22, case/SHELL.md "The joints"; the island's, 2026-10-23, "The island"; tune skips them: its
-// slices move the decks' face). The tongue: as tall as Alex asked (at least 2.5, about 3), its tip whole, 0.2 or
-// more from the board's edge (it passes the edge as the tub goes on), the groove over it leaving the skirts
-// skirt_t (by groove_in) and the decks' plates at least 0.8; along the side walls it passes under the island's
-// wedge, and where it steps up round the cores their groove stays clear of the wedge round the island's corner
+// The joints (2026-10-22, case/SHELL.md "The joints"; tune skips them: its slices move the ends' face). The tongue: as tall
+// as Alex asked (at least 2.5, about 3), its tip whole, 0.2 or more from the board's edge (it passes the edge as the tub goes
+// on), the groove over it leaving the skirts skirt_t (by groove_in) and the ends' plate at least 0.8
 function inner_max(H, z0, zt) = max([for (l = tongue_levels(H, z0, zt)) l[2]]);
 function tip_min(H, z0, zt) = min([for (l = tongue_levels(H, z0, zt)) l[2] - l[1]]);
-// the skin from a point (s in from the outline, at z) to a face's round from H (its arc and chamfer, its flat
-// face past it): the outside's nearest point
-function round_skin(H, s, z) = min(concat([for (k = [0:200]) let(dd = face_r * k / 200) norm([edge_in(dd, face_r) - s, H - dd - z])],
-  [H - z]));
-// the same to the island's edge (its foot isl_in in, the step's profile over it to the screen face)
-function isl_edge_skin(s, z) = min([for (k = [0:ceil(step_d * 100)]) let(dd = min(step_d, k / 100))
-  norm([isl_in + step_in(dd) - s, case_h - dd - z])]);
-// the decks' undercut over the island's wedge, at s in from the outline
-function undercut_z(s) = clear_top - (isl_in - deck_gap - s);
 if (!tune) {
   assert(deck_tongue_h >= 2.5 && z_arm_tongue - z_seam >= 2.5, "the tongue is shorter than the 2.5 Alex asked for");
   assert(tip_min(deck_face, z_seam, z_deck_tongue) >= 0.25 && tip_min(deck_face, z_seam, z_arm_tongue) >= 0.4 && tip_min(deck_face, z_seam, z_key) >= 0.25,
@@ -603,125 +523,50 @@ if (!tune) {
          "the tongue is too thin 0.4 under its tip");
   assert(max(inner_max(deck_face, z_seam, z_deck_tongue), inner_max(deck_face, z_seam, z_arm_tongue), inner_max(deck_face, z_seam, z_key))
          <= wall + board_clear - 0.2, "the tongue comes within 0.2 of the board's edge");
-  assert(deck_face - (z_deck_tongue + seam_gap) >= 0.8, "the decks' plates over the tongue are too thin");
-  assert(z_arm_tongue + seam_gap < z_deck_under, "the tongue along the side walls runs into the arms' plates or the island's wedge");
+  assert(deck_face - (z_deck_tongue + seam_gap) >= 0.8, "the ends' plate over the tongue is too thin");
   assert(z_deck_tongue > z_arm_tongue && deck_face - face_r < z_deck_tongue, "the tongue's heights are the wrong way round");
-  assert(wedge_corner_s(tongue_y - tongue_y_fit) >= max([for (l = groove_levels(deck_face, z_deck_tongue)) l[2]]) + 0.5,
-         "the cores' groove runs into the island's wedge round its corner");
-  // the keys: one in each arm, on the arms' height of tongue, not under the ear, clear of the laps' slots, the
-  // grip ribs and the side screws' bosses; the arm's plate over its pocket 0.8. Each deck's keys are the other's turned
-  // round (one deck part)
-  assert(deck_face - (z_key + seam_gap) >= 0.8, "an arm's plate over a key's pocket is too thin");
+  // the step in the tongue (tongue_y) lies under the slope, where the cavity's ceiling is higher than the taller tongue
+  assert(uni_lim(tongue_y - tongue_y_fit) >= z_deck_tongue + seam_gap + 0.3, "the taller tongue runs into the slope's ceiling");
+  // the keys: one in each side wall's band, on the side walls' height of tongue, clear of the USB-C notch, the grip ribs
+  // and the side screws' bosses; the plate over its pocket 0.8. The left keys are the right ones turned round
+  assert(deck_face - (z_key + seam_gap) >= 0.8, "the plate over a key's pocket is too thin");
   assert(key_lead < key_w / 2 && key_lead <= key_h, "a key's lead-in is out of range");
-  for (k = keys) assert(len([for (q = keys) if (q[0] == -k[0] && q[1] == -k[1]) q]) == 1, "the keys aren't each other turned round: the two decks would differ");
+  for (k = keys) assert(len([for (q = keys) if (q[0] == -k[0] && q[1] == -k[1]) q]) == 1, "the keys aren't each other turned round");
   for (g = grips) assert(len([for (q = grips) if (q[0] == -g[0] && q[1] == -g[1]) q]) == 1, "the grip ribs aren't each other turned round");
-  for (h = hooks) assert(len([for (q = hooks) if (q[0] == -h[0] && q[1] == -h[1]) q]) == 1, "the hooks aren't each other turned round");
   for (k = keys) {
     assert(abs(k[1]) + key_band <= tongue_y - tongue_y_fit - 1.0, "a key runs into the tongue's step");
-    assert(k[1] - key_band >= ear_of(k[0])[1] + 1.0 || k[1] + key_band <= ear_of(k[0])[0] - 1.0, "a key is under an ear");
-    for (l = laps) if (l[0] == k[0]) assert(k[1] - key_w / 2 - seam_fit >= lap_slot(l)[1] + 1.0 || k[1] + key_w / 2 + seam_fit <= lap_slot(l)[0] - 1.0,
-                                            "a key runs into a lap's slot");
+    assert(k[0] < 0 || k[1] - key_band >= usb_zone[1] + 1.0 || k[1] + key_band <= usb_zone[0] - 1.0, "a key is at the USB-C notch");
     for (g = grips) if (g[0] == k[0]) assert(abs(g[1] - k[1]) >= key_w / 2 + seam_fit + grip_w / 2 + 0.5, "a key runs into a grip rib");
-    for (s = side_pins) assert(abs(s[0]) + boss_d / 2 <= isl_x - 0.3 || abs(s[1] - k[1]) >= key_band + boss_d / 2, "a key's pocket runs into a side screw's boss");
+    for (s = side_pins) assert(abs(s[0]) + boss_d / 2 <= case_w / 2 - key_pocket_in - 0.3 || abs(s[1] - k[1]) >= key_band + boss_d / 2, "a key's pocket runs into a side screw's boss");
   }
-  // the decks' corner posts: 0.3 outside the board's corner (the board's straight edges stop at its corners'
-  // centres, so the corner is the nearest), inside the deck's plate where no pad or Start/Select is, their
-  // lead-in longer than the push
-  assert(norm(post_c - [board_w / 2 - board_r, board_l / 2 - board_r]) - board_r >= 0.3 - 1e-6 && post_c[0] > board_w / 2 - board_r && post_c[1] > board_l / 2 - board_r,
-         "a corner post comes within 0.3 of the board");
-  assert(post_c[0] < in_x - 1.0 && post_c[1] < in_y - 1.0, "a corner post is too small to locate a deck");
-  for (c = clusters) assert(norm([abs(c[0]), abs(c[1])] - (post_c - [seam_fit, 0])) >= abxy_pitch / 2 + abxy_lobe_r + 0.5, "a corner post's notch runs into a silicone pad");
-  assert(post_c[0] - seam_fit - (ss_pitch + ss_cell + 2 * ss_frame_w) / 2 >= 1.0, "a corner post's notch runs into Start/Select's frame");
-  for (p = [pins[4], pins[5]]) assert(norm([abs(p[0]), abs(p[1])] - post_c) >= boss_d / 2 + 1.0, "a corner post's notch runs into an end boss");
-  assert(post_lead >= deck_gap + 0.2, "a corner post's lead-in can't catch a deck that lies back");
-  // the grip ribs: on the tongue's straight part, 0.05 short of the skirt, each on its height of tongue, clear
-  // of the laps' slots and the ear
+  // the grip ribs: on the tongue's straight part, 0.05 short of the skirt, each on its height of tongue, clear of the
+  // USB-C notch
   for (g = grips) assert(grip_top(g[2]) - z_seam >= 1.5, "a grip rib is too short");
   for (g = grips) let(w = len(g) > 3 ? g[3] : grip_w) {
     assert(g[2] == z_arm_tongue ? abs(g[1]) + w / 2 <= tongue_y - tongue_y_fit - 0.3 : abs(g[1]) - w / 2 >= tongue_y + tongue_y_fit + 0.3,
            "a grip rib is on the wrong height of tongue");
-    for (l = laps) if (l[0] == g[0]) assert(g[1] + w / 2 <= lap_slot(l)[0] - 0.5 || g[1] - w / 2 >= lap_slot(l)[1] + 0.5, "a grip rib runs into a lap's slot");
-    assert(g[1] + w / 2 <= ear_of(g[0])[0] - 1.0 || g[1] - w / 2 >= ear_of(g[0])[1] + 1.0, "a grip rib is under an ear");
+    assert(g[0] < 0 || g[1] + w / 2 <= usb_zone[0] - 0.5 || g[1] - w / 2 >= usb_zone[1] + 0.5, "a grip rib is at the USB-C notch");
   }
   assert(grip_reach > 0 && grip_reach < seam_fit, "a grip rib reaches the skirt");
-  // the laps: 0.8 thick or more behind the other skirt (deck_gap off it, out to the tongue's inside, which the
-  // tongue's asserts keep 0.2 off the board), their free ends at least 0.8 tall, under the arms' plates; their
-  // slots clear of the crush ribs and the corner posts, the ear's clear of the tub's USB-C tab, the ear's roots in
-  // its skirt clear of the notch
-  assert(tongue_in(z_bot, deck_face, z_arm_tongue) - (groove_in(z_bot, deck_face) + deck_gap) >= 0.8, "a lap is too thin");
-  for (l = laps) {
-    assert(lap_top(l, lap_free(l)) - z_bot >= 0.8, "a lap's free end is too short");
-    assert(lap_top(l, l[1]) + 0.1 <= z_deck_under, "a lap runs into an arm's plate");
-    for (c = crush) if ((c[2] == 0 && l[0] > 0) || (c[2] == 180 && l[0] < 0))
-      assert(c[1] + 0.6 + crush_reach <= lap_slot(l)[0] - 0.3 || c[1] - 0.6 - crush_reach >= lap_slot(l)[1] + 0.3, "a lap's slot runs into a crush rib");
-    assert(abs(lap_slot(l)[0]) + 1.0 <= post_c[1] && abs(lap_slot(l)[1]) + 1.0 <= post_c[1], "a lap's slot runs into a corner post");
-  }
-  assert(lap_slot(ear_laps[0])[1] <= usb_y - usb_notch_w / 2 + usb_fit - 0.1 && lap_slot(ear_laps[1])[0] >= usb_y + usb_notch_w / 2 - usb_fit + 0.1,
-         "an ear's lap's slot runs into the tub's USB-C tab");
-  // the hooks: the head bears 0.3 or more on the tongue's inside, its lead-in under it; its top under the island's wedge;
-  // its foot 0.5 over the board (check_fit.py checks the board's parts under it, HOOKS); the slot under the arm's
-  // tongue height, clear of the laps' slots, the keys' pockets, the grip ribs, the crush ribs (which stop 0.05 under
-  // the head's foot), the side screws' bosses and the tongue's step
-  assert(hook_bear >= 0.3 && hook_lead > 0 && hook_s_in > hook_s_out + hook_lead, "a hook's head is too small to bear on the tongue");
-  assert(hook_top(hook_s_w) <= z_deck_under - deck_gap + 1e-6 && hook_lift >= 0.5 && hook_bot > z_top_cu + crush_reach, "a hook is out of range");
-  assert(hook_slot_bot - z_seam >= 1.0, "a hook's slot cuts the tongue to the seam");
-  for (h = hooks) {
-    assert(abs(h[1]) + hook_len / 2 <= tongue_y - tongue_y_fit - 1.0, "a hook runs into the tongue's step");
-    assert(h[1] - hook_len / 2 >= ear_of(h[0])[1] + 1.0 || h[1] + hook_len / 2 <= ear_of(h[0])[0] - 1.0, "a hook is under an ear");
-    for (l = laps) if (l[0] == h[0]) assert(h[1] + hook_len / 2 <= lap_slot(l)[0] - 0.5 || h[1] - hook_len / 2 >= lap_slot(l)[1] + 0.5, "a hook runs into a lap's slot");
-    for (k = keys) if (k[0] == h[0]) assert(abs(k[1] - h[1]) >= key_w / 2 + seam_fit + hook_len / 2 + 0.5, "a hook runs into a key's pocket");
-    for (g = grips) if (g[0] == h[0]) assert(abs(g[1] - h[1]) >= (len(g) > 3 ? g[3] : grip_w) / 2 + hook_neck / 2 + hook_play + 0.5, "a hook's slot runs into a grip rib");
-    for (c = crush) if ((c[2] == 0 && h[0] > 0) || (c[2] == 180 && h[0] < 0)) assert(abs(c[1] - h[1]) >= 0.6 + hook_len / 2 + 0.5, "a hook runs into a crush rib");
-    for (s = side_pins) assert(abs(s[0]) + max(boss_d, 6.0) / 2 <= case_w / 2 - hook_s_in - 0.3 || abs(s[1] - h[1]) >= hook_len / 2 + 3.3, "a hook runs into a side screw's boss");
-  }
-  assert(lap_rootend(ear_laps[0]) <= usb_y - usb_notch_w / 2 && lap_rootend(ear_laps[1]) >= usb_y + usb_notch_w / 2, "an ear's lap runs into the USB-C notch");
-  // the island (2026-10-23): its skin over its inside, the board's tall parts along the side walls under its inside
-  // (side_tall; check_fit.py checks every part against the JOINT zones), the speaker's pocket under its flat face
-  // and 0.7 under its edge, the side screws' bosses inside its foot and their pilots 1.5 in from it
-  assert(isl_wall >= 0.7 && isl_edge_skin(isl_in + isl_wall, z_ceil) >= 0.7, "the island's skin over its inside is too thin");
-  for (t = side_tall) assert(isl_x - isl_wall >= t[1] + 0.25, str(t[0], " stands under the island's wall or a deck's arm"));
-  // the debug switches and their pinholes' guides under the island's inside, 0.3 (the guides 0.5) in from its wall,
-  // so clear of everything the joints put along the left wall: the key at y -21 (its pocket in to isl_in + 0.1),
-  // the hook at y -31.5 (its head in to hook_s_in), the grip ribs (on the tongue); and in from the deck's joint
-  // band across the island's end
+  // the debug switches and their pinholes' guides, 0.3 (the guides 0.5) in from the side wall's cavity, clear of the key at
+  // y -21 (its pocket in to key_pocket_in), the grip ribs and the band's end
   for (p = pin_pos) {
-    assert(abs(p[0]) + pin_sw[0] <= isl_x - isl_wall - 0.3 && abs(p[0]) + pin_guide_d / 2 <= isl_x - isl_wall - 0.5,
-           "a debug switch or its guide runs into the island's wall");
-    for (k = keys) if (k[0] * p[0] > 0) assert(abs(k[1] - p[1]) >= key_band + pin_sw[1] + 0.5 || abs(p[0]) + pin_sw[0] <= case_w / 2 - isl_in - 0.1 - 1.0,
+    for (k = keys) if (k[0] * p[0] > 0) assert(abs(k[1] - p[1]) >= key_band + pin_sw[1] + 0.5 || abs(p[0]) + pin_sw[0] <= case_w / 2 - key_pocket_in - 1.0,
                                                "a debug switch runs into a key's pocket");
-    for (h = hooks) if (h[0] * p[0] > 0) assert(abs(h[1] - p[1]) >= hook_len / 2 + pin_sw[1] + 2.0 && abs(p[0]) + pin_sw[0] <= case_w / 2 - hook_s_in - 1.0,
-                                                "a debug switch runs into a hook");
     for (g = grips) if (g[0] * p[0] > 0) assert(abs(p[0]) + pin_guide_d / 2 <= in_x - 2.0, "a pinhole's guide runs into a grip rib");
-    assert(abs(p[1]) + max(pin_sw[1], pin_guide_d / 2) <= joint_y - joint_w - 3.0, "a debug switch runs into the deck's joint");
+    assert(abs(p[1]) + max(pin_sw[1], pin_guide_d / 2) <= joint_y - joint_w - 3.0, "a debug switch runs into the band's end");
   }
-  assert(spk_pos[0] + spk[0] / 2 + spk_keep <= isl_x - step_in(0), "the speaker's pocket isn't under the island's flat face");
-  assert(isl_edge_skin(case_w / 2 - (spk_pos[0] + spk[0] / 2 + spk_keep), z_ceil + spk_pocket) >= 0.7, "the island over the speaker's pocket is too thin");
-  for (s = side_pins) assert(abs(s[0]) + boss_d / 2 <= isl_x - 0.3 && abs(s[0]) + screw_pilot / 2 <= isl_x - 1.5, "a side screw's boss runs out of the island");
   assert((boss_d - screw_pilot) / 2 >= 1.2, "a pilot's wall is too thin");
-  // the ear: over J1 (the opening and the receptacle in its inside, clear of the fillets where it meets the
-  // island's side), its skin over its inside at the wall 0.7
-  assert(usb_y - usb_hole[0] / 2 >= ear_y[0] + isl_wall + isl_fillet + 0.5 && usb_y + usb_hole[0] / 2 <= ear_y[1] - isl_wall - isl_fillet - 0.5,
-         "the ear doesn't cover J1");
-  assert(round_skin(case_h, wall, z_ceil) >= 0.7, "the ear's side over its inside is too thin");
-  // the island's wedge: steep enough face down, under the arms' round (inside the clip), and the decks' plastic
-  // round it at least 0.7 (the lip's straight part, the arm's plate between its undercut and its round, the
-  // arm's plate over its groove)
-  assert(overhang >= 45 && wedge_out >= 0.8 && isl_in - wedge_out >= isl_clip_in + eps, "the island's wedge is out of range");
-  assert(deck_face - clear_top >= 0.7, "the decks' lip over the island's wedge is too thin");
-  assert(min([for (k = [0:50]) let(s = isl_in - wedge_out + (wedge_out - deck_gap) * k / 50) round_skin(deck_face, s, undercut_z(s))]) >= 0.7,
-         "an arm's plate over the island's wedge is too thin");
-  assert(round_skin(deck_face, wall / 2, z_arm_tongue + seam_gap) >= 0.7, "an arm's plate over its groove is too thin");
-  // and clear of the decks' walls on the pads, their end bosses and Start/Select's frames
-  for (c = clusters) assert(abs(c[1]) - (c == dpad1 || c == dpad2 ? dpad_wall[0] + dpad_wall[1] : a + abxy_ring) >= joint_y + wedge_out + 0.5,
-                            "the island's wedge runs into a deck's walls on a pad");
-  assert(seat_y + pin_out - boss_d / 2 >= spine_end + wedge_out + 0.3, "the island's wedge runs into an end boss");
-  assert(ss_y - (ss_cell + 2 * ss_frame_w) / 2 >= spine_end + wedge_out + 0.5, "the island's wedge runs into Start/Select's frame");
+  // the slope's foot clears the ends' button walls on the pads, their end bosses and Start/Select's frames
+  for (c = clusters) assert(abs(c[1]) - (c == dpad1 || c == dpad2 ? dpad_wall[0] + dpad_wall[1] : a + abxy_ring) >= uni_foot - 0.05 + 0.3,
+                            "the slope runs into the walls on a pad");
+  assert(seat_y + pin_out - boss_d / 2 >= uni_foot + 0.3, "the slope runs into an end boss");
+  assert(ss_y - (ss_cell + 2 * ss_frame_w) / 2 >= uni_foot + 0.5, "the slope runs into Start/Select's frame");
 }
-assert(step_in(0) <= joint_w - 0.2, "the step runs past the joint's wall: the screen face over it would be too thin");
 // The button stack's design rules (check_buttons.py checks the geometry itself: the pads clear
 // the shell, every cap sits and presses without touching it, at rest the caps only touch the domes)
 assert(sil_rib_gap >= sil_web_t, "the ribs crush the silicone pads' web");
-assert(retainer_bot > z_top_cu + sil_web_t, "the deck reaches down onto the pads");
+assert(retainer_bot > z_top_cu + sil_web_t, "the top reaches down onto the pads");
 assert(cap_proud - dome_travel >= 0.4, "a pressed cap sinks to the deck: a thumb catches its edge");
 let (r = (cap_hole_d - cap_abxy_d) / 2) assert(r >= 0.15 && r <= 0.5, str("A/B/X/Y hole clearance ", r, " a side: sticks or rattles"));
 assert(dpad_gap >= 0.3 && dpad_gap <= 1.0, "D-pad opening clearance out of range");
@@ -748,16 +593,17 @@ assert(abxy_square[0] >= abxy_boss[0] + 0.1 && abxy_square[2] >= abxy_boss[1] + 
        "the A/B/X/Y pad's centre square doesn't fit its pocket");
 assert(dpad_peg_gap >= 0, "the D-pad's peg holds its flange off the lip");
 assert(z_deck_under > retainer_bot + 0.5, "button deck lower than the retainers");
-assert(joint_y - joint_w > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "the step's wall runs into the panel frame");
+assert(joint_y - joint_w > (panel_l + panel_fit) / 2 + frame_wall + 0.3, "the band's end (positions.json's decks zones) runs into the panel frame");
 for (c = clusters) assert(abs(c[1]) - piece_d / 2 >= joint_y + 0.5 || abs(c[0]) - piece_d / 2 >= spine_w / 2 + 0.5,
-                          "a silicone piece runs under the top piece");
-// the openings and their chamfers lie on the deck's face, clear of the joint
-for (b = buttons) assert(abs(b[2][1]) - cap_hole_d / 2 - cap_chamfer >= joint_y + deck_gap + 1.0, "a cap's opening runs into the step");
-for (c = [dpad1, dpad2]) assert(abs(c[1]) - dpad_arm_l / 2 - dpad_gap - dpad_chamfer >= joint_y + deck_gap + 1.0, "the D-pad's opening runs into the step");
+                          "a silicone piece runs under the band");
+// the openings and their chamfers lie on the ends' face, clear of the slope's foot (tune: the fit kit's slices render other
+// silicone heights, which move the ends' face and with it the slope)
+for (b = buttons) assert(tune || abs(b[2][1]) - cap_hole_d / 2 - cap_chamfer >= uni_foot + 1.0, "a cap's opening runs into the slope");
+for (c = [dpad1, dpad2]) assert(tune || abs(c[1]) - dpad_arm_l / 2 - dpad_gap - dpad_chamfer >= uni_foot + 1.0, "the D-pad's opening runs into the slope");
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "screw boss under a silicone piece");
 assert(seat_y + pin_out - boss_d / 2 >= spine_end + 0.5, "an end boss runs under the spine");
 assert(seat_y + pin_out + boss_d / 2 + 0.3 <= ss_y - (ss_cell + 2 * ss_frame_w) / 2, "an end boss runs into Start/Select's frame");
-assert(pins[4] == rot180(pins[5]), "the end bosses aren't each other turned round: the two decks would differ");
+assert(pins[4] == rot180(pins[5]), "the end bosses aren't each other turned round");
 assert(ss_y - ss_mem[1] / 2 - 0.75 >= spine_end, "Start/Select under the spine");
 assert(ss_y + ss_mem[1] / 2 + 1 <= board_l / 2, "Start/Select off the board's end");
 for (c = clusters) assert(norm([ss_mem[0] / 2, abs(abs(c[1]) - ss_y) < ss_mem[1] / 2 ? 0 : abs(abs(c[1]) - ss_y) - ss_mem[1] / 2] - [abs(c[0]), 0]) >= piece_d / 2 + 0.5, "Start/Select runs into a silicone piece");
@@ -811,19 +657,18 @@ echo(str("USBC {\"hole_y\": [", jnum(kicad([0, usb_y + usb_hole[0] / 2])[1]), ",
   "], \"wall_x\": [", jnum(kicad([in_x, 0])[0]), ", ", jnum(kicad([case_w / 2, 0])[0]),
   "], \"plug_len_min\": ", plug_len_min, ", \"mate\": ", usb_mate, "}"));
 
-// the joint round the island for check_fit.py (KiCad corners; its limit over the board's top), not in positions.json
+// the one-piece top's lower ceilings for check_fit.py (KiCad corners; the limit over the board's top), not in positions.json:
+// the strip between the ends' clusters that positions.json's decks zones leave out (the band's end, which has the ends'
+// ceiling there), less U6's pocket in it
 function jrect(r) = str("[", jpt([r[0][0], r[1][1]]), ", ", jpt([r[1][0], r[0][1]]), "]");
-echo(str("HOOKS {\"limit\": ", jnum(hook_limit), ", \"zones\": [", join([for (h = hooks) jrect(hook_rect(h))]), "]}"));
-echo(str("HOOK lift ", hook_lift, " head ", hook_s_in - hook_s_out, " thick ", hook_len, " long, bearing ", hook_bear, ", top at the face ",
-         hook_top(hook_s_out), ", slot ", hook_neck + 2 * hook_play, " wide from ", hook_slot_bot, ", head in past the board's edge ",
-         board_w / 2 - (case_w / 2 - hook_s_in)));
-echo(str("JOINT {\"limit\": ", jnum(z_deck_under - z_top_cu - 0.3), ", \"zones\": [",
-  join([for (z = concat(joint_zones, [for (z = joint_zones) rot_rect(z)], side_zones)) jrect(z)]), "]}"));
+top_strips = [for (sy = [-1, 1]) [[-(spine_w / 2 - joint_w), sy * (joint_y - joint_w)], [spine_w / 2 - joint_w, sy * (spine_end - joint_w)]]];
+echo(str("TOP {\"limit\": ", jnum(z_deck_under - z_top_cu - 0.3), ", \"strips\": [", join([for (z = top_strips) jrect(z)]),
+  "], \"pocket_limit\": ", jnum(deck_face - uni_pocket_skin - z_top_cu - 0.3), ", \"pockets\": [", join([for (p = uni_pockets) jrect(p)]), "]}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
          deck_face - z_top_cu, ", screen face ", case_h - z_top_cu, ": ends ", deck_face, " mm thick, a ", step_d, " mm step"));
 echo(str("STACK floor ", floor_t, " + ribs ", board_lift, " + PCB ", pcb_t, " + under the panel ", glass_gap,
-         " + panel ", panel_t, " + tape ", tape_t, " + top over the panel ", face_t, " = ", case_h, " mm; top piece's underside ",
+         " + panel ", panel_t, " + tape ", tape_t, " + top over the panel ", face_t, " = ", case_h, " mm; top's underside ",
          bay_t, " over the board; seam ", z_seam, " over the tub's bottom"));
 
 // ---------------- 2D ----------------
@@ -867,15 +712,8 @@ module pad2d(c) let(dp = c == dpad1 || c == dpad2) union() {
 }
 module cross(w, l) union() { square([l, w], center = true); square([w, l], center = true); }
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
-// The top piece's plan up to the joint: the screen block across the case (past its sides: intersect
-// with an outline) and a spine at each end; the decks are the rest
-module top_region2d() union() {
-  square([4 * case_w, 2 * joint_y], center = true);
-  square([spine_w, 2 * spine_end], center = true);
-}
-module half2d(sy) scale([1, sy]) translate([-2 * case_w, 0]) square([4 * case_w, case_l]);
-// the decks, both ends, as the board's height limits see them (no clearance)
-module deck2d() difference() { square([4 * case_w, 4 * case_l], center = true); top_region2d(); }
+// The top's plan at the screen's height (the layout view): the band across the case, to its slope's foot
+module top_region2d() square([4 * case_w, 2 * uni_foot], center = true);
 module outline2d() rrect(case_w, case_l, corner_r);
 module inner2d(grow = 0) offset(delta = -wall + grow) outline2d();
 // how far in from an edge's wall line a round is at depth dd under the face it rolls into: an arc of
@@ -924,7 +762,7 @@ in_x = case_w / 2 - wall;  in_y = case_l / 2 - wall;
 // Crush ribs centre the board: on the tub's side walls (x) and end walls (y), [x, y, direction of the
 // wall], each with a 45 degree lead-in at its upper end, where the board meets it as the tub goes on.
 // The board lies inside the tub's walls since the cell went into it (2026-10-22): until then the
-// ribs were on the top piece's walls and the decks' (the board was over the seam)
+// ribs were on the top's walls (the board was over the seam)
 crush = [[in_x, 28, 0], [in_x, -28, 0], [-in_x, 28, 180], [-in_x, -28, 180],
          [22, in_y, 90], [-22, in_y, 90], [22, -in_y, -90], [-22, -in_y, -90]];
 crush_reach = board_clear - 0.05;   // how far a rib stands off the wall: 0.05 mm short of the board
@@ -937,14 +775,14 @@ tub_round_in = 0.2;
 // ---- the joints (2026-10-22, case/SHELL.md "The joints") ----
 eps = 0.01;               // how far a solid overlaps one it joins (the 0.01s elsewhere in this file)
 // The tongue and the skirts' groove over it, as insets from the case's outline at height z, along a
-// wall whose face is at H (case_h along the top piece's sides; deck_face round the decks and across
-// the step's band) under a tongue whose top is zt. The groove's outer side (the skirt's inside) is the
+// wall whose face is at H (deck_face: the ends' faces, the band's sides too, as the groove follows the round from the ends'
+// height) under a tongue whose top is zt. The groove's outer side (the skirt's inside) is the
 // wall's middle until the face's round comes within skirt_t of it, then follows the round in; the
 // tongue keeps seam_fit inside it, tongue_t thick, its tip chamfered: its outer edge (tongue_lead, a
 // lead-in into the skirt) and its inner edge at 45 degrees from the wall's inside (the tongue passes
 // the board's edge as the tub goes on: the chamfer leads the board in, and the tongue never comes
 // nearer it than the wall does). The groove's inner side keeps seam_fit inside the tongue (it matters
-// in the decks' plates and the step's band, where the parts are solid there)
+// in the ends' plate, where the part is solid there)
 function groove_in(z, H) = max(wall / 2, edge_in(H - z, face_r) + skirt_t);
 function lead_of(zt) = zt == z_deck_tongue ? core_lead : tongue_lead;
 function tongue_out(z, H, zt) = max(groove_in(z, H) + seam_fit, wall / 2 + seam_fit + max(0, z - (zt - lead_of(zt))));
@@ -955,7 +793,7 @@ function tongue_levels(H, z0, zt) = [for (k = [0:ceil((zt - z0) / 0.05 - 1e-6)])
   [z, tongue_out(z, H, zt), tongue_in(z, H, zt)]];
 function groove_levels(H, zt, z0 = z_seam - 0.987) = [for (k = [0:ceil((zt + seam_gap - z0) / 0.05 - 1e-6)])
   let(z = min(zt + seam_gap, z0 + 0.05 * k)) [z, groove_in(z, H), groove_inner(z, H, zt)]];
-// (the grooves' levels start off the parts' planes: a level on the top piece's underside left
+// (the grooves' levels start off the parts' planes: a level on the top's underside left
 // non-manifold edges)
 // a ring round the case between two insets, lofted through [z, outer, inner] levels (the inner loft runs
 // a little past both ends, so no face of the two coincides); shrink: both faces that much into the ring,
@@ -964,14 +802,12 @@ module ring_loft(levels, shrink = 0) let(n = len(levels) - 1) difference() {
   rr_loft([for (l = levels) [l[0], l[1] + shrink]]);
   rr_loft(concat([[levels[0][0] - 0.01, levels[0][2] - shrink]], [for (l = levels) [l[0], l[2] - shrink]], [[levels[n][0] + 0.01, levels[n][2] - shrink]]));
 }
-// The tongue is deck_tongue_h tall round the decks' cores and only arm_tongue_top along the side walls, under
-// the decks' arms and the island's ear (2026-10-23): there it passes under the island's wedge, which comes down
-// to the decks' underside. It steps at tongue_y, wedge_out past the joint across the step, where the wedge
-// has turned the island's corner away from the walls. The skirts' grooves overlap that step tongue_y_fit
-// each way, as the tub can shift along the case by its keys' fit (until the island the tongue was 7.2 tall
-// along the top piece's sides, under the full screen face)
+// The tongue is deck_tongue_h tall round the top's ends and only arm_tongue_top along the side walls, under the band
+// (the tub is as it was for the island and the decks, 2026-10-23). It steps at tongue_y, 1.2 past the old joint across the
+// step (the island's wedge's reach), just inside the slope's foot (uni_foot 36.2). The skirts' grooves overlap that step
+// tongue_y_fit each way, as the tub can shift along the case by its keys' fit
 tongue_y_fit = seam_fit + 0.1;
-tongue_y = joint_y + wedge_out;
+tongue_y = joint_y + 1.2;
 module yband(y0, y1, z0 = -1, z1 = 20) translate([-2 * case_w, y0, z0]) cube([4 * case_w, y1 - y0, z1 - z0]);
 module y_in(y) yband(-y, y);                            // |y| <= y
 module y_out(y) { yband(y, case_l); yband(-case_l, -y); }   // |y| >= y
@@ -998,246 +834,39 @@ module tongue() {
     y_out(tongue_y);
   }
 }
-// the skirts' groove over it (core: round the decks' cores, arm: along the side walls; the island's ear takes the
-// arms', its round over the groove being the decks' there)
-module skirt_groove(core = true, arm = true) {
-  if (core) intersection() { ring_loft(groove_levels(deck_face, z_deck_tongue)); y_out(tongue_y - tongue_y_fit); }
-  if (arm) intersection() { ring_loft(groove_levels(deck_face, z_arm_tongue)); y_in(tongue_y + tongue_y_fit); }
-}
-// The keys: tabs that carry the tongue key_h higher, key_w along the wall, into pockets in the decks' arms (until
-// the island, in the top piece's sides), one in each arm: they locate the arm along the case and hold its skirt
-// out on the tongue. Where a key is, the island's wedge stops and the arm's pocket opens on the island's foot (the
-// arm's lip has nothing under it for those 6.1 mm). [side, y]; clear of the laps' slots, the USB-C notch and the
-// grip ribs
+// The keys: tabs that carry the tongue key_h higher, key_w along the wall, into pockets in the top's side walls, two on each
+// side: they locate the top along the case and hold its skirt out on the tongue. [side, y]; clear of the USB-C notch and
+// the grip ribs
 keys = [[1, 21], [1, -18], [-1, -21], [-1, 18]];   // the left ones the right ones turned round (2026-10-24)
 key_w = 5.0;  key_h = 1.1;  key_lead = 0.5;
 z_key = z_arm_tongue + key_h;
 module key_span(k, w, lead = 0, z0 = z_seam - 1, z1 = case_h) translate([k[0] > 0 ? 0 : -case_w, k[1], 0]) rotate([90, 0, 90])
   linear_extrude(case_w) polygon([[-w / 2, z0], [w / 2, z0], [w / 2, z1 - lead], [w / 2 - lead, z1], [-w / 2 + lead, z1], [-w / 2, z1 - lead]]);
 module key_tab(k) intersection() { ring_loft(tongue_levels(deck_face, z_seam - 0.01, z_key), eps); key_span(k, key_w, key_lead, z1 = z_key); }
-// its pocket in the arm: from the skirt's inside in past the arm's edge, up to seam_gap over the key
+// its pocket in the top's wall: from the skirt's inside in to key_pocket_in (into the cavity), up to seam_gap over the key
+key_pocket_in = wall + 0.1;
 module key_pocket(k) intersection() {
-  ring_loft([for (l = groove_levels(deck_face, z_key)) [l[0], l[1], isl_in + 0.1]]);
+  ring_loft([for (l = groove_levels(deck_face, z_key)) [l[0], l[1], key_pocket_in]]);
   key_span(k, key_w + 2 * seam_fit);
 }
-key_band = key_w / 2 + seam_fit + 0.3;                  // the island's wedge stops this far either side of a key
-module key_wedge_cut(k) translate([k[0] > 0 ? case_w / 2 - isl_in - eps : -case_w, k[1] - key_band, z_deck_under - 1])
-  cube([case_w / 2 + isl_in + eps, 2 * key_band, deck_face - wedge_v - z_deck_under + 1]);
-// The decks' keys: a post in each of the tub's corners, outside the board's corner (board_r is larger
-// than corner_r, so there is room), up to the tongue's top, in a notch in the deck's plate. Its inner
-// faces locate the deck: across the case with seam_fit, and along it with none: it pushes the deck
-// towards the screen onto the island's wedge as the tub goes on (the 45 degree lead-in on its tip catches
-// a deck that lies back, by up to post_lead), and holds it there, at its place over the buttons (onto its
-// own wedges until 2026-10-23, then for a day onto the top piece's end wall's foot)
-post_c = [board_w / 2 - board_r, board_l / 2 - board_r] + (board_r + 0.3) / sqrt(2) * [1, 1];   // its inner corner
-post_lead = 0.4;
-module post(sx, sy) scale([sx, sy, 1]) intersection() {
-  hull() {
-    translate([post_c[0], post_c[1], floor_t - 0.01]) cube([case_w, case_l, z_deck_tongue - post_lead - floor_t + 0.01]);
-    translate([post_c[0] + post_lead, post_c[1] + post_lead, z_deck_tongue - post_lead]) cube([case_w, case_l, post_lead]);
-  }
-  rr_loft([for (l = tongue_levels(deck_face, floor_t - 0.01, z_deck_tongue)) [l[0], l[1] + eps]]);   // inside the tongue's outside
-}
-module post_notch(sx, sy, uni = false) scale([sx, sy, 1]) intersection() {
-  translate([post_c[0] - seam_fit, post_c[1], z_seam - 1]) cube([case_w, case_l, z_deck_tongue + seam_gap - z_seam + 1]);
-  rr_loft([for (l = uni ? uni_groove_levels(z_deck_tongue) : groove_levels(deck_face, z_deck_tongue)) [l[0], l[1] - (uni ? eps : 0)]]);   // inside the groove's outside (the one-piece top's: filled, uni_groove_out)
-}
+key_band = key_w / 2 + seam_fit + 0.3;                  // the clear band either side of a key
 // Grip ribs on the tongue's outside, standing grip_reach off it: 0.05 short of the skirt, as the board's
 // crush ribs are of the board, so a printed skirt (an inside face, which prints small) grips them. They
 // hold each part on the tub until the screws go in and centre it across the case, so the parts' sides
-// line up. Two on each side of each deck's core, two on each arm (one near its free end, as no screw lands
-// in an arm); the left arms' the right ones' turned round (one deck part). [side, y, the tongue's top there, width]
+// line up. Two on each side of each end, two on each side wall; the left wall's the right one's turned round.
+// [side, y, the tongue's top there, width]
 grip_reach = seam_fit - 0.05;  grip_w = 1.0;                 // GUESS (2026-10-22): the first print of these joints
                                                         // settles it (case/SHELL.md, "Best guesses")
 grips = concat([for (sx = [-1, 1], sy = [-1, 1], y = [40, 52]) [sx, sy * y, z_deck_tongue]],
                [for (sx = [-1, 1], sy = [-1, 1]) [sx, sy * 26, z_arm_tongue]],
                [[1, -13.25, z_arm_tongue], [1, 17.2, z_arm_tongue], [-1, 13.25, z_arm_tongue], [-1, -17.2, z_arm_tongue]]);
-// The laps (2026-10-22's side joint, carried on to the island): where two skirts meet end to end along a
-// wall, one carries a tongue of its own, lap_l on behind the other's skirt end, in the skirts' groove:
-// deck_gap behind the other's skirt, out to the tub's tongue's inside, lap_root back along its own skirt (the
-// groove filled there, so the lap is all one with it). The other skirt can't move in (the lap is behind it) and
-// this one can't move out past it: the two lie flush, and there is no straight path through the joint.
-// The ear carries one into each arm that meets it (it goes in last, from behind, its laps up the arms' grooves);
-// the ears are the only skirts that meet another end to end since the left wall got its ear (2026-10-24; until then
-// seat 1's left arm carried one behind seat 2's). Face down a lap's free end hangs off its part,
-// so its top (the print's underside) falls from its root at `overhang`. The tub's tongue stops either side
-// of each (lap_slot_cut). [side, y0: the carrying skirt's end, dir: the way its free end goes]
-lap_l = 3.0;  lap_root = 1.5;
-ear_laps = [[1, ear_y[0], -1], [1, ear_y[1], 1], [-1, ear_yl[0], -1], [-1, ear_yl[1], 1]];
-laps = ear_laps;
-// a lap's top at y (0.025 off the lofts' levels: a corner on one left slivers), and its ends along the wall
-function lap_top(l, y) = z_arm_tongue - 0.025 - max(0, (y - l[1]) * l[2]) / tan(overhang);
-function lap_free(l) = l[1] + l[2] * (deck_gap + lap_l);
-function lap_rootend(l) = l[1] - l[2] * lap_root;
-// the tongue's slot round it, along the wall: seam_fit off its free end and its root
-function lap_slot(l) = let(a = lap_free(l) + l[2] * seam_fit, b = lap_rootend(l) - l[2] * seam_fit) [min(a, b), max(a, b)];
-// (its inside eps short of the tongue's: on the wall's inner line, where the plan's other cuts lie, it left
-// non-manifold edges in a fit kit render)
-function lap_levels(outer) = [for (k = [0:ceil((z_arm_tongue - z_bot) / 0.05 - 1e-6)]) let(z = min(z_arm_tongue, z_bot + 0.05 * k))
-  [z, outer(z), tongue_in(z, deck_face, z_arm_tongue) - eps]];
-module lap(l) let(sx = l[0], y0 = l[1], dir = l[2], top_z = z_arm_tongue + seam_gap + eps, yf = lap_free(l), yr = lap_rootend(l)) intersection() {
-  // the groove filled, into the skirt and up into the plate (eps into both), less, past the skirt's end,
-  // deck_gap behind the other's skirt (one loft and a cut: two lofts unioned left slivers)
-  difference() {
-    ring_loft(concat(lap_levels(function(z) groove_in(z, deck_face) - eps), [[top_z, groove_in(top_z, deck_face) - eps, tongue_in(z_arm_tongue, deck_face, z_arm_tongue) - eps]]));
-    intersection() {
-      difference() {
-        translate([-case_w, -case_l, z_bot - 1]) cube([2 * case_w, 2 * case_l, case_h]);
-        rr_loft([for (z = [z_bot - 0.5:0.05:top_z + 0.5]) [z, groove_in(z, deck_face) + deck_gap]]);
-      }
-      yband(dir > 0 ? y0 + eps : y0 - 10, dir > 0 ? y0 + 10 : y0 - eps);
-    }
-  }
-  // its side and its span along the wall, its top falling at `overhang` from its skirt's end
-  translate([sx > 0 ? 0 : -case_w, -case_l, -1]) cube([case_w, 2 * case_l, case_h + 2]);
-  rotate([90, 0, 90]) translate([0, 0, -case_w]) linear_extrude(2 * case_w)
-    polygon([[yf, z_bot - 1], [yr, z_bot - 1], [yr, top_z + 1], [y0 + dir * 2 * eps, top_z + 1],
-             [y0 + dir * 2 * eps, lap_top(l, y0)], [yf, lap_top(l, yf)]]);   // (2 eps: off the skirt's end)
-}
-// the tongue's slot round a lap: through the tongue (and its thicker foot under the round's end) from the seam up
-module lap_slot_cut(l) let(s = lap_slot(l)) translate([l[0] > 0 ? case_w / 2 - wall - tub_round_in - 0.1 : -case_w / 2 + wall / 2 - seam_fit - 0.1, s[0], z_seam])
-  cube([wall / 2 + seam_fit + tub_round_in + 0.2, s[1] - s[0], case_h]);
 // a rib runs up the tongue to 0.1 short of where its outside starts to lean in, its top a 45 degree lead-in
 function grip_top(zt) = max([for (k = [0:800]) let(z = z_seam + 0.01 * k) if (z <= zt && tongue_out(z, deck_face, zt) <= wall / 2 + seam_fit + 1e-6) z]);
 module grip(g) let(sx = g[0], w = len(g) > 3 ? g[3] : grip_w, z1 = grip_top(g[2]) - 0.1)
   translate([sx * (case_w / 2 - wall / 2 - seam_fit), g[1], 0]) scale([sx, 1, 1]) rotate([90, 0, 0]) linear_extrude(w, center = true)
     polygon([[-0.1, z_seam - 0.3], [grip_reach, z_seam - 0.3], [grip_reach, z1 - grip_reach - 0.05], [-0.05, z1], [-0.1, z1]]);
 
-// The hooks (2026-10-24, Alex): nothing held an arm's skirt from springing outward (the ears' laps stop it moving in,
-// the grip ribs only grip). Each arm carries a hook: a neck down from the arm's plate and skirt through a vertical
-// slot in the tub's tongue, and a head behind the tongue, hook_play inside its inside face, that bears on that face
-// if the arm moves out. It goes straight in (the head passes inside the tongue, the neck down the slot, which also
-// keys the arm along the wall), a 45 degree lead-in on the head's outer foot. Face down its top (the print's
-// underside) rises from the arm's plate at `overhang`, deck_gap under the island's wedge, and the head's ends past
-// the neck taper in at `overhang` too, so it prints without supports. As near each arm's free end (at the ear) as
-// the laps' slots, the keys, the grip ribs and the crush ribs leave room for (asserted below); each deck's two the
-// other's turned round. [side, y]
-hooks = [[1, -23.5], [-1, 23.5], [-1, -31.5], [1, 31.5]];
-hook_neck = 1.6;  hook_len = 3.6;  hook_head = 0.55;     // the neck's width along the wall, the head's length and thickness
-hook_play = deck_gap;     // the head's outer face off the tongue's inside, the neck's off the slot's sides
-hook_lift = 0.5;          // the head's foot over the board's top
-hook_lead = 0.15;         // the lead-in on its outer foot (0.2 leaves the head 0.30 to bear on at 45)
-hook_bot = z_top_cu + hook_lift;
-hook_s_out = wall + hook_play;                           // the head's outer face, in from the outline
-hook_s_w = isl_in - wedge_out;                          // the island's wedge's outer edge, in from the outline
-// the hook's top at s in from the outline: deck_gap under the wedge's outer edge, falling inwards at `overhang`
-function hook_top(s) = z_deck_under - deck_gap - (s - hook_s_w) / tan(overhang);
-// the head's inner face: hook_head in from its outer one, or where its top meets its foot if that comes first
-hook_s_in = min(hook_s_out + hook_head, hook_s_w + (z_deck_under - deck_gap - hook_bot) * tan(overhang));
-hook_bear = hook_top(hook_s_out) - (hook_bot + hook_lead);   // how tall the head bears on the tongue's inside
-hook_slot_bot = hook_bot - hook_play;
-// in a wall's frame: s in from the outline (x), along the wall (y), z up; at the hook's y, its side's wall
-module on_wall(h) translate([h[0] * case_w / 2, h[1], 0]) scale([-h[0], 1, 1]) children();
-module hook(h) on_wall(h) {
-  s0 = wall / 2 - 0.05;                                 // 0.05 into the skirt (its inside is wall / 2 in)
-  zt = z_deck_under + 0.05;                             // and into the plate
-  prof = [[s0, hook_bot], [s0, zt], [hook_s_w - (deck_gap + 0.05) * tan(overhang), zt],
-          [hook_s_in, hook_top(hook_s_in)], [hook_s_in, hook_bot]];
-  // the neck: the whole profile, hook_neck wide
-  rotate([90, 0, 0]) linear_extrude(hook_neck, center = true) polygon(prof);
-  // the head: from its outer face in, its foot's outer edge chamfered, its ends tapering in at `overhang` above the
-  // outer face's top
-  intersection() {
-    rotate([90, 0, 0]) linear_extrude(hook_len, center = true)
-      polygon([[hook_s_out - 0.01, hook_bot + hook_lead], [hook_s_out + hook_lead, hook_bot], [hook_s_in, hook_bot],
-               [hook_s_in, hook_top(hook_s_in)], [hook_s_out - 0.01, hook_top(hook_s_out - 0.01)]]);
-    // (its apex 0.05 over the outer face's top and 0.01 inside the neck: on them it left non-manifold edges at 45)
-    let(zt = hook_top(hook_s_out) + 0.05, n = hook_neck / 2 - 0.01, w = hook_len / 2 - n) rotate([90, 0, 90]) translate([0, 0, -1]) linear_extrude(wall + 3)
-      polygon([[-hook_len / 2, hook_bot - 1], [hook_len / 2, hook_bot - 1], [hook_len / 2, zt - w / tan(overhang)], [n, zt],
-               [n, zt + 1], [-n, zt + 1], [-n, zt], [-hook_len / 2, zt - w / tan(overhang)]]);
-  }
-}
-// its slot in the tub's tongue (and the tongue's foot under the round's end), from hook_play under the head up
-module hook_slot(h) on_wall(h) translate([wall / 2 + seam_fit - 0.1, -hook_neck / 2 - hook_play, hook_slot_bot])
-  cube([wall / 2 - seam_fit + tub_round_in + 0.2, hook_neck + 2 * hook_play, case_h]);
-// the head's footprint for check_fit.py ([[x0, y0], [x1, y1]]): nothing on the board under it taller than hook_limit
-function hook_rect(h) = let(x0 = h[0] * (case_w / 2 - hook_s_in), x1 = h[0] * (case_w / 2 - hook_s_out))
-  [[min(x0, x1), h[1] - hook_len / 2], [max(x0, x1), h[1] + hook_len / 2]];
-hook_limit = hook_lift - 0.3;
 
-// ---- the island (2026-10-23, case/SHELL.md "The island") ----
-// Its plan at its foot (the decks' face): the screen block, isl_in in from the sides and to the joint across the
-// step, a spine at each end, and the ears on the side walls (out past the outline: the case's outside trims them).
-// [corner, its radius] counter-clockwise: convex isl_r, concave isl_fillet, the ear's outer two (past the
-// outline) 2.0
-isl_x = case_w / 2 - isl_in;  ear_x = case_w / 2 + 5;
-isl_plan = [
-  [[-isl_x, -joint_y], isl_r], [[-spine_w / 2, -joint_y], isl_fillet], [[-spine_w / 2, -spine_end], isl_r], [[spine_w / 2, -spine_end], isl_r],
-  [[spine_w / 2, -joint_y], isl_fillet], [[isl_x, -joint_y], isl_r], [[isl_x, ear_y[0]], isl_fillet], [[ear_x, ear_y[0]], 2.0],
-  [[ear_x, ear_y[1]], 2.0], [[isl_x, ear_y[1]], isl_fillet], [[isl_x, joint_y], isl_r], [[spine_w / 2, joint_y], isl_fillet],
-  [[spine_w / 2, spine_end], isl_r], [[-spine_w / 2, spine_end], isl_r], [[-spine_w / 2, joint_y], isl_fillet], [[-isl_x, joint_y], isl_r],
-  [[-isl_x, ear_yl[1]], isl_fillet], [[-ear_x, ear_yl[1]], 2.0], [[-ear_x, ear_yl[0]], 2.0], [[-isl_x, ear_yl[0]], isl_fillet]];
-isl_arc_n = 12;
-// The plan's outline offset d inwards (negative: outwards) at height z, as points: each corner's arc about its
-// own centre (a convex corner's radius less d, a concave one's more), the straight runs between them. Every
-// ring has the same points, so the rings loft, and the corners follow the edge's profile (all the corners
-// are square)
-function isl_ring(d, z, plan = isl_plan, arc_n = isl_arc_n) = let(n = len(plan)) [for (i = [0:n - 1]) let(
-    a = plan[(i + n - 1) % n][0], b = plan[i][0], c = plan[(i + 1) % n][0], r = plan[i][1],
-    u = (b - a) / norm(b - a), v = (c - b) / norm(c - b), nu = [u[1], -u[0]], nv = [v[1], -v[0]],
-    convex = u[0] * v[1] - u[1] * v[0] > 0, o = convex ? b - r * (nu + nv) : b + r * (nu + nv),
-    t0 = atan2(nu[1], nu[0]), t1r = atan2(nv[1], nv[0]),
-    t1 = convex ? (t1r < t0 ? t1r + 360 : t1r) : (t1r > t0 ? t1r - 360 : t1r))
-  for (k = [0:arc_n]) let(t = t0 + (t1 - t0) * k / arc_n, nn = [cos(t), sin(t)], p = convex ? o + r * nn : o - r * nn)
-    [p[0] - d * nn[0], p[1] - d * nn[1], z]];
-module isl2d(d = 0) polygon([for (p = isl_ring(d, 0)) [p[0], p[1]]]);
-// a solid lofted through rings that needn't be convex (its caps one face each)
-module loft_nc(rings) let(m = len(rings[0]), n = len(rings) - 1) polyhedron(
-  points = [for (r = rings) each r],
-  faces = concat([[for (i = [0:m - 1]) i]], [[for (i = [m - 1:-1:0]) n * m + i]],
-                 [for (k = [0:n - 1], i = [0:m - 1]) let(a = k * m + i, b = k * m + (i + 1) % m) each [[b, a, a + m], [b, a + m, b + m]]]));
-// Its edge, [z, inset from the foot]: the wedge from the decks' underside out wedge_out to its top wedge_v under
-// the decks' face, straight up from there to the step's foot, and the step's arc and chamfer (step_levels) to
-// the screen face
-wedge_n = round(wedge_out / 0.05);   // (isl_levels: with step_levels, under "the island" below)
-// the island and the joint's clearance round it, for cutting the decks: deck_gap off its foot, none off its wedge
-// (the 45 degree faces touch), and under the wedge straight down
-clear_top = deck_face - wedge_v - deck_gap;             // where the clearance's 45 degree face meets its straight one
-clear_levels = concat([[z_seam - 1, -wedge_out]],
-  [for (k = [0:round((clear_top - z_deck_under) / 0.05)]) let(z = z_deck_under + 0.05 * k) [z, -(deck_face - wedge_v - z)]],
-  [[case_h + 1, -deck_gap]]);
-// Under the decks' face the island's wedge (and its clearance) stays 1.35 inside the outline: at the ear's ends it
-// would otherwise come out through the arms' round. There the ear's end is straight down the wall
-isl_clip_in = 1.35;  isl_clip_z = 7.3;
-module isl_clip() difference() {
-  translate([-case_w, -case_l, -5]) cube([2 * case_w, 2 * case_l, 30]);
-  translate([0, 0, -6]) linear_extrude(isl_clip_z + 6) difference() { square([4 * case_w, 4 * case_l], center = true); offset(delta = -isl_clip_in) outline2d(); }
-}
-// the case's outside at the screen's height: the ear's side (the old top piece's), the skirt down the back's round
-module isl_shell() rr_loft(concat(skirt_levels, [for (k = [round_n:-1:0]) [case_h - face_r * k / round_n, edge_in(face_r * k / round_n, face_r)]]));
-module isl_outer() intersection() {
-  isl_shell();
-  union() {
-    intersection() { loft_nc([for (l = isl_levels) isl_ring(l[1], l[0])]); isl_clip(); }
-    // the ears' walls, down to the seam (its step's foot is above it)
-    // (eps inside its ends: on them it would lie in the loft's straight faces)
-    translate([in_x - eps, ear_y[0] + eps, z_bot - 1]) cube([wall + 1, ear_y[1] - ear_y[0] - 2 * eps, deck_face - z_bot + 1]);
-    translate([-in_x - wall - 1 + eps, ear_yl[0] + eps, z_bot - 1]) cube([wall + 1, ear_yl[1] - ear_yl[0] - 2 * eps, deck_face - z_bot + 1]);
-  }
-}
-module isl_clear() {
-  intersection() { loft_nc([for (l = clear_levels) isl_ring(l[1], l[0])]); isl_clip(); }
-  translate([case_w / 2 - isl_clip_in - eps, ear_y[0] - deck_gap, z_seam - 1]) cube([isl_clip_in + 1, ear_y[1] - ear_y[0] + 2 * deck_gap, case_h]);
-  translate([-case_w / 2 - 1, ear_yl[0] - deck_gap, z_seam - 1]) cube([isl_clip_in + 1 + eps, ear_yl[1] - ear_yl[0] + 2 * deck_gap, case_h]);
-}
-// its inside: isl_wall inside its foot along the sides, the wall's inside at the ear, joint_w (the old top piece's
-// band) across the step and round the spines
-module isl_inside2d() intersection() { inner2d(); isl2d(isl_wall); offset(delta = -joint_w) top_region2d(); }
-// the wedge's corner (round the island's corner at the step, wedge_out out) at |y| = y: how far it is from the
-// outline (the groove round the cores must stay clear of it)
-function wedge_corner_s(y) = let(c = [isl_x - isl_r, joint_y - isl_r], r = isl_r + wedge_out)
-  abs(y) - c[1] >= r ? case_w : case_w / 2 - (c[0] + sqrt(r * r - (abs(y) - c[1]) * (abs(y) - c[1])));
-// the joint's plan for check_fit.py (seat 1's end, as bounding rectangles: across the step each side of the spine,
-// down the spine's sides and round its end; and the side walls' strips under the arms, the island's wedge and its
-// wall, all round, less the ears): nothing under them taller than the decks allow
-joint_zones = let(o = wedge_out + 0.01, sw = spine_w / 2)
-  [[[sw - joint_w, -(joint_y + o)], [in_x, -(joint_y - joint_w)]], [[-in_x, -(joint_y + o)], [-(sw - joint_w), -(joint_y - joint_w)]],
-   [[sw - joint_w, -(spine_end + o)], [sw + o, -(joint_y - joint_w)]], [[-(sw + o), -(spine_end + o)], [-(sw - joint_w), -(joint_y - joint_w)]],
-   [[-(sw + o), -(spine_end + o)], [sw + o, -(spine_end - joint_w)]]];
-function rot_rect(r) = [rot180(r[1]), rot180(r[0])];
-side_zones = let(o = wedge_out + 0.01, x = isl_x - isl_wall)
-  [[[-case_w / 2, -(joint_y + o)], [-x, ear_yl[0]]], [[-case_w / 2, ear_yl[1]], [-x, joint_y + o]],
-   [[x, -(joint_y + o)], [case_w / 2, ear_y[0]]], [[x, ear_y[1]], [case_w / 2, joint_y + o]]];
 
 ss_vent = 1.25;           // each Start/Select dome's 0.5 mm vent, this far towards seat 1 from its centre
 // what the floor's ribs keep clear of under the board: [x0, y0, x1, y1]
@@ -1297,6 +926,11 @@ module loft(rings) let(m = len(rings[0]), n = len(rings) - 1) polyhedron(
     [for (i = [1:m - 2]) [0, i, i + 1]],                                  // the first ring's cap
     [for (i = [1:m - 2]) [n * m, n * m + i + 1, n * m + i]],              // the last's
     [for (k = [0:n - 1], i = [0:m - 1]) let(a = k * m + i, b = k * m + (i + 1) % m) each [[b, a, a + m], [b, a + m, b + m]]]));
+// a solid lofted through rings that needn't be convex (its caps one face each): the top's slopes
+module loft_nc(rings) let(m = len(rings[0]), n = len(rings) - 1) polyhedron(
+  points = [for (r = rings) each r],
+  faces = concat([[for (i = [0:m - 1]) i]], [[for (i = [m - 1:-1:0]) n * m + i]],
+                 [for (k = [0:n - 1], i = [0:m - 1]) let(a = k * m + i, b = k * m + (i + 1) % m) each [[b, a, a + m], [b, a + m, b + m]]]));
 // a solid lofted through the case's outline at each level [z, inset], from the first level to the last
 module rr_loft(levels) loft([for (l = levels) rr_pts(l[1], l[0])]);
 // [z, inset] up the back's round every 0.1 from z0 to z1 (both ends included); grow: that much more in
@@ -1313,13 +947,12 @@ module tub() difference() {
       // 2026-10-22), the wall's inside above it
       translate([0, 0, floor_t]) linear_extrude(z_seam - floor_t + 0.01) inner2d(-tub_round_in);
     }
-    // the tongue: the wall's inner half, up past the seam inside the skirts, its keys (tabs into the decks'
-    // arms, the decks' corner posts) and its grip ribs
+    // the tongue: the wall's inner half, up past the seam inside the skirts, its keys (tabs into the top's
+    // side walls) and its grip ribs
     tongue();
     for (k = keys) key_tab(k);
-    for (sx = [-1, 1], sy = [-1, 1]) post(sx, sy);
     for (g = grips) grip(g);
-    // the tab that carries the USB-C opening's lower half, up from the seam into the top piece's notch,
+    // the tab that carries the USB-C opening's lower half, up from the seam into the top's notch,
     // its outside the round's (0.01 in from it: its foot overlaps the wall under the seam, and an outer
     // face flush with the wall's would meet it exactly along the seam)
     intersection() { usb_notch(usb_fit, 0.1); tub_outside(case_h, 0.01); }
@@ -1353,11 +986,8 @@ module tub() difference() {
   for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
   // the cell's pocket in the floor, inside its hole's outline
   translate([0, 0, floor_t - cell_pocket]) linear_extrude(cell_pocket + 0.01) cell_hole2d(-cell_pocket_fit);
-  // the tongue's slots round the laps, at each end of each ear, and the hooks' slots
-  for (l = laps) lap_slot_cut(l);
-  for (h = hooks) hook_slot(h);
   // USB-C: the opening's lower half, in the tab; over the tab the tongue stops either side of the
-  // top piece's skirt, which comes down to the opening's centre there (usb_fit along the wall)
+  // top's skirt, which comes down to the opening's centre there (usb_fit along the wall)
   usb_opening();
   translate([in_x - 1, usb_y - usb_notch_w / 2 - usb_fit, usb_zc - 0.11]) cube([wall + 1, usb_notch_w + 2 * usb_fit, case_h]);
   // the slot the board's tab drops into
@@ -1367,9 +997,9 @@ module tub() difference() {
 
 usb_zc = z_top_cu + usb_h / 2;   // the port's centre
 usb_open_x = [in_x - 1, in_x + wall + 1];   // the opening's cut, through the whole wall
-// the notch in the island's skirt under the port (fit 0: as cut from the island) or the tub's
+// the notch in the top's skirt under the port (fit 0: as cut from the top) or the tub's
 // tab in it (fit, lift: its clearance each side and above): full width in the wall's inner half,
-// usb_step narrower and lower in its outer half, so the island frames the tab outside (the tab
+// usb_step narrower and lower in its outer half, so the top frames the tab outside (the tab
 // starts 0.01 under the seam, in the tub's wall, and 0.01 outside the wall's inside, in the tongue: a solid
 // only touching it leaves non-manifold edges)
 module usb_notch(fit = 0, lift = 0) let(o = fit == 0 ? 0.01 : -0.01, w = usb_notch_w - 2 * fit, dn = fit == 0 ? 1 : 0.01) {
@@ -1421,51 +1051,27 @@ module ss_cut(h, face = cut_face) {
 }
 module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_arm_w, dpad_arm_l); }
 
-// ---- the island (the top piece): the screen block, its spines and the ear; printed face down ----
-// Its outside is smooth solids, not 0.1 mm slabs (2026-10-22): slabs put their flat faces on the
-// slicer's planes, and it printed their steps unevenly (row 9 on the tub, 4df3f96). Every face here
-// is a ruled surface between levels every 0.05 down its edge and the rounds, so the slicer meets the
-// real slope. Since 2026-10-23 (the island) its edge is one loft of its plan's offsets (isl_ring), the step's
-// profile all round, and at the ear the case's side at the screen's height (isl_shell)
-z_round0 = deck_face - face_r;                          // the rounds start here (the step's is shallower)
+// ---- the top (the one piece: the band across the case at the screen's height, the ends); printed face down ----
+// Its outside is smooth solids, not 0.1 mm slabs (2026-10-22): slabs put their flat faces on the slicer's planes, and
+// it printed their steps unevenly (row 9 on the tub, 4df3f96). Every face here is a ruled surface between levels every
+// 0.05 down its slope and the rounds, so the slicer meets the real surface
 z_bot = z_seam + seam_gap;                              // the skirts' bottom
-round_n = round(face_r / 0.05);  step_n = round(step_d / 0.05);
-// [z, how far in from the joint] up the step (step_in), from its foot at the deck's height (a little under
-// it, to overlap the prism below) to the screen face
-step_levels = concat([[deck_face - 0.01, 0]], [for (k = [step_n:-1:0]) [case_h - step_d * k / step_n, step_in(step_d * k / step_n)]]);
-isl_levels = concat([for (k = [0:wedge_n]) let(z = z_deck_under + wedge_out * k / wedge_n) [z, -(deck_face - wedge_v - z)]], step_levels);
 // Under the round's end the skirt follows the back's round in, down to its tip at z_bot (2026-10-22)
 skirt_levels = back_levels(z_bot, back_r);              // [z, inset] up the round, z_bot to back_r
+// the shallow pocket over J4 and the speaker's mated plug: not past j4_pocket_edge (3.3 in from the side, under the side
+// round) nor into the band's end (joint_w short of joint_y), round H3's boss
+j4_pocket_edge = case_w / 2 - 3.3;
 module j4_pocket2d() intersection() {
   difference() {
     for (r = [j4_body, j4_plug]) corners2d(r, grow = j4_pocket_grow);
     at(pins[2]) circle(d = boss_d);
   }
-  isl_inside2d();                                       // (which ends where the step's band starts)
+  translate([-case_w, -(joint_y - joint_w)]) square([case_w + j4_pocket_edge, 2 * (joint_y - joint_w)]);
 }
-module top() difference() {
-  union() {
-    difference() {
-      isl_outer();
-      // the inside, under the screen block, the spines and the ear: isl_wall inside the foot along the sides,
-      // joint_w (the old top piece's band) across the step and round the spines, the wall's inside at the ear
-      translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) isl_inside2d();
-      // the groove the tub's tongue slides up at the ears: the skirt's inner half, to the tongue's top
-      intersection() { skirt_groove(core = false); yband(ear_y[0] - 1, ear_y[1] + 1); }
-      intersection() { skirt_groove(core = false); yband(ear_yl[0] - 1, ear_yl[1] + 1); }
-      // where the tub's keys are, its wedge stops: the arms' pockets for them open on its foot
-      for (k = keys) key_wedge_cut(k);
-    }
-    // the ears' laps, in behind the arms' skirts
-    for (l = ear_laps) lap(l);
-    top_inner();
-  }
-  top_cuts();
-}
-// what the island carries inside it (shared with the one-piece top, top_unibody)
+// what the top carries inside it: the USB-C notch's roof, the side screws' bosses, the pinhole guides, the panel's frame
 module top_inner() {
   // over the USB-C notch the skirt's inner half stays, from the opening's centre up: the tongue
-  // stops either side of it, so it frames the opening's upper half and keys the island along the wall
+  // stops either side of it, so it frames the opening's upper half and keys the top along the wall
   translate([in_x - eps, usb_y - usb_notch_w / 2, usb_zc - eps]) cube([wall / 2 + 2 * eps, usb_notch_w, z_arm_tongue + seam_gap + 0.1 - usb_zc + eps]);
   // bosses down to the board top: with the tub's bosses they clamp it
   for (s = side_pins) at(s, z_top_cu) cylinder(d = boss_d, h = z_ceil - z_top_cu + 0.01);
@@ -1479,7 +1085,7 @@ module top_inner() {
   }
 }
 // and what is cut from it
-module top_cuts(j4 = true, pilots = side_pins) {
+module top_cuts() {
   // USB-C: the opening's upper half, and below it the notch the tub's tab fills
   usb_opening();
   usb_notch(0);
@@ -1489,7 +1095,7 @@ module top_cuts(j4 = true, pilots = side_pins) {
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_ceil - 1]) linear_extrude(top_t + 2) window();
   // pilot holes for the screws
-  for (s = pilots) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
+  for (s = side_pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
   // pinholes
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
   // the speaker (2026-10-22): a pocket over it spk_keep round its outline, and its grille, slots
@@ -1497,49 +1103,14 @@ module top_cuts(j4 = true, pilots = side_pins) {
   // rim round them stays solid for its front ring to seal on
   translate([0, 0, z_ceil - 0.01]) linear_extrude(spk_pocket + 0.01) spk2d(spk_keep);
   translate([0, 0, z_ceil]) linear_extrude(top_t + 1) grille2d();
-  // a shallow pocket over J4 and the speaker's mated plug, round H3's boss, inside the island's inside
-  if (j4) j4_pocket3d();
 }
+// (the pocket over J4 and the speaker's mated plug is part of the cavity, uni_cavity)
 module j4_pocket3d() translate([0, 0, z_ceil - 0.01]) linear_extrude(j4_pocket + 0.01) j4_pocket2d();
 
-// ---- a deck (sy: -1 seat 1's end, 1 seat 2's): printed face down ----
-// One part since 2026-10-24: each arm ends at an ear (the left one the right one turned round), so seat 2's deck is
-// seat 1's turned round (export.py checks it) and the kits carry one deck, printed twice. Each arm carries a hook
+// ---- an end (sy: -1 seat 1's, 1 seat 2's): what the top carries under the ends' plate, and its openings ----
+// Seat 2's end is seat 1's turned round (the end bosses, the clusters and Start/Select all are)
 function end_pin(sy) = sy < 0 ? pins[5] : pins[4];
-module deck(sy) {
-  deck_body(sy);
-  for (h = hooks) if (h[1] * sy > 0) hook(h);           // after the island's clearance, which would cut them
-}
-// its plan, past the case's outline and the island (intersect with the one, cut the other): its half of the
-// case, each arm to its ear (whose clearance cuts its end)
-module deck_plan2d(sy) let(L = 2 * case_l) union() {
-  translate([0, sy < 0 ? -L : ear_y[1]]) square([2 * case_w, sy < 0 ? L + ear_y[0] : L]);
-  translate([-2 * case_w, sy < 0 ? -L : ear_yl[1]]) square([2 * case_w, sy < 0 ? L + ear_yl[0] : L]);
-}
-module deck_body(sy) difference() {
-  union() {
-    difference() {
-      // its face and outside: the outline's round from the deck face, out to the case's outline,
-      // one smooth loft (as the island's and the tub's)
-      intersection() {
-        rr_loft(concat(skirt_levels, [for (k = [round_n:-1:0]) [deck_face - face_r * k / round_n, edge_in(face_r * k / round_n, face_r)]]));
-        translate([0, 0, z_bot - 1]) linear_extrude(deck_face - z_bot + 2) deck_plan2d(sy);
-      }
-      translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();   // under the plate
-    }
-    deck_inner(sy);
-  }
-  deck_cuts(sy);
-  // the groove the tub's tongue slides up (into the plate round the core, where the tongue leans in), the
-  // notches its corner posts key into and the pockets its keys key into
-  skirt_groove();
-  for (sx = [-1, 1]) post_notch(sx, sy);
-  for (k = keys) if (k[1] * sy > 0) key_pocket(k);
-  // the island, and the joint's clearance round it: deck_gap off its foot, the undercut over its wedge
-  isl_clear();
-}
-// what a deck carries under its plate (shared with the one-piece top, top_unibody)
-module deck_inner(sy) {
+module end_inner(sy) {
   // the walls that rest on the silicone pads (the pockets are cut below)
   // (the A/B/X/Y clover is solid between its pockets, where the faceplate leaves it open round
   // pinwheel ears: here the tab slots are cut into it and key the caps with the notch ribs)
@@ -1549,11 +1120,11 @@ module deck_inner(sy) {
   }
   for (c = [dpad1, dpad2]) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) dpad_wall2d();
   for (c = ss_centres) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) ss_frame2d();
-  // its boss, down to the board: the end screw pulls the deck onto the board
+  // its boss, down to the board: the end screw pulls the top onto the board
   at(end_pin(sy), z_top_cu) cylinder(d = boss_d, h = z_deck_under - z_top_cu + 0.01);
 }
 // and its buttons' openings, the pads' reliefs and its pilot
-module deck_cuts(sy) {
+module end_cuts(sy) {
   for (k = abxy_keys()) if (k[0][1] * sy > 0) at(k[0], retainer_bot - 0.01) rotate(k[1]) abxy_cut(case_h, k[2]);
   for (c = [dpad1, dpad2]) if (c[1] * sy > 0) at(c, retainer_bot - 0.01) dpad_cut(case_h);
   for (b = ss_buttons) if (b[2][1] * sy > 0) at(b[2], retainer_bot - 0.01) ss_cut(case_h);
@@ -1573,15 +1144,15 @@ module deck_cuts(sy) {
 }
 
 
-// ---- the one-piece top (a mock-up, 2026-10-24, on ref-design-unibody; case/SHELL.md is the island's) ----
-// Alex: "we're gonna go uni body for the top and print with pla support material. What does that look like". One
-// part instead of the island and the two decks: no wedge, lips, laps, hooks or build bars; it goes on the tub over
-// the tongue and the keys as the island and the decks did (the tub is unchanged). Printed with supports (Bambu
-// Support For PLA as their interface), so its outside need not keep to `overhang`: the side rounds are true arcs.
+// ---- the top: one part (case/SHELL.md; the one-piece mock-up of 2026-10-24, the design since 2026-10-25) ----
+// Alex: "we're gonna go uni body for the top and print with pla support material", and on 2026-10-25, after the viewer:
+// "make unibody main". One part instead of the island and the two decks (SHELL.md, "Rejected"): no wedge, lips, laps,
+// hooks or build bars; it goes on the tub over the tongue and the keys. Printed face down with Bambu Support For PLA as the
+// support interface, so its outside need not keep to `overhang`: the side rounds are true arcs.
 // The raised screen block is a band across the whole width (2026-10-25, Alex, after an x-ray showing that J1, J2,
 // J4, J5 and the speaker force a block out to the sides: "have the island extend fully to the left and right but try
 // to minimize its extension on the top and bottom"): at the screen's height from the left side wall to the right, so
-// the sides at the screen's height are the case's side profile (the round of face_r) and beyond the band the decks'.
+// the sides at the screen's height are the case's side profile (the round of face_r) and beyond the band the ends'.
 // Its two ends are the only edges, and each is the DS Lite's lower screen frame in section ("make an exact copy of
 // this curve structure and adapt it to our purpose"), measured from nintendo_ds_bottom_base.stl: a sharp top edge, and
 // from it ONE concave arc of radius 8.0 (rms 0.002 mm over its facets, on the right side, the left and the top)
@@ -1591,15 +1162,15 @@ module deck_cuts(sy) {
 // the side wall) are the slope's offset with a radius that grows with the height, 0 at the foot to 1.45 at the top
 // edge; ours has no plan corners, the band runs out to the side walls, where the DS's own frame has nothing to copy
 // (its base is cut flat at the deck's level, the slope's foot at the cut): the section is carried out over the side
-// round unchanged (each slice of the step is the decks' side section lifted by the profile's height), so the same
+// round unchanged (each slice of the step is the ends' side section lifted by the profile's height), so the same
 // curve shows in the side view and the step runs straight out and is cut by the case's side at both heights
 uni_ds_r = 8.0;  uni_ds_angle = 36;                      // the DS Lite's slope: its arc's radius, and its angle at the edge
 uni_ds_h = uni_ds_r * (1 - cos(uni_ds_angle));           // 1.528 (measured 1.523)
 uni_k = step_d / uni_ds_h;                               // the scale to ours (1.21)
 uni_r = uni_ds_r * uni_k;                                // the arc's radius here (9.69)
 uni_run = uni_r * sin(uni_ds_angle);                     // the slope's run, edge to foot (5.69)
-uni_skin = 0.7;           // the inside keeps this far under the slope (and under the decks' face over a pocket: below)
-uni_pocket_skin = 0.75;   // the decks' face over a pocket in their underside (uni_limit's slab: 0.05 under uni_skin)
+uni_skin = 0.7;           // the inside keeps this far under the slope (and under the ends' face over a pocket: below)
+uni_pocket_skin = 0.75;   // the ends' face over a pocket in their underside (uni_limit's slab: 0.05 under uni_skin)
 // What sets the ends: the panel's pocket (half its length 30.13): the top edge is 0.4 outside it, as the last pass
 // had it, which keeps the pocket's upper corner (0.8 under the face) 0.88 from the slope. J4, the FPC's fold and the
 // rest of the board's tall parts no longer reach it: the slope is gentle, so the inside's ceiling is still z_ceil
@@ -1611,10 +1182,10 @@ uni_arc_n = 36;           // the side rounds' levels (true quarter arcs, every 2
 uni_x_r = case_w / 2 - face_r;                           // where the side rounds start (35.9)
 // the case's outside up to a face at H: the skirt down the back's round, the wall, a true quarter arc of face_r
 module uni_shell(H) rr_loft(concat(skirt_levels, [for (k = [0:uni_arc_n]) let(a = 90 * k / uni_arc_n) [H - face_r + face_r * sin(a), face_r * (1 - cos(a))]]));
-// the slope's height over the decks' face at t out from the top edge (the DS's arc, scaled), and its slices'
+// the slope's height over the ends' face at t out from the top edge (the DS's arc, scaled), and its slices'
 // angles: from the edge (uni_ds_angle) to the foot (0)
 function uni_h(t) = t <= 0 ? step_d : t >= uni_run ? 0 : uni_r * (1 - cos(asin(sin(uni_ds_angle) - t / uni_r)));
-// the decks' section (the side rounds and the flat between) lifted by h, out past the outline for the case's shell
+// the ends' section (the side rounds and the flat between) lifted by h, out past the outline for the case's shell
 // to cut: each slice of the step
 function uni_section(h) = let(cz = deck_face - face_r + h, zb = deck_face - face_r - 1, n = 18)
   concat([[-(uni_x_r + face_r + 0.5), zb]],
@@ -1638,7 +1209,7 @@ module uni_outer() {
   }
 }
 // the inside's limit under the slope: its arc at radius uni_r + uni_skin about the same centre (uni_foot from the
-// middle, uni_r over the decks' face), to where it meets the face's offset (uni_skin under it). Its levels,
+// middle, uni_r over the ends' face), to where it meets the face's offset (uni_skin under it). Its levels,
 // [z, how far in from the foot]: straight down below the arc, the arc, the face's offset
 uni_lim_phi = acos((deck_face + uni_r - case_h + uni_skin) / (uni_r + uni_skin));    // where the arc meets the face's offset
 uni_limit_levels = concat([[z_seam - 2, 0]],
@@ -1651,16 +1222,16 @@ function uni_lim(y) = let(d = uni_foot - abs(y), rs = uni_r + uni_skin, s = d / 
 // the distance from a point [y from the middle, z] in the section to the band's outside (the face, the slope's arc)
 function uni_dist(p) = let(y = abs(p[0]))
   min(min([for (k = [0:200]) let(t = uni_run * k / 200) norm([uni_edge + t - y, deck_face + uni_h(t) - p[1]])]), y < uni_edge ? case_h - p[1] : 99);
-// under the band the inside stays uni_skin under the slope and the face; elsewhere under the decks' face uni_pocket_skin
+// under the band the inside stays uni_skin under the slope and the face; elsewhere under the ends' face uni_pocket_skin
 module uni_limit() {
   translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_pocket_skin - z_seam + 2]);
   loft_nc([for (l = uni_limit_levels) uni_rect(l[1], l[0])]);
 }
-// The inside under the side rounds (2026-10-25): the decks' round (face_r) keeps uni_skin of plastic square to the
+// The inside under the side rounds (2026-10-25): the ends' round (face_r) keeps uni_skin of plastic square to the
 // surface, so the inside's upper outer corner (the hollow's wall at the inner outline, 2.0 in, and its ceiling) was
 // 0.56 to 0.59 under it where the slope's ceiling meets the round (y 33 to 35, 0.58). The inside is cut by the round's
 // offset: the same arcs' centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is a
-// slab of those sections: the band's, the slope's two sides, and the decks' beyond the foot. It reaches down
+// slab of those sections: the band's, the slope's two sides, and the ends' beyond the foot. It reaches down
 // past the seam so it cuts nothing but the inside's top
 uni_in_r = face_r - uni_skin - 0.01;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs)
 function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
@@ -1674,7 +1245,7 @@ module uni_in_limit() {
   mirror([0, 1, 0]) translate([0, 0.003, 0]) uni_slope(inner = true);
   for (m = [0, 1]) mirror([0, m, 0]) translate([0, case_l, 0]) rotate([90, 0, 0]) linear_extrude(case_l - uni_foot + 0.01) polygon(uni_isection(0));
 }
-// The skirts' groove round the decks' ends (2026-10-25): its upper outer corner stood 0.47 under the round (the skirt is
+// The skirts' groove round the ends (2026-10-25): its upper outer corner stood 0.47 under the round (the skirt is
 // skirt_t thick horizontally, and the round is 43 degrees there). The tub's tongue there has the chamfer core_lead (0.45)
 // at its tip and is 0.1 lower, and the groove's outer wall is filled to follow that chamfer 0.1 off it (normal to it:
 // uni_tip_clear), as a 45 degree ramp from where it leaves the groove's wall (0.25 off the tongue) up to the groove's
@@ -1683,15 +1254,16 @@ uni_tip_clear = 0.1;
 uni_ramp_h = uni_tip_clear * sqrt(2);                    // that clearance measured across the case, on a 45 degree face
 function uni_groove_out(z, zt) = max(groove_in(z, deck_face), wall / 2 + seam_fit - uni_ramp_h + (z - (zt - core_lead)));
 function uni_groove_levels(zt) = [for (l = groove_levels(deck_face, zt)) [l[0], uni_groove_out(l[0], zt), l[2]]];
+// the skirts' groove over the tongue: round the ends (the filled groove above) and along the side walls under the band
 module uni_skirt_groove() {
   intersection() { ring_loft(uni_groove_levels(z_deck_tongue)); y_out(tongue_y - tongue_y_fit); }
-  skirt_groove(core = false);
+  intersection() { ring_loft(groove_levels(deck_face, z_arm_tongue)); y_in(tongue_y + tongue_y_fit); }
 }
 // its checks: the filled wall keeps its skin (uni_groove_skin, square to the round) at every level, and keeps the
 // tongue's tip uni_tip_clear off (its chamfer: uni_ramp_h across, and its top's corner by distance) and, where the ramp isn't there, the groove's
 // own seam_fit
 uni_groove_skin = 0.65;
-for (l = uni_groove_levels(z_deck_tongue)) {
+if (!tune) for (l = uni_groove_levels(z_deck_tongue)) {
   assert(uni_rskin(case_w / 2 - l[1], l[0], deck_face) >= uni_groove_skin, "the skirts' groove is too near the side round");
   assert(let(g = tongue_out(min(l[0], z_deck_tongue), deck_face, z_deck_tongue) - l[1])
          l[0] <= z_deck_tongue ? g >= uni_ramp_h - 1e-6 : norm([g, l[0] - z_deck_tongue]) >= uni_tip_clear - 1e-6,
@@ -1701,13 +1273,13 @@ for (l = uni_groove_levels(z_deck_tongue)) {
 // the distance from a point [x from the middle, z] in the section where the surface's face is at H, to the side round
 // (and to the flat face above the round's start)
 function uni_rskin(x, z, H) = x <= uni_x_r ? H - z : z >= H - face_r ? face_r - norm([x - uni_x_r, z - (H - face_r)]) : case_w / 2 - x;
-// the pocket in the decks' underside over U6 (1.75 tall: 0.15 under the decks' underside without it), up to
-// uni_pocket_skin under their face, 0.5 round it (seat 1's end: U6 is at y -39.4 .. -33.4, where the old spine was)
+// the pocket in the ends' underside over U6 (1.75 tall: 0.15 under the ends' underside without it), up to
+// uni_pocket_skin under their face, 0.5 round it (seat 1's end: U6 is at y -39.4 .. -33.4, in the spine between the clusters)
 u6_box = [[-2.45, -39.4], [2.45, -33.4]];
 uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]]];
 module uni_cavity() intersection() {
   union() {
-    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the decks' face
+    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the ends' face
     intersection() {
       union() {
         translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) intersection() {   // under the band (0.05 in: off its foot)
@@ -1721,42 +1293,43 @@ module uni_cavity() intersection() {
   }
   uni_in_limit();
 }
-module top_unibody() difference() {
+module top() difference() {
   union() {
     difference() {
       uni_outer();
       uni_cavity();
-      // the groove the tub's tongue slides up, all round; the corner posts' notches and the keys' pockets
+      // the groove the tub's tongue slides up, all round, and the keys' pockets
       uni_skirt_groove();
-      for (sx = [-1, 1], sy = [-1, 1]) post_notch(sx, sy, true);
       for (k = keys) key_pocket(k);
     }
     top_inner();
-    for (sy = [-1, 1]) deck_inner(sy);
+    for (sy = [-1, 1]) end_inner(sy);
   }
-  top_cuts(j4 = false);
-  for (sy = [-1, 1]) deck_cuts(sy);
+  top_cuts();
+  for (sy = [-1, 1]) end_cuts(sy);
 }
 // its checks: the pocket's upper corner and the side screws' pilots 0.7 from the outside, the board's tall parts (their
 // 3D models' boxes, check_fit.py) 0.3 under the inside's limit (positions.json's own margin under a ceiling), the
-// speaker's worst case 0.15 under it (as on the island), its grille in the flat face, the side screws under it, U6 in
+// speaker's worst case 0.15 under it, its grille in the flat face, the side screws under it, U6 in
 // its pocket, the buttons' wells clear of the foot
 uni_j4_box = [[29.3, -30.82], [34.5, -23.17]];          // J4's 3D model's box, 3.4 tall
-assert(abs(uni_h(0) - step_d) < 1e-6 && abs(uni_h(uni_run)) < 1e-6, "the slope's profile");
-assert(uni_dist([(panel_l + panel_fit) / 2, case_h - face_t]) >= uni_skin, "the skin over the panel's pocket's edge is too thin");
-assert(min(z_ceil, uni_lim(uni_j4_box[0][1])) - (z_top_cu + j4_h) >= 0.3, "J4 isn't under the band");
-assert(min(z_ceil, uni_lim(fpc_y(-1.5) - 0.3)) - (z_glass + 0.5) >= 0.3, "the FPC's fold isn't under the band");   // the fold's outer reach, 1.5 past the glass
-assert(z_ceil + spk_pocket - (z_top_cu + spk_h_max) >= 0.15, "the speaker stands under the band");      // (in its pocket)
-assert(spk_pos[0] + spk[0] / 2 - grille_in <= uni_x_r - 0.1 && spk_pos[1] + spk[1] / 2 <= uni_edge - 1, "the speaker's grille isn't in the band's flat face");
-for (s = side_pins) {
-  assert(abs(s[0]) + screw_pilot / 2 + 1.0 <= uni_x_r && uni_dist([abs(s[1]) + screw_pilot / 2, case_h - 0.8]) >= uni_skin, "a side screw's pilot is too near the band's outside");
+if (!tune) {   // (the fit kit's tuning slices move the ends' face, and with it the slope: they skip these)
+  assert(abs(uni_h(0) - step_d) < 1e-6 && abs(uni_h(uni_run)) < 1e-6, "the slope's profile");
+  assert(uni_dist([(panel_l + panel_fit) / 2, case_h - face_t]) >= uni_skin, "the skin over the panel's pocket's edge is too thin");
+  assert(min(z_ceil, uni_lim(uni_j4_box[0][1])) - (z_top_cu + j4_h) >= 0.3, "J4 isn't under the band");
+  assert(min(z_ceil, uni_lim(fpc_y(-1.5) - 0.3)) - (z_glass + 0.5) >= 0.3, "the FPC's fold isn't under the band");   // the fold's outer reach, 1.5 past the glass
+  assert(z_ceil + spk_pocket - (z_top_cu + spk_h_max) >= 0.15, "the speaker stands under the band");      // (in its pocket)
+  assert(spk_pos[0] + spk[0] / 2 - grille_in <= uni_x_r - 0.1 && spk_pos[1] + spk[1] / 2 <= uni_edge - 1, "the speaker's grille isn't in the band's flat face");
+  for (s = side_pins) {
+    assert(abs(s[0]) + screw_pilot / 2 + 1.0 <= uni_x_r && uni_dist([abs(s[1]) + screw_pilot / 2, case_h - 0.8]) >= uni_skin, "a side screw's pilot is too near the band's outside");
+  }
+  assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3 && uni_pocket_skin >= uni_skin, "no room for U6 in its pocket");
+  // the inside's upper outer corner (the hollow's wall at the inner outline, up to its ceiling or the round's offset,
+  // whichever is lower) keeps uni_skin square to the side round, along the slope and under the band
+  for (k = [0:uni_s_n]) let(t = uni_run * k / uni_s_n, h = uni_h(t), H = deck_face + h, xw = case_w / 2 - wall,
+      zc = min(min(z_ceil, uni_lim(uni_edge + t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
+    assert(uni_rskin(xw, zc, H) >= uni_skin - 1e-3, "the inside's corner is too near the side round");
 }
-assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3 && uni_pocket_skin >= uni_skin, "no room for U6 in its pocket");
-// the inside's upper outer corner (the hollow's wall at the inner outline, up to its ceiling or the round's offset,
-// whichever is lower) keeps uni_skin square to the side round, along the slope and under the band
-for (k = [0:uni_s_n]) let(t = uni_run * k / uni_s_n, h = uni_h(t), H = deck_face + h, xw = case_w / 2 - wall,
-    zc = min(min(z_ceil, uni_lim(uni_edge + t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
-  assert(uni_rskin(xw, zc, H) >= uni_skin - 1e-3, "the inside's corner is too near the side round");
 
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
 // the cell in its hole on the pocket's floor, and the speaker on the board (nominal sizes)
@@ -1875,25 +1448,8 @@ if (part == "3d") {
   color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
   color("#8f8f99") silicone();
   color("#4a4a56") translate([0, 0, explode]) top();
-  color("#5a5a68") translate([0, 0, explode * 0.8]) for (sy = [-1, 1]) deck(sy);
-  color("#e8e8ee") caps();
-}
-if (part == "3d_unibody") {
-  color("#3a3a44") tub();
-  color("#c9c9d1") cell3d();
-  color("#b8912e") speaker3d();
-  board3d();
-  color("#101014") translate([0, 0, z_glass]) linear_extrude(panel_t) square([panel_w, panel_l], center = true);
-  color("#8f8f99") silicone();
-  color("#4a4a56") translate([0, 0, explode]) top_unibody();
   color("#e8e8ee") caps();
 }
 if (part == "tub") tub();
 if (part == "top") translate([0, 0, case_h]) rotate([180, 0, 0]) top();         // printed face down
-// one deck (2026-10-24), seat 1's as built, printed face down, twice; seat 2's as built, in the same pose turned
-// round, for export.py's check that the two are the same part
-// the one-piece top (the mock-up): face up, as it sits on the case (its skirts' tips on the bed), and face down
-if (part == "top_unibody") translate([0, 0, -z_bot]) top_unibody();
-if (part == "top_unibody_down") translate([0, 0, case_h]) rotate([180, 0, 0]) top_unibody();
-if (part == "deck") translate([0, 0, deck_face]) rotate([180, 0, 0]) deck(-1);
-if (part == "deck_seat2") rotate(180) translate([0, 0, deck_face]) rotate([180, 0, 0]) deck(1);
+if (part == "top_up") translate([0, 0, -z_bot]) top();                          // face up, its skirts' tips on the bed

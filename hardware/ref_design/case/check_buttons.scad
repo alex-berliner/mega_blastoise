@@ -7,8 +7,8 @@ check = "none";
 dpad_dir = 0;
 which = "all";
 module seat1() translate([-case_w, -case_l, -5]) cube([2 * case_w, case_l - bay_l / 2 + 2, case_h + 10]);   // y up to the glass
-// the shell over the buttons: the top piece and seat 1's deck
-module shell() intersection() { seat1(); union() { top(); deck(-1); } }
+// the shell over the buttons: the top's seat 1 end
+module shell() intersection() { seat1(); top(); }
 module seat(p) intersection() { seat1(); children(); }
 
 if (check == "silicone_shell") intersection() { shell(); seat() silicone(); }
