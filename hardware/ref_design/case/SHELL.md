@@ -49,6 +49,24 @@ to our purpose" (a close-up render of the DS Lite's frame corner).
 Renders, sections, the DS measurements, slice and write-up are in the session's scratch folder (`jobs/band/`), not in
 this file.
 
+*The wall under the side round (2026-10-25).* Measured square to the outer surface, in sections every 1 mm along both sides
+(`uni_wall.py`; the USB-C opening, which breaks through the round by design, left out): the band was 0.56 to 0.59 thick
+under the DS curve and 0.47 along the decks.
+- **Under the slope: fixed, 0.71.** The inside's upper outer corner (the hollow's wall at the inner outline, up to its
+  ceiling) stood under the round where the slope meets it (y 33 to 35). The cavity is now cut by the round's offset (the
+  rounds' arcs at radius `face_r - uni_skin`, lifted with the slope as the outside is: `uni_in_limit`), so the wall is
+  `uni_skin` (0.7) all along the round there. Added 2.1 mm3 in four corners (z 6.8 to 7.55, |y| to 36.2); nothing removed; the
+  outside is identical (renders pixel for pixel, `images/unibody_wall_outside_*.png`); the band pass's fitcheck against the board is
+  unchanged (no collisions; J2 0.36, SW18/19 0.47, J4 0.66 at the least). An assert on the slope's slices holds the relation.
+- **Along the decks (|y| over 35.2): not fixed, 0.467.** It is the groove's upper outer corner (z 6.8, over the tongue's
+  top, 1.44 in from the outline) against the round, which is 43 degrees there: the skirt is `skirt_t` thick *horizontally*
+  (0.7), 0.47 square to the surface. It is also so on the island case's decks. The tongue sits 0.1 under the corner (the
+  seam_gap) and leans in with the groove, 0.25 off it, so there is no room to fill without the tub: filling to a 0.1
+  clearance everywhere gives 0.55, to 0.05 gives 0.60; cutting a 0.6 chamfer off the tongue's top corner (a tub change)
+  with 0.1 gives 0.65; a groove that follows the round's normal offset (0.7 all along) fails the tongue-tip assert
+  (`tip_min`, 0.25) because the tongue's tip would be gone at 6.7, so it needs a lower, redesigned tongue. Lowering the
+  tongue's top alone gains little (6.1 gives 0.60). Left as is until Alex decides; `uni_wall.py` holds 0.467 so it can't get worse.
+
 ## The island (2026-10-23)
 
 Alex, on where the screen block's side round came down into the decks' (the side blend of "The side

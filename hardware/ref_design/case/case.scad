@@ -1618,9 +1618,11 @@ function uni_section(h) = let(cz = deck_face - face_r + h, zb = deck_face - face
          [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + face_r * sin(a)), cz + face_r * cos(a)]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + face_r * sin(a), cz + face_r * cos(a)]],
          [[uni_x_r + face_r + 0.5, zb]]);
-module uni_slope() loft_nc([for (k = [-1:uni_s_n]) let(ph = uni_ds_angle * (1 - max(k, 0) / uni_s_n),
-                                                        t = k < 0 ? -0.02 : uni_r * (sin(uni_ds_angle) - sin(ph)))
-  [for (p = uni_section(k < 0 ? step_d : uni_h(t))) [p[0], uni_edge + t, p[1]]]]);
+// (inner: the section of the inside's limit, uni_isection, instead of the outside's)
+module uni_slope(inner = false) loft_nc([for (k = [-1:uni_s_n]) let(ph = uni_ds_angle * (1 - max(k, 0) / uni_s_n),
+                                                                     t = k < 0 ? -0.02 : uni_r * (sin(uni_ds_angle) - sin(ph)),
+                                                                     h = k < 0 ? step_d : uni_h(t))
+  [for (p = inner ? uni_isection(h) : uni_section(h)) [p[0], uni_edge + t, p[1]]]]);
 module uni_outer() {
   uni_shell(deck_face);
   intersection() {
@@ -1651,22 +1653,46 @@ module uni_limit() {
   translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_pocket_skin - z_seam + 2]);
   loft_nc([for (l = uni_limit_levels) uni_rect(l[1], l[0])]);
 }
+// The inside under the side rounds (2026-10-25): the decks' round (face_r) keeps uni_skin of plastic square to the
+// surface, so the inside's upper outer corner (the hollow's wall at the inner outline, 2.0 in, and its ceiling) was
+// 0.56 to 0.59 under it where the slope's ceiling meets the round (y 33 to 35, 0.58). The inside is cut by the round's
+// offset: the same arcs' centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is a
+// slab of those sections: the band's, the slope's two sides, and the decks' beyond the foot. It reaches down
+// past the seam so it cuts nothing but the inside's top
+uni_in_r = face_r - uni_skin - 0.01;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs)
+function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
+  concat([[-x, zb]],
+         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + uni_in_r * sin(a)), cz + uni_in_r * cos(a)]],
+         [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + uni_in_r * sin(a), cz + uni_in_r * cos(a)]],
+         [[x, zb]]);
+module uni_in_limit() {
+  rotate([90, 0, 0]) linear_extrude(2 * uni_edge, center = true) polygon(uni_isection(step_d));
+  uni_slope(inner = true);
+  mirror([0, 1, 0]) uni_slope(inner = true);
+  for (m = [0, 1]) mirror([0, m, 0]) translate([0, case_l, 0]) rotate([90, 0, 0]) linear_extrude(case_l - uni_foot + 0.01) polygon(uni_isection(0));
+}
+// the distance from a point [x from the middle, z] in the section where the surface's face is at H, to the side round
+// (and to the flat face above the round's start)
+function uni_rskin(x, z, H) = x <= uni_x_r ? H - z : z >= H - face_r ? face_r - norm([x - uni_x_r, z - (H - face_r)]) : case_w / 2 - x;
 // the pocket in the decks' underside over U6 (1.75 tall: 0.15 under the decks' underside without it), up to
 // uni_pocket_skin under their face, 0.5 round it (seat 1's end: U6 is at y -39.4 .. -33.4, where the old spine was)
 u6_box = [[-2.45, -39.4], [2.45, -33.4]];
 uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]]];
-module uni_cavity() {
-  translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the decks' face
-  intersection() {
-    union() {
-      translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) intersection() {   // under the band (0.05 in: off its foot)
-        inner2d(); square([2 * case_w, 2 * (uni_foot - 0.05)], center = true);
+module uni_cavity() intersection() {
+  union() {
+    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the decks' face
+    intersection() {
+      union() {
+        translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) intersection() {   // under the band (0.05 in: off its foot)
+          inner2d(); square([2 * case_w, 2 * (uni_foot - 0.05)], center = true);
+        }
+        j4_pocket3d();
+        for (p = uni_pockets) translate([p[0][0], p[0][1], z_seam - 1]) cube([p[1][0] - p[0][0], p[1][1] - p[0][1], deck_face - z_seam + 1]);
       }
-      j4_pocket3d();
-      for (p = uni_pockets) translate([p[0][0], p[0][1], z_seam - 1]) cube([p[1][0] - p[0][0], p[1][1] - p[0][1], deck_face - z_seam + 1]);
+      uni_limit();
     }
-    uni_limit();
   }
+  uni_in_limit();
 }
 module top_unibody() difference() {
   union() {
@@ -1699,6 +1725,11 @@ for (s = side_pins) {
   assert(abs(s[0]) + screw_pilot / 2 + 1.0 <= uni_x_r && uni_dist([abs(s[1]) + screw_pilot / 2, case_h - 0.8]) >= uni_skin, "a side screw's pilot is too near the band's outside");
 }
 assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3 && uni_pocket_skin >= uni_skin, "no room for U6 in its pocket");
+// the inside's upper outer corner (the hollow's wall at the inner outline, up to its ceiling or the round's offset,
+// whichever is lower) keeps uni_skin square to the side round, along the slope and under the band
+for (k = [0:uni_s_n]) let(t = uni_run * k / uni_s_n, h = uni_h(t), H = deck_face + h, xw = case_w / 2 - wall,
+    zc = min(min(z_ceil, uni_lim(uni_edge + t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
+  assert(uni_rskin(xw, zc, H) >= uni_skin - 1e-3, "the inside's corner is too near the side round");
 
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
 // the cell in its hole on the pocket's floor, and the speaker on the board (nominal sizes)
