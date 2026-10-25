@@ -47,10 +47,10 @@ ZIP = os.path.join(HERE, "print", "mega_blastoise_print_P1S.zip")
 README = os.path.join(HERE, "print_package_README.md")    # its <!-- printer --> part replaced
 PRINTER = """Each `.3mf` is a Bambu Studio project for a Bambu Lab P1S (0.4 mm nozzle, 0.20 mm
 Standard), arranged and already sliced: open it and send it, or re-slice it after
-changing anything. Two filaments: **Bambu PLA Basic in AMS slot 1** for every part, and **Bambu Support For PLA in AMS slot 2**,
-used only on a plate with the top (or a coupon cut from it) as the layers of its supports that touch the part. A plate with
-neither is PLA only: slot 2 is never touched and there is no prime tower. (`mega_blastoise_print_U1.zip` has the same
-plates for the Snapmaker U1.) Set the plate type in Bambu Studio to the plate you use.
+changing anything. Filaments as above: **Bambu PLA Basic in AMS slot 1** (every part) and **Bambu Support For PLA in AMS slot 2**
+(only on the plates with the top or a coupon cut from it, where it is the layers of the supports that touch the part, with a prime
+tower at the front right of the bed); the other plates are PLA only. (`mega_blastoise_print_U1.zip` has the same plates for the
+Snapmaker U1.) Set the plate type in Bambu Studio to the plate you use.
 
 Weights are what the slicer reports: the part and its supports, then the **purge** (the flush at each change and the prime
 tower, with the start line; it is part of the weight shown, not added to it) and the number of **filament changes**.
