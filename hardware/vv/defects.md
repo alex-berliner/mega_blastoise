@@ -82,7 +82,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: ERC, netlist and DRC trust design.py's pin numbers.
 - Check added or changed: VER-02 (check_pins.py fails when a reviewed pin's net changes).
 - Updated: REQ-MCU-04, DF-63
-- Status: FIXED (VER-02 passed 2026-10-24 at 76955d2; closes again when VER-02 re-runs at 684a609). J6 itself left in 86bf694.
+- Status: CLOSED (VER-02 PASS 2026-10-25 at 4a86173). J6 itself left in 86bf694.
 
 ### DEF-08: USB series resistors were 22 ohm; the RP2350 requires 27
 - Found: datasheet pin review (check_pins.py, pin_review/u4.json pins 66 and 67), design phase (4c4d846)
@@ -91,7 +91,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: values were never checked against a datasheet requirement before the pin review.
 - Check added or changed: VER-02 (passives.json checks each resistor's value and LCSC number). The stale comments are DEF-21's.
 - Updated: REQ-MCU-02
-- Status: FIXED (VER-02 passed 2026-10-24 at 76955d2; closes again when VER-02 re-runs at 684a609)
+- Status: CLOSED (VER-02 PASS 2026-10-25 at 4a86173)
 
 ### DEF-09: The ME6211's CE could rise above its VIN at a live plug-in
 - Found: datasheet pin review (pin_review/u3.json), design phase (4c4d846)
@@ -335,7 +335,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the seeded-fault run that tested check_trace was never committed (DEF-28's rule).
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
-- Status: FIXED (check_trace.py rewritten; closes again when VER-129 re-runs with the new seeded faults)
+- Status: CLOSED (check_trace.py rewritten; VER-129 PASS 2026-10-25 at 4a86173: 47 seeded faults caught, 12 of them with git history)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -369,9 +369,9 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: on the 3.5in panel (until 53e21c8), 3V3 +2%, R61 +1% and R60 -1%, U6's +4.5 mV offset and R52/R53 -1% gave about 61.2 mA a pin, 122.5 mA against 120 mA. With the ER-TFT024IPS-3 and R61 2.4k the same stack gives 39.0 mA a sink, 78.0 mA against the panel's 80 mA.
 - Root cause: the requirement and the sim used nominal parts.
 - Why missed: no tolerance sweep; the sim hard-codes its values (DEF-45).
-- Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, new); VER-62 at the firmware's maximum duty.
+- Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, new).
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
-- Status: FIXED (the panel and R61 changed in 53e21c8; closes when VER-137 passes on fresh evidence)
+- Status: CLOSED (the panel and R61 changed in 53e21c8; VER-137 PASS 2026-10-25: 78.0 mA worst case against 80 mA; the bench reading at EVT is VER-62 in G-EVT-03)
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
@@ -405,9 +405,9 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: at 76955d2, C1 10 uF x 5 V = 50 uC alone, and with no cell D5 charged the VSYS capacitors at plug-in (46.8 uF x 4.6 V = 215 uC): 265 uC against USB 2.0's 50 uC, carried as a written deviation in REQ-PWR-13. Since 2d1124d D5 is gone and VSYS sits behind the BQ24073's input switch: VBUS carries C1 alone, 10 uF and 50 uC at 5.0 V.
 - Root cause: bulk capacitance behind a diode, not a soft-start switch.
 - Why missed: VER-99 was carried as NOT_BUILT behind the hot-plug ODE, though a calculator settles it.
-- Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073); VER-71's scope picture shows U2's start-up current.
+- Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073).
 - Updated: REQ-PWR-13
-- Status: FIXED (no deviation at 684a609; closes when VER-99 passes on fresh evidence)
+- Status: CLOSED (no deviation at 684a609; VER-99 PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
 
 ### DEF-44: Requirements that failed by construction
 - Board: both

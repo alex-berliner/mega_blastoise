@@ -1,0 +1,13 @@
+# VER-147 screws
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py screws
+board top at z 3.80; M2 x 6 from a 1 mm counterbore: tip at z 7.00
+thread into the island's pilots 3.20 mm of 4.95; into the decks' 3.20 of 3.30
+engagement 1.6 x d (REQ-MEC-09: 4.0 mm, 2 x d); the island's pilots would take M2 x 7, the decks' at most 3.30 mm of thread
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

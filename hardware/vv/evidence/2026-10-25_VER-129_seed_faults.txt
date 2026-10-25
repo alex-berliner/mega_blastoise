@@ -1,6 +1,6 @@
 # VER-129 seed_faults
-DATE: 2026-10-24
-COMMIT: e7a26e8c1e592f880664a808e18f1d2173c6af58
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -10,22 +10,26 @@ ok  structure dangling DF id in a gate
 ok  structure action priority off the AIAG-VDA table
 ok  structure PASS without a commit
 ok  structure evidence header names another commit
-ok  structure row result disagrees with its evidence
 ok  structure a commit message as evidence
 ok  structure an analysis PASS with no saved output
-ok  report    evidence past its valid_days
+ok  structure a test (T) PASS with no saved output
 ok  structure CLOSED defect with no check
 ok  structure covers glob matching nothing
 ok  structure covers regex matching no line
 ok  structure covers part not in design.py
 ok  structure a 'both' check covering one board
 ok  structure CUT check with no reason
+ok  structure RETIRED check with no commit
+ok  structure a live requirement verified by a retired check
+ok  structure a live risk detected by a retired check
+ok  structure a gate criterion naming a retired check
 ok  structure vp_map status changed with no evidence
 ok  structure requirement with no Verified by
 ok  structure requirement APPROVED with no APPROVALS line
 ok  structure allocation on the wrong board
 ok  structure risk ACCEPTED with no APPROVALS line
 ok  structure approval line signed by Claude
+ok  structure a deferral with no scope phase
 ok  structure detects names a check the text does not
 ok  structure detection rating better than its checks
 ok  structure occurrence 2 with no built hardware
@@ -33,8 +37,23 @@ ok  structure DONE with no detects
 ok  structure an ORDER check no gate reaches
 ok  structure criterion with a bad board
 ok  structure new BOM under an old BOARD_REV
-ok  gate      design baseline differs from HEAD
-29 seeded faults, 29 caught
+ok  structure design baseline differs from HEAD
+ok  structure design baseline leaves out the routed board
+ok  gate      an advisory-only check made binding
+ok      clean clone exits 0
+ok  structure row result disagrees with its evidence (git)
+ok  report    evidence past its valid_days (git)
+ok  gate      R6: a routed-board script changed after a release with no change record (git)
+ok  gate      an acceptance used past its scope (git)
+ok  gate      a waiver Alex signed meets its criterion (git)
+ok  structure a waiver signed in a commit with a Claude trailer (git)
+ok  report    staleness through a part: cover (git)
+ok  gate      R5: an uncommitted change under passed evidence (git)
+ok  gate      a deferral used past its scope (git)
+ok  gate      an EVT unit's result at the DVT gate (git)
+ok  structure a covers glob met only by an untracked file (git)
+ok  structure a statement edited after its approval (git)
+47 seeded faults, 47 caught
 RESULT: PASS
 
 exit 0

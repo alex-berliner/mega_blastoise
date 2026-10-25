@@ -1,13 +1,13 @@
 # VER-04 drc
-DATE: 2026-10-24
-COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/ref_design/board/tools/check_pcb.py
-DRC: 4 violations, 0 unconnected, 0 schematic parity issues
+DRC: 9 violations, 0 unconnected, 0 schematic parity issues
      2 warning  silk_edge_clearance  (cosmetic)
-     1 warning  silk_over_copper  (cosmetic)
-     1 warning  silk_overlap  (cosmetic)
+     5 warning  silk_over_copper  (cosmetic)
+     2 warning  silk_overlap  (cosmetic)
 RESULT: PASS
 
 exit 0

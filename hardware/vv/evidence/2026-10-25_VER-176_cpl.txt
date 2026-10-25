@@ -1,0 +1,17 @@
+# VER-176 cpl
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py cpl
+fab.py writes each footprint's origin as Mid X / Mid Y
+origin more than 0.10 mm off its pads' centre: J1 1.50 mm, J2 0.95 mm, J3 0.23 mm, J4 0.95 mm
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

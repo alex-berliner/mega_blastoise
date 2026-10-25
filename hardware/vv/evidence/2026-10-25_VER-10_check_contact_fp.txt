@@ -1,6 +1,6 @@
 # VER-10 check_contact_fp
-DATE: 2026-10-24
-COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/membrane/tools/check_contact_fp.py hardware/prod_board/prod_board/prod.pretty/DSL_button_4ring.kicad_mod

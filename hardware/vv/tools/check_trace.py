@@ -32,7 +32,8 @@ that drifted off its design fails here, not only at a gate). Everything else is 
   R2  every requirement in scope lists a check for the board, and every listed check whose
       phase is at or before the gate has PASSED on fresh evidence;
   R3  every H-priority DFMEA row in scope is ACCEPTED for this phase or a later one, or
-      DONE with every one of its 'detects' checks at or before the gate PASSED, fresh;
+      DONE with every one of its 'detects' checks PASSED, fresh, and of a phase at or
+      before the gate (a row with a later-phase 'detects' check needs an acceptance);
   R4  no defect of the board is OPEN (order, case, EVT); every one is CLOSED (DVT, PVT);
   R5  no PASSED check covers a file with uncommitted changes;
   R6  every commit since the newest release record that touches the design (DESIGN_PATHS:

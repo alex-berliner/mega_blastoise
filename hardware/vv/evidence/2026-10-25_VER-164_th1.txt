@@ -1,0 +1,13 @@
+# VER-164 th1
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py th1
+cell hole x 71.3-125.3, y 66.8-103.8; worst-case cell 52 x 36; TH1 at (126.1, 86.0), 0.80 mm right of the hole's right edge (the case pushes the cell there)
+TH1 within the cell's span along the edge: True; air between cell and board edge 0 to 6.0 mm (a nominal-minus-2 cell) unless pushed
+back-side pads within 1 mm of the hole: none
+RESULT: PASS
+
+exit 0
+RESULT: PASS

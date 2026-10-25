@@ -1,30 +1,30 @@
 # VER-03 erc
-DATE: 2026-10-24
-COMMIT: 4af820bfb12ec1aa6bf3b073274825f7843e9e17
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ kicad-cli sch erc --severity-all --exit-code-violations -o {tmp}/erc.rpt hardware/ref_design/board/battler.kicad_sch
 Found 0 violations
-Saved ERC Report to /tmp/tmpivulm4iw/erc.rpt
+Saved ERC Report to /tmp/tmpxfwefw8m/erc.rpt
 --- report
-ERC report (2026-10-24T12:58:45, Encoding UTF8)
+ERC report (2026-10-25T16:44:13, Encoding UTF8)
 Report includes: Errors, Warnings, Exclusions
 
 ***** Sheet /
 
 ***** Sheet /USB_Charger/
 
-***** Sheet /Debug/
-
 ***** Sheet /Power/
-
-***** Sheet /Display/
 
 ***** Sheet /MCU/
 
-***** Sheet /Audio/
-
 ***** Sheet /MCU_Power/
+
+***** Sheet /Debug/
+
+***** Sheet /Display/
+
+***** Sheet /Audio/
 
 ***** Sheet /Buttons/
 

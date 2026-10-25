@@ -1,0 +1,14 @@
+# VER-137 backlight
+DATE: 2026-10-25
+COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py backlight
+R60 100000, R61 2400, sense 2.2 ohm: nominal 35.2 mA a sink, 70.3 mA in all
+worst case at 100% duty (3V3 +2%, R61 +1%, R60 -1%, offset +4.5 mV, sense -1%): 39.0 mA a sink, 78.0 mA in all (panel maximum 80 mA)
+two LEDs share each sink: 39.0 mA against 40 mA for the pair (one LED's share is not controlled: VER-62 measures it)
+at the minimum duty 29%: BL_REF 22.4 mV, offset +-20.1% a sink (limit +-25%, REQ-DSP-12)
+RESULT: PASS
+
+exit 0
+RESULT: PASS
