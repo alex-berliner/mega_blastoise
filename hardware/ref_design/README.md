@@ -30,9 +30,10 @@ which this folder never touches.
   lies on the board's top beside the screen and plays up through a grille in the face
 - One 403450 Li-ion cell (about 700 mAh) in a hole in the board, its bottom in a pocket in the tub's floor, BQ24073 power-path charger,
   RT9013 3V3 LDO, soft power on seat 1's Start button with MCU hold
-- Case 77.4 x 132.7 mm (a DS Lite's length), 9.55 mm at the screen and 7.7 mm at the button decks
-  (genuine DS Lite caps stand 1.41 mm proud there): a tub, a top piece and a deck at each end that
-  curve over the sides to one seam, built upside down, all printed without supports, held by six M2
+- Case 77.4 x 132.7 mm (a DS Lite's length), 9.55 mm at the screen and 7.7 mm at the button ends
+  (genuine DS Lite caps stand 1.41 mm proud there): a tub and one top piece, the whole face and sides, whose screen
+  block ends in the DS Lite's own slope; the top curves over the sides to one seam and is built upside down, printed
+  face down on Bambu Support For PLA (a second filament) as its supports' interface, the tub without supports, held by six M2
   screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 72.4 x 127.7 mm, is placed to
   its constraints ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md))
 
@@ -48,8 +49,8 @@ which this folder never touches.
 | `board/tools/` | the scripts that build and check all of it (below) |
 | `board/sim/` | ngspice simulation of the backlight current sinks (loop stability, accuracy, transients); `backlight_results.txt` is the last run |
 | `case/case.scad` | the case, and the source of every mechanical position |
-| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts (tub, top, deck), board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
-| `case/SHELL.md`, `case/BOARD_OUTLINE.md` | the shell's design (2026-10-21) and what it asks of the board |
+| `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts (tub, top), board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
+| `case/SHELL.md`, `case/BOARD_OUTLINE.md` | the shell's design (the one-piece top, 2026-10-25; [the island's and decks' notes](case/SHELL_ISLAND.md) are the rejected design's) and what it asks of the board |
 | `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
 | `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
 | `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |
@@ -95,7 +96,7 @@ The stages, by hand:
 
 ```sh
 cd hardware/ref_design
-python3 case/export.py --stl                 # case -> positions.json, DXF, tub/top/deck STLs
+python3 case/export.py --stl                 # case -> positions.json, DXF, tub/top STLs
 python3 case/check_buttons.py                # D-pad, A/B/X/Y, Start/Select with their silicone under the shell
 cd board
 python3 tools/build_sch.py                   # design.py -> schematic (tools/schwrite.py writes the sheets)
@@ -113,6 +114,7 @@ python3 tools/fab.py                         # gerbers, BOM, CPL, STEP, renders
 python3 ../case/check_fit.py                 # board inside the case?
 python3 ../case/fitkit.py                    # the printable fit kit (under a minute with Manifold)
 python3 ../case/check_manifold.py            # every printed part's mesh manifold (each edge on two faces)?
+python3 ../case/check_wall.py                # the top's wall under its side rounds thick enough (about 2 min)?
 python3 tools/pinmap.py                      # docs/pinmap.md
 python3 tools/strip_load.py                  # nets through each strip beside the cell's hole, ratsnest length (no routing)
 python3 ../viewer/build.py                   # the exploded 3D view (GitHub Pages, /assembly/)

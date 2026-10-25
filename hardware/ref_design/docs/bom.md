@@ -51,10 +51,10 @@ pads, locating holes and fiducials. The panel's ZIF connector
 | Speaker: INGHAi GSPK151035PN (LCSC C530539), 15 x 10 x 3.5 mm, 8 ohm, 0.5 W, 90 dB | 1 | 10 | its 35 mm leads with the 1.25 mm 2-pin plug (it plugs into J4, a PicoBlade header) | LCSC | about $0.42 |
 | DS Lite silicone pads (NDSL): D-pad and ABXY pieces | 2 sets | 20 sets | "For NDSL"; the Start/Select strip isn't used | AliExpress, HM Trading Store: 20 sets $2.45 + $5.84 shipping | $0.83 |
 | DS Lite button sets: cross and A/B/X/Y | 2 sets | 20 sets | DS Lite; the L/R and other pieces are spares | AliExpress, China Game Store: $0.88 a set + $12.23 shipping | $2.98 |
-| Screws: M2 x 8 self-tapping, wafer head (4 mm, about 1 mm thick), for plastic | 6 | 60 (spares) | | marketplace | estimate about $0.10 |
+| Screws: M2 x 6 self-tapping, wafer head (4 mm, about 1 mm thick), for plastic | 6 | 60 (spares) | | marketplace | estimate about $0.10 |
 | Thin double-sided tape for the panel, adhesive foam pad for the cell | | 1 roll, 1 sheet | | marketplace | estimate about $0.50 |
-| Case: tub and lid, printed at home | 1 | 10 | PETG or PLA, 47 cm3 (about 59 g) of filament | at $20-30 a kg | about $1.20-1.80 |
-| **Total** | | | | | **about $20.3-21.3** |
+| Case: tub and top, printed at home | 1 | 10 | PLA, 30 cm3 (about 47 g with the purge), and about 7 g of Bambu Support For PLA for the top's supports (a second filament) | PLA at $20-30 a kg, the support filament at about $40 a kg | about $1.20-1.70 |
+| **Total** | | | | | **about $20.3-21.2** |
 
 Gone from the 4-layer build's list: the cover lens, the six screws, the light pipes
 and the printed power-button cap.
@@ -63,7 +63,7 @@ Hand work per unit: [assembly.md](assembly.md).
 
 ## Per unit, into your hands
 
-About **$37-38** at 10 units: the factory's $16.47 and your $20.3-21.3. Not in it: import
+About **$37-38** at 10 units: the factory's $16.47 and your $20.3-21.2. Not in it: import
 duties (at the 25% rate an earlier review suggested, unverified, about $3 a unit
 on the board order)
 and JLC's new-account coupons ($30 and $20 on the quote page, up to $5 a unit off if
