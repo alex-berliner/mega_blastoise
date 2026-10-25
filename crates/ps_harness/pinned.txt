@@ -177,3 +177,18 @@
 3 wide 418  # G3-M6 Trick's `-enditem|MON|ITEM|[silent]|[from] move: Trick` (flags first); Spite's 2-5 PP roll
 3 wide 609  # G3-M6 Trick's silent `-enditem`, a second team; Fake Out fails after the first action
 3 wide 39  # G3-M6 Counter returns twice the damage it recorded
+
+3 wide 176  # G3-I1 King's Rock's list ends with Wrap (a draft left it out: no flinch roll, one PRNG call short)
+3 wide 162  # G3-I1 Shell Bell heals `max(1, totalDamage / 8)` (battle.heal raises a fraction up to 1) with `[of]` the move's target
+3 wide 1934  # G3-I1 Bright Powder / Lax Incense keep the accuracy a JS double; truncating it to an integer changes a hit roll
+3 wide 60  # G3-I1 Focus Band rolls `randomChance(1, 10)` on every damage before it checks the damage or the effect
+3 wide 58510  # G3-I1r2 a future move's `[miss]` appended after a Helping Hand's `[notarget]` (PS appends; the flags render `[notarget]` before `[miss]`)
+3 wide 304  # G3-I1r2 Focus Band saves from confusion's self-hit (PS passes `{id: 'confused', effectType: 'Move'}`)
+3 wide 6444  # G3-I1r2 Leppa Berry's PP lands on the slot `baseMoveSlots` shares, so it outlasts a switch
+3 wide 4280  # G3-I1r2 King's Rock's list ends with Wrap (176 plays other teams since G3-M4 grew the pool)
+3 wide 3090  # G3-I1r2 King's Rock's flinch rolls after the move's own secondaries
+3 wide 557  # G3-I1r2 Shell Bell heals `max(1, totalDamage / 8)` with `[of]` the target (162 plays other teams now)
+3 wide 645  # G3-I1r2 Bright Powder / Lax Incense keep the accuracy a JS double (1934 plays other teams now)
+3 wide 209  # G3-I1r2 Focus Band rolls before it checks the damage (60 plays other teams now)
+3 wide 2071  # G3-I1r3 Shield Dust filters King's Rock's added flinch (the ModifySecondaries mask covers the dex's secondaries, then the added one)
+3 wide 9700069  # G3-I1r4 Shell Bell reads the event's own move, not `activeMove`: Nature Power's Swift heals once

@@ -14,9 +14,11 @@ use crate::state::Battle;
 /// `onModifyMove(move)`: `if (move.secondaries && move.id !== "chatter")`,
 /// the debug line and `secondary.chance *= 2` for each secondary with a
 /// chance (this use's copy of them). Chatter is a gen 4 move.
+/// `move.secondaries` includes King's Rock's added flinch: its
+/// `ModifyMove` (priority -1) runs before this one (-2).
 fn on_modify_move(b: &mut Battle, _a: &EventArgs) -> Option<Relay> {
     let mv = b.active_move().expect("ModifyMove without an active move");
-    if b.dex.move_def(mv.id).secondaries().is_empty() {
+    if mv.secondaries(b.dex).next().is_none() {
         return None;
     }
     b.debug(Text::new(TextId::DoublingSecondaryChance));

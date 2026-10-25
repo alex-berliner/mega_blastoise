@@ -144,11 +144,18 @@ pub struct ActiveMove {
     pub allies_len: u8,
     /// `secondary.chance *= 2` on this use's copy of `secondaries` (PS's
     /// `getActiveMove` deep-copies the move): Serene Grace. The effects
-    /// themselves are the dex's.
+    /// themselves are the dex's, plus `added_secondary`.
     pub secondary_chances_doubled: bool,
     /// `hasBounced`: a move Magic Coat reflected (it is not reflected
     /// again).
     pub has_bounced: bool,
+    /// `move.secondaries`: the secondary a `ModifyMove` handler pushed
+    /// onto the move in flight, after the dex move's own (King's Rock's
+    /// flinch). [`ActiveMove::secondaries`] lists both.
+    pub added_secondary: Option<&'static ps_dex::Secondary>,
+    /// `move.totalDamage`: the damage the move in flight has dealt (gen
+    /// 3's `tryMoveHit` writes it, Shell Bell reads it; 0 is PS's unset).
+    pub total_damage: i32,
 }
 
 impl ActiveMove {
@@ -181,6 +188,8 @@ impl ActiveMove {
         allies_len: 0,
         secondary_chances_doubled: false,
         has_bounced: false,
+        added_secondary: None,
+        total_damage: 0,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -207,6 +216,15 @@ impl ActiveMove {
             multihit: def.multihit(),
             ..ActiveMove::EMPTY
         }
+    }
+
+    /// `move.secondaries` of this move object, in PS's order: the dex
+    /// move's own, then the one a `ModifyMove` handler pushed (King's
+    /// Rock's flinch). Bit `i` of a [`crate::relay::Relay::Secondaries`]
+    /// mask is the `i`th of these. Empty for a fake move.
+    pub fn secondaries(&self, dex: &'static ps_dex::Dex) -> impl Iterator<Item = &'static ps_dex::Secondary> + Clone {
+        let own: &'static [ps_dex::Secondary] = if self.id.is_none() { &[] } else { dex.move_def(self.id).secondaries() };
+        own.iter().chain(self.added_secondary)
     }
 
     /// The move as an effect (`EffectId::None` for a fake move).

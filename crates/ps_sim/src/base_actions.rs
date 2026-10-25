@@ -345,8 +345,9 @@ impl Battle {
             self.self_drops::<S>(target, pokemon, mv, data, is_secondary);
         }
 
-        // 5. Secondary effects.
-        if !data_secondaries(data, def).is_empty() {
+        // 5. Secondary effects. `moveData.secondaries` holds the move's own
+        // secondaries and what a `ModifyMove` handler added to it.
+        if !data_secondaries(data, def).is_empty() || (matches!(data, MoveData::Move) && self.mv(mv).added_secondary.is_some()) {
             self.secondaries::<S>(target, pokemon, mv, data, is_self);
         }
 
@@ -660,26 +661,36 @@ impl Battle {
     // PS: sim/battle-actions.ts secondaries
     fn secondaries<S: GenScripts>(&mut self, target: HitTarget, source: MonRef, mv: MoveRef, data: MoveData, is_self: bool) {
         let def = self.dex.move_def(self.mv(mv).id);
+        // `moveData.secondaries`: the dex move's own, then what a
+        // `ModifyMove` handler pushed onto the move in flight (King's
+        // Rock's flinch).
         let secondaries = data_secondaries(data, def);
-        if secondaries.is_empty() || target == HitTarget::False {
+        let added = match data {
+            MoveData::Move => self.mv(mv).added_secondary,
+            _ => None,
+        };
+        if (secondaries.is_empty() && added.is_none()) || target == HitTarget::False {
             return;
         }
         // `runEvent('ModifySecondaries', target, source, moveData,
-        // secondaries.slice())`: the copy travels as a mask over the dex's
-        // list, so Shield Dust can drop the effects that are not `self`
-        // effects.
+        // secondaries.slice())`: the copy travels as a mask over the move's
+        // list ([`ActiveMove::secondaries`]: the dex's, then the added one,
+        // which PS pushes onto the same array), so Shield Dust can drop the
+        // effects that are not `self` effects, the added flinch included.
         let effect = self.mv(mv).effect();
         let holder = target.mon().map_or(Holder::None, Holder::Mon);
-        assert!(secondaries.len() <= 8, "more secondaries than the relay holds");
-        let all = u8::MAX >> (8 - secondaries.len());
+        let count = secondaries.len() + usize::from(added.is_some());
+        assert!(count <= 8, "more secondaries than the relay holds");
+        let all = u8::MAX >> (8 - count);
         let r = self.run_event(EventId::ModifySecondaries, holder, Some(source), effect, Some(Relay::Secondaries(all)));
         let kept = match r {
             Relay::Secondaries(mask) => mask,
             other => panic!("unported: ModifySecondaries answered {other:?}"),
         };
-        // Serene Grace's `secondary.chance *= 2` on this use's copy.
+        // Serene Grace's `secondary.chance *= 2` on this use's copy (the
+        // added flinch included: King's Rock's `ModifyMove` runs first).
         let doubled = self.mv(mv).secondary_chances_doubled;
-        for (i, secondary) in secondaries.iter().enumerate() {
+        for (i, secondary) in secondaries.iter().chain(added).enumerate() {
             if kept & (1 << i) == 0 {
                 continue;
             }

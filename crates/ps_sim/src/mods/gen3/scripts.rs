@@ -944,6 +944,8 @@ impl GenScripts for Gen3Scripts {
             total_damage = damage;
         }
 
+        // `move.totalDamage` (Shell Bell reads it).
+        b.mv_mut(mv).total_damage = total_damage.or_zero();
         if total_damage.truthy() {
             b.apply_recoil_damage(total_damage.or_zero(), mv, pokemon);
         }

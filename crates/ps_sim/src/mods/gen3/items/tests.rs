@@ -96,6 +96,20 @@ fn leppa_restores_pp_and_says_so() {
     assert!(take_log(&mut b).contains("|item: Leppa Berry|Body Slam|[consumed]\n"));
 }
 
+/// Leppa Berry's PP lands on the slot object `baseMoveSlots` shares, so
+/// it outlasts a switch (`clearVolatile` copies `baseMoveSlots` back).
+#[test]
+fn leppa_pp_outlasts_a_switch() {
+    let mut b = battle("Snorlax||Leppa Berry|Stench|tackle,block|||||||", "Snorlax|||Stench|tackle|||||||");
+    let max = b.mon(P1).move_slots[1].maxpp as i8;
+    b.mon_mut(P1).move_slots[1].pp = 0;
+    b.mon_mut(P1).base_move_slots[1].pp = 0;
+    b.run_event(EventId::Update, Holder::Mon(P1), None, EffectId::None, None);
+    assert_eq!(b.mon(P1).base_move_slots[1].pp, max);
+    b.clear_volatile(P1, true);
+    assert_eq!(b.mon(P1).move_slots[1].pp, max);
+}
+
 /// White Herb's `onAnyAfterMove` runs on the herb's holder, whoever moved.
 #[test]
 fn white_herb_clears_its_holders_drops_on_any_after_move() {

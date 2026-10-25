@@ -156,11 +156,15 @@ pub fn move_is_ported(dex: &Dex, registry: &Registry, m: MoveId) -> bool {
     (0..dex.moves.len()).map(|i| MoveId(i as u16)).filter(|&c| dex.move_def(c).flags.has("metronome")).all(|c| move_is_ported(dex, registry, c))
 }
 
-/// Conditions an item's handlers add, which its data does not name: Lansat
-/// Berry's `onEat` adds `focusenergy`.
-// PS: data/items.ts lansatberry onEat
+/// Conditions an item's handlers add, which its data does not name: Choice
+/// Band's `onAfterMove` adds `choicelock`, King's Rock's flinch secondary
+/// `flinch`, Lansat Berry's `onEat` `focusenergy`.
+// PS: data/mods/gen4/items.ts choiceband onAfterMove, data/mods/gen3/items.ts
+// kingsrock onModifyMove, data/items.ts lansatberry onEat
 pub fn item_conditions(dex: &Dex, i: ps_dex::ItemId) -> impl Iterator<Item = ConditionId> {
     let adds = match dex.item_def(i).name.as_str() {
+        "Choice Band" => "choicelock",
+        "King's Rock" => "flinch",
         "Lansat Berry" => "focusenergy",
         _ => "",
     };

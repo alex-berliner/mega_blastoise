@@ -1340,6 +1340,8 @@ texts! {
     BlazeBoost => "Blaze boost" (),
     // PS: data/moves.ts charge condition onBasePower
     ChargeBoost => "charge boost" (),
+    // PS: data/mods/gen4/items.ts brightpowder onModifyAccuracy
+    BrightPowderAccuracy => "brightpowder - decreasing accuracy" (),
     // PS: data/abilities.ts compoundeyes onSourceModifyAccuracy
     CompoundEyesAccuracy => "compoundeyes - enhancing accuracy" (),
     // PS: sim/battle-actions.ts getSpreadDamage
@@ -1370,6 +1372,8 @@ texts! {
     Instafaint => "instafaint: {}" (Nickname),
     // PS: data/mods/gen4/abilities.ts liquidooze onSourceTryHeal (`effect.id`)
     LiquidOozeHeal => "Heal is occurring: {} <- {} :: {}" (Mon, Mon, EffectId),
+    // PS: data/mods/gen3/items.ts laxincense onModifyAccuracy
+    LaxIncenseAccuracy => "lax incense - decreasing accuracy" (),
     // PS: sim/battle-actions.ts runMoveEffects
     MoveFailedNothing => "move failed because it did nothing" (),
     // PS: sim/pokemon.ts runStatusImmunity
@@ -1679,6 +1683,7 @@ mod tests {
         });
         assert_eq!(flags, ["[still]", "[miss]", "[miss]"]);
         assert!(!Kw { repeat_miss: 1, ..Kw::NONE }.is_empty());
+
     }
 
     #[test]

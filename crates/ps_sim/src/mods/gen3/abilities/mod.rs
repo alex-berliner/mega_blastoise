@@ -194,10 +194,14 @@ pub fn relay_number(a: &EventArgs) -> Option<f64> {
 }
 
 /// PS's `effect.secondaries`: whether the effect (a move) has secondary
-/// effects.
+/// effects. The move in flight's list includes King's Rock's added
+/// flinch ([`ActiveMove::secondaries`]).
 pub fn effect_has_secondaries(b: &Battle, effect: EffectId) -> bool {
     match effect {
-        EffectId::Move(m) => !b.dex.move_def(m).secondaries().is_empty(),
+        EffectId::Move(m) => match b.active_move().filter(|am| am.id == m) {
+            Some(am) => am.secondaries(b.dex).next().is_some(),
+            None => !b.dex.move_def(m).secondaries().is_empty(),
+        },
         _ => false,
     }
 }
