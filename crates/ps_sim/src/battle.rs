@@ -410,7 +410,8 @@ impl Battle {
             let def = dex.move_def(id);
             let pp_ups = if def.bools.has("noPPBoosts") || def.name.as_str() == "Trump Card" { 0 } else { 3 };
             let pp = crate::stats::calculate_pp(self.gen, def, pp_ups);
-            mon.base_move_slots[n] = MoveSlot { id, pp: pp as i8, maxpp: pp, disabled: 0, used: false, virtual_: false };
+            mon.base_move_slots[n] = MoveSlot { id, pp: pp as i8, maxpp: pp, disabled: 0, used: false, virtual_: false, no_target: false };
+            mon.pp_ups[n] = pp_ups as u8;
             n += 1;
         }
         if n == 0 {
@@ -638,6 +639,8 @@ impl Battle {
         }
         mon.last_move = MoveId::NONE;
         mon.last_move_used = MoveId::NONE;
+        mon.last_move_used_type = Type::None;
+        mon.volatile_staleness = false;
         mon.move_this_turn = MoveId::NONE;
         mon.move_last_turn_result = None;
         mon.move_this_turn_result = None;
@@ -667,8 +670,9 @@ impl Battle {
         let gen = self.gen;
         let mon = self.mon_mut(m);
         mon.species = species;
-        // `setType(species.types, true)`.
+        // `setType(species.types, true)`, then `knownType = true`.
         mon.types = TypeList(def.types);
+        mon.known_type = true;
         mon.weighthg = def.weighthg;
         if mon.maxhp == 0 {
             mon.base_maxhp = stats[0];
@@ -702,13 +706,7 @@ impl Battle {
     /// `baseMoveSlots` order; past the last move it is `undefined`.
     // PS: sim/pokemon.ts constructor (ppUps)
     pub fn pp_ups(&self, m: MonRef, i: usize) -> u32 {
-        let Some(slot) = self.mon(m).base_move_slots.get(i).filter(|s| !s.id.is_none()) else { return 0 };
-        let def = self.dex.move_def(slot.id);
-        if def.bools.has("noPPBoosts") || def.name.as_str() == "Trump Card" {
-            0
-        } else {
-            3
-        }
+        self.mon(m).pp_ups.get(i).map_or(0, |&u| u32::from(u))
     }
 
     /// PS `pokemon.transformInto(pokemon, effect)` for gens 1 to 3 (no
@@ -731,9 +729,13 @@ impl Battle {
         self.mon_mut(m).weighthg = self.mon(pokemon).weighthg;
 
         // `setType(pokemon.getTypes(true, true), true)` (no Roost before gen
-        // 4, no added type before gen 6).
+        // 4, no added type before gen 6), then `knownType = this.isAlly(pokemon)
+        // && pokemon.knownType`.
         let types = self.get_types(pokemon);
-        self.mon_mut(m).types = types;
+        let known = m.side == pokemon.side && self.mon(pokemon).known_type;
+        let mon = self.mon_mut(m);
+        mon.types = types;
+        mon.known_type = known;
 
         let (stored, modified) = (self.mon(pokemon).stored_stats, self.mon(pokemon).modified_stats);
         let gen = self.gen;
@@ -756,7 +758,8 @@ impl Battle {
             let def = self.dex.move_def(ms.id);
             let pp = def.pp.min(5) as i8;
             let maxpp = crate::stats::calculate_pp(gen, def, self.pp_ups(m, i));
-            slots[i] = MoveSlot { id: ms.id, pp, maxpp, disabled: 0, used: false, virtual_: true };
+            // `target: moveSlot.target`, unset when the copied slot has none.
+            slots[i] = MoveSlot { id: ms.id, pp, maxpp, disabled: 0, used: false, virtual_: true, no_target: ms.no_target };
         }
         let boosts = self.mon(pokemon).boosts;
         let mon = self.mon_mut(m);
@@ -1377,9 +1380,8 @@ impl Battle {
                 mon.trapped = Trapped::No;
                 mon.maybe_trapped = false;
                 self.run_event(EventId::TrapPokemon, Holder::Mon(m), None, EffectId::None, None);
-                // `!knownType || getImmunity('trapped', pokemon)`; the type
-                // is always known in gens 1-3.
-                if self.trap_immunity_passes(m) {
+                // `!knownType || getImmunity('trapped', pokemon)`.
+                if !self.mon(m).known_type || self.trap_immunity_passes(m) {
                     self.run_event(EventId::MaybeTrapPokemon, Holder::Mon(m), None, EffectId::None, None);
                 }
                 // Canceling switches would leak information if a foe might
@@ -1443,7 +1445,7 @@ impl Battle {
             let species = self.dex.species_def(self.mon(source).species);
             for slot in 0..2 {
                 let Some(name) = species.ability(slot) else { continue };
-                if !self.trap_immunity_passes(pokemon) {
+                if self.mon(pokemon).known_type && !self.trap_immunity_passes(pokemon) {
                     continue;
                 }
                 let id = ps_protocol::to_id::<40>(name).unwrap_or_default();
@@ -1576,10 +1578,12 @@ impl Battle {
         }
         // `stalenessBySide.every(s => !!s)`: staleness comes only from
         // restorative berries, Recycle-like moves and Skill Swap. None exists
-        // in gen 1, and in gen 3 all are items and moves with handlers, which
-        // are not ported (they panic `unported` first). So no side is ever
-        // stale and the clause never activates. The berry and Skill Swap
-        // ports must set staleness and port the rest of this function.
+        // in gen 1. In gen 3 Skill Swap is ported: it makes its target
+        // externally stale (`volatile_staleness`) and clears its user, so
+        // on its own it never leaves both sides' actives stale. The berries
+        // and Recycle are not ported yet (they panic `unported` first), so
+        // the clause never activates; their ports must port the rest of
+        // this function (`endTurn`'s `stalenessBySide` included).
         false
     }
 

@@ -310,11 +310,14 @@ pub struct MoveSlot {
     pub disabled: u8,
     pub used: bool,
     pub virtual_: bool,
+    /// The slot object has no `target` key (gen 3's Mimic and Sketch
+    /// build it without one), so the request leaves it out.
+    pub no_target: bool,
 }
 
 impl MoveSlot {
     pub const EMPTY: MoveSlot =
-        MoveSlot { id: MoveId::NONE, pp: 0, maxpp: 0, disabled: 0, used: false, virtual_: false };
+        MoveSlot { id: MoveId::NONE, pp: 0, maxpp: 0, disabled: 0, used: false, virtual_: false, no_target: false };
 }
 
 /// One `attackedBy` entry.
@@ -355,6 +358,10 @@ pub struct Pokemon {
     pub speed: i32,
     /// `types`.
     pub types: TypeList,
+    /// `knownType`: false after Transform copied a foe's types (the trap
+    /// checks then treat the type as unknown); `setType` and `setSpecies`
+    /// set it again.
+    pub known_type: bool,
     /// `status`, `ConditionId::NONE` for PS's `''`.
     pub status: ConditionId,
     pub status_state: EffectState,
@@ -381,6 +388,15 @@ pub struct Pokemon {
     pub base_move_slots: [MoveSlot; 4],
     pub last_move: MoveId,
     pub last_move_used: MoveId,
+    /// `lastMoveUsed.type`: the type of the move object `lastMoveUsed`
+    /// holds, as its `ModifyMove` handlers left it (Conversion 2 reads it).
+    pub last_move_used_type: Type,
+    /// `ppUps[i] || 0`, fixed by the constructor in `baseMoveSlots` order
+    /// (Sketch replaces the slot but not this).
+    pub pp_ups: [u8; 4],
+    /// `volatileStaleness` (`'external'` is true): set on the target of a
+    /// Skill Swap, cleared by `clearVolatile`.
+    pub volatile_staleness: bool,
     pub last_damage: u16,
     pub attacked_by: [Option<Attacker>; 4],
     pub active_turns: u16,
@@ -468,6 +484,7 @@ impl Pokemon {
         boosts: [0; 7],
         speed: 0,
         types: TypeList([Type::None, Type::None]),
+        known_type: true,
         status: ConditionId::NONE,
         status_state: EffectState::EMPTY,
         volatiles: EffectTable::new(),
@@ -486,6 +503,9 @@ impl Pokemon {
         base_move_slots: [MoveSlot::EMPTY; 4],
         last_move: MoveId::NONE,
         last_move_used: MoveId::NONE,
+        last_move_used_type: Type::None,
+        pp_ups: [0; 4],
+        volatile_staleness: false,
         last_damage: 0,
         attacked_by: [None; 4],
         active_turns: 0,

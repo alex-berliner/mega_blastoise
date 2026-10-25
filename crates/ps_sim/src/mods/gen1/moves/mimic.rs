@@ -33,7 +33,7 @@ fn on_hit(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let def = b.dex.move_def(moveid);
     let pp = b.mon(source).move_slots[moveslot].pp;
     let maxpp = crate::stats::calculate_pp(b.gen, def, b.pp_ups(source, moveslot));
-    b.mon_mut(source).move_slots[moveslot] = MoveSlot { id: moveid, pp, maxpp, disabled: 0, used: false, virtual_: true };
+    b.mon_mut(source).move_slots[moveslot] = MoveSlot { id: moveid, pp, maxpp, disabled: 0, used: false, virtual_: true, no_target: false };
     let mon = b.ident(source);
     let effect = Arg::new(ArgValue::Move(MoveNum(ps_dex::gen1::moves::MIMIC.0)));
     let name = Some(Arg::new(ArgValue::Move(MoveNum(moveid.0))));

@@ -24,7 +24,7 @@ fn on_any_trap_pokemon(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
 }
 
 /// `onAnyMaybeTrapPokemon(pokemon, source)`: `!pokemon.knownType ||
-/// pokemon.hasType('Steel')` (the type is always known in gen 3).
+/// pokemon.hasType('Steel')`.
 // PS: data/mods/gen3/abilities.ts magnetpull.onAnyMaybeTrapPokemon
 fn on_any_maybe_trap_pokemon(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let pokemon = a.target.mon()?;
@@ -35,7 +35,7 @@ fn on_any_maybe_trap_pokemon(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     if !b.is_adjacent(pokemon, source) {
         return None;
     }
-    if b.has_type(pokemon, Type::Steel) {
+    if !b.mon(pokemon).known_type || b.has_type(pokemon, Type::Steel) {
         b.mon_mut(pokemon).maybe_trapped = true;
     }
     None

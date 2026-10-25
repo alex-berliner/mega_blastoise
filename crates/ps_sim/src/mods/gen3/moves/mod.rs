@@ -1,10 +1,14 @@
 //! Gen 3 moves with handlers, one file per move.
 
+pub mod assist;
 pub mod attract;
 pub mod beatup;
 pub mod bide;
 pub mod block;
 pub mod bounce;
+pub mod camouflage;
+pub mod conversion2;
+pub mod conversion;
 pub mod curse;
 pub mod destinybond;
 pub mod dig;
@@ -24,14 +28,24 @@ pub mod imprison;
 pub mod leechseed;
 pub mod lockon;
 pub mod meanlook;
+pub mod metronome;
+pub mod mimic;
 pub mod mindreader;
+pub mod mirrormove;
+pub mod naturepower;
 pub mod odorsleuth;
 pub mod perishsong;
+pub mod psychup;
 pub mod pursuit;
 pub mod razorwind;
+pub mod roleplay;
 pub mod rollout;
+pub mod sketch;
+pub mod skillswap;
 pub mod skullbash;
 pub mod skyattack;
+pub mod sleeptalk;
+pub mod snore;
 pub mod solarbeam;
 pub mod spiderweb;
 pub mod spitup;
@@ -40,6 +54,7 @@ pub mod struggle;
 pub mod substitute;
 pub mod swallow;
 pub mod teleport;
+pub mod transform;
 pub mod uproar;
 pub mod yawn;
 
@@ -154,3 +169,27 @@ pub fn future_move_try(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     b.add(Msg::StartEffect { mon, effect: ps_protocol::Arg::new(ps_protocol::ArgValue::Move(MoveNum(m.0))), a: None, b: None, kw: ps_protocol::Kw::NONE });
     Some(Relay::Null)
 }
+
+/// `onTry(source)` of Sleep Talk and Snore: `source.status === 'slp' ||
+/// source.hasAbility('comatose')` (Comatose is gen 7: no gen 3 Pokemon
+/// has it).
+// PS: data/moves.ts sleeptalk.onTry, snore.onTry
+fn try_asleep(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
+    let source = a.target.mon()?;
+    let comatose = b.dex.ability_id("comatose");
+    let asleep = b.mon(source).status == conditions::SLP || comatose.is_some_and(|c| b.has_ability(source, c));
+    Some(Relay::Bool(asleep))
+}
+
+/// `this.add('-start', pokemon, 'typechange', type)` (Conversion,
+/// Conversion 2, Camouflage).
+fn add_typechange(b: &mut Battle, pokemon: crate::state::MonRef, t: ps_dex::Type) {
+    use ps_protocol::{Arg, Kw, Msg, TypeNum, Word};
+    let mon = b.ident(pokemon);
+    let effect = Arg::word(Word::TypeChange);
+    let a = Some(Arg::ty(TypeNum(t.index())));
+    b.add(Msg::StartEffect { mon, effect, a, b: None, kw: Kw::NONE });
+}
+
+#[cfg(test)]
+mod tests_call;

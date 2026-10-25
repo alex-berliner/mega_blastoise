@@ -25,8 +25,8 @@ fn on_foe_trap_pokemon(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
 }
 
 /// `onFoeMaybeTrapPokemon(pokemon, source)`: `maybeTrapped` when it might
-/// be grounded (`isGrounded(!pokemon.knownType)`; the type is always known
-/// in gen 3).
+/// be grounded (`isGrounded(!pokemon.knownType)`: an unknown type negates
+/// the Flying immunity).
 // PS: data/abilities.ts arenatrap.onFoeMaybeTrapPokemon
 fn on_foe_maybe_trap_pokemon(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     let pokemon = a.target.mon()?;
@@ -37,7 +37,8 @@ fn on_foe_maybe_trap_pokemon(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
     if !b.is_adjacent(pokemon, source) {
         return None;
     }
-    if b.is_grounded(pokemon, false) == Some(true) {
+    let negate_immunity = !b.mon(pokemon).known_type;
+    if b.is_grounded(pokemon, negate_immunity) == Some(true) {
         b.mon_mut(pokemon).maybe_trapped = true;
     }
     None

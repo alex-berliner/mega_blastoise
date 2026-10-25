@@ -54,7 +54,8 @@ const BATTLE_MAX: usize = 16 * 1024;
 /// fails here first; P1-6's report lists the reductions that would lower
 /// them.
 const SIDE_MAX: usize = 6 * 1024;
-const POKEMON_MAX: usize = 896;
+// 904 B since G3-M5 (Transform's knownType and the call/copy state, +8 B).
+const POKEMON_MAX: usize = 912;
 const EFFECT_STATE_MAX: usize = 40;
 
 #[test]

@@ -633,6 +633,9 @@ words! {
     Boost => "boost",
     Confusion => "confusion",
     Drain => "drain",
+    // PS: sim/battle.ts skillSwap (`-activate|MON|Skill Swap|||[of] TARGET`
+    // before gen 5)
+    Empty => "",
     // Event names in `|debug|EVENT handler suppressed by Air Lock` (PS:
     // sim/battle.ts runEvent, singleEvent): the ones gen 3's weathers and
     // weather abilities answer.

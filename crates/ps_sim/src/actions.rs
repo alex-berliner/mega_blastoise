@@ -146,6 +146,9 @@ pub struct ActiveMove {
     /// `getActiveMove` deep-copies the move): Serene Grace. The effects
     /// themselves are the dex's.
     pub secondary_chances_doubled: bool,
+    /// `hasBounced`: a move Magic Coat reflected (it is not reflected
+    /// again).
+    pub has_bounced: bool,
 }
 
 impl ActiveMove {
@@ -177,6 +180,7 @@ impl ActiveMove {
         allies: [0; 6],
         allies_len: 0,
         secondary_chances_doubled: false,
+        has_bounced: false,
     };
 
     /// PS `dex.getActiveMove(id)`: a fresh copy of the dex move, `hit` 0.
@@ -435,6 +439,15 @@ impl Battle {
             1 => Gen1Scripts::use_move(self, mv, pokemon, target, source_effect),
             3 => Gen3Scripts::use_move(self, mv, pokemon, target, source_effect),
             g => todo!("unported: the gen {g} move pipeline (useMove)"),
+        }
+    }
+
+    /// PS `pokemon.deductPP(move, amount)` of the gen's pipeline.
+    pub fn deduct_pp(&mut self, pokemon: MonRef, mv: MoveId, amount: i32) -> i32 {
+        match self.gen {
+            1 => Gen1Scripts::deduct_pp(self, pokemon, mv, amount),
+            3 => Gen3Scripts::deduct_pp(self, pokemon, mv, amount),
+            g => todo!("unported: the gen {g} deductPP"),
         }
     }
 
@@ -1110,6 +1123,13 @@ impl Battle {
     }
 
     /// `[from] EFFECT` of a `|move|` line: `dex.conditions.get(sourceEffect).name`.
+    /// The move whose own condition `c` is, when the two share a name
+    /// (`magiccoat`, `snatch`).
+    fn condition_move(&self, c: ps_dex::ConditionId) -> Option<MoveId> {
+        let def = self.dex.condition_def(c);
+        self.dex.move_id(def.key.as_str()).filter(|&m| self.dex.move_def(m).name.as_str() == def.name.as_str())
+    }
+
     pub(crate) fn move_from(&self, effect: EffectId) -> Arg {
         match effect {
             EffectId::Move(m) => Arg::new(ArgValue::Move(MoveNum(m.0))),
@@ -1117,6 +1137,12 @@ impl Battle {
             // name is its id.
             EffectId::Condition(c) if self.dex.condition_def(c).name.as_str() == "lockedmove" => {
                 Arg::new(ArgValue::Word(Word::LockedMove))
+            }
+            // A move's own condition calling a move (Magic Coat, Snatch):
+            // `conditions.get(sourceEffect).name`, the move's name.
+            EffectId::Condition(c) if self.condition_move(c).is_some() => {
+                let m = self.condition_move(c).expect("checked");
+                Arg::new(ArgValue::Move(MoveNum(m.0)))
             }
             other => panic!("unported: |move| [from] {other:?}"),
         }

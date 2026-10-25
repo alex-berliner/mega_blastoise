@@ -562,9 +562,14 @@ impl GenScripts for Gen3Scripts {
             b.require_ported(b.mv(mv).effect());
         }
 
-        // `getActiveMove(move)`: `move` is an `ActiveMove` already, the same
-        // object (its `priority` stays the caller's).
-        b.mon_mut(pokemon).last_move_used = b.mv(mv).id;
+        // `getActiveMove(move)`: the caller passes a move object (a new one
+        // for a move called by id). `move.priority = activeMove.priority` is
+        // not kept: nothing reads a move object's priority after the queue
+        // sorted the action.
+        let (id, type_) = (b.mv(mv).id, b.mv(mv).type_);
+        let mon = b.mon_mut(pokemon);
+        mon.last_move_used = id;
+        mon.last_move_used_type = type_;
 
         let base_target = b.mv(mv).target;
         let mut target = match target {
@@ -598,6 +603,9 @@ impl GenScripts for Gen3Scripts {
         let r = b.run_event(EventId::ModifyMove, Holder::Mon(pokemon), target, effect, Some(relay));
         // `if (!move) return false`: a handler could only clear it.
         assert!(matches!(r, Relay::Move(_)), "ModifyMove answered {r:?}");
+        // `lastMoveUsed` is this object: it sees what `ModifyMove` changed
+        // (Hidden Power's and Weather Ball's type).
+        b.mon_mut(pokemon).last_move_used_type = b.mv(mv).type_;
         if base_target != b.mv(mv).target {
             let t = b.mv(mv).target;
             target = b.get_random_target_of(pokemon, Some(t));

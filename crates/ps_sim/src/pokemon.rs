@@ -85,12 +85,14 @@ impl Battle {
 
     /// PS `pokemon.setType(newType, enforce)` of one type. Stellar,
     /// Arceus and Silvally (gens 4+) and Terastallization are not in gen 3,
-    /// so only the assignment is left; `addedType`, `knownType` and
-    /// `apparentType` are not kept (types are always known here).
+    /// so only the assignment and `knownType = true` are left; `addedType`
+    /// and `apparentType` are not kept (no protocol line reads them).
     // PS: sim/pokemon.ts setType
     pub fn set_type(&mut self, m: MonRef, t: ps_dex::Type, _enforce: bool) -> bool {
         assert!(self.gen <= 3, "unported: setType's gen {} refusals", self.gen);
-        self.mon_mut(m).types = crate::relay::TypeList([t, ps_dex::Type::None]);
+        let mon = self.mon_mut(m);
+        mon.types = crate::relay::TypeList([t, ps_dex::Type::None]);
+        mon.known_type = true;
         true
     }
 

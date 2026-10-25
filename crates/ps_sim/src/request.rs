@@ -281,13 +281,13 @@ impl Battle {
                 continue;
             }
             let name = self.slot_move_name(m, slot.id);
-            let mut target = request_target(self.dex.move_def(slot.id).target);
+            let mut target = (!slot.no_target).then(|| request_target(self.dex.move_def(slot.id).target));
             // `case 'curse': if (!this.hasType('Ghost')) target = 'self'`
             // (the move's `nonGhostTarget` field before c0845f33d).
             if self.dex.move_def(slot.id).name.as_str() == "Curse" {
                 let ghost = self.get_types(m).as_slice().contains(&ps_dex::Type::Ghost);
                 if !ghost {
-                    target = request_target(ps_dex::MoveTarget::Self_);
+                    target = Some(request_target(ps_dex::MoveTarget::Self_));
                 }
             }
             // `disabled`: false, true or 'hidden'; no Dynamax here.
@@ -301,7 +301,9 @@ impl Battle {
             if !disabled {
                 has_valid_move = true;
             }
-            let _ = moves.push(RequestMove::slot(name, slot.pp, slot.maxpp, target, disabled));
+            let mut rm = RequestMove::slot(name, slot.pp, slot.maxpp, MoveTarget::Normal, disabled);
+            rm.target = target;
+            let _ = moves.push(rm);
         }
         if has_valid_move {
             moves
