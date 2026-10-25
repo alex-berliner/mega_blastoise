@@ -3,16 +3,20 @@
 
     python3 case/print_package.py      # after case/export.py --stl and case/fitkit.py
 
-Each project is built from Alex's own fit_test_v5.3mf (print/), so it keeps his printer,
-filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI), PLA only on
-toolhead 1 (Alex, 2026-10-20: no PETG, no second toolhead, no prime tower; 2026-10-22: the PLA is
-loaded in bay 1, so the template's PETG slot 1 takes slot 2's PLA settings): only the objects,
-where they sit on the plate, and the supports change. Orca's CLI can't load U1 projects, so the projects are written the way
-Orca writes them (one object file per part, mesh centred on its own height, placed by the
-build item) and the STLs ship beside them in case a project won't open.
+Each project is built from Alex's own fit_test_v5.3mf, so it keeps his printer,
+filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI). Two filaments since the one-piece top
+(Alex, 2026-10-25): PLA on toolhead 1 (Alex, 2026-10-20: no PETG; 2026-10-22: the PLA is loaded in bay 1, so the
+template's PETG slot 1 takes slot 2's PLA settings) and Bambu Support For PLA on toolhead 2, as the interface of the top's
+supports only (SUPPORT_TOOL). The top prints face down: its slope and side rounds hang over the bed, so it (and the
+coupons cut from it that include them, TOP_PARTS) get tree supports whose interface layers, touching the part, are the
+second filament and whose body is PLA, with a prime tower; the tub and every other part print as before, without
+supports. Only the objects, where they sit on the plate, and the supports change. Orca's CLI can't load U1 projects, so
+the projects are written the way Orca writes them (one object file per part, mesh centred on its own height, placed by
+the build item) and the STLs ship beside them in case a project won't open.
 
 Supports are on only for the parts that need them, measured by overhangs.py: per object, not
-per plate (a plate's supports filled the tub's screw counterbores, 2026-10-21).
+per plate (a plate's supports filled the tub's screw counterbores, 2026-10-21). Only the top and its coupons are
+meant to have them (and the board mock's USB-C stand-in, in plain PLA): any other part overhangs.py flags fails the build.
 
 Each project names its slicer's system process preset and lists, in different_settings_to_system,
 every setting it changes from it (mark_presets): on loading a project Orca and Bambu Studio take
@@ -45,15 +49,15 @@ BED = 270.0
 GAP = 6.0
 PLA = 1                      # the toolhead for every part: Alex's PLA is in bay 1 (2026-10-22)
 PLA_SLOT = 2                 # the template's slot with the PLA filament settings (its slot 1 is PETG)
+SUPPORT_TOOL = 2             # Bambu Support For PLA: toolhead 2 (U1), AMS slot 2 (P1S): the top's support interface only
 NOT_FILAMENT = {"printable_area"}   # per-slot-length lists that aren't filament settings
 
 KIT = os.path.join(HERE, "fitkit")
 PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
 
-# PLA only (Alex, 2026-10-20): every object, support and interface on the PLA toolhead, and no
-# prime tower (one filament never changes). The faces print on the bed, not on supports,
-# so where a plate does need supports they're plain PLA organic trees from the build plate only,
-# with the usual 0.2 mm gap (PLA on PLA with none would fuse), and bridges aren't supported
+# The plate-level support settings are all off (no plate's supports): each part that needs them gets its own (OBJECT_SUPPORT,
+# TOP_SUPPORT below), and there is a prime tower only on a plate with a top (a second filament to change to). They say what
+# kind of support, with the usual 0.2 mm gap for plain PLA on PLA (fused with none), and bridges aren't supported
 SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style": "organic",
            "support_filament": str(PLA), "support_interface_filament": str(PLA),
            "support_interface_not_for_body": "0", "support_interface_top_layers": "2",
@@ -74,33 +78,40 @@ def _threshold():
 
 OBJECT_SUPPORT = {"enable_support": "1", "support_threshold_angle": _threshold(), "support_remove_small_overhang": "0",
                   "support_on_build_plate_only": "1", "bridge_no_support": "1"}
+# The top (and the coupons cut from it that have its slope or side rounds): printed face down, so those hang over the
+# bed. Tree supports from the plate or from the part, the body in PLA and the layers that touch the part (3 under it, 2 on
+# top of the part below) in Bambu Support For PLA, top Z distance 0 so the interface sits right on the surface and
+# peels off; as sliced and measured for the one-piece top (case/SHELL.md)
+TOP_SUPPORT = {"enable_support": "1", "support_type": "tree(auto)", "support_style": "default", "support_threshold_angle": _threshold(),
+               "support_filament": str(PLA), "support_interface_filament": str(SUPPORT_TOOL), "support_interface_not_for_body": "1",
+               "support_top_z_distance": "0", "support_bottom_z_distance": "0", "support_interface_top_layers": "3",
+               "support_interface_bottom_layers": "2", "support_interface_spacing": "0", "support_on_build_plate_only": "0",
+               "independent_support_layer_height": "0"}
+# where the prime tower stands on a plate with a top (its coordinates: x, y from the bed's front left): the corner the
+# packing reaches last, so the parts (which pack from one corner, in rows) don't have to move for it. The U1's parts pack
+# from the front left, the P1S's from the back left (print_package_p1s.layout), so the tower is at the back right of the U1's bed
+# and the front right of the P1S's. 35 wide and about 50 deep with its brim
+TOWER_W, TOWER_D = 35, 50
+TOWER_AT = {"U1": (223.0, 206.0), "P1S": (210.0, 8.0)}
 
 # plate name: [(object name, STL), ...]; the first plate keeps v5's own layout for its parts
+TOP_STL = os.path.join(HERE, "top.stl")
 PLATES = {
-    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
-    "1_case": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),
-               ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
-               ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
-               ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
-    # the deck twice (one part for both ends since 2026-10-24; two, seat 1's and seat 2's, for a day after the island) and
-    # the stand they lie on while the case is built
-    "1_case_decks": [("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),
-                     ("build_bar_a", f"{KIT}/build_bar.stl"), ("build_bar_b", f"{KIT}/build_bar.stl")],
+    "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_top")],
+    "1_case": [("tub_print", PRINT_TUB), ("top", TOP_STL)],
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
     "3_buttons_heights": [(f"tune_stack_{c}_lid_dome{d}", f"{KIT}/tune_stack_{c}_lid_dome{d}.stl")
                           for c in ("dpad", "abxy", "ss") for d in ("1.6", "1.9")],
     "4_fit_coupons": [(n, f"{KIT}/coupon_{n}.stl") for n in
-                      ("usb_tub", "usb_top", "usb_arms", "usb_board", "seam_tub", "seam_deck", "lear_tub", "lear_top",
-                       "lear_arms", "frame_top",
-                       "buttons_tub", "buttons_board", "buttons_top", "buttons_deck")],
-    "5_unit": [("tub_print", PRINT_TUB), ("top", os.path.join(HERE, "top.stl")),     # one whole unit and the
-               ("deck_a", os.path.join(HERE, "deck.stl")), ("deck_b", os.path.join(HERE, "deck.stl")),   # dummies to
-               ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),     # fit in it
-               ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),  # (Alex,
-               ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl"),
-               ("build_bar_a", f"{KIT}/build_bar.stl"), ("build_bar_b", f"{KIT}/build_bar.stl")],   # 2026-10-22)
+                      ("usb_tub", "usb_top", "usb_board", "seam_tub", "seam_top", "frame_top",
+                       "buttons_tub", "buttons_board", "buttons_top")],
+    # one whole unit and the dummies to fit in it (Alex, 2026-10-22): the board mock, panel, speaker, cell and its plug
+    "5_unit": [("tub_print", PRINT_TUB), ("top", TOP_STL),
+               ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
+               ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
+               ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
     # questions for the shell's redesign, no supports: openings, overhangs, screw holes, a column's clearance
     "6_tests": [("tune_openings", f"{KIT}/tune_openings.stl"), ("test_overhangs", f"{KIT}/test_overhangs.stl"),
                 ("screws_tub", f"{KIT}/coupon_screws_tub.stl"), ("screws_top", f"{KIT}/coupon_screws_top.stl"),
@@ -118,9 +129,18 @@ PLATES = {
     # best it has (TUNED, each printer's TUNED below), side by side
     "9_overhang_settings": [(f"overhang_ladder_{t}", f"{KIT}/test_overhang_ladder_{t}.stl") for t in ("DEF", "TUNED")],
 }
-# parts turned a quarter round on their plate (about z) so it packs: 5_unit's two decks and the cell dummy (the
-# decks are twice as long since the island, 2026-10-23, and the plate overflowed)
-TURN = {"5_unit": {"deck_a", "deck_b", "cell_dummy"}}
+# parts turned a quarter round on their plate (about z) so it packs
+TURN = {"5_unit": {"cell_dummy"}}
+# the parts printed face down on support filament: the top and the coupons cut from it that include its slope or side
+# rounds (overhangs.py flags exactly these among the top's; the others cut from it are flat plates and need none)
+TOP_PARTS = {TOP_STL, f"{KIT}/coupon_seam_top.stl", f"{KIT}/coupon_usb_top.stl", f"{KIT}/coupon_buttons_top.stl"}
+# and the only other parts with supports, plain PLA trees: the board mock's USB-C stand-in (front stands out past its edge)
+STANDIN_PARTS = {f"{KIT}/board_mock.stl", f"{KIT}/coupon_usb_board.stl"}
+
+
+def has_top(parts):
+    """Does a plate have a part printed on support filament (a second filament, a prime tower)?"""
+    return any(p in TOP_PARTS for _, p in parts)
 
 
 def load_part(plate, name, path):
@@ -169,7 +189,9 @@ NEVER_SUPPORTED = {f"{KIT}/test_overhangs.stl"} | {p for plate in [*LAYERS, "9_o
 
 
 def support_parts():
-    """The STLs of the parts that need supports (overhangs.py), after printing every part's verdict."""
+    """The STLs of the parts that get plain PLA supports (overhangs.py flags them: STANDIN_PARTS), after printing every
+    part's verdict. Fails when a part that is neither one of those nor a top (TOP_PARTS, which carry support filament)
+    needs supports, or a top part's flag is gone (then it isn't one)."""
     import overhangs
     from concurrent.futures import ProcessPoolExecutor
     paths = sorted({p for parts in PLATES.values() for _, p in parts})
@@ -179,7 +201,13 @@ def support_parts():
         print(f"  {os.path.basename(p):38s} " + ("no supports" if not found[p] else
               "; ".join(f"{a:.1f} mm2: {why}" for a, z, xy, why in found[p]))
               + (" (on purpose: printed without)" if found[p] and p in NEVER_SUPPORTED else ""))
-    return {p for p in paths if found[p] and p not in NEVER_SUPPORTED}
+    stale = [os.path.basename(p) for p in sorted(TOP_PARTS) if p in found and not found[p]]
+    if stale:
+        sys.exit(f"{', '.join(stale)} need no supports any more: take them out of TOP_PARTS")
+    wrong = [os.path.basename(p) for p in paths if found[p] and p not in NEVER_SUPPORTED | TOP_PARTS | STANDIN_PARTS]
+    if wrong:
+        sys.exit(f"{', '.join(wrong)} need supports and aren't designed for them (only the top and the stand-in parts are)")
+    return {p for p in paths if found[p] and p not in NEVER_SUPPORTED | TOP_PARTS}
 
 
 V5_NAMES = {"tub_print": "tub_print.stl", "board_mock": "board_mock.stl",
@@ -242,6 +270,15 @@ def pla_in_slot_1(cfg):
     assert set(cfg["filament_type"]) == {"PLA"}, cfg["filament_type"]
 
 
+def support_in_slot_2(cfg):
+    """Slot SUPPORT_TOOL (bay 2) is Bambu Support For PLA: the template's PLA settings there, marked as a support filament
+    (a PLA support filament, density 1.30, white), the changes listed in its entry of different_settings_to_system."""
+    s = SUPPORT_TOOL - 1
+    cfg["filament_is_support"][s], cfg["filament_density"][s], cfg["filament_colour"][s] = "1", "1.30", "#F2F2F2"
+    listed = set(cfg["different_settings_to_system"][1 + s].split(";")) - {""}
+    cfg["different_settings_to_system"][1 + s] = ";".join(sorted(listed | {"filament_is_support", "filament_density", "filament_colour"}))
+
+
 def mark_presets(cfg, system_dir, preset, keys=(), base=None):
     """Name the system process preset `preset` in a project's settings (cfg, changed in place) and
     list in different_settings_to_system[0] every process setting whose value isn't the preset's,
@@ -286,32 +323,13 @@ def tests_zip():
     print(f"{TESTS_ZIP} ({n} plates, {os.path.getsize(TESTS_ZIP) // 1024} kB)")
 
 
-def template_layout(z):
-    """Where v5 put each of its parts: bed centre (x, y) of each part's footprint."""
-    model = z.read("3D/3dmodel.model").decode()
-    paths = dict(re.findall(r'<object id="(\d+)"[^>]*>\s*<components>\s*<component p:path="([^"]+)"', model))
-    out = {}
-    for oid, t in re.findall(r'<item objectid="(\d+)"[^>]*transform="([^"]+)"', model):
-        tx, ty = map(float, t.split()[9:11])
-        part = z.read(paths[oid].lstrip("/")).decode()
-        v = np.array(re.findall(r'<vertex x="([^"]+)" y="([^"]+)" z="[^"]+"', part), float)
-        cx, cy = (v.min(0) + v.max(0)) / 2
-        name = os.path.basename(paths[oid]).split(".stl")[0]
-        out[name] = (tx + cx, ty + cy)
-    return out
-
-
-def tower_keepout(z):
-    """The prime tower's corner of the plate, if the projects keep one (the template's two
-    toolheads did; PLA only, they don't). Orca puts it at wipe_tower_x/y with prime_tower_width;
-    its depth depends on the purge, so keep a generous 45 mm, plus the brim and ribs round it."""
-    cfg = dict(json.loads(z.read("Metadata/project_settings.config")), **SUPPORT)
-    if str(cfg.get("enable_prime_tower", "0")) != "1":
+def tower_keepout(parts, printer="U1"):
+    """The prime tower's corner of a plate with a top (a second filament to change to): TOWER_AT, TOWER_W wide and about
+    TOWER_D deep, plus its brim and a margin. None on a plate without one (a single filament has no tower)."""
+    if not has_top(parts):
         return []
-    x, y = float(cfg["wipe_tower_x"][0]), float(cfg["wipe_tower_y"][0])
-    w = float(cfg.get("prime_tower_width", 30))
-    m = float(cfg.get("prime_tower_brim_width", 5)) + 3
-    return [(x - m, y - m, x + w + m, y + 45 + m)]
+    x, y = TOWER_AT[printer]
+    return [(x - 8, y - 8, x + TOWER_W + 8, y + TOWER_D + 8)]
 
 
 def pack(sizes, taken, bed=BED):
@@ -355,7 +373,6 @@ def build(plate, parts, z, supported):
     some_part = next(n for n in z.namelist() if n.startswith("3D/Objects/"))
     part_xml = z.read(some_part).decode()
     part_head = part_xml[:part_xml.index("<resources>")]
-    layout = template_layout(z) if plate == "1_case" else {}
     meshes = []
     for name, path in parts:
         m = load_part(plate, name, path)
@@ -363,14 +380,8 @@ def build(plate, parts, z, supported):
         lo, hi = m.bounds
         m.apply_translation(-(lo + hi) / 2)          # centred on its footprint and its height
         meshes.append((name, m, hi - lo))
-    taken, spots = tower_keepout(z), {}
-    for name, m, size in meshes:
-        if name in layout:
-            cx, cy = layout[name]
-            spots[name] = (cx, cy)
-            taken.append((cx - size[0] / 2, cy - size[1] / 2, cx + size[0] / 2, cy + size[1] / 2))
-    rest = [(n, s) for n, m, s in meshes if n not in spots]
-    for (n, s), xy in zip(rest, pack([(s[0], s[1]) for n, s in rest], taken)):
+    taken, spots = tower_keepout(parts), {}
+    for (n, s), xy in zip([(n, s) for n, m, s in meshes], pack([(s[0], s[1]) for n, m, s in meshes], taken)):
         spots[n] = xy
     files, resources, items, settings, instances, rels = {}, [], [], [], [], []
     for i, (name, m, size) in enumerate(meshes, 1):
@@ -385,7 +396,8 @@ def build(plate, parts, z, supported):
         items.append(f'  <item objectid="{oid}" p:UUID="{oid:08x}-b1ec-4553-aec9-835e5b724bb4" '
                      f'transform="1 0 0 0 1 0 0 0 1 {x:.4f} {y:.4f} {size[2] / 2:.4f}" printable="1"/>')
         stl_name = V5_NAMES.get(name, name + ".stl")
-        own = dict(OBJECT_SUPPORT if dict(parts)[name] in supported else {}, **OBJECT_SETTINGS.get(name, {}),
+        stl = dict(parts)[name]
+        own = dict(OBJECT_SUPPORT if stl in supported else TOP_SUPPORT if stl in TOP_PARTS else {}, **OBJECT_SETTINGS.get(name, {}),
                    **U1_OBJECT_SETTINGS.get(name, {}))
         own = "".join(f'    <metadata key="{k}" value="{v}"/>\n' for k, v in own.items())
         settings.append(f'  <object id="{oid}">\n    <metadata key="name" value="{stl_name}"/>\n{own}'
@@ -424,15 +436,19 @@ def build(plate, parts, z, supported):
             if n == "Metadata/project_settings.config":
                 cfg = json.loads(data)
                 pla_in_slot_1(cfg)
-                for k, v in dict(SUPPORT, enable_support="0", **PLATE_SETTINGS.get(plate, {})).items():   # supports per object
+                support_in_slot_2(cfg)
+                tower = {"enable_prime_tower": "1", "prime_tower_width": str(TOWER_W), "prime_tower_brim_width": "3"} if has_top(parts) else {}
+                for k, v in dict(SUPPORT, enable_support="0", **tower, **PLATE_SETTINGS.get(plate, {})).items():   # supports per object
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                     cfg[k] = v
-                for k in [*OBJECT_SUPPORT, *(k for o in [*OBJECT_SETTINGS.values(), *U1_OBJECT_SETTINGS.values()] for k in o)]:
+                if tower:                                  # (lists: one value per extruder variant)
+                    cfg["wipe_tower_x"], cfg["wipe_tower_y"] = [str(TOWER_AT["U1"][0])], [str(TOWER_AT["U1"][1])]
+                for k in [*OBJECT_SUPPORT, *TOP_SUPPORT, *(k for o in [*OBJECT_SETTINGS.values(), *U1_OBJECT_SETTINGS.values()] for k in o)]:
                     if k not in cfg:
                         sys.exit(f"{k} isn't a setting in the template's Orca: check the name")
                 mark_presets(cfg, U1_SYSTEM, U1_PLATE_PRESETS.get(plate, U1_PRESET),
-                             set(SUPPORT) | set(PLATE_SETTINGS.get(plate, {})), U1_PRESET)
+                             set(SUPPORT) | set(tower) | {"wipe_tower_x", "wipe_tower_y"} | set(PLATE_SETTINGS.get(plate, {})), U1_PRESET)
                 data = json.dumps(cfg, indent=4).encode()
             if n == "_rels/.rels":
                 data = re.sub(rb'\s*<Relationship Target="/Metadata/[^"]+\.png"[^>]*/>', b"", data)
@@ -482,7 +498,7 @@ def main():
         tests_zip()
     if not case:
         return
-    for extra in ("top.stl", "deck.stl", "tub.stl"):
+    for extra in ("top.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))

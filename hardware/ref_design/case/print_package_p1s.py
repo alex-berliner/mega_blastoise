@@ -7,14 +7,17 @@ after case/export.py --stl and case/fitkit.py. BAMBU_STUDIO is Bambu Studio's ex
 AppImage's AppRun, extracted with --appimage-extract, works headless). Each plate is laid out
 (print_package's packing) and sliced by Bambu Studio's command line into a project with its G-code in it, ready to send.
 
-PLA only, as the U1 package (Alex, 2026-10-20): Bambu PLA Basic, one filament, no prime tower.
-The profiles are in print/p1s/ (Bambu's system presets for a P1S, 0.4 mm nozzle, 0.20 mm
-Standard, flattened), supports off. Supports are per object, as in the U1 package: the parts
-overhangs.py says need them get print_package.OBJECT_SUPPORT (tree supports from the build plate)
-in the project, so each plate is sliced in two steps: Bambu Studio writes the plate as a project,
-the parts' own settings go into it, and Bambu Studio slices that. Then support_check.py reads the
-G-code and the build fails if a part that needs no supports got some (a plate's supports filled
-the tub's screw counterbores, 2026-10-21). A plate that doesn't fit the P1S's 256 mm bed is split.
+Two filaments since the one-piece top (Alex, 2026-10-25), as the U1 package: Bambu PLA Basic in AMS slot 1 for every part
+and Bambu Support For PLA in slot 2 (print/p1s/support.json), as the interface of the top's supports only. The profiles
+are in print/p1s/ (Bambu's system presets for a P1S, 0.4 mm nozzle, 0.20 mm Standard, flattened), plate-level supports
+off. Supports are per object, as in the U1 package: the parts overhangs.py says need them get print_package.OBJECT_SUPPORT
+(plain PLA tree supports from the build plate; the board mock's USB-C stand-in) and the top, with the coupons cut from it
+that have its slope or rounds (print_package.TOP_PARTS), print_package.TOP_SUPPORT (tree supports whose body is PLA and
+whose interface, the layers touching the part, is the support filament; top Z distance 0) with a prime tower, so each plate
+is sliced in two steps: Bambu Studio writes the plate as a project, the parts' own settings go into it, and Bambu Studio
+slices that. Then support_check.py reads the G-code and the build fails if a part that needs no supports got some (a plate's
+supports filled the tub's screw counterbores, 2026-10-21) or if the support filament prints anything but interface and the
+tower. A plate that doesn't fit the P1S's 256 mm bed is split.
 Bambu Studio's CLI lists no changed settings in its projects, so each project then names its
 process preset (P1S_PRESETS, the one at its layer height; Bambu's X1C presets are the P1S's) and
 lists what it changes from it (print_package.mark_presets), or Bambu Studio would load the preset's.
@@ -43,18 +46,26 @@ OUT = os.path.join(HERE, "print", "package_P1S")
 ZIP = os.path.join(HERE, "print", "mega_blastoise_print_P1S.zip")
 README = os.path.join(HERE, "print_package_README.md")    # its <!-- printer --> part replaced
 PRINTER = """Each `.3mf` is a Bambu Studio project for a Bambu Lab P1S (0.4 mm nozzle, 0.20 mm
-Standard, Bambu PLA Basic), arranged and already sliced: open it and send it, or re-slice it after
-changing anything. PLA only, one filament, no prime tower. (`mega_blastoise_print_U1.zip` has the
-same plates for the Snapmaker U1.) Set the plate type in Bambu Studio to the plate you use.
+Standard), arranged and already sliced: open it and send it, or re-slice it after
+changing anything. Two filaments: **Bambu PLA Basic in AMS slot 1** for every part, and **Bambu Support For PLA in AMS slot 2**,
+used only on a plate with the top (or a coupon cut from it) as the layers of its supports that touch the part. A plate with
+neither is PLA only: slot 2 is never touched and there is no prime tower. (`mega_blastoise_print_U1.zip` has the same
+plates for the Snapmaker U1.) Set the plate type in Bambu Studio to the plate you use.
 
-| Project | Supports | PLA | Time | Parts |
-|---|---|---|---|---|
+Weights are what the slicer reports: the part and its supports, then the **purge** (the flush at each change and the prime
+tower, with the start line; it is part of the weight shown, not added to it) and the number of **filament changes**.
+
+| Project | Supports | PLA | Support filament | Purge | Changes | Time | Parts |
+|---|---|---|---|---|---|---|---|
 <!-- PLATES -->
 """
 
 
 BED = 256.0
 EXCLUDE = (0, 0, 18, 28)       # the P1S's no-print corner, front left (machine.json bed_exclude_area)
+SUPPORT_PROFILE = os.path.join(PROFILES, "support.json")    # Bambu Support For PLA @BBL X1C, flattened
+TOWER_KEYS = {"enable_prime_tower": "1", "prime_tower_width": str(print_package.TOWER_W), "prime_tower_brim_width": "3",
+              "wipe_tower_x": str(print_package.TOWER_AT["P1S"][0]), "wipe_tower_y": str(print_package.TOWER_AT["P1S"][1])}
 
 
 SYSTEM = os.path.join(PROFILES, "system")      # Bambu's process presets, flattened (print_package --flatten)
@@ -73,14 +84,14 @@ P1S_OBJECT_SETTINGS = {"overhang_ladder_TUNED": {
     "overhang_2_4_speed": "30,30", "overhang_3_4_speed": "15,15", "bridge_flow": "0.85"}}
 
 
-def mark_presets(project, plate):
-    """Name the plate's process preset in a Bambu project and list the settings it changes."""
+def mark_presets(project, plate, extra=()):
+    """Name the plate's process preset in a Bambu project and list the settings it changes (extra: more that it sets)."""
     with zipfile.ZipFile(project) as z:
         files = {n: z.read(n) for n in z.namelist()}
     cfg = json.loads(files["Metadata/project_settings.config"])
     own = print_package.PLATE_SETTINGS.get(plate, {})
     preset = P1S_PRESETS[own.get("layer_height", "0.20")]
-    print_package.mark_presets(cfg, SYSTEM, preset, own, P1S_PRESET)
+    print_package.mark_presets(cfg, SYSTEM, preset, set(own) | set(extra), P1S_PRESET)
     files["Metadata/project_settings.config"] = json.dumps(cfg, indent=4).encode()
     with zipfile.ZipFile(project, "w", zipfile.ZIP_DEFLATED) as z:
         for k, v in files.items():
@@ -95,8 +106,9 @@ def layout(parts, plate=""):
     meshes = [(obj, print_package.load_part(plate, obj, path)) for obj, path in parts]
     sizes = [tuple(m.extents[:2]) for _, m in meshes]
     x0, y0, x1, y1 = EXCLUDE
+    taken = [(x0, BED - y1, x1, BED - y0)] + [(a, BED - d, c, BED - b) for a, b, c, d in print_package.tower_keepout(parts, "P1S")]
     try:                                           # packed front to back, then turned back to front
-        spots = print_package.pack(sizes, [(x0, BED - y1, x1, BED - y0)], BED)
+        spots = print_package.pack(sizes, taken, BED)
     except SystemExit:
         return None
     for (obj, m), (x, y) in zip(meshes, spots):
@@ -124,8 +136,9 @@ def own_settings(project, objs):
 
 
 def slice_plate(name, parts, supported, tmp):
-    """Place and slice one plate (supported: the STLs that get supports); returns (3mf path,
-    grams, seconds, {object: mm of support under it}) or None if it doesn't fit."""
+    """Place and slice one plate (supported: the STLs that get plain PLA supports; the top's go with the support
+    filament); returns (3mf path, {"pla": g, "support": g, "purge": [PLA g, support g], "changes": n}, seconds,
+    {object: mm of support under it}) or None if it doesn't fit."""
     placed = layout(parts, name)
     if placed is None:
         print(f"  {name}: doesn't fit the bed")
@@ -141,29 +154,33 @@ def slice_plate(name, parts, supported, tmp):
     project = os.path.join(work, name + "_unsliced.3mf")
     process = os.path.join(PROFILES, "process.json")
     plate_name = name.removesuffix("_a").removesuffix("_b")
-    own = print_package.PLATE_SETTINGS.get(plate_name)
-    if own:                                        # the plate's own settings (a layer height) over the profile's
+    own = dict(print_package.PLATE_SETTINGS.get(plate_name, {}))
+    two = print_package.has_top(parts)             # a top: the support filament is loaded, with a prime tower
+    if two:
+        own.update(TOWER_KEYS)
+    if own:                                        # the plate's own settings (a layer height, the tower) over the profile's
         cfg = json.load(open(process))
-        if any(k not in cfg for k in own):
+        if any(k not in cfg for k in own if k not in TOWER_KEYS):
             sys.exit(f"{name}: {', '.join(k for k in own if k not in cfg)} isn't a setting in the P1S process")
         process = os.path.join(work, "process.json")
         json.dump(dict(cfg, **own), open(process, "w"), indent=4)
     subprocess.run([os.environ["BAMBU_STUDIO"],
                     "--load-settings", f"{PROFILES}/machine.json;{process}",
-                    "--load-filaments", f"{PROFILES}/filament.json", "--arrange", "0",
+                    "--load-filaments", f"{PROFILES}/filament.json" + (f";{SUPPORT_PROFILE}" if two else ""), "--arrange", "0",
                     "--export-3mf", os.path.basename(project), "--outputdir", work, *stls],
                    capture_output=True, text=True, timeout=600)
     if not os.path.exists(project):
         print(f"  {name}: Bambu Studio wrote no project")
         return None
     with_supports = [obj for obj, path in parts if path in supported]
-    own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else {},
+    top_objs = [obj for obj, path in parts if path in print_package.TOP_PARTS]
+    own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else print_package.TOP_SUPPORT if obj in top_objs else {},
                           **print_package.OBJECT_SETTINGS.get(obj, {}), **P1S_OBJECT_SETTINGS.get(obj, {}))
                 for obj, _ in parts}
     own_objs = {obj: own for obj, own in own_objs.items() if own}
     if own_objs:
         own_settings(project, own_objs)
-    mark_presets(project, plate_name)
+    mark_presets(project, plate_name, set(TOWER_KEYS) if two else ())
     cmd = [os.environ["BAMBU_STUDIO"], "--slice", "0", "--export-3mf", name + ".3mf",
            "--outputdir", os.path.join(work, "out"), project]
     subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
@@ -176,15 +193,18 @@ def slice_plate(name, parts, supported, tmp):
         return None
     plate = result["sliced_plates"][0]
     out = os.path.join(work, "out", name + ".3mf")
-    mark_presets(out, plate_name)                  # the slice writes the list empty again
+    mark_presets(out, plate_name, set(TOWER_KEYS) if two else ())      # the slice writes the list empty again
     on_plate = json.loads(zipfile.ZipFile(out).read("Metadata/plate_1.json"))["bbox_objects"]
+    on_plate = [o for o in on_plate if "wipe_tower" not in str(o.get("name", ""))]       # (the prime tower counts as an object)
     if len(on_plate) != len(parts):
-        sys.exit(f"{name}: only {len(on_plate)} of its {len(parts)} parts are on the plate")
-    grams = sum(f["main_used_g"] for f in plate["filaments"])
-    report, bad, mm = support_check.check(out, {obj for obj, path in parts if path not in supported})
-    if bad:
-        sys.exit(f"{name}: support under {', '.join(bad)}, which need none:\n" + "\n".join(report))
-    return out, grams, plate["total_predication"], {o: mm.get(o, 0) for o in with_supports}
+        sys.exit(f"{name}: only {len(on_plate)} of its {len(parts)} parts are on the plate: {[o.get('name') for o in on_plate]}")
+    fil = sorted(plate["filaments"], key=lambda f: f["id"])
+    grams = {"pla": fil[0]["total_used_g"], "support": fil[1]["total_used_g"] if len(fil) > 1 else 0.0,
+             "purge": [f["total_used_g"] - f["main_used_g"] for f in fil], "changes": plate.get("filament_change_times", 0)}
+    report, bad, mm, filament = support_check.check(out, {obj for obj, path in parts if path not in supported and path not in print_package.TOP_PARTS}, set(top_objs))
+    if bad or filament:
+        sys.exit(f"{name}: " + ("; ".join(([f"support under {', '.join(bad)}, which need none"] if bad else []) + filament)) + ":\n" + "\n".join(report))
+    return out, grams, plate["total_predication"], {o: mm.get(o, 0) for o in [*with_supports, *top_objs]}
 
 
 def halves(parts):
@@ -229,21 +249,30 @@ def main():
             for _, p in parts:
                 shutil.copy(p, os.path.join(where, "stl", os.path.basename(p)))
             if where == OUT:
-                rows.append((name, sup, grams, secs, [o for o, _ in parts]))
-            print(f"{name + '.3mf':24s} {grams:6.1f} g  {int(secs // 3600)} h {int(secs % 3600 // 60):02d} min  "
-                  + ", ".join(o for o, _ in parts) + "".join(f"\n{'':24s} supports under {o}: {v:.0f} mm of extrusion"
-                                                            for o, v in sup.items()))
+                rows.append((name, parts, sup, grams, secs))
+            print(f"{name + '.3mf':24s} PLA {grams['pla']:5.1f} g, support filament {grams['support']:4.1f} g, purge "
+                  f"{grams['purge'][0]:.1f} + {grams['purge'][1] if len(grams['purge']) > 1 else 0:.1f} g, {grams['changes']} changes, "
+                  f"{int(secs // 3600)} h {int(secs % 3600 // 60):02d} min  " + ", ".join(o for o, _ in parts)
+                  + "".join(f"\n{'':24s} supports under {o}: {v:.0f} mm of extrusion" for o, v in sup.items()))
     if tests:
         shutil.copy(print_package.TESTS_README, os.path.join(tests_dir, "README.md"))
         print_package.tests_zip()
     if not case:
         return
-    for extra in ("top.stl", "deck.stl", "tub.stl"):
+    for extra in ("top.stl", "tub.stl"):
         if os.path.exists(os.path.join(HERE, extra)) and not only:
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
-    table = "\n".join(f"| `{n}.3mf` | {'under ' + ', '.join(s) if s else 'none'} | {g:.1f} g | "
-                      f"{int(t // 3600)} h {int(t % 3600 // 60):02d} min | {', '.join(objs)} |"
-                      for n, s, g, t, objs in rows)
+    def supports(parts, sup):
+        top = [o for o, p in parts if p in print_package.TOP_PARTS]
+        plain = [o for o in sup if o not in top]
+        return "; ".join(([f"{', '.join(top)}: tree, interface in slot 2" if len(top) > 1 else f"{top[0]}: tree, interface in slot 2"] if top else [])
+                         + ([f"{', '.join(plain)}: plain PLA"] if plain else [])) or "none"
+
+    def purge(g):
+        return f"{g['purge'][0]:.1f} g PLA + {g['purge'][1]:.1f} g support" if g["support"] else "none"
+    table = "\n".join(f"| `{n}.3mf` | {supports(parts, sup)} | {g['pla']:.1f} g | {g['support']:.1f} g | {purge(g)} | {g['changes']} | "
+                      f"{int(t // 3600)} h {int(t % 3600 // 60):02d} min | {', '.join(o for o, _ in parts)} |"
+                      for n, parts, sup, g, t in rows)
     text = open(README).read()
     a, b = text.index("<!-- printer -->"), text.index("<!-- /printer -->") + len("<!-- /printer -->")
     text = text[:a] + PRINTER.replace("<!-- PLATES -->", table) + text[b:]

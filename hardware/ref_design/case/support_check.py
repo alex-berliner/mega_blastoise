@@ -3,6 +3,12 @@
 
     python3 case/support_check.py plate.3mf [object ...]     # objects that must get none
 
+The one-piece top prints on support (2026-10-25): tree supports with the interface layers, the ones that touch the
+part, in the second filament (Bambu Support For PLA) and the body in PLA. So besides "no support inside the outline of a
+part that needs none" it checks the support filament: it may print only "Support interface" and the prime tower (the
+purge and the start moves aside), and only inside the outlines of the parts it is designed for (the top and the coupons
+cut from it). That is the top's designed support; any other part with support fails.
+
 For each object on the plate (its mesh placed by the project's own transforms, then moved onto
 its own first layer in the G-code: Bambu Studio's G-code sits 2.0 mm off the project's placement
 in y on a P1S, so no offset is assumed), the support and support interface extruded inside its outline, layer by layer, and
@@ -21,14 +27,21 @@ import trimesh
 from shapely.geometry import MultiPoint, Polygon
 
 SUPPORT = ("Support", "Support interface", "Support transition")
+SUPPORT_TOOL = 1                       # the second filament (T1): Bambu Support For PLA
+SUPPORT_TOOL_FEATURES = {"Support interface", "Prime tower", "Flush", "Custom", "Undefined"}   # all it may print
+TOOL = re.compile(r"^T(\d+)\s*$")
 WORD = re.compile(r"([XYZEIJ])(-?[\d.]+)")
 
 
 def extrusions(gcode):
-    """[(feature, z, points (n, 2))] for every extruding move: G1 lines, and G2/G3 arcs sampled
-    along the arc. Bambu writes relative E (M83), absolute XY, and ; Z_HEIGHT: per layer."""
-    out, x, y, z, feature = [], 0.0, 0.0, 0.0, ""
+    """[(feature, z, points (n, 2), tool)] for every extruding move: G1 lines, and G2/G3 arcs sampled
+    along the arc. Bambu writes relative E (M83), absolute XY, ; Z_HEIGHT: per layer and Tn for the filament."""
+    out, x, y, z, feature, tool = [], 0.0, 0.0, 0.0, "", 0
     for line in gcode.splitlines():
+        m = TOOL.match(line)
+        if m:
+            tool = int(m.group(1))
+            continue
         if line.startswith(";"):
             if line.startswith("; FEATURE:"):
                 feature = line[10:].strip()
@@ -54,7 +67,7 @@ def extrusions(gcode):
             else:
                 n = max(2, int(np.hypot(nx - x, ny - y) / 0.1) + 1)
                 pts = np.c_[np.linspace(x, nx, n), np.linspace(y, ny, n)]
-            out.append((feature, z, pts))
+            out.append((feature, z, pts, tool))
         x, y = nx, ny
     return out
 
@@ -88,8 +101,8 @@ def register(objs, moves):
     extruded round it (within 3 mm of its outline) against its own section's centre. (Not the
     start G-code's purge lines: they're "Custom".)"""
     import overhangs
-    z0 = min(zz for f, zz, _ in moves if f == "Outer wall")
-    first = np.concatenate([p for f, zz, p in moves if zz == z0 and f == "Outer wall"])
+    z0 = min(zz for f, zz, *_ in moves if f == "Outer wall")
+    first = np.concatenate([p for f, zz, p, _ in moves if zz == z0 and f == "Outer wall"])
     for name, m in objs.items():
         b = np.array(overhangs._slice(m, m.bounds[0][2] + z0 / 2).bounds)
         near = MultiPoint(m.vertices[:, :2]).convex_hull.buffer(3)
@@ -108,19 +121,33 @@ def counterbores(mesh, z=0.5, d=(3.5, 6.0)):
     return [h for h in holes if d[0] < 2 * np.sqrt(h.area / np.pi) < d[1]]
 
 
-def check(path, no_support):
+def check(path, no_support, designed=()):
     """Support extrusion inside each object's outline, and inside each of the tub's counterbores:
-    (lines of a report, [no_support objects that got some], {object: mm of support in its outline})."""
+    (lines of a report, [no_support objects that got some], {object: mm of support in its outline},
+    [problems with the support filament's use: it prints only interface and the tower, and only under `designed`])."""
     z = zipfile.ZipFile(path)
     gcode = z.read("Metadata/plate_1.gcode").decode()
     moves = extrusions(gcode)
     objs = register(objects(z), moves)
-    sup = [(f, zz, p) for f, zz, p in moves if f in SUPPORT]
+    sup = [(f, zz, p) for f, zz, p, _ in moves if f in SUPPORT]
     pts = np.concatenate([p for *_, p in sup]) if sup else np.zeros((0, 2))
     zs = np.concatenate([[zz] * len(p) for _, zz, p in sup]) if sup else np.zeros(0)
     import overhangs
     report, bad, mm = [f"{len(pts) * 0.1:.0f} mm of support extrusion on the plate (the parts that need none: "
                        f"no face flatter than {overhangs.OVERHANG:g} degrees from vertical, overhangs.py)"], [], {}
+    # the support filament: only its interface and the prime tower; and the interface only in it
+    printed = {}
+    for f, zz, p, tool in moves:
+        printed.setdefault(tool, {})
+        printed[tool][f] = printed[tool].get(f, 0.0) + 0.1 * len(p)
+    filament = []
+    for tool, features in sorted(printed.items()):
+        report.append(f"  filament {tool + 1} prints " + ", ".join(f"{f} {mmv:.0f} mm" for f, mmv in sorted(features.items())))
+    for f in printed.get(SUPPORT_TOOL, {}):
+        if f not in SUPPORT_TOOL_FEATURES:
+            filament.append(f"the support filament prints {f}")
+    own = [p for f, zz, p, tool in moves if tool == SUPPORT_TOOL and f == "Support interface"]
+    own = np.concatenate(own) if own else np.zeros((0, 2))
     for name, m in sorted(objs.items()):
         outline = MultiPoint(m.vertices[:, :2]).convex_hull.buffer(-0.3)
         inside = shapely.contains_xy(outline, pts[:, 0], pts[:, 1]) if len(pts) else np.zeros(0, bool)
@@ -134,17 +161,19 @@ def check(path, no_support):
                       + (f" (layers {layers})" if layers else ""))
         if must_not and inside.any():
             bad.append(name)
+        if name not in designed and len(own) and shapely.contains_xy(outline, own[:, 0], own[:, 1]).any():
+            filament.append(f"the support filament prints inside {name}'s outline, which has none of its own")
         if name.startswith("tub") or "screws_tub" in name:      # the tub, and its screw holes coupon
             for i, h in enumerate(counterbores(m)):
                 c = h.centroid
                 n = shapely.contains_xy(h.buffer(0.2), pts[:, 0], pts[:, 1]).sum() if len(pts) else 0
                 report.append(f"    counterbore {i + 1} at ({c.x:6.1f}, {c.y:6.1f}), "
                               f"{2 * np.sqrt(h.area / np.pi):.2f} across: {n * 0.1:.1f} mm of support")
-    return report, bad, mm
+    return report, bad, mm, filament
 
 
 if __name__ == "__main__":
-    lines, bad, _ = check(sys.argv[1], set(sys.argv[2:]))
+    lines, bad, _, filament = check(sys.argv[1], set(sys.argv[2:]))
     print("\n".join(lines))
-    if bad:
-        sys.exit(f"support on {', '.join(bad)}")
+    if bad or filament:
+        sys.exit("; ".join(([f"support on {', '.join(bad)}"] if bad else []) + filament))
