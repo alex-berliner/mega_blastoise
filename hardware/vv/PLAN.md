@@ -4,7 +4,7 @@
 (branch ref-design-island-45, 2026-10-24 12:49). On 2026-10-25 this register was re-seeded
 for it: the first run (2026-10-24) had described 76955d2, a design two days older (DEF-47).
 The same day two models attacked the re-seed; their 39 accepted findings (O-R1 to O-R23,
-F-R1 to F-R16, none disputed) are applied (section l). The order gate fails @GATE@ counted
+F-R1 to F-R16, none disputed) are applied (section l). The order gate fails 27 of its 31 counted
 criteria (section i); the default mode passes.
 
 Contents: (a) the system on one page; (b) what changed in the design; (c) the first run's
@@ -23,8 +23,9 @@ its own evidence.
 
 **The chain.** Requirements (requirements.md: 133, of which 130 live and PROPOSED, 3
 RETIRED) -> DFMEA rows (dfmea.csv: 177, of which 145 live: 53 H, 65 M, 27 L; 32 RETIRED) ->
-checks (verification.csv: @CHECKS@) -> gates (gates.md: ORDER, CASE, EVT, DVT, PVT) ->
-release and change records (releases/) -> defects (defects.md: @DEFECTS@). Alex's decisions
+checks (verification.csv: 182: 14 PASS, 9 FAIL, 52 NOT_RUN, 102
+NOT_BUILT, 2 CUT, 3 RETIRED) -> gates (gates.md: ORDER, CASE, EVT, DVT, PVT) ->
+release and change records (releases/) -> defects (defects.md: 55: 22 OPEN, 20 FIXED, 6 CLOSED, 7 RETIRED). Alex's decisions
 live in one file, releases/APPROVALS.md, which only he edits, in commits signed with his key.
 
 **What check_trace.py enforces** (`python3 hardware/vv/tools/check_trace.py`):
@@ -61,7 +62,9 @@ live in one file, releases/APPROVALS.md, which only he edits, in commits signed 
   order branch: a design commit on it after 684a609 warns in the default mode and fails the
   order gate (R8, O-R13), even before it is merged here.
 
-`tools/seed_faults.py` seeds @SEEDS@ faults and catches every one (VER-129).
+`tools/seed_faults.py` seeds 63 faults and catches every one (VER-129): 41 on a copy of the
+register, 22 in a scratch clone with real git history and signed commits, two of those
+design_numbers.py runs (O-R1, O-R14).
 `tools/design_numbers.py` recomputes the pre-order numbers this plan quotes; its CPL and
 drill checks run fab.py's own export into a temp dir and read the files it writes (O-R1).
 `tools/run_checks.py` runs it and the other quick checks and writes their evidence.
@@ -174,7 +177,7 @@ Unit allocation (gates.md): unit 1 FAI, full bring-up, golden readings, the char
 a load (VER-145) and SR_CLK (VER-179); units 2 and 3 bring-up, soak and thermal; unit 4 abuse,
 ESD screen, near-field, drop, button life and fault injection (it never ships); unit 5 spare.
 
-Exit: `--gate evt` exits 0 (G-EVT-01 to G-EVT-14).
+Exit: `--gate evt` exits 0 (G-EVT-01 to G-EVT-14; G-EVT-15 is prod_board's).
 
 ### DVT: the revised spin
 
@@ -395,38 +398,40 @@ ORDER (above), and DEF-47 stays FIXED, not CLOSED, until scripts/check.sh runs c
 
 ## (i) The gate today
 
-At 78b777a and the evidence commit after it (14 PASS, 8 FAIL, 52 NOT_RUN, 100 NOT_BUILT, 2 CUT, 3
-RETIRED):
+At d3f66ea, the evidence commit after fc862fa (14 PASS, 9 FAIL, 52 NOT_RUN, 102 NOT_BUILT,
+2 CUT, 3 RETIRED):
 
 ```
 $ python3 hardware/vv/tools/check_trace.py
 STRUCTURE: OK (4 warnings)
-  requirements 132 {'PROPOSED': 129, 'RETIRED': 3}
-  DFMEA rows 173, action priority {'H': 46, 'L': 47, 'M': 80}   (live: 36 H, 65 M, 40 L)
-  checks 179 {'PASS': 14, 'FAIL': 8, 'NOT_RUN': 52, 'NOT_BUILT': 100, 'CUT': 2, 'RETIRED': 3}
-  defects 51 {'OPEN': 20, 'FIXED': 19, 'CLOSED': 5, 'RETIRED': 7}
+  requirements 133 {'PROPOSED': 130, 'RETIRED': 3}
+  DFMEA rows 177 (live: 53 H, 65 M, 27 L; 32 RETIRED)
+  checks 182 {'PASS': 14, 'FAIL': 9, 'NOT_RUN': 52, 'NOT_BUILT': 102, 'CUT': 2, 'RETIRED': 3}
+  defects 55 {'OPEN': 22, 'FIXED': 20, 'CLOSED': 6, 'RETIRED': 7}
+  approvals by Alex: 0 counted (signed); commit signing not set up, so none can count yet
+  order branch: ref-design-island-45 has no design commit after 684a609
   design baseline: matches HEAD
-  design.py parts and contacts named in no row (of 138): 0
-  advisory only: VER-40
   warnings: the pass bands of VER-67, VER-88, VER-134 and VER-139 are 1.4-2.2 x their DMM's
   accuracy (want 4 x)
 exit 0
 
 $ python3 hardware/vv/tools/check_trace.py --gate order
-  PASS  R5, R6 (no release yet), R7
+  PASS  R5, R6 (no release yet), R7, R8
   INFO  G-ORD-05, G-ORD-12 (advisory); N/A G-ORD-25 (prod_board)
-  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06 to G-ORD-11, G-ORD-13 to G-ORD-24
-        (the FAILs among them: VER-131 drill, VER-176 CPL, VER-138 cutoff, VER-177 VBUS)
-  FAIL  G-ORD-22: 65 ORDER checks not passing (VER-40 excluded as advisory)
-  FAIL  R1 126 PROPOSED; R2 56 requirements with an ORDER check not passing;
-        R3 36 H rows neither accepted nor DONE; R4 20 OPEN defects
-RESULT: FAIL (26 of 29 not met); 1 N/A, 2 advisory
+  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06 to G-ORD-11, G-ORD-13 to G-ORD-24, G-ORD-26
+        (the FAILs among them: VER-131 drill, VER-176 CPL, VER-181 the cell's gap,
+        VER-138 cutoff, VER-177 VBUS)
+  FAIL  G-ORD-22: 67 ORDER checks not passing (VER-40 excluded as advisory)
+  FAIL  R1 127 PROPOSED; R2 56 requirements with an ORDER check not passing;
+        R3 52 H rows neither accepted nor DONE; R4 17 OPEN defects with Gate ORDER
+RESULT: FAIL (27 of 31 not met); 1 N/A, 2 advisory
 ```
 
 The case gate fails 10 of 13, EVT 18 of 21, DVT 9 of 12, PVT 10 of 13, and prod_board's order
-gate 4 of 7 (23 criteria N/A). The checks that pass: the netlist, the pin gate, ERC, DRC with
-parity, both 4-ring contact footprints, inrush, holes, the backlight's worst case, the MLCC
-keep-out, TH1's geometry, two inspections (VER-104, VER-124) and the seeded faults (VER-129).
+gate 5 of 7 (24 criteria N/A; R3 now reads its DFMEA rows, O-R12). The checks that pass: the
+netlist, the pin gate, ERC, DRC with parity, both 4-ring contact footprints, inrush, holes,
+the backlight's worst case, the MLCC keep-out, TH1's geometry (now from the board), two
+inspections (VER-104, VER-124) and the seeded faults (VER-129, 63 of 63).
 
 ## (j) Past bugs and what catches them
 
