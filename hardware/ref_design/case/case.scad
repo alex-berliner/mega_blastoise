@@ -26,29 +26,31 @@ explode = 0;
 $fn = 72;
 
 // ---------------- bought parts ----------------
-// EastRising ER-TFT024IPS-3 (ST7789V, 240 x 320 IPS), from its datasheet's outline drawing (page 6).
-// The 2.4 in panel replaced the 3.5 in ER-TFT035IPS-6 (Alex, 2026-10-21): the case is 23.5 mm shorter
-panel_w = 42.72;  panel_l = 59.46;  panel_t = 2.4;      // outline with the FPC folded; 2.3 +-0.1 thick: the thickest
+// EastRising ER-TFT035IPS-6 (ILI9488, 320 x 480 IPS, "No Touch"): the 3.5 in panel, back since 2026-10-26 (it was the 2.4 in
+// ER-TFT024IPS-3 from 2026-10-21; the case was 23.5 mm shorter). Its numbers are the old 3.5 in design's (5d0ef99^), from the
+// datasheet's outline drawing as the old reviewer read it (the datasheet is behind Cloudflare and the Wayback copy was down on
+// 2026-10-26, so none of it is re-checked here): ESTIMATE until a real panel and calipers say
+panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.45;     // outline with the FPC folded; the drawing's side view says
+                                                        // 2.35 +-0.1 (its table 2.3): the thickest
 tape_t = 0.15;                                          // double-sided tape between the top piece's skin and the panel
 panel_fit = 0.8;   // the top piece's locating frame is this much larger: the panel is +-0.2, FDM openings print small
 frame_wall = 1.1;  frame_h = 1.0;                       // that frame's walls, hanging from the top piece
-aa_w = 36.72;     aa_l = 48.96;                         // active area
-aa_to_top = 2.90;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (the drawing: 2.90 from
-                                                        // the edge away from the FPC, centred across)
-aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.35 mm towards seat 2
-window_margin = 1.0;                                    // bezel opening past the active area (it is then the panel's
-                                                        // 38.72 x 50.96 visual area): covers the panel's float in its
-                                                        // frame, its active-area tolerance and a printed opening's error
-// Its FPC (50 contacts, 0.5 mm pitch) leaves the seat-1 edge, folds under the panel and plugs into a
-// 50-pin ZIF connector under the panel (J3, Hirose FH12-50S, bottom contact). The drawing: 31.5 wide,
-// its edge 6.0 from the panel's +x edge (seen from the front, seat 1 nearest), 27.0 long unfolded
-// from the glass edge to its tip, the contacts 25.5 wide
-fpc_w = 31.5;  fpc_tail_w = 25.5;  fpc_x = panel_w / 2 - 6.0 - fpc_w / 2;   // FPC centre, x
-fpc_l = 27.0;
-// Folded, the tip lands somewhere in tip_range in from the seat-1 glass edge (the fold isn't drawn:
-// the schematic session's estimate, 2026-10-21). J3 isn't fixed yet, so the board keeps the whole
-// range clear; tip_in is where the board places it for now
-tip_range = [22.5, 25.0];                               // ESTIMATE
+aa_w = 48.96;     aa_l = 73.44;                         // active area (the old design's; ESTIMATE for this exact part)
+aa_to_top = 2.5;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
+aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.28 mm towards seat 2
+window_margin = 1.0;                                    // bezel opening past the active area: covers the panel's float
+                                                        // in its frame, its active-area tolerance and a printed
+                                                        // opening's error; at most 0.5 mm of the panel's black border shows
+// Its FPC leaves the seat-1 edge, folds under the panel and plugs into a 50-pin ZIF connector (J3, Hirose FH12-50S, bottom
+// contact). Seen from above, x from the panel's centre, lengths along the FPC from that edge: a 4.59 mm neck (35.6 wide,
+// centre +3.6) wraps the edge, then a 14.41 mm body (47.9 wide, centre +2.5) lies under the panel, then an 11.7 mm tail (25.5
+// wide, centred) ends in the 3.5 mm contact strip. ESTIMATE (the old design's, scaled from the drawing's views, not dimensioned)
+fpc_neck = [3.6, 35.6, 4.59];   fpc_body = [2.5, 47.9, 14.41];   fpc_tail = [0, 25.5, 11.7];
+fpc_x = fpc_tail[0];  fpc_w = fpc_neck[1];              // J3 and the tail are centred; the fold passes through the frame as wide as the neck
+fpc_l = fpc_body[2] + fpc_tail[2];
+// Folded, the tip lands somewhere in tip_range in from the seat-1 glass edge (the fold isn't drawn: the old design's 26.11, 1.2
+// either way). J3 isn't fixed until a real panel is measured, so the board keeps the whole range clear
+tip_range = [fpc_l - 1.2, fpc_l + 1.2];                 // ESTIMATE
 tip_in = (tip_range[0] + tip_range[1]) / 2;
 fpc_slack = 1.0;                                        // the connector 1 mm short of the tail's tip: a
                                                         // long FPC bows, a short one can't reach (ESTIMATE)
@@ -63,36 +65,37 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // its top at most cell_top over the board, its bottom in a pocket in the tub's floor. The hole is
 // the board's (placement.py CUTOUTS, case/CELLCUT_FOR_CASE.md): 0.5 round a worst-case cell, 1.0
 // more at its left end, where its leads come out and run to J2 at the hole's seat-1 corner. It is
-// pushed to the hole's right end, where the charger's thermistor TH1 reads it through the gap
+// pushed to the hole's right end, where the charger's thermistor TH1 reads it through the gap.
+// With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_hole = [[-28.7, -3.8], [25.3, 33.2]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
+cell_hole = [[-28.7, 7.0], [25.3, 44.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
 cell_pocket_fit = 0.25;                                 // the pocket inside the hole's outline, each side
 // The speaker (Alex, 2026-10-22): INGHAi's GSPK151035PN, a 15 x 10 mm racetrack 3.5 mm thick with
-// its adhesive front foam ring, whose 35 mm leads end in a 1.25 mm 2-pin plug for J4. It lies face
-// up on the board's top in the right bezel beside the screen, its long axis along the case, and fires
-// up through a grille in the face; the board keeps parts out of its outline plus spk_keep (SPEAKER in
-// placement.py). Its top stands 3.5 over the board, 3.8 worst case with tolerance and its tape, over
-// the bezel's 3.45: the top piece's underside has a pocket over it. The side outlet, the floor chamber
-// and the pad it lay on went with it (Alex, 2026-10-22: the side bezel, not the side wall)
+// its adhesive front foam ring, whose 35 mm leads end in a 1.25 mm 2-pin plug for J4. Since the 3.5 in panel
+// (2026-10-26) it lies in a hole in the board like the cell, its back on a pocket in the tub's floor, face up: beside the
+// 54.5 mm glass only 8 mm of board is left before the wall, and a speaker lying on the board stands 3.8 over it, 1.6
+// over the glass's limit. Sunk, its top is spk_over over the board, so it can lie half under the glass; its cone fires up
+// through a grille in the right ear's flat top (the ear: the raised block that runs out to the wall over J1, J4 and the
+// speaker's grille). The board keeps parts out of the hole's outline plus spk_keep (SPEAKER in placement.py)
 spk = [10, 15, 3.5];                                    // across (x), along (y, the racetrack's length), height
-spk_h_max = 3.8;                                        // its top over the board, worst case
-spk_pos = [28.7, -11.4];                                // its centre and its cone's (placement.py SPEAKER; 2.1 up
-                                                        // since the side screws came back inward, 2026-10-22)
-spk_keep = 0.5;                                         // the board's keep-out round it, and the pocket's
-spk_pocket = 0.5;                                       // the pocket's depth into the top piece's underside
+spk_h_max = 3.8;                                        // its top over its seat, worst case (tolerance and its tape)
+spk_pos = [29.7, -23.0];                                // its centre and its cone's (placement.py SPEAKER)
+spk_keep = 0.5;                                         // the board's hole is this much bigger than its outline
+spk_pocket_floor = 0.6;                                 // the tub's floor pocketed under it, as under the cell
+spk_hole_r = 1.0;                                       // the hole's corner radius, over the racetrack's: a rounded rectangle
 grille_in = 1.5;                                        // the grille stays this far inside the speaker's outline:
                                                         // the rim round it is solid, for its front ring to seal on
-grille_slot = [1.0, 1.8];                               // the grille's slots along the racetrack: width, pitch
-// J4 (the speaker's plug, PicoBlade like J2, 3.4 tall) below the speaker against the right wall, its
-// mouth towards the glass; the mated plug goes in from the left. A 0.3 pocket over both gives the plug
-// room; the side screw H3 stands between the speaker and the plug, and the pocket goes round its boss
-j4_body = [[28.75, -31.73], [35.65, -22.17]];           // its body's corners (centre 31.9, -27.0: CELLCUT_FOR_CASE.md)
-j4_plug = [[24.75, -29.25], [28.75, -24.75]];           // the mated plug's (about)
-j4_pocket = 0.3;  j4_pocket_grow = 0.25;                // the pocket's depth, and how far it is grown round them
+grille_slot = [1.0, 1.4];                               // the grille's slots along the racetrack: width, pitch
+grille_x = [28.6, 34.0];                                // and in x between these: outside the panel's pocket, on the ear's flat top
+// J4 (the speaker's plug, PicoBlade like J2, 3.4 tall) in the right strip, its mouth along the strip towards the speaker: a
+// PicoBlade is 7.65 across and 5.2 deep, and its mated plug stands 4 mm out from the mouth. With the mouth towards the
+// glass (the old layout) the pair would be 9.2 long across a strip that is 8.5 wide beside the glass
+j4_body = [[27.98, -9.7], [35.62, -4.5]];               // its model's box (centre 31.8, -7.1: CELLCUT_FOR_CASE.md)
+j4_plug = [[28.5, -13.7], [35.1, -9.7]];                // the mated plug's (about), towards the speaker
 j4_h = 3.4;
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
@@ -148,12 +151,12 @@ dome_h = 1.75;                                          // board to the flange's
 case_w = 77.4;            // the board's 72.4 (2026-10-22, Alex: up to 2 mm wider for its strips beside the
                           // cell's hole) and the walls: 2 mm wider than the 75.4 the clusters set, the clusters
                           // where they were (edge_margin_x)
-glass_side = (case_w - bay_w) / 2;                      // panel bay edge to long case edge (16.6: USB-C, the
-                                                        // speaker and the debug parts beside the glass)
+glass_side = (case_w - bay_w) / 2;                      // panel bay edge to long case edge (10.7: J1, J2 and J4 beside
+                                                        // the glass, and the island's slope)
 edge_margin = 4;          // case end to silicone piece
 edge_margin_x = edge_margin + 1;                        // and case side to silicone piece, 1 more since the case
                                                         // grew 2 mm wider round the same clusters (2026-10-22)
-piece_to_glass = 5;       // silicone piece to glass edge
+piece_to_glass = 5.2;     // silicone piece to glass edge (5 until the 3.5 in panel's 2.45 thick glass lengthened the slope's run to 5.85)
 wall = 2.0;  board_clear = 0.5;
 corner_r = 4.3;           // plan corners: a DS Lite's 4.3 to 4.4 (8 felt round and toy-like, 2026-10-19)
 board_r = 5.5;            // the board's own corners (its KiCad outline): no longer follow the case's
@@ -203,6 +206,7 @@ seam_gap = 0.1;                                         // the skirts stop this 
 
 // ---------------- stack (z) ----------------
 floor_t = 1.5;  pcb_t = 1.6;  top_t = 2.0;               // top 2.0, not 1.5: the first print felt flimsy
+spk_seat = floor_t - spk_pocket_floor;                  // the speaker's seat, z (0.9)
 // the board sits this high over the tub's floor, on ribs: a worst-case cell in its hole, its top
 // cell_top over the board, its bottom in the floor's pocket (0.7: the case is 9.55 at the screen)
 board_lift = cell[2] - cell_top - pcb_t - cell_pocket;
@@ -332,7 +336,9 @@ ss_centres = [[0, -ss_y], [0, ss_y]];
 // The side screws are the board's (placement.py SIDE_SCREWS; Alex, 2026-10-22: |y| <= 29, inside the
 // top, no shoulders): H1 and H2 at the seat-2 ends of the strips beside the cell's hole, H3 in
 // the right bezel between the speaker and J4, H4 in the left bezel between J2 and the LDO
-side_pins = [[32.5, 29.0], [-32.5, 29.0], [25.9, -21.95], [-33.0, -15.2]];
+// (2026-10-26, the 3.5 in panel: all four at the glass's corners, x +-32.5 (beyond the panel's frame, 28.75) and y +-40, under the
+// island's side slope and the deck beside it, where the ends' ceiling holds their bosses)
+side_pins = [[32.5, 40.0], [-32.5, 40.0], [32.5, -40.0], [-32.5, -40.0]];
 pin_key = 3.0;            // the end bosses sit off the centre line (seat 1's board hole is there)
 pin_out = 1.4;            // and this much further out than the clusters
 // seat 2's end boss is seat 1's turned round (2026-10-20)
@@ -345,12 +351,13 @@ tub_boss_d = [6.0, boss_d, 6.0, boss_d, 6.0, 6.0];
 // M2 x 6 self-tapping, wafer head (4 mm, 1 mm): M2 x 8 until the case got 3.8 mm thinner (2026-10-22),
 // when an 8 would have run past the ends' pilots
 screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;  screw_l = 6;
-screw_engage = min(6.0, case_h - z_top_cu - 0.8);       // the pilot stops 0.8 under the face
-deck_engage = deck_face - z_top_cu - 0.6;               // and 0.6 under the ends' face (the screw's tip 0.1 short)
+deck_engage = deck_face - z_top_cu - 0.6;               // the end screws' pilots stop 0.6 under the ends' face (the screw's tip 0.1 short)
+side_engage = deck_engage - 0.1;                        // the side screws' too, 0.1 shorter: they stand under the island's side slope and the deck
+                                                        // beside it (2026-10-26), where the face is the deck's or a little above it
 
 // edge parts, all on the right (+X) long edge. J1 slid 2 mm up its wall (towards seat 2) when the side
 // screws came back inward (2026-10-22, CELLCUT_FOR_CASE.md): its opening, tab, notch and slot follow usb_y
-usb_y = 2.0; usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
+usb_y = 1.5; usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
 usb_r = 1.0;                                            // its corner radius: a rounded rectangle with 1.2 mm flats
                                                         // on its ends, not a stadium (HRO's 3D model, 2026-10-20)
 // The receptacle's face sits usb_recess under the case's surface, so a plug's overmold comes up to
@@ -385,18 +392,18 @@ plug_len_min = 6.55;  usb_mate = 6.20;
 // levers, CELLCUT_FOR_CASE.md) out of the left strip into the left bezel below H4, one above the other, each
 // lying across the bezel (TS-1088, its 3D model 4.8 x 2.9 x 1.95: pin_sw its half size in the plan, pin_sw_h
 // its height). A floor rib in the tub under them (pin_rib) carries a pin's press into the floor
-pin_pos = [[-32.35, -20.7], [-32.35, -24.35]];
+pin_pos = [[-32.35, -30.2], [-32.35, -33.85]];
 pin_sw = [2.4, 1.45];  pin_sw_h = 1.95;
 pin_guide_d = 3.0;  pin_guide_z = 2.4;                  // the guides round the pinholes, down to this over the board
 // J5 (SWD), JST SH, its mouth towards the left edge (the board's, 2026-10-22): plugged with the case open (the
 // tub off), as the plug stands past the board's edge; no slot in the wall. J6 (UART) went on 2026-10-24
-swd_pos = [-32.6, 15.2];
+swd_pos = [-31.8, -18.0];
 debug_h = 2.9;
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
 // bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
 // the hole's corner (placement.py), its leads down beside the cell's left end
-j2_pos = [-30.7, -7.24];  j2_h = 3.4;
-j2_plug = [[-32.8, -4.6], [-28.6, -1.6]];               // the mated plug's outline, corners
+j2_pos = [-31.7, 3.56];  j2_h = 3.4;
+j2_plug = [[-35.4, 6.2], [-28.0, 10.2]];               // the mated plug's outline, corners
 // the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
 // backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
 // U9 (1.2)
@@ -409,7 +416,7 @@ function rect_dist(p, r) = norm([max(0, min(r[0][0], r[1][0]) - p[0], p[0] - max
 assert(cluster_spacing >= piece_d + 2, "a seat's two silicone pieces would touch");
 assert(seat_y - piece_d / 2 >= bay_l / 2 + piece_to_glass - 1e-6, "cluster runs into the glass");
 assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs off the board");
-assert(glass_side >= 9.7, "no room for USB-C beside the glass");
+assert(glass_side >= 9.7, "no room for the tall connectors beside the glass");
 // the cell in its hole: on the board, under the panel and the ends, and its pocket in the floor
 assert(cell_hole[0][0] >= -board_w / 2 + 7 && cell_hole[1][0] <= board_w / 2 - 7, "the strips beside the cell's hole are too narrow");
 assert(cell_hole[1][0] - cell_hole[0][0] >= cell[0] + 1.0 && cell_hole[1][1] - cell_hole[0][1] >= cell[1] + 1.0,
@@ -427,18 +434,19 @@ for (i = [0:3]) let(s = pins[i], b = max(tub_boss_d[i], boss_d)) {
   assert(rect_dist(s, cell_hole) >= b / 2 + 1.0, "a side screw's boss runs into the cell's hole");
   assert(abs(s[0]) + b / 2 <= board_w / 2 - 0.5, "a side screw's boss runs past the board's edge");
 }
-// the speaker in the right bezel, under its pocket, clear of the panel's frame, the cell and J4
-assert(spk_pos[0] - spk[0] / 2 - spk_keep >= (panel_w + panel_fit) / 2 + frame_wall + 0.3, "the speaker's pocket runs into the panel frame");
-assert(spk_pos[0] + spk[0] / 2 + spk_keep <= case_w / 2 - wall - 1.0, "the speaker's pocket runs into the side wall");
-assert(z_ceil + spk_pocket - z_top_cu >= spk_h_max + 0.15, "no room for the speaker under the top");
-assert(top_t - spk_pocket >= 1.2, "the face over the speaker is too thin");
-// (since 2026-10-22 its seat-2 end is 0.1 short of the hole's edge: it lies on the board, and its
-// pocket, over the ceiling, reaches 0.4 over the hole, far above the cell's top)
-assert(spk_pos[1] + spk[1] / 2 <= cell_hole[0][1] + 1e-6, "the speaker doesn't lie on the board");
-assert(spk_pos[1] - spk[1] / 2 - spk_keep >= j4_body[1][1], "the speaker runs into J4");
-assert(spk_pos[0] - spk[0] / 2 + grille_in >= (panel_w + panel_fit) / 2 + frame_wall + 2.0, "the grille runs into the screen's bezel");
-assert(j4_body[0][1] >= -(joint_y - joint_w), "J4 runs under the band's end");
-assert(z_ceil + j4_pocket - z_top_cu >= j4_h + 0.3, "no room for J4 and its plug under the top");
+// the speaker in the right strip, sunk in its hole in the board like the cell: the hole (the speaker's outline plus spk_keep)
+// leaves the board's edge a rim of 0.9, is a web 1.0 clear of the cell's hole and of J4's plug, and the speaker's top, on its seat in the
+// floor's pocket, stays under the glass's and the ends' limits; its grille's slots lie inside its outline less grille_in, outside the panel's
+// frame, on the island's side slope (or the ear's flat top)
+spk_top_over = spk_seat + spk_h_max - z_top_cu;         // its top over the board's top, worst case (0.9)
+assert(spk_pos[0] + spk[0] / 2 + spk_keep <= board_w / 2 - 0.9, "the speaker's hole leaves the board's edge too thin a rim");
+assert(spk_pos[1] + spk[1] / 2 + spk_keep <= cell_hole[0][1] - 1.0 || spk_pos[0] - spk[0] / 2 - spk_keep >= cell_hole[1][0] + 1.0, "the speaker's hole runs into the cell's");
+assert(spk_pos[1] + spk[1] / 2 + spk_keep + 1.0 <= j4_plug[0][1] || spk_pos[1] - spk[1] / 2 - spk_keep - 1.0 >= j4_plug[1][1], "the speaker's hole runs into J4's plug");
+assert(floor_t - spk_pocket_floor >= 0.8, "the floor under the speaker is too thin");
+assert(spk_top_over <= glass_gap - 0.4 && spk_top_over <= z_deck_under - z_top_cu - 0.3 + 1e-6, "the speaker's top runs into the panel or the ends");
+assert(spk_pos[0] - spk[0] / 2 - spk_keep >= -board_w / 2 + 0.9 && grille_x[0] >= (panel_w + panel_fit) / 2 + 0.9, "the grille runs into the screen's bezel");
+assert(grille_x[1] <= case_w / 2 - face_r - 0.5, "the grille runs into the side round");
+assert(j4_body[0][0] >= (panel_w + panel_fit) / 2 + 0.2 && j4_body[1][0] <= board_w / 2 - 0.5, "J4 isn't in the strip beside the glass");
 // USB-C: the opening centred on the receptacle's mouth (it stands on the board's top), usb_gap round
 // it, cut through the whole wall from inside the tub's round to past the outside, the receptacle's
 // face in the wall, and a mated plug's overmold off the wall (check_fit.py checks the same against
@@ -454,9 +462,9 @@ assert(usb_recess <= plug_len_min - usb_mate - 0.1, "a mated USB-C plug's overmo
 assert(usb_zc - usb_hole[1] / 2 - z_seam >= 0.8 && usb_zc - usb_step - 0.1 >= usb_zc - usb_hole[1] / 2 + 0.3,
        "the tub's USB-C tab under the opening is too thin");
 assert(usb_front - (case_w / 2 - wall / 2) > 0 && z_seam < z_top_cu, "the USB-C notch isn't needed: drop the tab");
-// J2 and J5 under the left bezel
-assert(z_ceil - z_top_cu >= j2_h + 0.3 && z_ceil - z_top_cu >= debug_h + 0.3, "J2 or the debug connector touches the top");
-assert(j2_plug[1][0] <= cell_hole[0][0] + 0.2, "J2's plug isn't at the hole's corner");
+// J2 (under the left ear) and J5 (under the slope and the deck's pocket): x, y over the board's top, their model's boxes
+assert(j2_plug[0][0] >= -board_w / 2 && j2_plug[1][0] <= -(panel_w + panel_fit) / 2 - 0.15, "J2's plug isn't beside the glass");
+assert(j2_plug[0][1] >= j2_pos[1] + 2.6 - 0.5 && abs(j2_plug[1][0] - cell_hole[0][0]) <= 1.0, "J2's plug isn't at the hole's corner");
 // the debug switches (2026-10-24) in the left bezel below H4: their guides over them, the two side by side, clear
 // of J5, J2's plug, the cell's hole and the panel's frame (H4 and the other screws' bosses: below the side screws'
 // asserts). Along the left wall (the key at y -21, the grip ribs, the band's end): in the joints' asserts
@@ -487,8 +495,8 @@ for (p = pin_pos) for (i = [0:5]) let(q = pins[i], b = max(tub_boss_d[i], boss_d
 }
 for (p = pin_pos) assert(rect_dist(p, frame_rect) >= pin_guide_d / 2 + 0.5, "a pinhole's guide runs into the panel's frame");
 // the screws: each tip short of its pilot's end
-assert(tune || screw_cb[1] + screw_l <= z_top_cu + deck_engage && screw_cb[1] + screw_l <= z_top_cu + screw_engage, "the screws are longer than their pilots");
-assert(z_top_cu + screw_engage <= case_h - 0.8 + 1e-6 && z_top_cu + deck_engage <= deck_face - 0.6 + 1e-6, "a pilot runs too near a face");
+assert(tune || screw_cb[1] + screw_l <= z_top_cu + side_engage + 1e-6 && screw_cb[1] + screw_l <= z_top_cu + deck_engage + 1e-6, "the screws are longer than their pilots");
+assert(z_top_cu + side_engage <= deck_face - 0.6 + 1e-6 && z_top_cu + deck_engage <= deck_face - 0.6 + 1e-6, "a pilot runs too near a face");
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(face_t >= 0.6 && face_t <= top_t, "face_t out of range");
@@ -526,7 +534,7 @@ if (!tune) {
   assert(deck_face - (z_deck_tongue + seam_gap) >= 0.8, "the ends' plate over the tongue is too thin");
   assert(z_deck_tongue > z_arm_tongue && deck_face - face_r < z_deck_tongue, "the tongue's heights are the wrong way round");
   // the step in the tongue (tongue_y) lies under the slope, where the cavity's ceiling is higher than the taller tongue
-  assert(uni_lim(tongue_y - tongue_y_fit) >= z_deck_tongue + seam_gap + 0.3, "the taller tongue runs into the slope's ceiling");
+  assert(uni_lim_d(uni_foot - (tongue_y - tongue_y_fit)) >= z_deck_tongue + seam_gap + 0.3, "the taller tongue runs into the slope's ceiling");
   // the keys: one in each side wall's band, on the side walls' height of tongue, clear of the USB-C notch, the grip ribs
   // and the side screws' bosses; the plate over its pocket 0.8. The left keys are the right ones turned round
   assert(deck_face - (z_key + seam_gap) >= 0.8, "the plate over a key's pocket is too thin");
@@ -622,8 +630,9 @@ echo(str("JSON {",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
   "\"bezel_limit\": ", jnum(z_ceil - z_top_cu - 0.3), ", ",
   "\"retainer_limit\": ", jnum(retainer_bot - z_top_cu - 0.3), ", ",
-  "\"fpc_zones\": [[", jpt([fpc_x - fpc_w / 2 - 0.5, fpc_y(tip_range[1] + 0.5)]), ", ",
-    jpt([fpc_x + fpc_w / 2 + 0.5, fpc_y(-1.5)]), "]], ",
+  "\"fpc_zones\": [[", jpt([fpc_tail[0] - fpc_tail[1] / 2 - 0.5, fpc_y(tip_range[1] + 0.5)]), ", ",
+    jpt([fpc_tail[0] + fpc_tail[1] / 2 + 0.5, fpc_y(fpc_body[2])]), "], [",
+    jpt([fpc_body[0] - fpc_body[1] / 2 - 0.5, fpc_y(fpc_body[2])]), ", ", jpt([fpc_body[0] + fpc_body[1] / 2 + 0.5, fpc_y(-1.5)]), "]], ",
   "\"fpc_conn\": {\"x\": ", jnum(kicad([fpc_x, 0])[0]), ", \"y\": ", jnum(kicad([0, fpc_y(conn_in)])[1]),
     ", \"y_range\": [", jnum(kicad([0, fpc_y(conn_in_at(tip_range[0]))])[1]), ", ", jnum(kicad([0, fpc_y(conn_in_at(tip_range[1]))])[1]), "]}, ",
   "\"j3_zone\": [", jpt([fpc_x - j3_w / 2 - 0.5, fpc_y(conn_in_at(tip_range[1]) + 2.0 + 0.5)]), ", ",
@@ -641,7 +650,7 @@ echo(str("JSON {",
   "\"cell_hole\": [", jpt([cell_hole[0][0], cell_hole[1][1]]), ", ", jpt([cell_hole[1][0], cell_hole[0][1]]), "], \"cell_top\": ", cell_top, ", ",
   "\"back_limit\": ", jnum(board_lift - 0.2), ", ",
   "\"speaker\": {\"c\": ", jpt(spk_pos), ", \"size\": [", spk[0], ", ", spk[1], "], \"keep\": ", spk_keep,
-    ", \"limit\": ", jnum(z_ceil + spk_pocket - z_top_cu - 0.15), "}, ",
+    ", \"top_over\": ", jnum(spk_top_over), ", \"seat\": ", jnum(spk_seat), "}, ",
   "\"crush\": [", join([for (c = crush) jpt(c)]), "], ",
   "\"frame\": {\"outer\": [", jpt([-(panel_w + panel_fit) / 2 - frame_wall, (panel_l + panel_fit) / 2 + frame_wall]), ", ",
     jpt([(panel_w + panel_fit) / 2 + frame_wall, -(panel_l + panel_fit) / 2 - frame_wall]), "], \"inner\": [",
@@ -713,7 +722,7 @@ module pad2d(c) let(dp = c == dpad1 || c == dpad2) union() {
 module cross(w, l) union() { square([l, w], center = true); square([w, l], center = true); }
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
 // The top's plan at the screen's height (the layout view): the band across the case, to its slope's foot
-module top_region2d() square([4 * case_w, 2 * uni_foot], center = true);
+module top_region2d() { rrect(2 * uni_edge_x, 2 * uni_edge, uni_corner_r); for (e = uni_ears) scale([e[0], 1, 1]) translate([uni_ear_xa, e[1]]) square([case_w, e[2] - e[1]]); }
 module outline2d() rrect(case_w, case_l, corner_r);
 module inner2d(grow = 0) offset(delta = -wall + grow) outline2d();
 // how far in from an edge's wall line a round is at depth dd under the face it rolls into: an arc of
@@ -734,6 +743,7 @@ module board_outline() difference() {
     if (usb_tab > 0) translate([board_w / 2 - 1, usb_y - usb_tab_w / 2]) square([usb_tab + 1, usb_tab_w]);
   }
   cell_hole2d();
+  spk2d(spk_keep);
 }
 if (part == "board") board_outline();
 
@@ -857,8 +867,8 @@ key_band = key_w / 2 + seam_fit + 0.3;                  // the clear band either
 // [side, y, the tongue's top there, width]
 grip_reach = seam_fit - 0.05;  grip_w = 1.0;                 // GUESS (2026-10-22): the first print of these joints
                                                         // settles it (case/SHELL.md, "Best guesses")
-grips = concat([for (sx = [-1, 1], sy = [-1, 1], y = [40, 52]) [sx, sy * y, z_deck_tongue]],
-               [for (sx = [-1, 1], sy = [-1, 1]) [sx, sy * 26, z_arm_tongue]],
+grips = concat([for (sx = [-1, 1], sy = [-1, 1], y = [54, 66]) [sx, sy * y, z_deck_tongue]],      // (40, 52 until the 3.5 in panel moved the tongue's step out to 47.3)
+               [for (sx = [-1, 1], sy = [-1, 1], y = [26, 38]) [sx, sy * y, z_arm_tongue]],
                [[1, -13.25, z_arm_tongue], [1, 17.2, z_arm_tongue], [-1, 13.25, z_arm_tongue], [-1, -17.2, z_arm_tongue]]);
 // a rib runs up the tongue to 0.1 short of where its outside starts to lean in, its top a 45 degree lead-in
 function grip_top(zt) = max([for (k = [0:800]) let(z = z_seam + 0.01 * k) if (z <= zt && tongue_out(z, deck_face, zt) <= wall / 2 + seam_fit + 1e-6) z]);
@@ -872,6 +882,8 @@ ss_vent = 1.25;           // each Start/Select dome's 0.5 mm vent, this far towa
 // what the floor's ribs keep clear of under the board: [x0, y0, x1, y1]
 rib_free = concat([
   [cell_hole[0][0] - 0.5, cell_hole[0][1] - 0.5, cell_hole[1][0] + 0.5, cell_hole[1][1] + 0.5],   // the cell's hole
+  [spk_pos[0] - spk[0] / 2 - spk_keep - 0.5, spk_pos[1] - spk[1] / 2 - spk_keep - 0.5,
+   spk_pos[0] + spk[0] / 2 + spk_keep + 0.5, spk_pos[1] + spk[1] / 2 + spk_keep + 0.5],               // the speaker's
   [usb_front - 8.5, usb_y - usb_tab_w / 2, board_w / 2 + usb_tab, usb_y + usb_tab_w / 2],         // J1's shell legs
   [-10, 45.5, 10, 48.5], [-12.0, -15.5, -9.2, -12.5], [-9.3, -11.5, 1.3, -8.5], [-23.0, -28.3, -19.8, -25.1],  // test pads
   [-8.0, -43.7, 8.0, -38.6],                                                                      // J7's pogo pads
@@ -881,21 +893,24 @@ module rib_free2d() for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[
 // their length: the left one under J5, where a cable is pushed in (until 2026-10-24 also under the debug
 // switches, which left the strip, and J6, which went); the right one under TH1 and J1's end (the power latch
 // left it on 2026-10-24), with one across it at y 14. The floor's grid and its ring round the board's edge cross them
+th1_y = 21.0;                                           // TH1 (placement.py), at the cell hole's right edge
 strip_ribs = [[[-31.2 - 0.6, cell_hole[0][1]], [-31.2 + 0.6, cell_hole[1][1]]],
               [[29.6 - 0.6, cell_hole[0][1]], [29.6 + 0.6, cell_hole[1][1]]],
-              [[cell_hole[1][0], 14 - 0.6], [board_w / 2, 14 + 0.6]]];
-// and one under the debug switches (2026-10-24) in the left bezel, along under both plungers, from the grid's
-// line below the lower one up into H4's boss: a pin's press goes into the floor, not into bending the board
-pin_rib_y0 = -board_l / 2 + support_pitch * floor((min(pin_pos[0][1], pin_pos[1][1]) + board_l / 2) / support_pitch) - 0.6;
-pin_rib = [[pin_pos[0][0] - 0.6, pin_rib_y0], [pin_pos[0][0] + 0.6, side_pins[3][1] - tub_boss_d[3] / 2 + 0.5]];
-assert(side_pins[3][1] > max(pin_pos[0][1], pin_pos[1][1]) && abs(side_pins[3][0] - pin_pos[0][0]) + 0.6 <= tub_boss_d[3] / 2 - 0.3
-       && pin_rib[0][1] <= min(pin_pos[0][1], pin_pos[1][1]) - pin_sw[1] - 0.5, "the debug switches' floor rib doesn't run under both into H4's boss");
+              [[cell_hole[1][0], th1_y - 0.6], [board_w / 2, th1_y + 0.6]]];
+// and one under the debug switches (2026-10-24) in the left bezel, along under both plungers and into H4's boss:
+// a pin's press goes into the floor, not into bending the board
+// (2026-10-26: H4 stands at the glass's corner now, y -40, below both switches: the rib runs from under the upper one down into H4's boss)
+pin_rib_y1 = max(pin_pos[0][1], pin_pos[1][1]) + pin_sw[1] + 0.5;
+pin_rib = [[pin_pos[0][0] - 0.6, side_pins[3][1] + tub_boss_d[3] / 2 - 0.5], [pin_pos[0][0] + 0.6, pin_rib_y1]];
+assert(side_pins[3][1] < min(pin_pos[0][1], pin_pos[1][1]) && abs(side_pins[3][0] - pin_pos[0][0]) + 0.6 <= tub_boss_d[3] / 2 - 0.3
+       && pin_rib[1][1] >= max(pin_pos[0][1], pin_pos[1][1]) + pin_sw[1] + 0.3, "the debug switches' floor rib doesn't run under both into H4's boss");
 for (r = rib_free) assert(r[2] <= pin_rib[0][0] || r[0] >= pin_rib[1][0] || r[3] <= pin_rib[0][1] || r[1] >= pin_rib[1][1],
                           "the debug switches' floor rib is cut by a keep-out");
 // the speaker's outline in the plan, a racetrack along y (grow: out from it), and its grille: slots
 // along it, inside the outline less grille_in
 module spk2d(grow = 0) at(spk_pos) hull() for (s = [-1, 1]) translate([0, s * (spk[1] - spk[0]) / 2]) circle(d = spk[0] + 2 * grow);
 module grille2d() offset(r = grille_slot[0] / 2, $fn = 24) intersection() {
+  translate([grille_x[0] + grille_slot[0] / 2, -case_l]) square([grille_x[1] - grille_x[0] - grille_slot[0], 2 * case_l]);
   spk2d(-grille_in - grille_slot[0] / 2);
   at(spk_pos) for (i = [-3:3]) translate([i * grille_slot[1], 0]) square([0.002, 2 * spk[1]], center = true);
 }
@@ -986,6 +1001,8 @@ module tub() difference() {
   for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
   // the cell's pocket in the floor, inside its hole's outline
   translate([0, 0, floor_t - cell_pocket]) linear_extrude(cell_pocket + 0.01) cell_hole2d(-cell_pocket_fit);
+  // and the speaker's, inside its hole's outline (the speaker lies on it, face up)
+  translate([0, 0, spk_seat]) linear_extrude(spk_pocket_floor + 0.01) spk2d(spk_keep - cell_pocket_fit);
   // USB-C: the opening's lower half, in the tab; over the tab the tongue stops either side of the
   // top's skirt, which comes down to the opening's centre there (usb_fit along the wall)
   usb_opening();
@@ -1058,16 +1075,6 @@ module dpad_flange() union() { circle(r = dpad_flange_r, $fn = 64); cross(dpad_a
 z_bot = z_seam + seam_gap;                              // the skirts' bottom
 // Under the round's end the skirt follows the back's round in, down to its tip at z_bot (2026-10-22)
 skirt_levels = back_levels(z_bot, back_r);              // [z, inset] up the round, z_bot to back_r
-// the shallow pocket over J4 and the speaker's mated plug: not past j4_pocket_edge (3.3 in from the side, under the side
-// round) nor into the band's end (joint_w short of joint_y), round H3's boss
-j4_pocket_edge = case_w / 2 - 3.3;
-module j4_pocket2d() intersection() {
-  difference() {
-    for (r = [j4_body, j4_plug]) corners2d(r, grow = j4_pocket_grow);
-    at(pins[2]) circle(d = boss_d);
-  }
-  translate([-case_w, -(joint_y - joint_w)]) square([case_w + j4_pocket_edge, 2 * (joint_y - joint_w)]);
-}
 // what the top carries inside it: the USB-C notch's roof, the side screws' bosses, the pinhole guides, the panel's frame
 module top_inner() {
   // over the USB-C notch the skirt's inner half stays, from the opening's centre up: the tongue
@@ -1095,18 +1102,13 @@ module top_cuts() {
   // viewing window: the panel's own glass shows through, no lens
   translate([0, 0, z_ceil - 1]) linear_extrude(top_t + 2) window();
   // pilot holes for the screws
-  for (s = side_pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = screw_engage);
+  for (s = side_pins) at(s, z_top_cu - 0.01) cylinder(d = screw_pilot, h = side_engage);
   // pinholes
   for (p = pin_pos) at(p, 0) cylinder(d = 1.2, h = case_h + 1);
-  // the speaker (2026-10-22): a pocket over it spk_keep round its outline, and its grille, slots
-  // through the face over its cone (face down they are plain holes in the plate on the bed); the
+  // the speaker's grille: slots through the face over its cone (face down they are plain holes in the plate on the bed); the
   // rim round them stays solid for its front ring to seal on
-  translate([0, 0, z_ceil - 0.01]) linear_extrude(spk_pocket + 0.01) spk2d(spk_keep);
   translate([0, 0, z_ceil]) linear_extrude(top_t + 1) grille2d();
 }
-// (the pocket over J4 and the speaker's mated plug is part of the cavity, uni_cavity)
-module j4_pocket3d() translate([0, 0, z_ceil - 0.01]) linear_extrude(j4_pocket + 0.01) j4_pocket2d();
-
 // ---- an end (sy: -1 seat 1's, 1 seat 2's): what the top carries under the ends' plate, and its openings ----
 // Seat 2's end is seat 1's turned round (the end bosses, the clusters and Start/Select all are)
 function end_pin(sy) = sy < 0 ? pins[5] : pins[4];
@@ -1149,62 +1151,78 @@ module end_cuts(sy) {
 // "make unibody main". One part instead of the island and the two decks (SHELL.md, "Rejected"): no wedge, lips, laps,
 // hooks or build bars; it goes on the tub over the tongue and the keys. Printed face down with Bambu Support For PLA as the
 // support interface, so its outside need not keep to `overhang`: the side rounds are true arcs.
-// The raised screen block is a band across the whole width (2026-10-25, Alex, after an x-ray showing that J1, J2,
-// J4, J5 and the speaker force a block out to the sides: "have the island extend fully to the left and right but try
-// to minimize its extension on the top and bottom"): at the screen's height from the left side wall to the right, so
-// the sides at the screen's height are the case's side profile (the round of face_r) and beyond the band the ends'.
-// Its two ends are the only edges, and each is the DS Lite's lower screen frame in section ("make an exact copy of
-// this curve structure and adapt it to our purpose"), measured from nintendo_ds_bottom_base.stl: a sharp top edge, and
-// from it ONE concave arc of radius 8.0 (rms 0.002 mm over its facets, on the right side, the left and the top)
-// that starts at 36 degrees off the flat and is tangent to the deck 4.70 out, 1.528 down (a 0.07 bead on the edge
-// is left out: it is under half a layer, and face down it would lie below the bed). Scaled uniformly to our step
-// (uni_k = step_d / 1.528 = 1.21): R 9.69, 5.69 out. The DS's plan corners (the frame is an island there, 31 from
-// the side wall) are the slope's offset with a radius that grows with the height, 0 at the foot to 1.45 at the top
-// edge; ours has no plan corners, the band runs out to the side walls, where the DS's own frame has nothing to copy
-// (its base is cut flat at the deck's level, the slope's foot at the cut): the section is carried out over the side
-// round unchanged (each slice of the step is the ends' side section lifted by the profile's height), so the same
-// curve shows in the side view and the step runs straight out and is cut by the case's side at both heights
+// The raised screen block is an island since 2026-10-26 (Alex, after a render of the band's long side meeting the side wall
+// through the side round: "can you make this slope inwards the way the slope towards the deck is"): at the screen's height
+// over the glass and 0.4 beyond it, with the DS Lite's slope on all four sides, and the area beside it at the ends' height.
+// (Until then it was a band from wall to wall, because J1, J2, J4, J5 and the speaker are tall near the sides; with the 3.5 in
+// panel the glass takes 27.25 of the 38.7 from the middle to the wall, the slope's run is 5.69, and what is left is the ends'
+// round, so the tall parts that can't go under the slope have EARS: the island runs out to the wall over J1 and J4 on the right
+// and over J2 on the left, `uni_ears`, as the old band did, with the slope across each ear's two ends.)
+// The slope is the DS Lite's lower screen frame in section ("make an exact copy of this curve structure and adapt it to our
+// purpose"), measured from nintendo_ds_bottom_base.stl: a sharp top edge, and from it ONE concave arc of radius 8.0 (rms 0.002
+// mm over its facets) that starts at 36 degrees off the flat and is tangent to the deck 4.70 out, 1.528 down (a 0.07 bead on
+// the edge is left out: it is under half a layer, and face down it would lie below the bed). Scaled uniformly to our step
+// (uni_k = step_d / 1.528): R 9.7, 5.7 out. The DS's plan corners (the frame is an island there, 31 from the side wall) are
+// the slope's offset with a radius that grows with the height, 0 at the foot to 1.45 at the top edge (x uni_k here): the
+// island is a loft through rounded rectangles, rings every 1.5 degrees of the arc. An ear is the old band's construction
+// (the ends' section, its side round lifted by the profile's height, swept along the case through the slope) cut off at the
+// ear's inner end, so the side round shows the same curve in the side view
 uni_ds_r = 8.0;  uni_ds_angle = 36;                      // the DS Lite's slope: its arc's radius, and its angle at the edge
 uni_ds_h = uni_ds_r * (1 - cos(uni_ds_angle));           // 1.528 (measured 1.523)
-uni_k = step_d / uni_ds_h;                               // the scale to ours (1.21)
-uni_r = uni_ds_r * uni_k;                                // the arc's radius here (9.69)
-uni_run = uni_r * sin(uni_ds_angle);                     // the slope's run, edge to foot (5.69)
+uni_k = step_d / uni_ds_h;                               // the scale to ours
+uni_r = uni_ds_r * uni_k;                                // the arc's radius here
+uni_run = uni_r * sin(uni_ds_angle);                     // the slope's run, edge to foot
 uni_skin = 0.7;           // the inside keeps this far under the slope (and under the ends' face over a pocket: below)
-uni_pocket_skin = 0.75;   // the ends' face over a pocket in their underside (uni_limit's slab: 0.05 under uni_skin)
-// What sets the ends: the panel's pocket (half its length 30.13): the top edge is 0.4 outside it, as the last pass
-// had it, which keeps the pocket's upper corner (0.8 under the face) 0.88 from the slope. J4, the FPC's fold and the
-// rest of the board's tall parts no longer reach it: the slope is gentle, so the inside's ceiling is still z_ceil
-// until 2.0 past the edge, the foot is uni_run further out
-uni_edge = (panel_l + panel_fit) / 2 + 0.4;              // the top edge, from the middle (30.53)
-uni_foot = uni_edge + uni_run;                           // 36.22
+uni_pocket_skin = 0.7;    // the ends' face over a pocket in their underside (J5's, U6's)
+// What sets the island: the panel's pocket (half its width 27.65, half its length 41.9): the top edge is 0.4 outside it, which
+// keeps the pocket's upper corner (0.8 under the face) 0.88 from the slope
+uni_edge_x = (panel_w + panel_fit) / 2 + 0.4;            // the top edge, from the middle, across the case (28.05)
+uni_edge = (panel_l + panel_fit) / 2 + 0.4;              // and along it (42.3)
+uni_foot_x = uni_edge_x + uni_run;  uni_foot = uni_edge + uni_run;     // 33.74, 47.99
+uni_corner_r = 1.45 * uni_k;                             // the plan corner's radius at the top edge (the DS Lite's 1.45)
 uni_s_n = 24;             // the slope's slices, every 1.5 degrees of the arc
 uni_arc_n = 36;           // the side rounds' levels (true quarter arcs, every 2.5 degrees)
 uni_x_r = case_w / 2 - face_r;                           // where the side rounds start (35.9)
+// The ears: [side, y0, y1], the flat top's extent along the wall, from the island's inner end `uni_ear_xa` (inside it) out
+// to the wall; the slope runs uni_run beyond each end. Right: J4's plug and J1 (the USB-C opening's wall); left: J2 and its plug
+uni_ear_xa = uni_edge_x - 8;
+uni_ears = [[1, -11.0, 8.0], [-1, 3.5, 8.5]];
 // the case's outside up to a face at H: the skirt down the back's round, the wall, a true quarter arc of face_r
 module uni_shell(H) rr_loft(concat(skirt_levels, [for (k = [0:uni_arc_n]) let(a = 90 * k / uni_arc_n) [H - face_r + face_r * sin(a), face_r * (1 - cos(a))]]));
 // the slope's height over the ends' face at t out from the top edge (the DS's arc, scaled), and its slices'
 // angles: from the edge (uni_ds_angle) to the foot (0)
 function uni_h(t) = t <= 0 ? step_d : t >= uni_run ? 0 : uni_r * (1 - cos(asin(sin(uni_ds_angle) - t / uni_r)));
-// the ends' section (the side rounds and the flat between) lifted by h, out past the outline for the case's shell
-// to cut: each slice of the step
-function uni_section(h) = let(cz = deck_face - face_r + h, zb = deck_face - face_r - 1, n = 18)
-  concat([[-(uni_x_r + face_r + 0.5), zb]],
-         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + face_r * sin(a)), cz + face_r * cos(a)]],
+function uni_t_of(k) = uni_r * (sin(uni_ds_angle) - sin(uni_ds_angle * (1 - k / uni_s_n)));     // slice k's offset from the edge (0 at k 0)
+function uni_rho(t) = max(0.2, uni_corner_r * (1 - t / uni_run));      // the plan corner's radius at offset t
+// a rounded rectangle's ring of points (counter-clockwise, as rr_pts), half sizes hx, hy, corner radius r, at height z
+function uni_ring(hx, hy, r, z, n = 10) = [for (q = [0:3]) let(cx = (q == 0 || q == 3) ? hx - r : -(hx - r), cy = q < 2 ? hy - r : -(hy - r))
+  for (i = [0:n]) let(a = 90 * q + 90 * i / n) [cx + r * cos(a), cy + r * sin(a), z]];
+// the island: rings from the foot (a wall down into the ends' plate first) up the slope to the top edge, whose ring is the flat top
+module uni_island() loft(concat([uni_ring(uni_foot_x, uni_foot, uni_rho(uni_run), deck_face - 1)],
+  [for (k = [uni_s_n:-1:0]) let(t = uni_t_of(k)) uni_ring(uni_edge_x + t, uni_edge + t, uni_rho(t), deck_face + uni_h(t))]));
+// an ear's section (right side; the left is it turned over in x): from `xa` across the flat top and out over the round to the wall,
+// lifted by h; and the inside's (the round's offset, uni_in_r, instead)
+function uni_hsection(h, xa) = let(cz = deck_face - face_r + h, zb = deck_face - face_r - 1, n = 18)
+  concat([[xa, zb], [xa, cz + face_r]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + face_r * sin(a), cz + face_r * cos(a)]],
          [[uni_x_r + face_r + 0.5, zb]]);
-// (inner: the section of the inside's limit, uni_isection, instead of the outside's)
-module uni_slope(inner = false) loft_nc([for (k = [-1:uni_s_n]) let(ph = uni_ds_angle * (1 - max(k, 0) / uni_s_n),
-                                                                     t = k < 0 ? -0.02 : uni_r * (sin(uni_ds_angle) - sin(ph)),
-                                                                     h = k < 0 ? step_d : uni_h(t))
-  [for (p = inner ? uni_isection(h) : uni_section(h)) [p[0], uni_edge + t, p[1]]]]);
+// a slope going +y from y1, its slices swept through the section lifted by the profile
+module uni_eslope(y1, inner = false) loft_nc([for (k = [-1:uni_s_n]) let(ph = uni_ds_angle * (1 - max(k, 0) / uni_s_n),
+                                                                          t = k < 0 ? -0.02 : uni_r * (sin(uni_ds_angle) - sin(ph)),
+                                                                          h = k < 0 ? step_d : uni_h(t))
+  [for (p = inner ? uni_hisection(h, uni_ear_xa) : uni_hsection(h, uni_ear_xa)) [p[0], y1 + t, p[1]]]]);
+module uni_ear(y0, y1, inner = false) {
+  if (!inner) translate([uni_ear_xa, y0, z_bot - 1]) cube([case_w, y1 - y0, case_h - z_bot + 2]);
+  uni_eslope(y1 + (inner ? 0.003 : 0), inner);
+  translate([0, y0, 0]) mirror([0, 1, 0]) uni_eslope(inner ? 0.003 : 0, inner);
+}
 module uni_outer() {
   uni_shell(deck_face);
   intersection() {
     uni_shell(case_h);
     union() {
-      translate([-case_w, -uni_edge, z_bot - 1]) cube([2 * case_w, 2 * uni_edge, case_h - z_bot + 2]);
-      uni_slope();
-      mirror([0, 1, 0]) uni_slope();
+      uni_island();
+      for (e = uni_ears) scale([e[0], 1, 1]) uni_ear(e[1], e[2]);
     }
   }
 }
@@ -1215,23 +1233,28 @@ uni_lim_phi = acos((deck_face + uni_r - case_h + uni_skin) / (uni_r + uni_skin))
 uni_limit_levels = concat([[z_seam - 2, 0]],
   [for (k = [0:uni_s_n]) let(p = uni_lim_phi * k / uni_s_n) [deck_face + uni_r - (uni_r + uni_skin) * cos(p), (uni_r + uni_skin) * sin(p)]],
   [[case_h - uni_skin, (uni_r + uni_skin) * sin(uni_lim_phi)]]);
-function uni_rect(inset, z) = let(y = uni_foot - inset, x = case_w) [[-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z]];
-// the inside's ceiling at y from the middle, under the band (the limit's; z_ceil is the other)
-function uni_lim(y) = let(d = uni_foot - abs(y), rs = uni_r + uni_skin, s = d / rs)
-  d <= 0 ? deck_face - uni_skin : s >= sin(uni_lim_phi) ? case_h - uni_skin : deck_face + uni_r - rs * sqrt(1 - s * s);
-// the distance from a point [y from the middle, z] in the section to the band's outside (the face, the slope's arc)
-function uni_dist(p) = let(y = abs(p[0]))
-  min(min([for (k = [0:200]) let(t = uni_run * k / 200) norm([uni_edge + t - y, deck_face + uni_h(t) - p[1]])]), y < uni_edge ? case_h - p[1] : 99);
-// under the band the inside stays uni_skin under the slope and the face; elsewhere under the ends' face uni_pocket_skin
-module uni_limit() {
-  translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_pocket_skin - z_seam + 2]);
-  loft_nc([for (l = uni_limit_levels) uni_rect(l[1], l[0])]);
-}
+function uni_rho_in(e) = max(0.2, uni_corner_r * min(e, uni_run) / uni_run);      // the plan radius of the limit's ring e in from the foot
+module uni_island_limit() loft([for (l = uni_limit_levels) uni_ring(uni_foot_x - l[1], uni_foot - l[1], uni_rho_in(l[1]), l[0])]);
+module uni_ear_limit(y0, y1) loft([for (l = uni_limit_levels) let(g = uni_run - l[1])
+  [[uni_ear_xa, y0 - g, l[0]], [case_w, y0 - g, l[0]], [case_w, y1 + g, l[0]], [uni_ear_xa, y1 + g, l[0]]]]);
+// the inside's ceiling at p = [x, y]: the distance t out from the island's top edge (the island's rectangle and the ears', as the
+// plan's distance: conservative at the corners, where the radius cuts them) and the limit's arc; z_ceil under the flat top, the
+// ends' underside beyond the foot
+function uni_tdist(p) = min(rect_dist(p, [[-uni_edge_x, -uni_edge], [uni_edge_x, uni_edge]]),
+  min([for (e = uni_ears) rect_dist(p, e[0] > 0 ? [[uni_ear_xa, e[1]], [case_w, e[2]]] : [[-case_w, e[1]], [-uni_ear_xa, e[2]]])]));
+function uni_lim_d(d) = let(rs = uni_r + uni_skin, s = d / rs) s >= sin(uni_lim_phi) ? case_h - uni_skin : deck_face + uni_r - rs * sqrt(1 - s * s);
+function uni_ceil(p) = let(t = uni_tdist(p)) t >= uni_run ? z_deck_under : min(z_ceil, uni_lim_d(uni_run - t));
+// the least ceiling over a rectangle's corners, edge midpoints and centre
+function uni_ceil_box(r) = min([for (u = [0, 0.5, 1], v = [0, 0.5, 1]) uni_ceil([r[0][0] + u * (r[1][0] - r[0][0]), r[0][1] + v * (r[1][1] - r[0][1])])]);
+// the distance from a point [x or y from the middle, z] in the section to the island's outside (the face, the slope's arc), its top
+// edge at `edge` from the middle
+function uni_dist(p, edge = uni_edge) = let(y = abs(p[0]))
+  min(min([for (k = [0:200]) let(t = uni_run * k / 200) norm([edge + t - y, deck_face + uni_h(t) - p[1]])]), y < edge ? case_h - p[1] : 99);
 // The inside under the side rounds (2026-10-25): the ends' round (face_r) keeps uni_skin of plastic square to the
 // surface, so the inside's upper outer corner (the hollow's wall at the inner outline, 2.0 in, and its ceiling) was
-// 0.56 to 0.59 under it where the slope's ceiling meets the round (y 33 to 35, 0.58). The inside is cut by the round's
-// offset: the same arcs' centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is a
-// slab of those sections: the band's, the slope's two sides, and the ends' beyond the foot. It reaches down
+// 0.56 to 0.59 under it where the slope's ceiling meets the round. The inside is cut by the round's offset: the same arcs'
+// centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is the ends' round all along the case,
+// the island's inside (which the walls don't reach), and each ear's, swept through the slope lifted. It reaches down
 // past the seam so it cuts nothing but the inside's top
 uni_in_r = face_r - uni_skin - 0.01;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs)
 function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
@@ -1239,11 +1262,15 @@ function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n =
          [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + uni_in_r * sin(a)), cz + uni_in_r * cos(a)]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + uni_in_r * sin(a), cz + uni_in_r * cos(a)]],
          [[x, zb]]);
+function uni_hisection(h, xa) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
+  concat([[xa, zb], [xa, cz + uni_in_r]], [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + uni_in_r * sin(a), cz + uni_in_r * cos(a)]], [[x, zb]]);
 module uni_in_limit() {
-  rotate([90, 0, 0]) linear_extrude(2 * uni_edge, center = true) polygon(uni_isection(step_d));
-  translate([0, 0.003, 0]) uni_slope(inner = true);      // (0.003 off uni_limit's loft, which ends at the same foot)
-  mirror([0, 1, 0]) translate([0, 0.003, 0]) uni_slope(inner = true);
-  for (m = [0, 1]) mirror([0, m, 0]) translate([0, case_l, 0]) rotate([90, 0, 0]) linear_extrude(case_l - uni_foot + 0.01) polygon(uni_isection(0));
+  rotate([90, 0, 0]) linear_extrude(case_l + 2, center = true) polygon(uni_isection(0));
+  translate([-(uni_foot_x + 1), -(uni_foot + 1), z_seam - 2]) cube([2 * (uni_foot_x + 1), 2 * (uni_foot + 1), case_h]);
+  for (e = uni_ears) scale([e[0], 1, 1]) {
+    translate([0, e[2], 0]) rotate([90, 0, 0]) linear_extrude(e[2] - e[1]) polygon(uni_hisection(step_d, uni_ear_xa));
+    uni_ear(e[1], e[2], inner = true);
+  }
 }
 // The skirts' groove round the ends (2026-10-25): its upper outer corner stood 0.47 under the round (the skirt is
 // skirt_t thick horizontally, and the round is 43 degrees there). The tub's tongue there has the chamfer core_lead (0.45)
@@ -1273,22 +1300,23 @@ if (!tune) for (l = uni_groove_levels(z_deck_tongue)) {
 // the distance from a point [x from the middle, z] in the section where the surface's face is at H, to the side round
 // (and to the flat face above the round's start)
 function uni_rskin(x, z, H) = x <= uni_x_r ? H - z : z >= H - face_r ? face_r - norm([x - uni_x_r, z - (H - face_r)]) : case_w / 2 - x;
-// the pocket in the ends' underside over U6 (1.75 tall: 0.15 under the ends' underside without it), up to
-// uni_pocket_skin under their face, 0.5 round it (seat 1's end: U6 is at y -39.4 .. -33.4, in the spine between the clusters)
-u6_box = [[-2.45, -39.4], [2.45, -33.4]];
-uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]]];
+// the pockets in the ends' underside (up to uni_pocket_skin under their face, 0.5 round the part): U6 (1.75 tall: 0.15 under
+// the ends' underside without it) in seat 1's spine between the clusters, and J5 (2.9 tall) in the left strip
+u6_pos = [0, -53.5];
+u6_box = [u6_pos + [-2.45, -3.0], u6_pos + [2.45, 3.0]];
+j5_box = [[-34.3, -20.5], [-29.4, -15.5]];                // J5's model box (placement.py), mouth to the left wall
+uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]],
+               [[j5_box[0][0] - 0.5, j5_box[0][1] - 0.5], [j5_box[1][0] + 0.5, j5_box[1][1] + 0.5]]];
 module uni_cavity() intersection() {
   union() {
-    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the ends' face
+    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the ends' face, everywhere
     intersection() {
-      union() {
-        translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) intersection() {   // under the band (0.05 in: off its foot)
-          inner2d(); square([2 * case_w, 2 * (uni_foot - 0.05)], center = true);
-        }
-        j4_pocket3d();
-        for (p = uni_pockets) translate([p[0][0], p[0][1], z_seam - 1]) cube([p[1][0] - p[0][0], p[1][1] - p[0][1], deck_face - z_seam + 1]);
-      }
-      uni_limit();
+      translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) inner2d();         // under the island and the ears, up to their ceiling
+      union() { uni_island_limit(); for (e = uni_ears) scale([e[0], 1, 1]) uni_ear_limit(e[1], e[2]); }
+    }
+    intersection() {                                                                         // the pockets, to the ends' face less the skin
+      union() for (p = uni_pockets) translate([p[0][0], p[0][1], z_seam - 1]) cube([p[1][0] - p[0][0], p[1][1] - p[0][1], deck_face - z_seam + 1]);
+      translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_pocket_skin - z_seam + 2]);
     }
   }
   uni_in_limit();
@@ -1310,31 +1338,35 @@ module top() difference() {
 }
 // its checks: the pocket's upper corner and the side screws' pilots 0.7 from the outside, the board's tall parts (their
 // 3D models' boxes, check_fit.py) 0.3 under the inside's limit (positions.json's own margin under a ceiling), the
-// speaker's worst case 0.15 under it, its grille in the flat face, the side screws under it, U6 in
-// its pocket, the buttons' wells clear of the foot
-uni_j4_box = [[29.3, -30.82], [34.5, -23.17]];          // J4's 3D model's box, 3.4 tall
+// grille in the island's face or the ear's, the side screws under it, U6 and J5 in their pockets, the buttons' wells clear of the foot
 if (!tune) {   // (the fit kit's tuning slices move the ends' face, and with it the slope: they skip these)
   assert(abs(uni_h(0) - step_d) < 1e-6 && abs(uni_h(uni_run)) < 1e-6, "the slope's profile");
-  assert(uni_dist([(panel_l + panel_fit) / 2, case_h - face_t]) >= uni_skin, "the skin over the panel's pocket's edge is too thin");
-  assert(min(z_ceil, uni_lim(uni_j4_box[0][1])) - (z_top_cu + j4_h) >= 0.3, "J4 isn't under the band");
-  assert(min(z_ceil, uni_lim(fpc_y(-1.5) - 0.3)) - (z_glass + 0.5) >= 0.3, "the FPC's fold isn't under the band");   // the fold's outer reach, 1.5 past the glass
-  assert(z_ceil + spk_pocket - (z_top_cu + spk_h_max) >= 0.15, "the speaker stands under the band");      // (in its pocket)
-  assert(spk_pos[0] + spk[0] / 2 - grille_in <= uni_x_r - 0.1 && spk_pos[1] + spk[1] / 2 <= uni_edge - 1, "the speaker's grille isn't in the band's flat face");
+  assert(uni_dist([(panel_l + panel_fit) / 2, case_h - face_t]) >= uni_skin, "the skin over the panel's pocket's end is too thin");
+  assert(uni_dist([(panel_w + panel_fit) / 2, case_h - face_t], uni_edge_x) >= uni_skin, "the skin over the panel's pocket's side is too thin");
+  assert(uni_ceil_box(j4_body) - (z_top_cu + j4_h) >= 0.3 && uni_ceil_box(j4_plug) - (z_top_cu + j4_h - 0.2) >= 0.3, "J4 or its plug isn't under the ear");
+  assert(uni_ceil_box([[j2_pos[0] - 3.85, j2_pos[1] - 2.6], [j2_pos[0] + 3.85, j2_pos[1] + 2.6]]) - (z_top_cu + j2_h) >= 0.3
+         && uni_ceil_box(j2_plug) - (z_top_cu + j2_h - 0.2) >= 0.3, "J2 or its plug isn't under the ear");
+  assert(uni_ceil_box([[usb_front - 8.0, usb_y - 4.5], [usb_front, usb_y + 5.0]]) - (z_top_cu + usb_h) >= 0.3, "J1 isn't under the ear");
+  assert(min([for (u = [0, 0.5, 1], v = [0, 0.5, 1]) max(uni_ceil([j5_box[0][0] + u * (j5_box[1][0] - j5_box[0][0]), j5_box[0][1] + v * (j5_box[1][1] - j5_box[0][1])]), deck_face - uni_pocket_skin)]) - (z_top_cu + debug_h) >= 0.3 - 1e-3, "J5 isn't under the slope or its pocket");
+  assert(min([for (u = [-1, 1]) uni_ceil([u * fpc_neck[1] / 2 + fpc_neck[0], fpc_y(-1.5) - 0.3])]) - (z_glass + 0.5) >= 0.3, "the FPC's fold isn't under the island");   // the fold's outer reach, 1.5 past the glass
+  assert(spk_top_over >= 0 && uni_ceil([grille_x[0], spk_pos[1]]) - (z_top_cu + spk_top_over) >= 0.5, "the speaker's top is too near the ceiling under its grille");
   for (s = side_pins) {
-    assert(abs(s[0]) + screw_pilot / 2 + 1.0 <= uni_x_r && uni_dist([abs(s[1]) + screw_pilot / 2, case_h - 0.8]) >= uni_skin, "a side screw's pilot is too near the band's outside");
+    // the pilot's top stays uni_skin under the face over it (the island's slope or the ends' face) at its far side
+    assert(deck_face + uni_h(uni_tdist(s) + screw_pilot / 2) - (z_top_cu + side_engage) >= uni_skin, "a side screw's pilot is too near the outside");
   }
-  assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3 && uni_pocket_skin >= uni_skin, "no room for U6 in its pocket");
+  assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3, "no room for U6 in its pocket");
+  assert(deck_face - uni_pocket_skin - (z_top_cu + debug_h) >= 0.3 - 1e-6, "no room for J5 in its pocket");
   // the inside's upper outer corner (the hollow's wall at the inner outline, up to its ceiling or the round's offset,
-  // whichever is lower) keeps uni_skin square to the side round, along the slope and under the band
+  // whichever is lower) keeps uni_skin square to the side round, along the ends' round and each ear's slope
   for (k = [0:uni_s_n]) let(t = uni_run * k / uni_s_n, h = uni_h(t), H = deck_face + h, xw = case_w / 2 - wall,
-      zc = min(min(z_ceil, uni_lim(uni_edge + t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
+      zc = min(min(z_ceil, uni_lim_d(uni_run - t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
     assert(uni_rskin(xw, zc, H) >= uni_skin - 1e-3, "the inside's corner is too near the side round");
 }
 
 module board3d() color("#2e7d4f") translate([0, 0, z_board]) linear_extrude(pcb_t) board_outline();
 // the cell in its hole on the pocket's floor, and the speaker on the board (nominal sizes)
 module cell3d() translate([0, 0, floor_t - cell_pocket]) linear_extrude(cell_nom[2]) offset(r = 1) offset(delta = -1) cell2d(cell_nom);
-module speaker3d() translate([0, 0, z_top_cu]) linear_extrude(spk[2]) spk2d();
+module speaker3d() translate([0, 0, spk_seat]) linear_extrude(spk[2]) spk2d();
 
 // button caps, for the assembly view only (they are bought DS Lite parts)
 // The caps at rest (flanges up against their lips; the D-pad's and Start/Select's lips are lifted).
