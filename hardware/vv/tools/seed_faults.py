@@ -175,9 +175,10 @@ FAULTS = [
     ("DONE with no detects", "structure", "DONE needs at least one 'detects' check",
      lambda d: csv_edit(d, "dfmea.csv", "DF-87", status="DONE")),
     # every ORDER check is now also named by a criterion or a requirement (2026-10-26), so dropping PHASE:ORDER
-    # no longer strands one: an advisory check taken out of its advisory criterion is reached by nothing
+    # alone no longer strands one: with it, an advisory check taken out of its advisory criterion is reached by nothing
     ("an ORDER check no gate reaches", "structure", "VER-21: phase ORDER, but no gate criterion",
-     lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| ADVISORY VER-40 VER-27 |")),
+     lambda d: (text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| ADVISORY VER-40 VER-27 |"),
+                text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| VER-01 | both |"))),
     ("criterion with a bad board", "structure", "board 'nowhere' not in",
      lambda d: text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| PHASE:ORDER | nowhere |")),
     ("new BOM under an old BOARD_REV", "structure", "BOARD_REV is still",
