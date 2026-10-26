@@ -53,7 +53,7 @@ CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(71.3, 57.0, 125.3, 94.0), r=1.0),     # 54.0 x 37.0 (case y 6 .. 43)
+    dict(name="cell", box=(73.0, 57.0, 127.0, 94.0), r=1.0),     # 54.0 x 37.0 (case y 6 .. 43)
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
@@ -206,8 +206,8 @@ at("R10", 20.1, -9.6, 90)
 at("R43", 21.4, -9.6, 90)
 at("R44", 22.7, -9.6, 90)
 at("R64", 24.0, -9.6, 90)                    # ILIM
-at("TP7", 26.0, -6.3, 0)                     # CHG_TEMP
-at("TH1", 26.1, 21.0, 90)                    # the cell's temperature, at the hole's right edge
+at("TP7", 24.6, -6.3, 0)                     # CHG_TEMP
+at("TH1", 27.8, 21.0, 90)                    # the cell's temperature, at the hole's right edge
 
 # ---- 3V3 LDO in the left strip (1.5 tall, under the slope)
 at("U3", -31.4, -21.5, 90)
@@ -221,7 +221,7 @@ for ref, (ox, oy, rot) in {"R23": (-28.8, -14.9, 90), "C13": (-20.0, -5.2, 90), 
                            "C14": (-28.8, -17.0, 90), "C15": (-13.3, -32.2, 90), "C17": (-12.1, -32.2, 90), "C22": (-13.3, -34.4, 90),
                            "C16": (-28.8, -21.6, 270), "C20": (-28.8, -19.3, 90), "C19": (-26.4, -26.8, 90), "R65": (-17.4, -32.7, 90)}.items():
     at(ref, ox - 1.8, oy + 5.5, rot)
-at("C10", 25.0, -16.5, 90)
+at("C10", 16.0, -19.5, 90)
 
 # ---- test pads on the back
 for i in range(5):
@@ -250,7 +250,7 @@ at("Q3", 21.0, -13.0, 0)                     # SHUTDOWN switch
 at("TP8", 14.8, -24.5, 0)                    # SHUTDOWN: flat, under the tail's edge
 at("JP3", 14.8, -27.8, 0)                    # VSYS -> amplifier
 at("TP15", 14.8, -30.5, 0)
-at("J4", 31.8, -8.2, 0)                      # PicoBlade: mouth towards the speaker (case -y), pins by the wall
+at("J4", 31.6, -8.2, 0)                      # PicoBlade: mouth towards the speaker (case -y), pins by the wall
 
 # ---- seat 2's end: U9 in the spine, the power latch and Start/Select's parts in the row above the cell's hole
 at("U9", 0.0, 55.0, 90)

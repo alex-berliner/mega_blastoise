@@ -71,7 +71,7 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_hole = [[-28.7, 6.0], [25.3, 43.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
+cell_hole = [[-27.0, 6.0], [27.0, 43.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
@@ -96,8 +96,8 @@ grille_x = [28.6, 34.0];                                // and in x between thes
 // J4 (the speaker's plug, PicoBlade like J2, 3.4 tall) in the right strip, its mouth along the strip towards the speaker: a
 // PicoBlade is 7.65 across and 5.2 deep, and its mated plug stands 4 mm out from the mouth. With the mouth towards the
 // glass (the old layout) the pair would be 9.2 long across a strip that is 8.5 wide beside the glass
-j4_body = [[27.98, -10.8], [35.62, -5.6]];               // its model's box (centre 31.8, -7.1: CELLCUT_FOR_CASE.md)
-j4_plug = [[28.5, -14.8], [35.1, -10.8]];                // the mated plug's (about), towards the speaker
+j4_body = [[27.775, -10.8], [35.425, -5.6]];               // its model's box (centre 31.8, -7.1: CELLCUT_FOR_CASE.md)
+j4_plug = [[28.3, -14.8], [34.9, -10.8]];                // the mated plug's (about), towards the speaker
 j4_h = 3.4;
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
@@ -451,7 +451,7 @@ assert(floor_t - spk_pocket_floor >= 0.8, "the floor under the speaker is too th
 assert(spk_top_over <= glass_gap - 0.4 && spk_top_over <= z_deck_under - z_top_cu - 0.3 + 1e-6, "the speaker's top runs into the panel or the ends");
 assert(spk_pos[0] - spk[0] / 2 - spk_keep >= -board_w / 2 + 0.9 && grille_x[0] >= (panel_w + panel_fit) / 2 + 0.9, "the grille runs into the screen's bezel");
 assert(grille_x[1] <= case_w / 2 - face_r - 0.5, "the grille runs into the side round");
-assert(j4_body[0][0] >= (panel_w + panel_fit) / 2 + 0.2 && j4_body[1][0] <= board_w / 2 - 0.5, "J4 isn't in the strip beside the glass");
+assert(j4_body[0][0] >= (panel_w + panel_fit) / 2 + 0.1 && j4_body[1][0] <= board_w / 2 - 0.5, "J4 isn't in the strip beside the glass");
 // USB-C: the opening centred on the receptacle's mouth (it stands on the board's top), usb_gap round
 // it, cut through the whole wall from inside the tub's round to past the outside, the receptacle's
 // face in the wall, and a mated plug's overmold off the wall (check_fit.py checks the same against

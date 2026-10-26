@@ -157,10 +157,19 @@ def line(board, a, b, layer=pcbnew.Edge_Cuts, w=0.1):
 
 
 def rounded_rect(board, x0, y0, x1, y1, r):
-    line(board, (x0 + r, y0), (x1 - r, y0))
-    line(board, (x1, y0 + r), (x1, y1 - r))
-    line(board, (x1 - r, y1), (x0 + r, y1))
-    line(board, (x0, y1 - r), (x0, y0 + r))
+    """A rounded rectangle on Edge.Cuts; a side that is only its two corners' arcs (r = half the width: a stadium)
+    has no straight piece, and its two quarter arcs are drawn as one half circle."""
+    def seg(a, b):
+        if math.dist(a, b) > 1e-6:
+            line(board, a, b)
+    seg((x0 + r, y0), (x1 - r, y0))
+    seg((x1, y0 + r), (x1, y1 - r))
+    seg((x1 - r, y1), (x0 + r, y1))
+    seg((x0, y1 - r), (x0, y0 + r))
+    if abs((x1 - x0) - 2 * r) < 1e-6:
+        arc(board, ((x0 + x1) / 2, y0 + r), r, 180, 360)
+        arc(board, ((x0 + x1) / 2, y1 - r), r, 0, 180)
+        return
     arc(board, (x1 - r, y0 + r), r, -90, 0)
     arc(board, (x1 - r, y1 - r), r, 0, 90)
     arc(board, (x0 + r, y1 - r), r, 90, 180)

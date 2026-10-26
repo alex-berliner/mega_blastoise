@@ -989,6 +989,14 @@ def saved_ses():
     return os.path.join(LOGS, "last_route.ses")
 
 
+class FreeroutingStuck(Exception):
+    """Freerouting 1.9 re-raised its "DSN file reader" warning dialog more than STUCK_DIALOGS times: the design it was handed has
+    wiring it can't normalize (2026-10-26: 30 minutes lost per attempt, 330 to 920 dismissals). The net it names is in the message."""
+
+
+STUCK_DIALOGS = 5
+
+
 def freerouting_19(args):
     """Freerouting 1.9 needs a display even in batch mode, and when the design it is
     given carries wiring it can't tidy ("normalization of net ... failed") it waits on
@@ -1019,7 +1027,7 @@ def freerouting_19(args):
         java = subprocess.Popen(["java", "-jar", JAR, *args], env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, text=True, cwd=os.path.dirname(args[1]))
         start = last = time.time()
-        seen = set()
+        seen, dismissed = set(), 0
         while java.poll() is None:
             time.sleep(0.5)                  # (it exits the moment the session is written)
             if time.time() - start > 3 * 3600:
@@ -1041,7 +1049,13 @@ def freerouting_19(args):
                     # centre misses it, and Freerouting then waits for ever)
                     subprocess.run(["xdotool", "mousemove", str(x + wd - 44), str(y + ht - 27), "click", "1"],
                                    env=env, capture_output=True)
+                    dismissed += 1
                     print("  Freerouting warning dialog dismissed", flush=True)
+                    if dismissed > STUCK_DIALOGS:
+                        java.kill()
+                        out = java.stdout.read()
+                        nets = sorted(set(re.findall(r"normalization of net '([^']*)' failed", out)))
+                        raise FreeroutingStuck(f"Freerouting stuck on its warning dialog ({dismissed} dismissals); nets it could not normalize: {nets or '?'}")
         return java.stdout.read()
     finally:
         xvfb.terminate()
@@ -1082,6 +1096,30 @@ def run_freerouting(board, passes, contacts):
     return session
 
 
+def snap_slivers(board, tiny=0.005):
+    """Freerouting's own session comes back with a track a nanometre long here and there, and two tracks that
+    then differ by that much between the same two points: a sliver loop its next run can't normalize
+    ("The normalization of net ... failed", then its warning dialog for ever). Each such track is taken away
+    and the ends that met its far end move to its near one; split_at_joins() then drops the twin it leaves."""
+    n = 0
+    for t in [t for t in board.GetTracks() if not isinstance(t, pcbnew.PCB_VIA) and not t.IsLocked()]:
+        a, b = xy(t.GetStart()), xy(t.GetEnd())
+        if math.dist(a, b) >= tiny:
+            continue
+        for o in board.GetTracks():
+            if o is t or o.GetLayer() != t.GetLayer() or o.GetNetname() != t.GetNetname():
+                continue
+            if isinstance(o, pcbnew.PCB_VIA):
+                continue
+            if math.dist(xy(o.GetStart()), b) < tiny:
+                o.SetStart(V(*a))
+            if math.dist(xy(o.GetEnd()), b) < tiny:
+                o.SetEnd(V(*a))
+        remove(board, t)
+        n += 1
+    return n
+
+
 def freeroute(board, passes, contacts, reuse=False, again=2):
     """Returns open_pairs() of the routed board when it already asked the DRC for it, else None."""
     if reuse and os.path.exists(saved_ses()):
@@ -1100,7 +1138,12 @@ def freeroute(board, passes, contacts, reuse=False, again=2):
             break
         print(f"Freerouting left {len(known[0])} open; running it again from its result", flush=True)
         known = None
-        session = run_freerouting(board, max(10, passes // 2), contacts)
+        print("slivers taken out before the re-run:", snap_slivers(board), "; tracks split, duplicates dropped:", split_at_joins(board), flush=True)
+        try:
+            session = run_freerouting(board, max(10, passes // 2), contacts)
+        except FreeroutingStuck as e:       # the first run's wiring stands; the maze router takes it from here
+            print("re-run abandoned:", e, flush=True)
+            break
     open(saved_ses(), "w").write(session)
     return known
 
