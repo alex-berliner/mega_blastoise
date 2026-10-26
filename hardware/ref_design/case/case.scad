@@ -52,6 +52,8 @@ fpc_l = fpc_body[2] + fpc_tail[2];
 // either way). J3 isn't fixed until a real panel is measured, so the board keeps the whole range clear
 tip_range = [fpc_l - 1.2, fpc_l + 1.2];                 // ESTIMATE
 tip_in = (tip_range[0] + tip_range[1]) / 2;
+fpc_low = 1.05;                                         // parts this tall (over the board) may lie under the FPC's body: it lies on the glass's back
+fpc_neck_keep = 5.1;                                    // nothing this far in from the glass edge: the neck wraps it (ESTIMATE, the old drawing's 4.59)
 fpc_slack = 1.0;                                        // the connector 1 mm short of the tail's tip: a
                                                         // long FPC bows, a short one can't reach (ESTIMATE)
 conn_rear = 1.2;  conn_front = 4.4;                     // FH12 footprint origin to its back and to its mouth
@@ -69,7 +71,7 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_hole = [[-28.7, 7.0], [25.3, 44.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
+cell_hole = [[-28.7, 6.0], [25.3, 43.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
@@ -83,7 +85,7 @@ cell_pocket_fit = 0.25;                                 // the pocket inside the
 // speaker's grille). The board keeps parts out of the hole's outline plus spk_keep (SPEAKER in placement.py)
 spk = [10, 15, 3.5];                                    // across (x), along (y, the racetrack's length), height
 spk_h_max = 3.8;                                        // its top over its seat, worst case (tolerance and its tape)
-spk_pos = [29.7, -23.0];                                // its centre and its cone's (placement.py SPEAKER)
+spk_pos = [29.7, -24.5];                                // its centre and its cone's (placement.py SPEAKER)
 spk_keep = 0.5;                                         // the board's hole is this much bigger than its outline
 spk_pocket_floor = 0.6;                                 // the tub's floor pocketed under it, as under the cell
 spk_hole_r = 1.0;                                       // the hole's corner radius, over the racetrack's: a rounded rectangle
@@ -94,8 +96,8 @@ grille_x = [28.6, 34.0];                                // and in x between thes
 // J4 (the speaker's plug, PicoBlade like J2, 3.4 tall) in the right strip, its mouth along the strip towards the speaker: a
 // PicoBlade is 7.65 across and 5.2 deep, and its mated plug stands 4 mm out from the mouth. With the mouth towards the
 // glass (the old layout) the pair would be 9.2 long across a strip that is 8.5 wide beside the glass
-j4_body = [[27.98, -9.7], [35.62, -4.5]];               // its model's box (centre 31.8, -7.1: CELLCUT_FOR_CASE.md)
-j4_plug = [[28.5, -13.7], [35.1, -9.7]];                // the mated plug's (about), towards the speaker
+j4_body = [[27.98, -10.8], [35.62, -5.6]];               // its model's box (centre 31.8, -7.1: CELLCUT_FOR_CASE.md)
+j4_plug = [[28.5, -14.8], [35.1, -10.8]];                // the mated plug's (about), towards the speaker
 j4_h = 3.4;
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
@@ -393,18 +395,20 @@ plug_len_min = 6.55;  usb_mate = 6.20;
 // levers, CELLCUT_FOR_CASE.md) out of the left strip into the left bezel below H4, one above the other, each
 // lying across the bezel (TS-1088, its 3D model 4.8 x 2.9 x 1.95: pin_sw its half size in the plan, pin_sw_h
 // its height). A floor rib in the tub under them (pin_rib) carries a pin's press into the floor
-pin_pos = [[-32.35, -30.2], [-32.35, -33.85]];
+pin_pos = [[-31.0, -30.2], [-31.0, -33.85]];
 pin_sw = [2.4, 1.45];  pin_sw_h = 1.95;
 pin_guide_d = 3.0;  pin_guide_z = 2.4;                  // the guides round the pinholes, down to this over the board
 // J5 (SWD), JST SH, its mouth towards the left edge (the board's, 2026-10-22): plugged with the case open (the
 // tub off), as the plug stands past the board's edge; no slot in the wall. J6 (UART) went on 2026-10-24
-swd_pos = [-31.8, -18.0];
+swd_pos = [-32.1, -5.0];
 debug_h = 2.9;
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
 // bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
 // the hole's corner (placement.py), its leads down beside the cell's left end
-j2_pos = [-31.7, 3.56];  j2_h = 3.4;
-j2_plug = [[-35.4, 6.2], [-28.0, 10.2]];               // the mated plug's outline, corners
+j2_pos = [-31.7, 2.56];  j2_h = 3.4;
+// the panel frame's notches where a tall connector (3.4, over the frame's limit) lies beside the glass: [side, y0, y1]
+frame_notches = [[1, -15.3, -5.1], [-1, -0.5, 9.7]];
+j2_plug = [[-35.4, 5.2], [-28.0, 9.2]];               // the mated plug's outline, corners
 // the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
 // backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
 // U9 (1.2)
@@ -627,7 +631,8 @@ echo(str("JSON {",
   "\"case\": {\"w\": ", jnum(case_w), ", \"l\": ", jnum(case_l), ", \"h\": ", jnum(case_h), ", \"deck_h\": ", jnum(deck_face),
     ", \"seam\": ", jnum(z_seam), ", \"z_board\": ", jnum(z_board), "}, ",
   "\"board\": {\"w\": ", jnum(board_w), ", \"l\": ", jnum(board_l), ", \"r\": ", jnum(board_r), ", \"t\": ", pcb_t, "}, ",
-  "\"glass\": [", jpt([-bay_w / 2, bay_l / 2]), ", ", jpt([bay_w / 2, -bay_l / 2]), "], ",
+  "\"glass\": [", jpt([-(panel_w + panel_fit) / 2, (panel_l + panel_fit) / 2]), ", ", jpt([(panel_w + panel_fit) / 2, -(panel_l + panel_fit) / 2]), "], ",
+  "\"fpc_low\": ", fpc_low, ", \"fpc_neck_y\": ", jnum(kicad([0, fpc_y(fpc_neck_keep)])[1]), ", ",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
   "\"bezel_limit\": ", jnum(z_ceil - z_top_cu - 0.3), ", ",
   "\"retainer_limit\": ", jnum(retainer_bot - z_top_cu - 0.3), ", ",
@@ -656,7 +661,8 @@ echo(str("JSON {",
   "\"frame\": {\"outer\": [", jpt([-(panel_w + panel_fit) / 2 - frame_wall, (panel_l + panel_fit) / 2 + frame_wall]), ", ",
     jpt([(panel_w + panel_fit) / 2 + frame_wall, -(panel_l + panel_fit) / 2 - frame_wall]), "], \"inner\": [",
     jpt([-(panel_w + panel_fit) / 2, (panel_l + panel_fit) / 2]), ", ", jpt([(panel_w + panel_fit) / 2, -(panel_l + panel_fit) / 2]),
-    "], \"limit\": ", jnum(z_ceil - z_top_cu - frame_h - 0.3), "}, ",
+    "], \"limit\": ", jnum(z_ceil - z_top_cu - frame_h - 0.3), ", \"notches\": [",
+    join([for (n = frame_notches) str("[", jpt([n[0] > 0 ? 27 : -31, n[2]]), ", ", jpt([n[0] > 0 ? 31 : -27, n[1]]), "]")]), "]}, ",
   "\"decks\": [", join(concat([for (sy = [-1, 1], sx = [-1, 1]) str("[", jpt([sx * (spine_w / 2 - joint_w), sy * (joint_y - joint_w)]), ", ",
     jpt([sx * case_w / 2, sy * case_l / 2]), "]")], [for (sy = [-1, 1]) str("[", jpt([-spine_w / 2, sy * (spine_end - joint_w)]), ", ",
     jpt([spine_w / 2, sy * case_l / 2]), "]")])), "], \"deck_limit\": ", jnum(z_deck_under - z_top_cu - 0.3),
@@ -674,6 +680,9 @@ function jrect(r) = str("[", jpt([r[0][0], r[1][1]]), ", ", jpt([r[1][0], r[0][1
 top_strips = [for (sy = [-1, 1]) [[-(spine_w / 2 - joint_w), sy * (joint_y - joint_w)], [spine_w / 2 - joint_w, sy * (spine_end - joint_w)]]];
 echo(str("TOP {\"limit\": ", jnum(z_deck_under - z_top_cu - 0.3), ", \"strips\": [", join([for (z = top_strips) jrect(z)]),
   "], \"pocket_limit\": ", jnum(deck_face - uni_pocket_skin - z_top_cu - 0.3), ", \"pockets\": [", join([for (p = uni_pockets) jrect(p)]), "]}"));
+echo(str("ISLAND {\"edge\": [", uni_edge_x, ", ", uni_edge, "], \"run\": ", uni_run, ", \"r\": ", uni_r, ", \"skin\": ", uni_skin, ", \"phi\": ", uni_lim_phi,
+  ", \"deck_face\": ", deck_face, ", \"z_top_cu\": ", z_top_cu, ", \"z_ceil\": ", z_ceil, ", \"z_deck_under\": ", z_deck_under, ", \"ear_xa\": ", uni_ear_xa,
+  ", \"ears\": [", join([for (e = uni_ears) str("[", e[0], ", ", e[1], ", ", e[2], "]")]), "], \"pocket_skin\": ", uni_pocket_skin, ", \"case_w\": ", case_w, "}"));
 for (b = buttons) echo(str(b[0], "  ", b[1], "   KiCad (", kicad(b[2])[0], ", ", kicad(b[2])[1], ")"));
 echo(str("CAPS flange top ", retainer_z - z_top_cu, " above the board, cap top ", cap_top - z_top_cu, ", deck face ",
          deck_face - z_top_cu, ", screen face ", case_h - z_top_cu, ": ends ", deck_face, " mm thick, a ", step_d, " mm step"));
@@ -886,8 +895,8 @@ rib_free = concat([
   [spk_pos[0] - spk[0] / 2 - spk_keep - 0.5, spk_pos[1] - spk[1] / 2 - spk_keep - 0.5,
    spk_pos[0] + spk[0] / 2 + spk_keep + 0.5, spk_pos[1] + spk[1] / 2 + spk_keep + 0.5],               // the speaker's
   [usb_front - 8.5, usb_y - usb_tab_w / 2, board_w / 2 + usb_tab, usb_y + usb_tab_w / 2],         // J1's shell legs
-  [-10, 45.5, 10, 48.5], [-12.0, -15.5, -9.2, -12.5], [-9.3, -11.5, 1.3, -8.5], [-23.0, -28.3, -19.8, -25.1],  // test pads
-  [-8.0, -43.7, 8.0, -38.6],                                                                      // J7's pogo pads
+  [-10, 50.0, 10, 53.0], [-12.2, -1.0, -9.0, 2.0], [-9.3, -12.5, 1.3, -9.5], [-24.8, -22.8, -21.6, -19.6],  // test pads
+  [-8.0, -50.5, 8.0, -46.5],                                                                      // J7's pogo pads
 ], [for (b = ss_buttons) [b[2][0] - 0.75, b[2][1] - ss_vent - 0.75, b[2][0] + 0.75, b[2][1] - ss_vent + 0.75]]);   // dome vents
 module rib_free2d() for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[0], r[3] - r[1]]);
 // Ribs under the strips beside the cell's hole, the board's weakest part (2026-10-22 review), along
@@ -1090,6 +1099,7 @@ module top_inner() {
   translate([0, 0, z_ceil - frame_h]) linear_extrude(frame_h + 0.01) difference() {
     square([panel_w + panel_fit + 2 * frame_wall, panel_l + panel_fit + 2 * frame_wall], center = true);
     translate([fpc_x, -panel_l / 2]) square([fpc_w + 4, 6], center = true);   // the FPC's fold passes here
+    for (n = frame_notches) translate([n[0] > 0 ? 27 : -31, n[1]]) square([4, n[2] - n[1]]);   // the tall connectors' notches
   }
 }
 // and what is cut from it
@@ -1187,7 +1197,7 @@ uni_x_r = case_w / 2 - face_r;                           // where the side round
 // The ears: [side, y0, y1], the flat top's extent along the wall, from the island's inner end `uni_ear_xa` (inside it) out
 // to the wall; the slope runs uni_run beyond each end. Right: J4's plug and J1 (the USB-C opening's wall); left: J2 and its plug
 uni_ear_xa = uni_edge_x - 8;
-uni_ears = [[1, -11.0, 8.0], [-1, 3.5, 8.5]];
+uni_ears = [[1, -12.5, 8.0], [-1, 2.5, 7.5]];
 // the case's outside up to a face at H: the skirt down the back's round, the wall, a true quarter arc of face_r
 module uni_shell(H) rr_loft(concat(skirt_levels, [for (k = [0:uni_arc_n]) let(a = 90 * k / uni_arc_n) [H - face_r + face_r * sin(a), face_r * (1 - cos(a))]]));
 // the slope's height over the ends' face at t out from the top edge (the DS's arc, scaled), and its slices'
@@ -1303,9 +1313,9 @@ if (!tune) for (l = uni_groove_levels(z_deck_tongue)) {
 function uni_rskin(x, z, H) = x <= uni_x_r ? H - z : z >= H - face_r ? face_r - norm([x - uni_x_r, z - (H - face_r)]) : case_w / 2 - x;
 // the pockets in the ends' underside (up to uni_pocket_skin under their face, 0.5 round the part): U6 (1.75 tall: 0.15 under
 // the ends' underside without it) in seat 1's spine between the clusters, and J5 (2.9 tall) in the left strip
-u6_pos = [0, -53.5];
+u6_pos = [-3.2, -55.0];
 u6_box = [u6_pos + [-2.45, -3.0], u6_pos + [2.45, 3.0]];
-j5_box = [[-34.3, -20.5], [-29.4, -15.5]];                // J5's model box (placement.py), mouth to the left wall
+j5_box = [[-34.6, -7.5], [-29.7, -2.5]];                // J5's model box (placement.py), mouth to the left wall
 uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]],
                [[j5_box[0][0] - 0.5, j5_box[0][1] - 0.5], [j5_box[1][0] + 0.5, j5_box[1][1] + 0.5]]];
 module uni_cavity() intersection() {

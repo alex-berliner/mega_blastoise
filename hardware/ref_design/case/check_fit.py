@@ -139,7 +139,7 @@ def case_echo():
                        capture_output=True, text=True)
         text = open(out).read() if os.path.exists(out) else ""
     found = {}
-    for key in ("USBC", "TOP"):
+    for key in ("USBC", "TOP", "ISLAND"):
         m = re.search(r'ECHO: "' + key + r' (\{.*\})"', text)
         found[key] = json.loads(m.group(1).replace('\\"', '"')) if m else None
     return found
@@ -160,6 +160,41 @@ def near_circle(box, c, r):
     cx = min(max(c[0], box[0]), box[2])
     cy = min(max(c[1], box[1]), box[3])
     return math.hypot(cx - c[0], cy - c[1]) < r
+
+
+def island_ceiling(isl, tops, x, y):
+    """The inside's ceiling at a point (case frame): case.scad's uni_ceil (the island's slope, the ears, the ends)."""
+    def rect_d(r):
+        return math.hypot(max(0, r[0] - x, x - r[2]), max(0, r[1] - y, y - r[3]))
+    ex, ey = isl["edge"]
+    t = rect_d((-ex, -ey, ex, ey))
+    for side, y0, y1 in isl["ears"]:
+        t = min(t, rect_d((isl["ear_xa"], y0, 99, y1) if side > 0 else (-99, y0, -isl["ear_xa"], y1)))
+    if t >= isl["run"]:
+        return isl["z_deck_under"]
+    rs = isl["r"] + isl["skin"]
+    sn = (isl["run"] - t) / rs
+    lim = isl["deck_face"] + isl["r"] - rs * math.sqrt(1 - sn * sn)
+    if sn >= math.sin(math.radians(isl["phi"])):
+        lim = 99
+    return min(isl["z_ceil"], lim)
+
+
+def box_ceiling(isl, ceilings, box):
+    """The least ceiling over a box's footprint (KiCad frame box), its pocket (U6, J5) lifting it where there is one."""
+    best = 99
+    n = 6
+    for i in range(n + 1):
+        for j in range(n + 1):
+            kx = box[0] + (box[2] - box[0]) * i / n
+            ky = box[1] + (box[3] - box[1]) * j / n
+            x, y = kx - 100, 100 - ky
+            z = island_ceiling(isl, None, x, y)
+            for p in ceilings["pockets"]:
+                if min(p[0][0], p[1][0]) <= kx <= max(p[0][0], p[1][0]) and min(p[0][1], p[1][1]) <= ky <= max(p[0][1], p[1][1]):
+                    z = max(z, isl["deck_face"] - isl["pocket_skin"])
+            best = min(best, z)
+    return best
 
 
 def near_speaker(box):
@@ -217,9 +252,10 @@ def main():
                 problems.append(f"{ref} is at a crush rib at {c}")
         if inside_rect(box, POS["cell_hole"]):
             problems.append(f"{ref} reaches over the cell's hole")
-        if near_speaker(box) and top > 0.1:
-            problems.append(f"{ref} is under the speaker (or within its keep-out)")
-        limit, where = POS["bezel_limit"], "bezel"
+        if near_speaker(box):
+            problems.append(f"{ref} is in the speaker's hole (or within its keep-out)")
+        isl = echoed["ISLAND"]
+        limit, where = box_ceiling(isl, ceilings, box) - isl["z_top_cu"] - 0.3, "island's slope, ear or the ends' ceiling"
         if inside_rect(box, glass):
             limit, where = POS["glass_limit"], "glass"
         elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]) or \
@@ -227,8 +263,11 @@ def main():
             limit, where = min(limit, POS["retainer_limit"]), "retainer"
         if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
             limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
+            if ceilings and any(within(box, p) for p in ceilings["pockets"]):
+                limit, where = ceilings["pocket_limit"], "button deck, in a pocket"
         frame = POS["frame"]                    # the top's panel frame hangs lower than the rest of it
-        if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit:
+        notched = any(inside_rect(box, n) for n in frame["notches"])
+        if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit and not notched:
             limit, where = frame["limit"], "top's panel frame"
         if top > limit + 1e-3:
             problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
@@ -239,9 +278,17 @@ def main():
             if top > cap + 1e-3:
                 problems.append(f"{ref} is {top:.2f} mm tall in the strip between the clusters under the top's ends, which allows {cap:.2f}"
                                 + (" (in a pocket)" if pocket else ""))
-        for zone in POS["fpc_zones"]:
-            if inside_rect(box, zone, -0.2) and top > 0.3 and not ref.startswith("J3"):
-                problems.append(f"{ref} is under the display's folded FPC")
+        tail, body = POS["fpc_zones"]
+        if ref.startswith("J3"):
+            pass
+        elif inside_rect(box, tail, -0.2) and top > 0.3:
+            problems.append(f"{ref} is under the display's folded FPC (its tail: nothing but J3)")
+        elif inside_rect(box, body, -0.2):
+            neck = inside_rect(box, ((body[0][0], POS["fpc_neck_y"]), (body[1][0], body[1][1])), -0.2)
+            if neck and top > 0.3:
+                problems.append(f"{ref} is under the display's FPC neck (the fold round the glass's edge)")
+            elif top > POS["fpc_low"] + 1e-3:
+                problems.append(f"{ref} is {top:.2f} mm tall under the display's folded FPC, which lies on the glass's back: {POS['fpc_low']} at most")
         if ref.startswith("J3") and not within(box, POS["j3_zone"]):
             problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
     if ceilings:
