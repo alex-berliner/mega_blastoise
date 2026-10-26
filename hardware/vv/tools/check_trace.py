@@ -16,10 +16,17 @@ physical exclusion); a PASS or FAIL carries a commit, a date and an evidence fil
 header matches it (every analysis and every test: COMMIT, TOOLS, RESULT); a 'covers'
 pattern matches a file committed to git and, with a regex, a line in it; a check marked
 'both' covers both boards; every check is reached by some gate, requirement or
-high-priority risk no later than its own phase; a status of APPROVED, REJECTED, DEFERRED,
+high-priority risk no later than its own phase; every ORDER check is named by a step of
+PLAN.md section (d), so the checklist and the gate cannot drift apart (round 2's objection);
+a requirement has a live check no later than its Phase (F's objection: a check moved later
+cannot leave a requirement behind); a detection rating of 2 or 1 rests on two or more
+'detects' checks; a status of APPROVED, REJECTED, DEFERRED,
 ACCEPTED or a signed waiver has a matching line in releases/APPROVALS.md that Alex
-committed in a commit signed with his key (O-R4: never a merge, never a Claude commit;
-DEFERRED, ACCEPTED and WAIVED name the last phase they hold for); an approved requirement's
+committed in a commit signed with the key README.md pins (O-R4 and round 2: never a merge,
+never a Claude commit, never another key in the allowed-signers file; DEFERRED, ACCEPTED and
+WAIVED name the last phase they hold for; a line 'REQ-ALL@<commit>' approves every
+requirement whose statement is unchanged since that commit, 'DF-H@<commit>' accepts every
+H row unchanged since it); an approved requirement's
 statement has not changed since; two release records of one board with different BOMs have
 different BOARD_REVs; a change record's 'What to re-run' lists every bench test tied to a
 part its commits changed (O-R21); no defect is CLOSED without a check, and every defect
@@ -62,7 +69,8 @@ A product requirement split per board (REQ-X and REQ-X.R / REQ-X.P) is verified 
 the child for the board.
 
 A check named only by ADVISORY criteria (and by no requirement or H row) is advisory: it is
-printed, and PHASE:<p> does not count it.
+printed, and PHASE:<p> does not count it. A criterion whose Needs is RETIRED (its text 'RETIRED
+in <commit>: why') keeps its ID and is printed, never counted.
 
 Evidence is fresh when its commit is an ancestor of HEAD, nothing it covers changed since,
 and it is younger than the check's valid_days. 'covers' tokens:
@@ -74,8 +82,11 @@ and it is younger than the check's valid_days. 'covers' tokens:
 Python 3 standard library only.
 """
 import argparse
+import base64
 import csv
 import datetime
+import hashlib
+import io
 import os
 import re
 import subprocess
@@ -196,6 +207,31 @@ def is_merge(sha):
 def signature(sha):
     """git's %G? for a commit: G is a good signature from a key in the allowed-signers file."""
     return git("log", "-1", "--format=%G?", sha)[1].strip() or "N"
+
+
+def signing_key(sha):
+    """git's %GF: the fingerprint (SHA256:...) of the key that signed the commit, or ''."""
+    return git("log", "-1", "--format=%GF", sha)[1].strip()
+
+
+def allowed_key_type(fingerprint):
+    """The key type the allowed-signers file lists for a fingerprint ('sk-ssh-ed25519@openssh.com' is a
+    hardware key that wants a touch), or None when the file does not list it."""
+    path = os.path.expanduser(SIGNERS) if SIGNERS else ""
+    if not path or not os.path.isfile(path):
+        return None
+    for line in open(path, encoding="utf-8", errors="replace"):
+        toks = line.split()
+        for i, t in enumerate(toks[:-1]):
+            if re.fullmatch(r"(sk-)?(ssh|ecdsa)-[\w@.-]+", t):
+                try:
+                    blob = base64.b64decode(toks[i + 1])
+                except ValueError:
+                    continue
+                fp = "SHA256:" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip("=")
+                if fp == fingerprint:
+                    return t
+    return None
 _resolved, _diff, _lines, _anc, _msg, _blame, _design = {}, {}, {}, {}, {}, {}, {}
 
 
@@ -476,7 +512,10 @@ def parse_gates():
                 err(f"gates.md:{n}", f"{cells[0]}: board {cells[3]!r} not in {BOARD_VALUES}")
             phase = PREFIX_PHASE[cells[0].rsplit("-", 1)[0]]
             crit[cells[0]] = {"id": cells[0], "text": cells[1], "needs": cells[2].split(), "board": cells[3],
-                              "phase": phase, "advisory": "ADVISORY" in cells[2].split(), "_where": f"gates.md:{n}"}
+                              "phase": phase, "advisory": "ADVISORY" in cells[2].split(),
+                              "retired": cells[2].split() == ["RETIRED"], "_where": f"gates.md:{n}"}
+            if crit[cells[0]]["retired"]:
+                retired_ok(f"gates.md:{n}", cells[0], cells[1])
         elif re.match(r"W-", cells[0]):
             if not re.fullmatch(RE["W"], cells[0]) or len(cells) < 3:
                 err(f"gates.md:{n}", "waiver row wants | W-NN | G-... | reason |")
@@ -517,13 +556,81 @@ def parse_records():
     return recs
 
 
+def pinned_key():
+    """README.md's '- Signing key: `SHA256:...`' line (round 2's objection to O-R4: a good signature only
+    proves a key in a user-global allowed-signers file, which any process running as alex can edit, so the
+    one key that counts is pinned in the repository). Returns (fingerprint, why it cannot be trusted or '')."""
+    path = os.path.join(VV, "README.md")
+    if not os.path.exists(path):
+        return None, "README.md missing"
+    rel = vv_rel("README.md")
+    bl = blame(rel) if rel and rel in TRACKED else {}
+    for n, line in enumerate(open(path, encoding="utf-8"), 1):
+        m = re.match(r"^- Signing key: `(SHA256:[A-Za-z0-9+/]+)`", line)
+        if not m:
+            continue
+        fp, sha = m.group(1), bl.get(n, "0" * 40)
+        if set(sha) <= {"0"}:
+            return fp, "the pinned key's line in README.md is not committed"
+        if CLAUDE_TRAILER.search(commit_message(sha)) or is_merge(sha):
+            return fp, f"the pinned key's line comes from {sha[:7]}, a Claude or merge commit"
+        if signature(sha) != "G" or signing_key(sha) != fp:
+            return fp, f"the pinned key's line ({sha[:7]}) is not in a commit signed with that key"
+        return fp, ""
+    return None, "README.md pins no signing key ('- Signing key: `SHA256:...`', README 'Approvals')"
+
+
+def file_at(commit, relpath):
+    rc, out = git("show", f"{commit}:{relpath}")
+    return out if rc == 0 else None
+
+
+def statements_at(commit):
+    """{requirement id: statement} in requirements.md at a commit (for a 'REQ-ALL@<commit>' line)."""
+    rel = vv_rel("requirements.md")
+    text = file_at(commit, rel) if rel else None
+    out, cur, field = {}, None, None
+    for line in (text or "").splitlines():
+        m = re.match(r"^### (\S+?):? ", line)
+        if line.startswith("#"):
+            cur = m.group(1) if m and REQ_ID.fullmatch(m.group(1)) else None
+            continue
+        m = re.match(r"^- ([A-Za-z][A-Za-z ]*?): (.*)$", line)
+        if cur and m:
+            field = m.group(1)
+            if field == "Statement":
+                out[cur] = m.group(2).strip()
+        elif cur and field == "Statement" and line.startswith("  "):
+            out[cur] += " " + line.strip()
+    return out
+
+
+def hrows_at(commit):
+    """{DF id: (failure_mode, effect, severity)} of the H rows in dfmea.csv at a commit (a 'DF-H@' line)."""
+    rel = vv_rel("dfmea.csv")
+    text = file_at(commit, rel) if rel else None
+    out = {}
+    if text:
+        for r in csv.DictReader(io.StringIO(text)):
+            if r.get("action_priority") == "H" and r.get("status") != "RETIRED":
+                out[r["id"]] = (r["failure_mode"], r["effect"], r["severity"])
+    return out
+
+
+BULK = re.compile(r"^(REQ-ALL|DF-H)@([0-9a-f]{7,40})$")
+
+
 def parse_approvals():
     """releases/APPROVALS.md rows: | A-NNN | item | decision | scope | reason | by | date |.
     Only lines Alex committed count: a line whose commit carries a Claude trailer is an error,
-    and an uncommitted line is pending."""
+    and an uncommitted line is pending; a line counts only from a commit signed with the key
+    README.md pins. 'REQ-ALL@<commit>' (APPROVED) and 'DF-H@<commit>' (ACCEPTED) are bulk lines
+    (round 2's proportionality objection): they cover every requirement, or every H row, unchanged
+    since that commit, and each ID is still checked on its own (an edit after it is not covered)."""
     path = os.path.join(VV, "releases", "APPROVALS.md")
     rel = vv_rel("releases", "APPROVALS.md")
     bl = blame(rel) if rel and rel in TRACKED else {}
+    pin, pin_bad = pinned_key()
     rows, seen = [], set()
     for n, cells in table_rows(path):
         if not re.match(r"A-", cells[0]):
@@ -538,6 +645,12 @@ def parse_approvals():
             continue
         seen.add(aid)
         kind = item.split("-")[0]
+        bulk = BULK.match(item)
+        if bulk and not resolve(bulk.group(2)):
+            err(w, f"{aid}: {item}: commit {bulk.group(2)} is not in this repository")
+            continue
+        if bulk and (bulk.group(1) == "REQ-ALL") != (dec == "APPROVED"):
+            err(w, f"{aid}: {item}: REQ-ALL@ takes APPROVED, DF-H@ takes ACCEPTED")
         want = {"REQ": ("APPROVED", "REJECTED", "DEFERRED"), "DF": ("ACCEPTED",), "W": ("WAIVED",)}.get(kind)
         if not want:
             err(w, f"{aid}: item {item!r} is not a REQ, DF or W id")
@@ -573,12 +686,50 @@ def parse_approvals():
             warn(w, f"{aid}: {sha[:7]} is not signed with a key in the allowed-signers file "
                     f"(%G? = {signature(sha)}): it does not count")
             committed, pending = False, "not signed with Alex's key"
+        elif not pin or pin_bad:
+            # round 2: 'G' only proves some key in a user-global file; the key that counts is pinned here
+            warn(w, f"{aid}: pending: {pin_bad}")
+            committed, pending = False, "no trusted pinned key"
+        elif signing_key(sha) != pin:
+            warn(w, f"{aid}: {sha[:7]} is signed with {signing_key(sha) or 'no key'}, not the pinned key {pin}: "
+                    "it does not count")
+            committed, pending = False, "signed with another key"
         rows.append({"id": aid, "item": item, "decision": dec, "scope": scope, "reason": reason, "who": who,
                      "date": date, "sha": sha, "committed": committed, "pending": pending, "_where": w})
+    if pin and not pin_bad:
+        kt = allowed_key_type(pin)
+        if kt is None:
+            warn("README.md", f"the pinned key {pin} is not in the allowed-signers file: no line can count")
+        elif not kt.startswith("sk-"):
+            warn("README.md", f"the pinned key is a software key ({kt}): it counts, but any process running as alex "
+                              "can sign with it while it sits unlocked in an agent (README 'Approvals')")
     eff = {}
+    cur_req, cur_h = None, None
     for r in rows:
-        if r["committed"]:
+        if not r["committed"]:
+            continue
+        b = BULK.match(r["item"])
+        if not b:
             eff[r["item"]] = r                     # a later line supersedes an earlier one
+            continue
+        if b.group(1) == "REQ-ALL":
+            if cur_req is None:
+                n0 = len(ERRORS)
+                cur_req = parse_blocks("requirements.md", RE["REQ"], [])
+                del ERRORS[n0:]                    # load() reports the file's own errors once
+            then = statements_at(b.group(2))
+            for rid, blk in cur_req.items():
+                if rid in then and then[rid] == blk["f"].get("Statement", "").strip():
+                    eff[rid] = dict(r, item=rid)
+        else:
+            if cur_h is None:
+                n0 = len(ERRORS)
+                cur_h = {d["id"]: d for d in read_csv("dfmea.csv", DF_COLS)}
+                del ERRORS[n0:]
+            then = hrows_at(b.group(2))
+            for did, d in cur_h.items():
+                if did in then and then[did] == (d["failure_mode"], d["effect"], d["severity"]):
+                    eff[did] = dict(r, item=did)
     return rows, eff
 
 
@@ -805,6 +956,10 @@ def load():
             err(w, f"{d['id']}: every 'detects' check is NOT_BUILT, so detection_rating must be 8 or more (it is {d['D']})")
         if d["status"] == "DONE" and not live:
             err(w, f"{d['id']}: DONE needs at least one 'detects' check")
+        if d["D"] <= 2 and len(live) < 2:
+            # F's objection: the README's 2 is 'two independent checks', 1 'cannot pass unseen'
+            err(w, f"{d['id']}: detection_rating {d['D']} needs two or more independent 'detects' checks "
+                   f"(it has {len(live)}): rate it 3-4 for one script that can fail")
         if d["O"] <= 2:
             built = any("T" in vers[t]["method"] and vers[t]["release"] and vers[t]["last_result"] == "PASS"
                         for t in live)
@@ -911,6 +1066,8 @@ def load():
 
     cross_check_approvals(db)
     check_reach(db)
+    check_req_phase(db)
+    check_plan_steps(db)
     check_releases(db)
     check_change_reruns(db)
 
@@ -931,9 +1088,9 @@ def load():
         texts += [(c["_where"], c["text"])]
         for t in c["needs"]:
             if not (ANY_ID.fullmatch(t) or re.fullmatch(r"PHASE:(" + "|".join(PHASES) + ")", t)
-                    or t in ("DEFECTS:CLOSED", "DFMEA:COVERAGE", "ADVISORY")):
+                    or t in ("DEFECTS:CLOSED", "DFMEA:COVERAGE", "ADVISORY") or (t == "RETIRED" and c["retired"])):
                 err(c["_where"], f"{c['id']}: needs token {t!r} is not an ID, PHASE:<phase>, "
-                                 "DEFECTS:CLOSED, DFMEA:COVERAGE or ADVISORY")
+                                 "DEFECTS:CLOSED, DFMEA:COVERAGE, ADVISORY or (alone) RETIRED")
             texts.append((c["_where"], t))
     for w in waivers:
         texts.append((w["_where"], w["crit"] + " " + w["reason"]))
@@ -1113,6 +1270,43 @@ def check_reach(db):
         if v["last_result"] not in ("CUT", "RETIRED") and vid not in reached:
             err(v["_where"], f"{vid}: phase {v['phase']}, but no gate criterion at or before {v['phase']}, "
                              "requirement or H-priority risk reaches it: that gate can pass without it")
+
+
+def check_req_phase(db):
+    """F's objection: a requirement proven by its Phase has a live check of that phase or earlier, so a check
+    moved to a later phase cannot quietly leave a requirement that still says it is proven earlier (R2 would
+    pass it there on no evidence)."""
+    for r in db["reqs"].values():
+        if r["f"].get("Status") in ("RETIRED", "REJECTED") or r["f"].get("Phase") not in PHASES:
+            continue
+        live = [(PHASES.index(db["vers"][v]["phase"]), v) for v in r["vers"]
+                if v in db["vers"] and db["vers"][v]["last_result"] not in ("CUT", "RETIRED")]
+        if not live:
+            continue
+        first, vid = min(live)
+        if first > PHASES.index(r["f"]["Phase"]):
+            err(r["_where"], f"{r['id']}: Phase {r['f']['Phase']}, but its earliest live check ({vid}) is "
+                             f"{PHASES[first]}: nothing proves it by its Phase; move the requirement's Phase or a check's")
+
+
+def check_plan_steps(db):
+    """Round 2's objection: every ORDER check (advisory-only, CUT and RETIRED ones aside) is named by a step of
+    PLAN.md section (d), so the order checklist cannot drift from the gate again."""
+    path = os.path.join(VV, "PLAN.md")
+    if not os.path.exists(path):
+        err("PLAN.md", "missing")
+        return
+    text = open(path, encoding="utf-8").read()
+    m = re.search(r"^## \(d\).*?(?=^## )", text, re.M | re.S)
+    if not m:
+        err("PLAN.md", "no section '## (d)' (the steps before the order)")
+        return
+    named = set(VER_ID.findall(m.group(0)))
+    for vid, v in db["vers"].items():
+        if (v["phase"] == "ORDER" and v["last_result"] not in ("CUT", "RETIRED")
+                and vid not in db["advisory_only"] and vid not in named):
+            err(v["_where"], f"{vid}: an ORDER check that no step of PLAN.md section (d) names: add it to a step "
+                             "(with its effort) or move it to the phase where it matters")
 
 
 WAS = re.compile(r"\bWas:[^.;|]*")
@@ -1338,7 +1532,8 @@ def report(db, verbose):
     print(f"  defects {len(defs)} " + str(dict(Counter(d['status'] for d in defs.values()))))
     print(f"  approvals by Alex: {sum(1 for a in db['approvals'] if a['committed'])} counted (signed), "
           f"{sum(1 for a in db['approvals'] if not a['committed'])} pending"
-          + ("" if SIGNERS else "; commit signing not set up, so none can count yet"))
+          + ("" if SIGNERS else "; commit signing not set up, so none can count yet")
+          + ("; " + pinned_key()[1] if pinned_key()[1] else f"; pinned key {pinned_key()[0]}"))
     bdr = branch_drift(db)
     print("  order branch: " + ("; ".join(bdr) if bdr else f"{db['order_branch'][0]} has no design commit after "
                                                             f"{db['order_branch'][1]}"))
@@ -1510,6 +1705,9 @@ def gate(db, phase, board, verbose):
         if not for_board(c["board"], board):
             results.append((cid, "N/A", [f"a {c['board']} criterion"]))
             continue
+        if c["retired"]:
+            results.append((cid, "RETIRED", [c["text"][:90]]))
+            continue
         checked = [need_ok(t) for t in c["needs"]]
         reasons = [r for ok, r in checked if ok is False]
         if all(ok is None for ok, _ in checked):
@@ -1600,14 +1798,15 @@ def gate(db, phase, board, verbose):
 
     print(f"gate {phase} for {board} at {HEAD[:7]}")
     for cid, state, reasons in results:
-        print(f"  {state:4}  {cid}" + (f"  {crit[cid]['text'][:70]}" if cid in crit else ""))
-        for r in reasons if (verbose or state in ("FAIL", "INFO")) else [x for x in reasons if x.startswith("waived by")]:
+        print(f"  {state:4}  {cid}" + (f"  {crit[cid]['text'][:70]}" if cid in crit and state != "RETIRED" else ""))
+        for r in reasons if (verbose or state in ("FAIL", "INFO", "RETIRED")) else [x for x in reasons if x.startswith("waived by")]:
             print(f"          {r}")
     counted = [s for _, s, _ in results if s in ("PASS", "FAIL")]
     n_bad = counted.count("FAIL")
     print(f"RESULT: {'PASS' if not n_bad else f'FAIL ({n_bad} of {len(counted)} not met)'}"
           + (f"; {sum(1 for _, s, _ in results if s == 'N/A')} N/A, "
-             f"{sum(1 for _, s, _ in results if s == 'INFO')} advisory" if len(counted) < len(results) else ""))
+             f"{sum(1 for _, s, _ in results if s == 'INFO')} advisory, "
+             f"{sum(1 for _, s, _ in results if s == 'RETIRED')} retired" if len(counted) < len(results) else ""))
     return n_bad == 0
 
 

@@ -18,7 +18,7 @@ becomes a DEF here.
 
 Seeded 2026-10-24 from the git log under `hardware/ref_design` (this branch, and three
 commits on other branches where named) and from `docs/design_review.md` ("Found and fixed");
-re-seeded 2026-10-25 for 684a609. A defect whose part or function left the design is RETIRED
+re-seeded 2026-10-25 for 684a609 and 2026-10-26 for be437f8. A defect whose part or function left the design is RETIRED
 with the commit that removed it: it keeps its ID and history, and the DVT gate counts it as
 closed. RETIRED is not a way to close a defect whose part is still on the board.
 
@@ -37,7 +37,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: round 1 lowered R15 (PWR_EN pull-down) from 100k to 10k against D5 leakage; that cut the pill resistance Q1 could still read by about five times.
 - Root cause: a fix for one failure mode made without re-deriving the latch's other margins.
 - Why missed: the latch's margins exist only in prose; no state table or script recomputes them on a change.
-- Check added or changed: none yet; VER-33 (latch state table) and VER-78 (10 kohm in series on the real board, the margin REQ-BTN-01 allows; 1 kohm proved nothing: F-10).
+- Check added or changed: none yet; VER-33 (latch state table: the largest series resistance that still turns on) and VER-78 (1 kohm in series with either Start dome on the real board, F-R11).
 - Updated: REQ-PWR-08, REQ-PWR-11, DF-27
 - Gate: ORDER
 - Status: FIXED (R15 back to 100k, R38 bleeder added); VER-33 and VER-78 not built
@@ -224,10 +224,10 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 
 ### DEF-21: Docs disagree with the design
 - Found: while seeding this register (2026-10-24, VER-39); some of these are fixed on other branches (67e3d13), not here
-- Symptom: re-checked at 684a609 (2026-10-25). Still true or new: (a) bringup.md step 0 expects one body-diode drop from Q2 and TP1 above about 1 kohm; Q2 is gone and R38 is 10k (VER-53 and VER-52 hold the new limits). (b) bringup.md lists TP7 as LS_GATE; it is CHG_TEMP, the BQ24073's TS node. (c) bringup.md steps 1, 2.3, 5.1-5.6 describe the TP4056: D5 feeding VSYS, CHG_DONE_N, 333-364 mA by R5, the TEMP pin at 0.63 x VBUS, D7 for 1.5-3.3 ms at the unplug, VBUS under 8 V for the TP4056; step 4a puts TH1 left of J3. (d) bringup.md 6.2-6.3 still call seat 1's Y the power button (both Starts since 2d1124d). (e) assembly.md section 3 says to look over the TP4056's pad and that 'JP1 and JP2 come bridged' (five jumpers); section 1's polarised list names the TP4056, AO3401A and D5, D6. (f) bom.md: TP4056 at $0.17 among the priciest parts, M2 x 8 screws (case.scad: M2 x 6), 'the Start/Select strip isn't used' and no domes or Start/Select caps (DEF-42), 'Case: tub and lid' and 47 cm3, 118 placements and 49 part numbers from before the shift registers. (g) hardware/ref_design/README.md's first paragraph says the cell lies under the board (it sits in the board's hole since 2026-10-21). (h) pin_review/panel.json and u6.json still name the ME6211 and the 3.5in panel's 124 mV full scale. (i) docs/pinmap.md calibrates the VBAT gain at the end of a charge (DEF-40, DF-117). (j) assembly.md opens the case with the cell still plugged into J2 (DF-169). Items (a)-(r) of 2026-10-24 that concerned the TP4056, ME6211, D7, J6 or the 3.5in panel left with those parts. Added 2026-10-25 by the second review: (k) bom.md:16 quotes the old 70.5 x 151.34 mm board (72.4 x 127.7 mm at 684a609; F-R5); (l) bom.md:55 still buys an adhesive foam pad for the cell (no foam since the cell moved into the hole; F-R16); (m) pin_review/u4.json's E9 note (line 17) says PWR_HOLD is GPIO2, CHG_OFF GPIO19, AMP_EN GPIO11 and BL_PWM GPIO44 (GPIO44, GPIO43, GPIO34 and GPIO28 at 684a609; F-R2).
+- Symptom: re-checked at be437f8 (2026-10-26, VER-39). Still true or new: (a) bringup.md step 0 expects one body-diode drop from Q2 and TP1 above about 1 kohm; Q2 is gone and R38 is 10k (VER-53 and VER-52 hold the new limits). (b) bringup.md lists TP7 as LS_GATE; it is CHG_TEMP, the BQ24073's TS node. (c) bringup.md steps 1, 2.3, 5.1-5.6 describe the TP4056: CHG_DONE_N, 333-364 mA by R5, the TEMP pin, D7 at the unplug, VBUS under 8 V for the TP4056; step 4a puts TH1 left of J3. (d) bringup.md 6.2-6.3 still call seat 1's Y the power button (both Starts since 2d1124d). (e) assembly.md's polarised list (line 17) and section 3 (line 55) name the TP4056; 'JP1 and JP2 come bridged' (five jumpers). (f) bom.md: TP4056 at $0.17 among the priciest parts (line 33), 'the Start/Select strip isn't used' and no domes or Start/Select caps (DEF-42). (g) hardware/ref_design/README.md's first paragraph says the cell lies under the board (it sits in the board's hole since 2026-10-21). (h) pin_review/panel.json and u6.json still name the ME6211 as 3V3's source. (i) docs/pinmap.md calibrates the VBAT gain at the end of a charge (DEF-40, DF-117). (j) assembly.md step 10 lifts the tub with the cell still plugged into J2 (DF-169). (l) bom.md:55 still buys an adhesive foam pad for the cell. (m) pin_review/u4.json's E9 note (line 17) says PWR_HOLD is GPIO2, CHG_OFF GPIO19, AMP_EN GPIO11 and BL_PWM GPIO44 (GPIO44, GPIO43, GPIO34 and GPIO28). New at be437f8: (n) bringup.md's display steps 3.1-3.5 are the 2.4 in panel's: the ST7789V's init, RDDID 0x85 0x85 0x52, IM3-0 = 1110, COLMOD 0x55, 154 kB frames, 70 mA backlight at 0.077 V and a 29% minimum duty (the ILI9488 needs ID4 0x94 0x88, IM2-0 high, COLMOD 0x66, 461 kB frames; 113 mA at 0.124 V; 18%). (o) assembly.md says the speaker sits on the board's top (line 67, it is sunk in a hole since 9cff0d3) and J4's mouth faces the glass (line 88; placement.py turns it towards the speaker). (p) placement.py's comments: the docstring and SPEAKER's block put the speaker on the board's top, CUTOUTS' block says the speaker and its amplifier went and gives strips of 7.5 and 8.9 mm (9.2 each at be437f8); design.py:152 ('half-close Q2') and :455 (the speaker on the board's top) (F's objection). (q) hardware/ref_design/PLAN.md's table: the speaker on the board's top, the case 77.4 x 132.7 x 9.55 mm (156.64 x 9.6 at be437f8), the cell between seat 2's deck and J3's range. (r) docs/design_review.md's charger and power sections still describe the TP4056 and the ME6211. Items (a)-(r) of 2026-10-24 that concerned parts that left went with them; (k), bom.md's board size, is fixed (72.4 x 151.64 mm, its quote marked as not re-quoted).
 - Root cause: docs repeat numbers from design.py and case.scad by hand; nothing compares them.
 - Why missed: no doc check; reviews read the docs as truth.
-- Check added or changed: VER-39 (stale-doc sweep, FAIL 2026-10-25: 26 statements); VER-161 (check_claims.py: the numbers, GPIOs and lists compared with design.py, case.scad and pin_review; moved to ORDER by the second review; not built) is the real fix.
+- Check added or changed: VER-39 (stale-doc sweep, now also design.py's and placement.py's comments: FAIL 2026-10-26 at be437f8, the list above); VER-161 (check_claims.py: the numbers, GPIOs and lists compared with design.py, case.scad and pin_review; not built) is the real fix. bringup.md matching the design is now also a precondition of first power (G-EVT-02, round 2's objection).
 - Updated: REQ-TST-01, DF-102, DF-169
 - Gate: CASE
 - Status: OPEN
@@ -314,23 +314,23 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 
 ### DEF-30: Which design is the order candidate is not recorded
 - Found: while seeding this register (2026-10-24)
-- Symptom: the board to order is hardware/ref_design at 684a609 (branch ref-design-island-45, 2026-10-24), per the 2026-10-25 brief; this register was re-seeded for it and README's design baseline names its files. No release record names it yet, and another session may still commit to ref-design-island-45.
+- Symptom: the board to order is hardware/ref_design at be437f8 (branch ref-design-35in, 2026-10-26; the board itself is final at 62b01f2, the later commits are docs and print kits), per the 2026-10-26 brief; this register was re-seeded for it and README's design baseline names its files. No release record names it yet, and another session may still commit to ref-design-35in.
 - Root cause: no release record names the commit being ordered.
 - Why missed: no configuration control before this register.
 - Check added or changed: VER-42 (release record: tag, commit, fab zip hash; not run); check_trace.py's rule R7 fails any gate when HEAD's design files differ from README's design baseline ("gate evaluated against a design it does not describe", F-1); evidence goes stale when HEAD moves past changes it covers, or its commit is not an ancestor of HEAD.
 - Updated: REQ-FAB-08, DF-76
 - Gate: ORDER
-- Status: OPEN (the release record names 684a609 or a later commit with a change record; R7 and the default mode fail on anything after it)
+- Status: OPEN (the release record names be437f8 or a later commit with a change record; R7 and the default mode fail on anything after it)
 
 ### DEF-31: The case screws engage 1.4 mm of the lid's pilots
 - Found: two-model review (O-52), 2026-10-24, from case.scad
-- Symptom: since the case got 3.8 mm thinner (2026-10-22) the screws are M2 x 6 from a 1 mm counterbore: the tip at z 7.0, 3.2 mm of thread above the board (1.6 x d) in the island's 4.95 mm pilots and the decks' 3.30 mm ones. Self-tapping screws in printed plastic want 4-5 mm. bom.md still buys M2 x 8, which would run past the decks' pilots.
+- Symptom: since the case got 3.8 mm thinner (2026-10-22) the screws are M2 x 6 from a 1 mm counterbore: the tip at z 7.0, 3.2 mm of thread above the board (1.6 x d) in the side pilots under the screen band (5.00 mm deep) and the end pilots (3.30 mm). Self-tapping screws in printed plastic want 4-5 mm where the pilot allows it. bom.md buys M2 x 6 since 03df0f2.
 - Root cause: the stack changed and the fastener and pilot were not recomputed (DEF-19's class).
 - Why missed: no assert ties the screw length to the stack; bom.md's "M2 x 8" is prose.
 - Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles.
 - Updated: REQ-MEC-09, DF-119
 - Gate: CASE
-- Status: OPEN (M2 x 7 in the island's four pilots engages 4.2 mm; the decks' pilots cap at 3.3 mm: PLAN.md decision D18)
+- Status: OPEN (M2 x 7 in the four side pilots engages 4.2 mm with the tip 0.8 mm short; the end pilots cap at 3.3 mm, and REQ-MEC-09 now asks 3.0 mm of them: DEC-18)
 
 ### DEF-32: The drill file mixes plated and unplated holes
 - Found: two-model review (O-14), 2026-10-24, from a scratch export with fab.py's own kicad-cli arguments
@@ -340,11 +340,11 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-131 (design_numbers.py drill: FAIL until fab.py passes --excellon-separate-th; then parse both files); VER-114 (every hole >= 0.30 mm: PASS).
 - Updated: REQ-FAB-04, DF-127
 - Gate: ORDER
-- Status: OPEN
+- Status: OPEN (re-checked at be437f8: fab.py's export writes one MixedPlating file of 628 holes and 4 slots; VER-131 FAIL)
 
 ### DEF-33: The CPL uses footprint origins, and J1's and J2's are off their pads
 - Found: two-model review (O-16), 2026-10-24, measured with pcbnew
-- Symptom: re-measured at 684a609 with pcbnew (design_numbers.py cpl): every assembled footprint's origin sits within 0.10 mm of its pads' centre except J1 (1.50 mm), J2 and J4 (0.95 mm, the same PicoBlade footprint) and J3 (0.23 mm). fab.py writes the origin; JLC places at its own footprint's centroid.
+- Symptom: re-measured at be437f8 with pcbnew (design_numbers.py cpl): every assembled footprint's origin sits within 0.10 mm of its pads' centre except J1 (1.50 mm), J2 and J4 (0.95 mm, the same PicoBlade footprint) and J3 (0.23 mm). fab.py writes the origin; JLC places at its own footprint's centroid.
 - Root cause: footprints whose origin is not the centroid, and a CPL that assumes it is.
 - Why missed: no centroid check; the dry run has not been done.
 - Check added or changed: VER-176 (origin against the pads' centre: FAIL); VER-29 (the rotation table; not built); VER-28 screenshots J1-J4.
@@ -357,9 +357,9 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: the fw crate targets the RP2350A (rp235xa, GPIO0-29), 4096K of flash and the ST7796; the only ref-board firmware (fw-ref-board a01f6fb) predates the routing levers (86bf694): it holds PWR_HOLD on GPIO2 (P2_START at 684a609) and drives SR_PL on GPIO28 (BL_PWM); every pin number is typed by hand. pinmap.md is generated from design.py (board/tools/pinmap.py), but no firmware file is.
 - Root cause: firmware written against another branch's design, with no generated pin file.
 - Why missed: the generated pin definitions (vp_map #56) were scheduled for EVT, so the first build for the real chip would be the day the boards arrive.
-- Check added or changed: VER-149 (generated pin file and a host test), VER-150 (an rp235xb build at 2048K), VER-151 (flash budget); all at the order gate (G-ORD-23); not built.
+- Check added or changed: VER-149 (generated pin file and a host test) and VER-150 (an rp235xb build at 2048K), moved to EVT on 2026-10-26 (G-EVT-08: needed when the boards arrive, not to order them); VER-151 (flash budget, ORDER: more than 2 MB would need an external flash); not built.
 - Updated: REQ-MCU-10, REQ-MCU-11, DF-121, DF-122
-- Gate: ORDER
+- Gate: EVT
 - Status: OPEN
 
 ### DEF-35: The trace gate could pass on evidence that did not show what it claimed
@@ -375,23 +375,23 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
-- Symptom: battler.kicad_pro sets hole_to_hole, holes_co_located, copper_sliver, isolated_copper, connection_width, padstack, lib_footprint_mismatch, lib_footprint_issues, footprint_symbol_field_mismatch, net_conflict, missing_footprint, extra_footprint and duplicate_footprints to warning; check_pcb.py fails only on errors, while VER-04's pass limit says "silkscreen warnings only". Today's evidence happens to list silk warnings only.
+- Symptom: battler.kicad_pro sets hole_to_hole, holes_co_located, copper_sliver, isolated_copper, connection_width, padstack, lib_footprint_mismatch, lib_footprint_issues, footprint_symbol_field_mismatch, net_conflict, missing_footprint, extra_footprint and duplicate_footprints to warning; check_pcb.py fails only on errors, while VER-04's pass limit says 'silkscreen warnings only'. At be437f8 its three 'cosmetic' silk_edge_clearance warnings are the board's name, BOARD_REV and build text cut away by the cell's hole (DEF-57): a silk warning can hide a defect too.
 - Root cause: the script's rule is weaker than the limit it is credited with.
 - Why missed: no seeded fault for check_pcb.
-- Check added or changed: VER-04 (fail on any type not in COSMETIC), VER-22 (a seeded hole_to_hole fault); not built.
+- Check added or changed: VER-04 (fail on any type not in COSMETIC, and silk_edge_clearance out of COSMETIC), VER-22 (a seeded hole_to_hole fault; DVT); not built. VER-18 now reads the silk texts against the outline itself (FAIL).
 - Updated: vp_map #19
 - Gate: ORDER
 - Status: OPEN
 
 ### DEF-37: TH1 sits at the cell's edge, and four bare pads face the pouch
 - Found: two-model review (O-30, F-36), 2026-10-24, from placement.py and case.scad
-- Symptom: since the cell sits in the board's hole (2026-10-21) TH1 is on the board's top at (126.1, 86.0), 0.80 mm right of the hole's right edge, facing the cell's end across the routed FR4 edge and an air gap of 0 to 0.5 mm when the case pushes a worst-case cell right (up to 6 mm for a short cell not pushed home); its GND pad ties it to the pour. The bare back-side pads no longer face the cell (none within 1 mm of the hole: VER-164).
+- Symptom: since the cell sits in the board's hole (2026-10-21) TH1 is on the board's top at (127.8, 79.0) since the 3.5 in re-placement, 0.80 mm right of the hole's right edge, facing the cell's end across the routed FR4 edge and an air gap of 0 to 0.5 mm when the case pushes a worst-case cell right (up to 6 mm for a short cell not pushed home); its GND pad ties it to the pour. The bare back-side pads no longer face the cell (none within 1 mm of the hole: VER-164).
 - Root cause: the cell moved under the board (2026-10-09) and nothing checks placement against the cell's rectangle.
 - Why missed: check_fit never reads positions.json's cell and skips test points on its back-side pass.
 - Check added or changed: VER-164 (design_numbers.py th1: the geometry, PASS); VER-87 (two thermocouples: the lag; not built).
 - Updated: REQ-THM-02, REQ-BAT-08, DF-04
 - Gate: CASE
-- Status: OPEN (PLAN.md decision D25 before the case release: a silicone thermal pad across the gap, or accept the lag for EVT)
+- Status: OPEN (PLAN.md decision DEC-25 before the case release: a silicone thermal pad across the gap, or accept the lag for EVT)
 
 ### DEF-38: C9 sits 0.9 mm from a screw boss's edge
 - Found: two-model review (O-43), 2026-10-24, measured with pcbnew
@@ -403,15 +403,15 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Gate: ORDER
 - Status: RETIRED in 2d1124d: C9 left with the TP4056's load sharing; the class (an MLCC by a clamping boss) is VER-142 (PASS: the nearest is C14, 4.40 mm from H4) and REQ-MEC-12
 
-### DEF-39: Backlight at 100% exceeds the panel's 120 mA at worst-case tolerance
+### DEF-39: Backlight at 100% exceeds the panel's 120 mA at worst-case tolerance (again since 79de1f7)
 - Found: two-model review (F-7, O-21), 2026-10-24, by hand
-- Symptom: on the 3.5in panel (until 53e21c8), 3V3 +2%, R61 +1% and R60 -1%, U6's +4.5 mV offset and R52/R53 -1% gave about 61.2 mA a pin, 122.5 mA against 120 mA. With the ER-TFT024IPS-3 and R61 2.4k the same stack gives 39.0 mA a sink, 78.0 mA against the panel's 80 mA.
-- Root cause: the requirement and the sim used nominal parts.
-- Why missed: no tolerance sweep; the sim hard-codes its values (DEF-45).
-- Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, new).
+- Symptom: on the 3.5in panel (until 53e21c8), 3V3 +2%, R61 +1% and R60 -1%, U6's +4.5 mV offset and R52/R53 -1% gave about 61.2 mA a pin, 122.5 mA against 120 mA. The 2.4 in panel (53e21c8 to 79de1f7) took it to 78.0 mA against 80 mA and the defect was closed. 79de1f7 brought back the ER-TFT035IPS-6 with R61 3.9k, and the same stack again: 61.2 mA a pin, 122.4 mA against 120 mA (20.4 mA an LED on average); the design comment and pin_review/panel.json say '120 mA worst case' because they leave out the resistors' 1%.
+- Root cause: the requirement and the sim used nominal parts; then the panel change brought back a value chosen for nominal.
+- Why missed: no tolerance sweep at first (the sim hard-codes its values: DEF-45); in 79de1f7 the pin review re-derived the worst case by hand without the resistors' tolerance. VER-137 would have failed on that commit had check_trace run on design commits (DEF-47, PLAN.md step 0.3).
+- Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, now with the six-LED panel's 120 mA and the firmware's highest duty read from pinmap.md: FAIL 2026-10-26, 122.4 mA; it prints the duty cap, 97.9%, and the R61 that would pass, 3.74k).
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
 - Gate: ORDER
-- Status: CLOSED (VER-137 re-run 2026-10-26 at fc862fa after the second review rewrote design_numbers.py: PASS, 78.0 mA; the panel and R61 changed in 53e21c8; first PASS 2026-10-25: 78.0 mA worst case against 80 mA; the bench reading at EVT is VER-62 in G-EVT-03)
+- Status: OPEN (reopened 2026-10-26: DEC-31, a 97% duty cap written in pinmap.md or R61 3.74k; it closes when VER-137 passes)
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
@@ -466,12 +466,12 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 
 ### DEF-45: The backlight sim cannot follow design.py, and its evidence missed loop-made parts
 - Found: two-model review (O-5), 2026-10-24
-- Symptom: board/sim/backlight_circuit.py hard-codes rs = 2.2, rg = 330, rf = 10k, cf = 1n, rtop = 100k, rbot = 3.9k and gate_pd = 100k, and its docstring says BL_REF comes from GPIO44: design.py has R61 2.4k on GPIO28 since 53e21c8, so backlight_results.txt (56 mA a sink, 72.5 degrees of margin) is for the 3.5in panel, not the 35 mA the ER-TFT024IPS-3 runs.
+- Symptom: board/sim/backlight_circuit.py hard-codes rs = 2.2, rg = 330, rf = 10k, cf = 1n, rtop = 100k, rbot = 3.9k and gate_pd = 100k, and its docstring says BL_REF comes from GPIO44 (GPIO28). Its values were wrong for the 2.4 in panel (R61 2.4k) from 53e21c8 and are right again since 79de1f7 (R61 3.9k, 56 mA a pin), by coincidence: nothing ties them to design.py.
 - Root cause: a sim that copies values, and line-regex freshness.
 - Why missed: nobody changed a value to see whether the evidence went stale.
-- Check added or changed: VER-05 (now covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed).
+- Check added or changed: VER-05 (covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed; at EVT since 2026-10-26: the loop's parts are BOM values and the bench sees ringing on unit 1).
 - Updated: REQ-DSP-05, DF-44
-- Gate: ORDER
+- Gate: EVT
 - Status: OPEN
 
 ### DEF-46: Bring-up's cell emulation cannot hold 3.50 V with USB in
@@ -486,14 +486,14 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 
 ### DEF-47: The register drifted off the design it was meant to describe
 - Board: both
-- Found: the brief of 2026-10-25 and check_trace.py after vv-plan was rebased onto 684a609: 13 structure errors (covers naming parts that no longer exist: C9, D5, D7, Q2, R6, R39, R40, R47), while the content still described 76955d2
+- Found: the brief of 2026-10-25 and check_trace.py after vv-plan was rebased onto 684a609: 13 structure errors (covers naming parts that no longer exist: C9, D5, D7, Q2, R6, R39, R40, R47), while the content still described 76955d2. On 2026-10-26 the rebase onto be437f8 failed the default mode at once (7 errors: the baseline and the CLOSED defects' stale checks), as the fix intended.
 - Symptom: the register was seeded on 76955d2 (TP4056, ME6211, the 3.5in ILI9488 panel) on 2026-10-24, two days after the design had moved on in other branches (BQ24073 2026-10-22, RT9013 2026-10-22, ER-TFT024IPS-3 2026-10-21, the cell in a hole, 74HC165s, domes). Its order gate, decisions and H rows were about parts that would not be on the ordered board, and the first run's plan estimated half a day to re-seed.
 - Root cause: the register was seeded from the checkout at hand, not from a named order candidate; its design baseline covered only design.py, placement.py and case.scad, and a mismatch was reported in the default mode but failed only at a gate.
 - Why missed: nothing runs check_trace.py on a design commit (it is not in scripts/check.sh); the default mode printed 'baseline differs' as a report line and exited 0; a rebase that changes the design under the register raised nothing until someone ran the tool.
 - Check added or changed: check_trace.py's structure check now fails when README.md's design baseline differs from HEAD or does not name every design path (design.py, placement.py, lib/, battler.kicad_pcb, last_route.ses, build_pcb.py, route.py, silk.py, fab.py, case.scad); VER-129 seeds both faults and passes. Still to do outside hardware/vv: a hardware step in scripts/check.sh that runs check_trace.py (PLAN.md step 0.3).
 - Updated: README (baseline at 684a609), every file of the register
 - Gate: ORDER
-- Status: FIXED (re-seeded at 684a609; closes when scripts/check.sh runs check_trace.py on every commit and VER-129 passes)
+- Status: FIXED (re-seeded at be437f8; closes when scripts/check.sh runs check_trace.py on every commit and VER-129 passes: it would have caught DEF-39's return in 79de1f7)
 
 ### DEF-48: The charge window's hot edge is 47 C and nothing on the board can move it
 - Found: re-seeding for 684a609 (2026-10-25), from pin_review/u2.json pin 1
@@ -503,14 +503,14 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-32 (the window from SLUS810N's TS limits; not built); VER-135 (per unit, now with a finger-warm step: TH1 is an NTC).
 - Updated: REQ-BAT-03, DF-147, DF-146
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision D5 before the order: a BOM-only TH1 with a higher B, about 4250-4350, if JLC stocks one, or accept 47.2 C against the cell's datasheet)
+- Status: OPEN (PLAN.md decision DEC-05 before the order: a BOM-only TH1 with a higher B, about 4250-4350, if JLC stocks one, or accept 47.2 C against the cell's datasheet)
 
 ### DEF-49: The shift registers cut the pill margin from 10 kohm to about 3.7 kohm
 - Found: re-seeding for 684a609 (2026-10-25)
 - Symptom: REQ-BTN-01 asked each input to read pressed up to 10 kohm of pill resistance, a margin set against the RP2350's 50k internal pull-up. Since 2d1124d the 16 D-pad and A/B/X/Y contacts feed 74HC165 inputs pulled up by 10k arrays; with a VIL of about 0.94 V at 3.3 V a pill reads pressed only under about 3.7 kohm.
 - Root cause: the pull-up value was chosen for the shift registers without re-deriving the contact's margin (DEF-02's class: a change made without re-deriving the other margins).
 - Why missed: the margin lives in prose; no script computes it from design.py.
-- Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision D24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
+- Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision DEC-24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
 - Updated: REQ-BTN-01, DF-164
 - Gate: ORDER
 - Status: OPEN
@@ -523,17 +523,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-177 (design_numbers.py vbus: FAIL at 6.9 V).
 - Updated: REQ-PWR-17, DF-101
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision D17)
+- Status: OPEN (PLAN.md decision DEC-17)
 
-### DEF-51: A worst-case cell has 0.30 mm to swell under the deck
+### DEF-51: A worst-case cell had 0.30 mm to swell under the deck
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py swell
-- Symptom: a 4.5 mm cell's top stands 1.6 mm over the board (cell_top, set to the decks' limit); the deck's underside is 1.9 mm over it, the panel's back 2.4 mm. REQ-BAT-07 asks 0.4 mm.
+- Symptom: at 684a609 a 4.5 mm cell's top stood 1.6 mm over the board (cell_top, set to the decks' limit) under a deck whose underside was 1.9 mm over it: 0.30 mm against REQ-BAT-07's 0.4 mm. Since 9cff0d3 (be437f8's placement) the cell lies under the glass's seat-2 half and no button end reaches it: the panel's back is the lowest thing over it, 0.80 mm free.
 - Root cause: cell_top was set to what the decks allow, not to the room the cell needs to swell.
 - Why missed: the Z stack has no script (VER-20 was not built).
-- Check added or changed: VER-20 (its swell part written: FAIL at 0.30 mm).
+- Check added or changed: VER-182 (design_numbers.py swell, rewritten 2026-10-26 to read what case.scad puts over the tub's pocket instead of assuming a deck: PASS, 0.80 mm).
 - Updated: REQ-BAT-07, DF-84
 - Gate: CASE
-- Status: OPEN (PLAN.md decision D18 before the case release)
+- Status: CLOSED (VER-182 PASS 2026-10-26 on be437f8's case.scad: 0.80 mm under the panel's back)
 
 ### DEF-52: The trace gate and the fab checks still passed on words, typed results and unsigned approvals
 - Board: both
@@ -546,15 +546,15 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Gate: ORDER
 - Status: CLOSED (VER-129 PASS 2026-10-26 at fc862fa: 63 of 63 seeded faults caught, 16 of them this defect's; the claims script's fault waits for VER-161, DEF-54)
 
-### DEF-53: The pushed cell's end sits 0.25 mm from the routed FR4 edge
-- Found: two-model review (O-R7), 2026-10-25, from case.scad lines 73 and 1278 and assembly.md step 5
-- Symptom: the tub's pocket is 0.25 mm inside the board hole's outline on each side, and assembly.md pushes the cell against its right wall, so every cell's end is 0.25 mm from the FR4 edge at TH1. JLC's routing tolerance (about +-0.2 mm) can take that near zero. REQ-BAT-08 asks 0.5 mm all round.
-- Root cause: the pocket was sized for the cell's fit, not against REQ-BAT-08; VER-164 asked only that TH1 be within 1.0 mm.
-- Why missed: no check computed the gap at the pushed end.
-- Check added or changed: VER-181 (design_numbers.py cellgap: FAIL).
+### DEF-53: A worst-case cell sits 0.25 mm from the routed FR4 edge on every side
+- Found: two-model review (O-R7), 2026-10-25, from case.scad and assembly.md step 5; restated on every side by round 2's sign-off objections (O, F), 2026-10-26
+- Symptom: the tub's pocket is 0.25 mm inside the board hole's outline on each side, so a worst-case 52 x 36 cell against any wall of it (assembly.md pushes it to the right one) is 0.25 mm from the FR4 edge: -0.15 mm after JLC's routing (about +-0.2 mm), the print's and the screws' tolerances, at the pushed end and on both long sides; its lead end is 1.35 mm against 1.5. REQ-BAT-08 asks 0.5 mm all round. Widening one end of the hole changes nothing while the pocket follows the hole (seeded in VER-129).
+- Root cause: the pocket was sized for the cell's fit, not against REQ-BAT-08; the worst-case cell is a listing's 50 +-2 x 34 +-2, not a spec sheet's.
+- Why missed: no check computed the gap; the first fix proposed (widen the right end) was checked against the pushed end only.
+- Check added or changed: VER-181 (design_numbers.py cellgap: every side, and what would pass: FAIL).
 - Updated: REQ-BAT-08, DF-85 (now H)
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision D27 before the order: D25's silicone pad in the gap, a wider hole's right end, or a restated REQ-BAT-08)
+- Status: OPEN (PLAN.md decision DEC-27 before the order: a cell of at most 51.2 x 35.2 mm by its spec sheet with the pocket 0.9 mm inside the hole, or a 54.8 x 37.8 mm hole (copper), or REQ-BAT-08 restated)
 
 ### DEF-54: Rows still written for 76955d2 after the re-seed
 - Found: two-model review (O-R9, O-R10, F-R2, F-R4, F-R5, F-R7, F-R9, F-R10, F-R11, F-R14, F-R16), 2026-10-25
@@ -564,14 +564,34 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-161 (check_claims.py, moved to ORDER; not built); check_trace's structure rule against a live row citing a RETIRED id outside 'Was:' (seeded in VER-129).
 - Updated: VER-28, VER-29, VER-33, VER-36, VER-52, VER-68, VER-77, VER-78, VER-79, VER-89, VER-90, VER-91, VER-130, VER-148, VER-159, VER-166; REQ-ASM-01, REQ-FAB-11, REQ-PWR-08, REQ-PWR-11; DF-45, DF-144
 - Gate: ORDER
-- Status: FIXED (rows rewritten against design.py at 684a609); VER-161 not built
+- Status: FIXED (rows rewritten against design.py at 684a609, and again at be437f8 on 2026-10-26); VER-161 not built
 
 ### DEF-55: JLC's order-number marker is not on the board
 - Found: two-model review (O-R19), 2026-10-25: `grep -c JLCJLC` on battler.kicad_pcb and silk.py gives 0 and 0
-- Symptom: REQ-FAB-05 asks for 'JLCJLCJLCJLC' on the back silk so JLC prints its number there; it is not in the design, so JLC places it anywhere (DF-125: on a comb or the BOARD_REV text).
+- Symptom: REQ-FAB-05 asks for 'JLCJLCJLCJLC' on the back silk so JLC prints its number there; it is not in the design (still absent at be437f8), so JLC places it anywhere (DF-125: on a comb). The spot the release template named, by the BOARD_REV text, is inside the cell's hole at be437f8 (DEF-57).
 - Root cause: REQ-FAB-05 was written as if the marker existed.
 - Why missed: no check read the silk for it.
 - Check added or changed: VER-132 (k) (the marker on B.Silkscreen, or JLC's paid removal option in the release record; not built).
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision D28)
+- Status: OPEN (PLAN.md decision DEC-28)
+
+### DEF-56: Copper within 0.20 mm of the cell's and the speaker's routed edges
+- Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge)
+- Symptom: the GND pours on both layers come 0.20 mm from the cell's hole (54.0 x 37.0 mm) and the speaker's hole (11.0 x 16.0 mm, new in 9cff0d3); J2's mounting pad is 0.275 mm from the board's left edge; J2's courtyard runs 0.22 mm and J4's 0.12 mm past the outline. REQ-FAB-03 asks 0.30 mm of copper to a routed edge (JLC's figure as this register quotes it; VER-17 confirms it on the dated page). The speaker's hole also leaves a 1.00 mm FR4 bar to the right edge (DF-178).
+- Root cause: the board's rules allow 0.2 mm (battler.kicad_pro min_copper_edge_clearance), and the PicoBlades were placed at the edges to clear the glass.
+- Why missed: KiCad's DRC checks its own 0.2 mm; VER-18 (the edge check) was NOT_BUILT.
+- Check added or changed: VER-18 (design_numbers.py edge: copper, courtyards and silk against every routed edge; FAIL).
+- Updated: REQ-FAB-03, DF-179, DF-178
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision DEC-32: the pours' edge clearance to 0.3 mm in build_pcb.py and J2 0.1 mm in, or JLC's dated page accepting 0.2 mm)
+
+### DEF-57: The board's name, BOARD_REV and build text sit in the cell's hole
+- Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge reads the silk texts)
+- Symptom: silk.py writes 'TWO-PLAYER HANDHELD  REF-A', 'REV 1' (design.BOARD_REV) and '2 LAYERS  1.6 MM  ENIG' at (100, 57.6), (100, 60.6) and (100, 63.2) on the back, 'between seat 2's clusters' as the old layout had it; since 9cff0d3 the cell's hole runs y 57.0-94.0 there, so all three are routed away. 'BOOT' and 'RST' are written at (-31.0, -32.5) and (-32.0, -31.6), case coordinates used as KiCad's: off the board. 'SPEAKER' and '15x10 8R' sit in the speaker's hole. The FAI reads BOARD_REV from the silk (VER-109), and a BOM-only change bumps it (README, R6): with no printed revision the boards cannot be told apart.
+- Root cause: fixed text positions in silk.py that the re-placement did not move; check_pcb.py treats silk_edge_clearance as cosmetic (DEF-36).
+- Why missed: KiCad's DRC reported three silk_edge_clearance warnings and check_pcb passed them; silk.py's own clash list is printed, not failed.
+- Check added or changed: VER-18 (every silk text wholly on the board; FAIL); VER-109 (the FAI reads BOARD_REV).
+- Updated: REQ-FAB-05, DF-125
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision DEC-28: move the texts out of the holes in silk.py, with the JLC marker, before the order)

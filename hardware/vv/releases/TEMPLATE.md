@@ -52,7 +52,7 @@ VER-28's screenshots must match each line.
 | Min hole | 0.3 mm | no small-hole fee (REQ-FAB-04) |
 | Via tenting | | |
 | Colour | | |
-| Order number | 'Specify a location' (the JLCJLCJLCJLC marker on B.SilkS by the BOARD_REV text) | never on a comb, a dome pad or the BOARD_REV text (DF-125) |
+| Order number | 'Specify a location': the JLCJLCJLCJLC marker on B.SilkS in the clear patch silk.py names (no pad, via, other silk or routed edge within 1 mm; VER-132 (k)), with the board's name and BOARD_REV moved out of the cell's hole first (DEF-57) | never on a comb, a dome pad, a test pad or the board's name and BOARD_REV (DF-125) |
 | Edge rails | no (or routed removal if JLC insists for J5 at the left edge) | a V-cut ridge binds in the USB tab slot |
 | E-test | against the IPC-D-356 netlist with net ties merged, or none | DF-126 |
 | Confirm production file | yes | see the CPL before placement |
@@ -74,8 +74,8 @@ These must arrive as designed or the order stops. Pre-ordered or consigned parts
 
 | Designator | Part | LCSC | Why it cannot change | Pre-ordered or consigned |
 |---|---|---|---|---|
-| U4 | RP2354B (2 MB flash inside) | C39843328 | an RP2350B has no flash; another package does not fit (DF-69); out at JLC and LCSC on 2026-10-21 | pre-order or consign (PLAN.md decision D2) |
-| L2 | Abracon AOTA-B201610S3R3-101-T | C42411119 | the RP2350 hardware guide names this inductor for the core switcher; its polarity dot matters (DF-93); out on 2026-10-21 | pre-order or consign (D2) |
+| U4 | RP2354B (2 MB flash inside) | C39843328 | an RP2350B has no flash; another package does not fit (DF-69); out at JLC and LCSC on 2026-10-21 | pre-order or consign (PLAN.md decision DEC-02) |
+| L2 | Abracon AOTA-B201610S3R3-101-T | C42411119 | the RP2350 hardware guide names this inductor for the core switcher; its polarity dot matters (DF-93); out on 2026-10-21 | pre-order or consign (DEC-02) |
 | U2 | BQ24073RGTR | C15220 | a BQ24075 puts up to 5.5 V on VSYS, a BQ24079 charges to 4.1 V, a BQ24072/74 differs on pin 15 and the timers (DF-144) | |
 | U3 | RT9013-33GB | C47773 | another output voltage of the family (1.2-3.3 V) runs the chip low or puts the panel over its VCI (DF-155) | |
 | U1 | SRV05-4.TCT | C13612 | the JLC footprint orientation is settled for this part only: KiCad's SOT-23-6 turned 180 degrees (DF-68) | |
@@ -83,9 +83,19 @@ These must arrive as designed or the order stops. Pre-ordered or consigned parts
 | TH1 | SDNT1005X103F3950FTF (10k, B3950, 1%) | C95939 | its B value sets the charge window (3.5-47.2 C); a fixed 10k in its place disables the temperature pause (DF-146, DF-147) | |
 | D2 | BAT54C,215 | C37704 | BAT54A/S/single share the package and break the latch (DF-20) | |
 | J3 | FH12-50S-0.5SH(55) | C202116 | bottom contact; a top-contact part does not meet the FPC (DF-58) | |
-| J2, J4 | Molex 53261-0271 | C177225 | the cell's and the speaker's PicoBlade plugs must latch in it (DF-113) | |
+| J2, J4 | Molex 53261-0271 | C177225 | the cell's and the speaker's PicoBlade plugs must latch in it (DF-113); while both are this part the cell's plug also fits J4 (DF-170, DEC-33) | |
 | J5 | SM03B-SRSS-TB(LF)(SN) | C160403 | the Megastar clone (C7430445) has another land pattern and is taller (DF-64) | |
 | X1 | ABM8-272-T3 | C20625731 | Raspberry Pi's core layout and its 15 pF load caps are drawn for it (DF-92) | |
+| R61 | 3.9k 1% 0402 (or the value DEC-31 sets) | C51721 | it sets the backlight's full scale: 122.4 mA worst case at 3.9k against the panel's 120 mA (DF-130); a 1% part, not 5% | |
+
+Bought by Alex and fitted by hand (not on JLC's BOM), held to the same rule:
+
+| Part | What | Why it cannot change |
+|---|---|---|
+| Panel | EastRising ER-TFT035IPS-6, 'No Touch' (ILI9488, 320 x 480) | J3's pin map, the FPC fold and J3's place, and the backlight's 120 mA are this panel's (DF-57, DF-61, DF-130) |
+| Cell | the 403450 whose spec sheet VER-37 recorded, at most the length and width DEC-27 sets, its PCM named | the hole's gap on every side (DF-85), R5's charge current (DF-07) and the PCM layer (DF-151, DF-172) |
+| Speaker | INGHAi GSPK151035PN (LCSC C530539) | its 35 mm leads and plug, its outline in the board's hole, its rating (REQ-AUD-06) |
+| Start/Select domes | HYP 600-415S-260, 4 mm | Dome_4mm_Round is drawn for it (DF-168) |
 
 ## Case
 
@@ -96,16 +106,14 @@ hold depend on how it is printed (VER-173). VER-48 and VER-92 evidence name this
 - Case rev (embossed inside the tub):
 - Material and brand:
 - Printer:
-- Slicer profile: layer height, walls, infill, the overhang the parts were exported at (45 or 60: case/print/case_45_60.zip)
+- Slicer profile: layer height, walls, infill, the support filament under the top's face (the print kit's project file, named with its sha256)
 - Panel tape part number:
-- Screws: M2 x <length> in the island's pilots, M2 x <length> in the decks' (VER-147)
+- Screws: M2 x <length> in the four side pilots (H1-H4), M2 x <length> in the two end pilots (H5, H6) (VER-147)
 
 | Part | File | sha256 |
 |---|---|---|
 | tub | | |
-| top (the island) | | |
-| deck (printed twice) | | |
-| build bars | | |
+| top (one piece, printed face down on support) | | |
 
 ## Gate results
 

@@ -9,9 +9,12 @@ first, and a status.
 **Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 from
 `hardware/ref_design/docs/validation_plan.md` (archived), the datasheet reviews in
 `hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1, revised
-them the same day from the two-model review, and re-seeded them on 2026-10-25 for the board
-being ordered, 684a609 (the BQ24073 charger, RT9013 LDO, ER-TFT024IPS-3 panel, 74HC165s, metal
-domes for Start and Select, the cell in a hole in the board). A requirement whose subject left
+them the same day from the two-model review, re-seeded them on 2026-10-25 for 684a609, and
+re-seeded them again on 2026-10-26 for the board being ordered, be437f8 (branch
+ref-design-35in: the BQ24073 charger, RT9013 LDO, the 3.5 in ER-TFT035IPS-6 panel (ILI9488)
+with R61 3.9k, 74HC165s in the button ends, metal domes for Start and Select, the cell in a
+hole under the glass's seat-2 half, the speaker sunk in a hole, a 72.4 x 151.64 mm board in a
+one-piece top). A requirement whose subject left
 the design is RETIRED with the commit that removed it; it keeps its ID. None is binding until
 Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md): APPROVED, REJECTED, or
 DEFERRED with a reason. A Status here that has no matching line he committed there is a
@@ -84,9 +87,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-02.R: One readable screen (ref_design)
 - Level: product
 - Board: ref_design
-- Statement: The 240 x 320 ER-TFT024IPS-3 (ST7789V) shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat.
+- Statement: The 320 x 480 ER-TFT035IPS-6 (ILI9488) shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat.
 - Rationale: the one shared screen is the product.
-- Source: ER-TFT024IPS-3 datasheet (pin_review/panel.json); the panel since 53e21c8.
+- Source: ER-TFT035IPS-6 datasheet (pin_review/panel.json); the panel since 79de1f7 (it was the 2.4 in ER-TFT024IPS-3 from 53e21c8).
 - Method: T
 - Verified by: VER-60, VER-61
 - Phase: EVT
@@ -107,7 +110,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: ref_design
 - Statement: From charge-done, the device shall play for at least 4.0 h before the 3.50 V cutoff at 25 C, backlight at 50% duty and sound at -12 dBFS.
-- Rationale: about 700 mAh against an estimated 90-120 mA (core up to 50 mA, panel logic 10 mA, backlight 35 mA at 50%, amplifier 4.4 mA plus sound); the usable capacity to the cutoff is measured per lot (VER-153).
+- Rationale: about 700 mAh against an estimated 90-120 mA (core up to 50 mA, panel logic 10 mA, backlight 56 mA at 50%, amplifier 4.4 mA plus sound); the usable capacity to the cutoff is measured per lot (VER-153).
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
 - Verified by: VER-101, VER-153
@@ -124,7 +127,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: allocated: REQ-PRD-04.R
 - Phase: EVT
-- Notes: the first draft said 3.0 h from 1.5 A, the allocation REQ-PRD-04.R says 4.0 h from 0.5 A (the BQ24073's USB500 input limit is 475 mA): Alex sets the time (PLAN.md decision D4, F-R12).
+- Notes: the first draft said 3.0 h from 1.5 A, the allocation REQ-PRD-04.R says 4.0 h from 0.5 A (the BQ24073's USB500 input limit is 475 mA): Alex sets the time (PLAN.md decision DEC-04, F-R12).
 - Status: PROPOSED
 
 ### REQ-PRD-04.R: Charge time (ref_design)
@@ -153,9 +156,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-06: Size
 - Level: product
 - Board: ref_design
-- Statement: The closed case shall measure at most 77.4 x 132.7 mm in plan and 9.55 mm thick at the screen, 7.7 mm at the button decks, each +0.3 mm for print tolerance.
-- Rationale: a DS Lite's length with the width the buttons and the cell's hole set (hardware/ref_design/PLAN.md, Case).
-- Source: hardware/ref_design/README.md; case.scad (case_h, the decks).
+- Statement: The closed case shall measure at most 77.4 x 156.64 mm in plan and 9.6 mm thick at the screen, 7.7 mm at the button ends, each +0.3 mm for print tolerance.
+- Rationale: a DS Lite's feel with the width the buttons set and the length the 3.5 in panel sets (hardware/ref_design/PLAN.md, Case).
+- Source: hardware/ref_design/README.md; case.scad (case_w, case_l, case_h, deck_face).
 - Method: I, A
 - Verified by: VER-48, VER-20
 - Phase: CASE
@@ -199,7 +202,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: ref_design
 - Statement: The all-in cost per unit at 10 units shall be $45 or less (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament).
-- Rationale: the number comes from VER-117's re-run of cost.py with a new board quote at 72.4 x 127.7 mm; bom.md's figure predates the board's present size.
+- Rationale: the number comes from VER-117's re-run of cost.py with a new board quote at 72.4 x 151.64 mm; bom.md's board line is still the quote for 70.5 x 151.34 mm (3% less area).
 - Source: docs/bom.md; Alex's use.
 - Method: I
 - Verified by: VER-117
@@ -274,13 +277,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
-- Notes: with TH1 (B3950 10k) the window is 3.5-47.2 C nominal, so the hot edge fails before any tolerance. No series or parallel resistor fixes both edges (a parallel one that brings the hot edge to 45 C drags the cold edge to -11.6 C). PLAN.md decision D5: a BOM-only TH1 with a higher B (B 4250: 4.9-45.5 C; B 4350: about 5.3-45.0 C nominal) if JLC stocks one, or accept 47.2 C against the cell's datasheet (DF-147).
+- Notes: with TH1 (B3950 10k) the window is 3.5-47.2 C nominal, so the hot edge fails before any tolerance. No series or parallel resistor fixes both edges (a parallel one that brings the hot edge to 45 C drags the cold edge to -11.6 C). PLAN.md decision DEC-05: a BOM-only TH1 with a higher B (B 4250: 4.9-45.5 C; B 4350: about 5.3-45.0 C nominal) if JLC stocks one, or accept 47.2 C against the cell's datasheet (DF-147).
 
 ### REQ-BAT-04: Cell temperature during charge
 - Level: subsystem
 - Board: both
 - Statement: The cell surface shall stay at or below 45 C through a full charge in the closed case at 25 C ambient, and at or below the cell maker's maximum charge temperature at 35 C ambient.
-- Rationale: the cell sits in a hole in the board in a printed case, under the panel and a deck.
+- Rationale: the cell sits in a hole in the board in a printed case, under the panel.
 - Source: validation_plan #31; IEC 62133-2.
 - Method: T
 - Verified by: VER-85
@@ -323,26 +326,26 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BAT-07: Room to swell
 - Level: subsystem
 - Board: ref_design
-- Statement: The closed case shall leave 0.4 mm or more of free height above the cell at worst-case tolerance (a 4.5 mm cell), under the decks and under the panel.
+- Statement: The closed case shall leave 0.4 mm or more of free height above the cell at worst-case tolerance (a 4.5 mm cell), under everything that lies over its pocket.
 - Rationale: pouch cells grow 8-10% in thickness over life; 0.4 mm for a 4.0 mm cell.
-- Source: validation_plan #26; case.scad (cell_top 1.6 over the board, the deck's underside 1.9, the panel's back 2.4).
+- Source: validation_plan #26; case.scad (cell_top 1.6 over the board; the panel's back 2.4, the panel frame's walls 2.8, the button ends' underside 1.9 where they reach).
 - Method: A, I
 - Verified by: VER-182, VER-20, VER-48
 - Phase: CASE
 - Status: PROPOSED
-- Notes: today 0.30 mm under the deck and 0.80 mm under the panel (VER-20's swell script): DF-84, PLAN.md decision D18.
+- Notes: at be437f8 the cell lies under the glass's seat-2 half and no button end reaches it: 0.80 mm under the panel's back (VER-182 PASS); it was 0.30 mm under a deck at 684a609 (DEF-51).
 
 ### REQ-BAT-08: Nothing hard against the pouch
 - Level: subsystem
 - Board: ref_design
-- Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole all round (1.0 mm more at its lead end), and no back-side copper within 1 mm of the hole.
+- Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances, and no back-side copper within 1 mm of the hole.
 - Rationale: a pierced pouch shorts internally and can burn.
 - Source: validation_plan #27; placement.py CUTOUTS (the hole 54.0 x 37.0 mm); case.scad cell.
 - Method: A, I
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Not met by the design today: the tub's pocket sits 0.25 mm inside the hole's outline (case.scad cell_pocket_fit) and assembly.md step 5 pushes the cell against its right wall, so the cell's end is 0.25 mm from the routed edge at TH1 before JLC's routing tolerance (VER-181 FAIL). PLAN.md decision D27 before the order.
+- Notes: Not met on any side at be437f8: the tub's pocket sits 0.25 mm inside the hole's outline on every side (case.scad cell_pocket_fit), so a worst-case 52 x 36 cell against any wall of it is 0.25 mm from the routed edge, -0.15 mm after tolerances, and its lead end 1.35 mm (VER-181 FAIL). Widening one end cannot help while the pocket follows the hole. What passes (design_numbers.py cellgap): the pocket 0.9 mm inside the hole and a cell of at most 51.2 x 35.2 mm (case and cell spec), or a 54.8 x 37.8 mm hole (copper). PLAN.md decision DEC-27 before the order.
 
 
 ### REQ-BAT-09: Charge path single faults
@@ -388,7 +391,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-138, VER-139, VER-67
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: decide before the order (PLAN.md decision D7, with R18): a bench calibration at 3.50 V and a firmware dropout rule, or a 3.6 V cutoff; a voltage reference needs copper.
+- Notes: decide before the order (PLAN.md decision DEC-07, with R18): a bench calibration at 3.50 V and a firmware dropout rule, or a 3.6 V cutoff; a voltage reference needs copper.
 
 ### REQ-BAT-13: Charge timeout
 - Level: subsystem
@@ -431,7 +434,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: Claude's proposal (O-58): Alex sets the lot limit.
 - Method: T
 - Verified by: VER-153
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ## Subsystem: power path (PWR)
@@ -457,7 +460,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-80, VER-102
 - Phase: EVT
 - Status: PROPOSED
-- Notes: decision for Alex after VER-80: raise the lower bound, or accept (PLAN.md decision D15).
+- Notes: decision for Alex after VER-80: raise the lower bound, or accept (PLAN.md decision DEC-15).
 
 ### REQ-PWR-02: Hot-plug peaks
 - Level: subsystem
@@ -467,7 +470,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: pin_review/u2.json (IN 28 V absolute, OVP 6.6 V, EN1 7 V), pin_review/u3.json (EN 6 V).
 - Method: A, T
 - Verified by: VER-12, VER-71
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 - Notes: bringup.md 5.6 still describes the TP4056 design's simulation (DEF-21). u2.json quotes only OVP's 6.6 V nominal: VER-34 takes SLUS810N's minimum into it (pin_review is outside hardware/vv) before VER-12 is built.
 
@@ -488,7 +491,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for VSYS 3.60-4.50 V and loads of 0-150 mA.
 - Rationale: RP2354B IOVDD and the panel's logic supply; the RT9013 is +-2%.
-- Source: pin_review/u3.json; ER-TFT024IPS-3 VCI 2.5-3.3 V recommended (pin_review/panel.json: up to 3.366 V is 66 mV over, accepted as minor: DF-96).
+- Source: pin_review/u3.json; ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (pin_review/panel.json: up to 3.366 V is 66 mV over, accepted as minor: DF-96).
 - Method: T
 - Verified by: VER-83, VER-55
 - Phase: EVT
@@ -582,7 +585,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-81
 - Phase: EVT
 - Status: PROPOSED
-- Notes: decision for Alex: USB 2.0 also caps an unconfigured device at 100 mA and a suspended one at 2.5 mA; U2 charges from plug-in regardless (PLAN.md decision D8).
+- Notes: decision for Alex: USB 2.0 also caps an unconfigured device at 100 mA and a suspended one at 2.5 mA; U2 charges from plug-in regardless (PLAN.md decision DEC-08).
 
 ### REQ-PWR-13: VBUS capacitance and inrush
 - Level: subsystem
@@ -594,7 +597,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-99
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: no deviation is needed at 684a609 (VER-99). U2's current limit while it brings VSYS up is a datasheet claim; VER-71's scope picture shows it.
+- Notes: no deviation is needed at be437f8 (VER-99). U2's current limit while it brings VSYS up is a datasheet claim; VER-71's scope picture shows it.
 
 ### REQ-PWR-14: Derating
 - Level: subsystem
@@ -606,7 +609,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-31, VER-36
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (pin_review/u4.json pin 58, waived there by the design session; DF-95), unless Alex takes R18 = 56k (PLAN.md decision D7); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
+- Notes: named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (pin_review/u4.json pin 58, waived there by the design session; DF-95), unless Alex takes R18 = 56k (PLAN.md decision DEC-07); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
 
 ### REQ-PWR-15: 3V3 budget
 - Level: subsystem
@@ -616,7 +619,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: pin_review/u3.json (0.4 W, dropout).
 - Method: A, T
 - Verified by: VER-31, VER-83, VER-144
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ### REQ-PWR-17: A faulty USB source
@@ -629,7 +632,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-177, VER-97
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: PLAN.md decision D17: R14 47k and R43 220k (BOM only) raise it to about 9.1 V; 20 V needs a clamp (copper); or accept for EVT.
+- Notes: PLAN.md decision DEC-17: R14 47k and R43 220k (BOM only) raise it to about 9.1 V; 20 V needs a clamp (copper); or accept for EVT.
 
 ## Subsystem: core (MCU)
 
@@ -699,6 +702,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-15
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: F's objection (round 2) read GPIO28 as PWM2 A; the RP2350's table maps GPIO 0-31 to slices (n >> 1) & 7 and GPIO 32-47 to 8 + ((n >> 1) & 3), so GPIO28 is slice 6 A and GPIO31 slice 7 B (embassy-rp 0.8.0 src/pwm.rs: 'impl_pin!(PIN_28, PWM_SLICE6, ChannelAPin)', 'impl_pin!(PIN_31, PWM_SLICE7, ChannelBPin)'). VER-15 derives each slice from the table, not from pin_review.
 
 ### REQ-MCU-07: Pull-downs for E9
 - Level: subsystem
@@ -710,7 +714,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-02, VER-75
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM (R60 + R61, 102.4k) do not: DF-45, DF-47. Decision for Alex (PLAN.md decision D11): 4.7k pull-downs (BOM only), or rely on firmware and the placed stepping (VER-75).
+- Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM (R60 + R61, 103.9k) do not: DF-45, DF-47. Decision for Alex (PLAN.md decision DEC-11): 4.7k pull-downs (BOM only), or rely on firmware and the placed stepping (VER-75).
 
 ### REQ-MCU-08: Chip identity
 - Level: subsystem
@@ -749,12 +753,12 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MCU-11: A bring-up image for the ordered chip
 - Level: subsystem
 - Board: ref_design
-- Statement: Before the order, a self-test image shall build and link for the RP2354B (embassy-rp rp235xb, 2048K of flash) from pin definitions generated from design.py, with 0 hand-typed pin numbers.
-- Rationale: the fw crate targets the A package with 4 MB and the ST7796, and the only ref-board branch (fw-ref-board a01f6fb) predates the routing levers: it holds PWR_HOLD on GPIO2 and drives SR_PL on GPIO28 (DEF-34).
+- Statement: Before the boards arrive, a self-test image shall build and link for the RP2354B (embassy-rp rp235xb, 2048K of flash) from pin definitions generated from design.py, with 0 hand-typed pin numbers.
+- Rationale: the fw crate targets the A package with 4 MB and the ST7796, and the only ref-board branch (fw-ref-board a01f6fb) predates the routing levers: it holds PWR_HOLD on GPIO2 and drives SR_PL on GPIO28 (DEF-34); the image is needed the day the boards arrive, not to order them (round 2's proportionality objection), while the GPIO choices that copper freezes are VER-15's.
 - Source: crates/mega_blastoise_fw/Cargo.toml; vp_map #56; Claude's review (F-44, O-37, O-56).
 - Method: A
 - Verified by: VER-149, VER-150
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ## Subsystem: display (DSP)
@@ -762,9 +766,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-01: Panel interface
 - Level: subsystem
 - Board: ref_design
-- Statement: The panel shall run 4-line serial interface II (IM0 low, IM1-IM3 high, as design.py straps them) and return 0x85 0x85 0x52 for RDDID (0x04) at a read clock of 5 MHz or less.
+- Statement: The panel shall run 4-wire 8-bit SPI (IM2-0 = 111, as design.py straps them) and return 0x94 0x88 for ID4 (0xD3) at a read clock of 5 MHz or less.
 - Rationale: proves the interface straps and the read path.
-- Source: ER-TFT024IPS-3 datasheet section 4.1 (pin_review/panel.json); ST7789V serial read cycle; bringup.md display step 2.
+- Source: ER-TFT035IPS-6 datasheet section 4.1 (pin_review/panel.json); the ILI9488's serial read cycle (VER-34 quotes it); bringup.md display step 2.
 - Method: T
 - Verified by: VER-43, VER-60
 - Phase: ORDER
@@ -773,9 +777,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-02: Write speed
 - Level: subsystem
 - Board: ref_design
-- Statement: SPI writes at 40 MHz shall draw 10 full 240 x 320 RGB565 frames of a checker pattern with 0 corrupted pixels.
-- Rationale: the ST7789V rates serial writes to a 16 ns cycle; 154 kB a frame.
-- Source: ST7789V datasheet; bringup.md display step 4; validation_plan #16, #143.
+- Statement: SPI writes at 20 MHz shall draw 10 full 320 x 480 frames (461 kB each in 18-bit colour) of a checker pattern with 0 corrupted pixels.
+- Rationale: the ILI9488 takes only 18-bit colour over SPI; 20 MHz is a conservative clock until VER-34 quotes its serial write cycle.
+- Source: ILI9488 datasheet; bringup.md display step 4; validation_plan #16, #143.
 - Method: T
 - Verified by: VER-61
 - Phase: EVT
@@ -786,7 +790,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: ref_design
 - Statement: J3 pin j shall carry panel pin 51 - j for all 50 contacts, so LED_A (panel pin 1) is on J3 pin 50.
 - Rationale: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
-- Source: design.py display section; pin_review/panel.json; the ER-TFT024IPS-3's map since 53e21c8.
+- Source: design.py display section; pin_review/panel.json; the ER-TFT035IPS-6's map since 79de1f7.
 - Method: A, T
 - Verified by: VER-02, VER-43, VER-136
 - Phase: ORDER
@@ -795,7 +799,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-04: FPC fit
 - Level: subsystem
 - Board: ref_design
-- Statement: The panel's FPC tail shall be 0.30 +-0.05 mm thick (the ER-TFT024IPS-3's drawing: 0.3 +-0.03) and 25.5 +-0.07 mm wide, and the folded FPC shall reach J3 with 0.5-3 mm of slack and no crease.
+- Statement: The panel's FPC tail shall be 0.30 +-0.05 mm thick (the ER-TFT035IPS-6's drawing: 0.3 +-0.03) and 25.5 +-0.07 mm wide, and the folded FPC shall reach J3 with 0.5-3 mm of slack and no crease.
 - Rationale: the FH12-50S's FPC specification; too short cannot mate, too long bows under the panel.
 - Source: Hirose FH12 catalog p.2, p.11 (pin_review/j3.json); validation_plan #215, #160.
 - Method: I
@@ -806,9 +810,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-05: Backlight current
 - Level: subsystem
 - Board: ref_design
-- Statement: At the firmware's maximum duty the four LEDs shall draw 80 mA or less in total at worst-case tolerance (3V3 +2%, R60/R61 1%, U6 offset 4.5 mV, R52/R53 -1%) for VSYS 3.5-4.5 V; at nominal parts and 100% duty they draw 70 mA +-5% (35 mA a sink, the two sinks within 5% of each other).
-- Rationale: the panel's 80 mA maximum (4 x 20 mA); the worst case at 100% is 78.0 mA (VER-137).
-- Source: ER-TFT024IPS-3 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
+- Statement: At the firmware's highest duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance (3V3 +2%, R60/R61 1%, U6 offset 4.5 mV, R52/R53 -1%) for VSYS 3.5-4.5 V; at nominal parts and 100% duty they draw 113 mA +-5% (56 mA a cathode pin, the two pins within 5% of each other).
+- Rationale: the panel's 120 mA (6 x 20 mA); the worst case at 100% is 122.4 mA (VER-137), so the firmware caps the duty at 97% or R61 becomes 3.74k (DEC-31).
+- Source: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
 - Method: T, A
 - Verified by: VER-62, VER-137, VER-05
 - Phase: ORDER
@@ -817,19 +821,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-06: Backlight transient
 - Level: subsystem
 - Board: ref_design
-- Statement: The LED current shall exceed 80 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
-- Rationale: the panel publishes no pulse rating; the committed simulation is for the 3.5in panel's 56 mA a sink (DEF-45).
+- Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
+- Rationale: the panel publishes no pulse rating; the committed simulation is for this circuit again (56 mA a pin, R61 3.9k), but backlight.py reads nothing from design.py (DEF-45).
 - Source: board/sim/backlight_results.txt (to re-run).
 - Method: A, T
 - Verified by: VER-05, VER-62
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ### REQ-DSP-07: Backlight headroom
 - Level: subsystem
 - Board: ref_design
 - Statement: At the firmware's maximum duty and VSYS 3.5 V the LED current shall drop by 5% or less from its value at 4.2 V for LED Vf up to 3.2 V, and by 10% or less for Vf up to 3.4 V (the newer datasheet's maximum).
-- Rationale: brightness should not sag until the cutoff; at 17.5 mA an LED's Vf sits under its 3.2 V typical (rated at 20 mA).
+- Rationale: brightness should not sag until the cutoff; at 18.8 mA an LED (56 mA over three) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
 - Source: pin_review/panel.json; design_review.md Backlight.
 - Method: A, T
 - Verified by: VER-05, VER-137, VER-62
@@ -841,10 +845,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: ref_design
 - Statement: Each sink's loop shall have 45 degrees of phase margin or more at every simulated corner, and an 18% to 95% duty step shall show no ringing on the scope.
 - Rationale: an op-amp driving a FET gate can oscillate.
-- Source: board/sim/backlight.py (72.5 degrees or more over 720 corners, run for the 3.5in panel's 56 mA and R61 3.9k: to re-run on design.py's values, DEF-45).
+- Source: board/sim/backlight.py (72.5 degrees or more over 720 corners, run for 56 mA a pin and R61 3.9k: this board's values again, DEF-45).
 - Method: A, T
 - Verified by: VER-05, VER-62
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ### REQ-DSP-09: Backlight off when 3V3 is off
@@ -855,7 +859,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: board/sim/backlight_results.txt (4.7 mA peak).
 - Method: A
 - Verified by: VER-05
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ### REQ-DSP-10: Tearing-effect signal
@@ -872,19 +876,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-11: Redraw time
 - Level: subsystem
 - Board: ref_design
-- Statement: A full-screen 240 x 320 RGB565 redraw shall complete in 50 ms or less, and a battle-text update in 20 ms or less.
-- Rationale: 154 kB a frame: about 31 ms at 40 MHz; the ILI9488's 18-bit-only serial mode that made this an order risk left with the 3.5in panel (53e21c8).
-- Source: ST7789V datasheet; crates/mega_blastoise_fw (a 240 x 320 UI since 1baf6e8).
+- Statement: A full-screen 320 x 480 redraw, sent to the ILI9488 as 18-bit colour, shall complete in 120 ms or less (Alex sets the number: DEC-13), and a battle-text update in 50 ms or less, with the frame held in 320 KB of RAM or less.
+- Rationale: the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 92 ms at 40 MHz and 184 ms at 20 MHz, and an 18-bit frame does not fit beside the game; the RGB565 frame is expanded on the fly (DF-180). The 2.4 in panel's RGB565 that took this risk away left again in 79de1f7.
+- Source: ILI9488 datasheet (18-bit only over serial); crates/mega_blastoise_fw; validation_plan #180.
 - Method: A, T
 - Verified by: VER-43, VER-61
-- Phase: EVT
+- Phase: ORDER
 - Status: PROPOSED
 
 ### REQ-DSP-12: Backlight halves match at low duty
 - Level: subsystem
 - Board: ref_design
-- Statement: At the lowest duty the firmware uses (29%, pinmap.md), each sink's current shall be within +-25% of its nominal; the minimum duty shall be written in pinmap.md.
-- Rationale: U6's 4.5 mV offset is +-20.1% of BL_REF's 22.4 mV there (VER-137); the two groups light one diffuser, so a 25% band per group is not visible as two halves.
+- Statement: At the lowest duty the firmware uses (18%, pinmap.md), each sink's current shall be within +-25% of its nominal; the minimum duty shall be written in pinmap.md.
+- Rationale: U6's 4.5 mV offset is +-20.2% of BL_REF's 22.3 mV there (VER-137); the two halves light one diffuser, so a 25% band per half is not visible as two halves.
 - Source: Claude's analysis (O-21); pinmap.md Backlight.
 - Method: A, T
 - Verified by: VER-137, VER-62
@@ -956,7 +960,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: bom.md (INGHAi GSPK151035PN, C530539, 0.5 W); Claude's review (O-31).
 - Method: I
 - Verified by: VER-128
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ## Subsystem: buttons (BTN)
@@ -965,7 +969,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 3.3 kohm of pill resistance (ref_design: through the 74HC165 against its 10k pull-up).
-- Rationale: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 10k pull-up a pill reads pressed only under about 3.7 kohm (the RP2350's 50k internal pull-up allowed 10 kohm): DF-164, PLAN.md decision D24.
+- Rationale: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 10k pull-up a pill reads pressed only under about 3.7 kohm (the RP2350's 50k internal pull-up allowed 10 kohm): DF-164, PLAN.md decision DEC-24.
 - Source: validation_plan gate item 5, #42, #137; TI SN74HC165 VIL.
 - Method: T
 - Verified by: VER-45, VER-56
@@ -991,7 +995,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing. Start and Select are metal domes since 2d1124d (REQ-BTN-08).
 - Source: hardware/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
 - Method: A
-- Verified by: VER-08, VER-10, VER-25, VER-162
+- Verified by: VER-08, VER-10, VER-132, VER-162
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1002,7 +1006,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a tented via under a pill lifts it.
 - Source: design_review.md Membrane contacts.
 - Method: A
-- Verified by: VER-25
+- Verified by: VER-132
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1066,7 +1070,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-02: Stack closes
 - Level: subsystem
 - Board: ref_design
-- Statement: The Z stack (the tub's floor and pocket, cell, board, parts, panel, tape, the island and the decks) shall close with 0.2 mm or more of margin at worst-case tolerance including 0.4 mm of cell swelling.
+- Statement: The Z stack (the tub's floor and pockets, cell, board, parts, speaker, panel, tape, the one-piece top) shall close with 0.2 mm or more of margin at worst-case tolerance including 0.4 mm of cell swelling.
 - Rationale: nominal fits fail at tolerance.
 - Source: validation_plan #25, #132, gate item 7.
 - Method: A
@@ -1099,8 +1103,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-05: Opening and closing
 - Level: subsystem
 - Board: ref_design
-- Statement: The case shall survive 20 open/close cycles with its six M2 screws and the four arm hooks, with 0 cracked hooks, 0 stripped bosses and 0 torn cell leads.
-- Rationale: the first PLA print's hooks snapped (DEF-15); service needs opening, and the cell comes out with the tub on its leads (DF-169).
+- Statement: The case shall survive 20 open/close cycles with its six M2 screws, with 0 cracked keys or grip ribs, 0 stripped bosses and 0 torn cell leads.
+- Rationale: the first PLA print's hooks snapped (DEF-15) and the one-piece top's joints are thin printed features (DF-181); service needs opening, and the cell comes out with the tub on its leads (DF-169).
 - Source: validation_plan #194; assembly.md steps 9-10.
 - Method: T
 - Verified by: VER-92
@@ -1132,7 +1136,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-08: No unintended openings
 - Level: subsystem
 - Board: ref_design
-- Statement: The printed island, decks and tub shall have 0 through-openings other than the listed ones (USB-C, pinholes, cap holes, speaker grille, screw holes).
+- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, pinholes, cap holes, speaker grille, screw holes).
 - Rationale: screw pilots and a notch once came through the face (DEF-19).
 - Source: 177123c.
 - Method: A, I
@@ -1143,8 +1147,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-09: Screws engage
 - Level: subsystem
 - Board: ref_design
-- Statement: Each M2 case screw shall engage 4.0 mm or more of its pilot above the board and end 0.5 mm or more short of the pilot's end.
-- Rationale: self-tapping screws in printed plastic want 2 to 2.5 x d; M2 x 6 engages 3.2 mm today, and the decks' pilots hold 3.3 mm at most (VER-147, DEF-31).
+- Statement: Each of the four side screws (H1-H4, under the screen band) shall engage 4.0 mm or more of its pilot above the board and end 0.5 mm or more short of the pilot's end; each of the two end screws (H5, H6, under the button ends) shall engage 3.0 mm or more and end 0.1 mm or more short.
+- Rationale: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31).
 - Source: case.scad; Claude's analysis (O-52).
 - Method: A, T
 - Verified by: VER-147, VER-92
@@ -1154,7 +1158,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-10: Panel stays bonded
 - Level: subsystem
 - Board: ref_design
-- Statement: The panel shall stay bonded in the island's pocket, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
+- Statement: The panel shall stay bonded in the top's pocket, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
 - Rationale: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-107).
 - Source: Claude's review (O-59).
 - Method: T
@@ -1222,12 +1226,12 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-THM-04: Heat budget per mode
 - Level: subsystem
 - Board: ref_design
-- Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall dissipate 2.0 W or less in total, tabulated per mode (off, cell play, USB play, charging, charging while playing) with each part's position before the order, and the firmware rule the table implies (for example CHG_OFF or a capped volume while the backlight is at full on USB) shall be in the bring-up image before the touch test.
-- Rationale: a rough worst case on a 5.5 V source with a 3.0 V cell is about 1.5 W (U2 about 0.66 W, U7 0.4 W, U3 0.17 W, the backlight's FETs 0.1 W) in a 77.4 x 132.7 x 9.55 mm case, beside the glass.
+- Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall dissipate 2.0 W or less in total, tabulated per mode (off, cell play, USB play, charging, charging while playing) with each part's position, and the firmware rule the table implies (for example CHG_OFF or a capped volume while the backlight is at full on USB) shall be in the bring-up image before the touch test.
+- Rationale: a rough worst case on a 5.5 V source with a 3.0 V cell is about 1.6 W (U2 about 0.66 W, U7 0.4 W, U3 0.17 W, the backlight's FETs 0.15 W at 56 mA a pin) in a 77.4 x 156.64 x 9.6 mm case, beside the glass; the table decides a firmware rule, not copper, so it is due with the bring-up image (round 2's proportionality objection).
 - Source: Claude's analysis (O-47, F-48).
 - Method: A
 - Verified by: VER-144
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 
 ## Subsystem: ESD and EMC (EMC)
@@ -1289,6 +1293,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-17, VER-18, VER-28
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: not met at be437f8 by the copper to the edge: GND pours 0.20 mm from the cell's and the speaker's holes and J2's mounting pad 0.275 mm from the left edge (VER-18 FAIL, DEF-56; the board's own rule is 0.2 mm). PLAN.md decision DEC-32.
 
 ### REQ-FAB-04: Holes
 - Level: board
@@ -1311,7 +1316,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-42, VER-28
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: The marker is in neither battler.kicad_pcb nor silk.py at 684a609 (O-R19), so JLC would place its number anywhere (DF-125). PLAN.md decision D28: JLC's paid 'remove order number' option (and this statement restated), or the marker added in silk.py (a design change and a new baseline). VER-132 (k) checks it.
+- Notes: At be437f8 the marker is in neither battler.kicad_pcb nor silk.py (O-R19), so JLC would place its number anywhere (DF-125); and the board's name and BOARD_REV text, where the marker was to go, sit inside the cell's hole (DEF-57). PLAN.md decision DEC-28: both into a clear patch in silk.py (a design change and a new baseline), or JLC's paid 'remove order number' option with this statement restated. VER-132 (k) checks it.
 
 
 ### REQ-FAB-06: Part identity
@@ -1354,7 +1359,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the board ordered must be the board checked; Alex's main checkout had an uncommitted KiCad GUI change to battler.kicad_pro on 2026-10-24.
 - Source: validation_plan #12, #88, #121, gate item 11.
 - Method: A, I
-- Verified by: VER-24, VER-143, VER-42, VER-132
+- Verified by: VER-143, VER-42, VER-132
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1383,7 +1388,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-11: Flatness
 - Level: board
 - Board: both
-- Statement: Each board's bow and twist shall be 0.75% or less of its length (0.96 mm over the ref_design board's 127.7 mm; the Edge.Cuts outline).
+- Statement: Each board's bow and twist shall be 0.75% or less of its length (1.14 mm over the ref_design board's 151.64 mm; the Edge.Cuts outline).
 - Rationale: the case clamps the board flat; a bowed board cracks MLCCs.
 - Source: IPC-6012 Class 2 (bow and twist for SMT boards); validation_plan #78.
 - Method: T
@@ -1447,7 +1452,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: bring-up must not need rework to measure.
 - Source: validation_plan #21, #155.
 - Method: I
-- Verified by: VER-115, VER-158
+- Verified by: VER-158
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1498,8 +1503,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-TST-06: Per-unit VBAT calibration
 - Level: board
 - Board: ref_design
-- Statement: Each unit's VBAT gain shall be set in production test at a true 3.50 V from the bench supply (no USB, the self-test at its highest 3V3 load, a DMM checked that session against a 4.096 V reference) and lie within 0.95-1.05; a re-read at 3.50 V shall be within 10 mV; the firmware shall store no gain from a no-cell CHG_DONE_N edge.
-- Rationale: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG, so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-117).
+- Statement: Each unit's VBAT gain shall be set in production test at a true 3.50 V from the bench supply (no USB, the self-test at its highest 3V3 load, a DMM checked that session against a 4.096 V reference) and lie within 0.95-1.05; a re-read at 3.50 V shall be within 10 mV; the firmware shall store no gain from a no-cell CHG_STAT_N edge.
+- Rationale: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-117).
 - Source: Claude's review (O-63, O-60).
 - Method: T
 - Verified by: VER-155, VER-156

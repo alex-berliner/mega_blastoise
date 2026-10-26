@@ -27,7 +27,7 @@ the case, survives use.
 | [tools/check_trace.py](tools/check_trace.py) | the trace gate (Python 3 standard library) | |
 | [tools/run_checks.py](tools/run_checks.py) | runs the quick scripted checks, writes their evidence with a header and records the result | |
 | [tools/seed_faults.py](tools/seed_faults.py) | proves check_trace can fail: seeds one fault at a time into a copy, and the faults that need git history into a scratch clone (VER-129) | |
-| [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws, MLCC keep-out, TH1, the cell's gap, VBUS fault reach, BOM coverage, holes, swelling); the CPL and drill checks run fab.py's own export into a temp dir and read what it writes | |
+| [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws per pilot, MLCC keep-out, TH1, the cell's gap on every side, VBUS fault reach, BOM coverage, holes, swelling, copper and silk against the routed edges, the cell's plug against J4) and prints two bench numbers (the TS band at an ambient, the CV load window); the CPL and drill checks run fab.py's own export into a temp dir and read what it writes | |
 
 ## How they link
 
@@ -88,10 +88,15 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
 - **Only Alex decides.** Requirements stay PROPOSED, risks unaccepted and waivers unsigned
   until he commits a line in releases/APPROVALS.md in a commit signed with his key (Approvals,
   below). Every commit in this repository has the same author, so authorship proves nothing
-  (O-R4). check_trace counts a line only when git's `%G?` for its blame commit is `G`; a line
-  from an unsigned commit, or anywhere signing is not set up (a scratch clone), is pending; a
-  line from a merge or a commit with a Claude trailer is an error; an approved statement edited
-  since needs approving again.
+  (O-R4), and a good signature alone proves only some key in a user-global allowed-signers
+  file that any process running as alex can edit (round 2's objection). check_trace counts a
+  line only when its blame commit is signed (`%G?` = `G`) by the one key this README pins
+  (`%GF` equal to the '- Signing key:' line below), and that pin line was itself committed in a
+  commit signed by the same key; a line from an unsigned commit, another key, or anywhere the
+  key is not pinned is pending; a line from a merge or a commit with a Claude trailer is an
+  error; an approved statement edited since needs approving again. A bulk line
+  ('REQ-ALL@<commit>' APPROVED, 'DF-H@<commit>' ACCEPTED) covers every requirement, or every
+  H row, unchanged since that commit, each checked on its own.
 - **No defect closes without a new or changed check.** CLOSED needs a VER in "Check added
   or changed" that passes on fresh evidence. A design fix with no check is FIXED, not CLOSED.
 - **Evidence is a saved output, not a typed word.** A PASS or FAIL names an evidence file
@@ -156,20 +161,31 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
 
 ## Approvals: signing with Alex's key
 
-check_trace counts an APPROVALS.md line only from a commit signed with a key in git's
-allowed-signers file. One-time setup in this worktree (SSH signing; any ed25519 key works):
+check_trace counts an APPROVALS.md line only from a commit signed with the key pinned below.
+Use a key a Claude session running as alex cannot use: an ed25519-sk key on a security key
+that wants a touch (best), or a passphrase key that is never loaded into an agent while a
+Claude session runs. Not ~/.ssh/id_ed25519 without a passphrase: any process running as alex
+can read it. One-time setup in this worktree (SSH signing):
 
 ```sh
+ssh-keygen -t ed25519-sk -f ~/.ssh/alex_sign_sk          # a touch per signature (or: -t ed25519 with a passphrase)
 git config gpg.format ssh
-git config user.signingkey ~/.ssh/id_ed25519.pub        # the key file Alex signs with
-echo "<Alex's commit e-mail> namespaces=\"git\" $(cat ~/.ssh/id_ed25519.pub)" >> ~/.config/git/allowed_signers
+git config user.signingkey ~/.ssh/alex_sign_sk.pub
+echo "<Alex's commit e-mail> namespaces=\"git\" $(cat ~/.ssh/alex_sign_sk.pub)" >> ~/.config/git/allowed_signers
 git config gpg.ssh.allowedSignersFile ~/.config/git/allowed_signers
+ssh-keygen -lf ~/.ssh/alex_sign_sk.pub                   # its SHA256:... fingerprint
+# add the line "- Signing key: `SHA256:...`" under 'Pinned key' below, then:
+git commit -S -m "vv: pin Alex's signing key" hardware/vv/README.md
 git commit -S -m "approvals: ..." hardware/vv/releases/APPROVALS.md   # one signed commit per decision set
-git log -1 --format=%G?                                  # G: good, and check_trace will count it
+git log -1 --format='%G? %GF'                            # G and the pinned fingerprint: check_trace counts it
 ```
 
-Until this is set up every line is pending, and the report says so. Claude never signs, and
-never edits APPROVALS.md.
+Pinned key (Alex writes the line, in a commit signed with that key; check_trace warns while it
+is a software key):
+
+Until a key is pinned every line is pending, and the report says so. Claude never signs,
+never pins a key, and never writes a line in APPROVALS.md's table (it may correct the
+header's wording, as round 2 asked).
 
 ## Design baseline
 
@@ -177,36 +193,37 @@ The design files this register describes, as git object hashes (`git rev-parse
 HEAD:<path>`; board/lib and board/tools are trees). The default mode fails when any differs
 from HEAD, and every ref_design gate fails with "gate evaluated against a design it does not
 describe" (the order gate reads the board's files, the case gate case.scad and export.py,
-later gates all). Re-seeded at 684a609 (branch ref-design-island-45, 2026-10-24 12:49) on
-2026-10-25, the board Alex is ordering; 76955d2, the first seed's design, is kept on branch
-vv-plan-76955d2. The second review (F-R13) added the schematics, battler.kicad_pro (its DRC
-rules, which VER-04 relies on), the whole board/tools tree (the route, silk and fab scripts and
-last_route.ses; cost.py and the like churn it too, accepted) and case/export.py (it writes
-case/positions.json, which placement.py reads; positions.json is gitignored, so its sha256 goes
-in the release record instead).
+later gates all). Re-seeded on 2026-10-26 at be437f8 (branch ref-design-35in), the board Alex
+is ordering: the board itself is final at 62b01f2, the later commits are docs and print kits.
+The earlier seeds are kept on branches vv-plan-684a609 (2026-10-25, ref-design-island-45) and
+vv-plan-76955d2 (2026-10-24). The second review (F-R13) added the schematics,
+battler.kicad_pro (its DRC rules, which VER-04 relies on), the whole board/tools tree (the
+route, silk and fab scripts and last_route.ses; cost.py and the like churn it too, accepted)
+and case/export.py (it writes case/positions.json, which placement.py reads; positions.json is
+gitignored, so its sha256 goes in the release record instead).
 
 The order branch below is read by check_trace (O-R13): a commit on it after the baseline commit
 that touches any of these paths makes the default mode warn and the order gate fail (R8), even
-before it is merged here. Every hash below equals the same path at 684a609.
+before it is merged here. Every hash below equals the same path at be437f8.
 
-- Order branch: `ref-design-island-45` from `684a609`
-- `hardware/ref_design/board/design.py` a6eb8306a47b833d2c0e4e136f2712363d65b31d
-- `hardware/ref_design/board/placement.py` dcf9f35aa1f7200f5b3b40407cfb4eb8db1ca7e9
+- Order branch: `ref-design-35in` from `be437f8`
+- `hardware/ref_design/board/design.py` 1b2ce08a3f966375a9babc9777abff73fc01f89e
+- `hardware/ref_design/board/placement.py` 65f219bc34795b8ec697a86203f5db8ff88dae12
 - `hardware/ref_design/board/lib` 50f371cbf7df2fae7db3746b134434297c38a4fa
-- `hardware/ref_design/board/battler.kicad_pcb` eb810304f358999cc2d0f2491c0302bf70095ef5
+- `hardware/ref_design/board/battler.kicad_pcb` 1094c8d8347db6ffee35c37c48f0d12fdf35b909
 - `hardware/ref_design/board/battler.kicad_pro` 3633f0dd64d37be8ed692d95dfb9c3d86589e6bc
-- `hardware/ref_design/board/tools` a5700fed227b4b2a92c508f5b79bdebe577c1406
-- `hardware/ref_design/board/audio.kicad_sch` 9820d75fc1641ac2fea1337e689405a54f9f0701
-- `hardware/ref_design/board/battler.kicad_sch` 3a1edfc5ca07822198bb85cea15125d62a80573f
-- `hardware/ref_design/board/buttons.kicad_sch` 2c382a3373867c00413e73df5cd1cdaeb5fefeb1
+- `hardware/ref_design/board/tools` 7ace29d2c562703c2fe97ec908c84432f2f1212a
+- `hardware/ref_design/board/audio.kicad_sch` c26fffa4213c87a1ae70dd9cef9354229cdfba03
+- `hardware/ref_design/board/battler.kicad_sch` d5ed7b835ef3668f9be177a601270a0c16692406
+- `hardware/ref_design/board/buttons.kicad_sch` 058ae4c0a8e9039fda0591dcb321200670296dc5
 - `hardware/ref_design/board/debug.kicad_sch` 967425f19e2c54b7737201fafd07f60db1b25670
-- `hardware/ref_design/board/display.kicad_sch` c9496c09ac3a751bb66c986fa02421fc98387d52
+- `hardware/ref_design/board/display.kicad_sch` 22130b7609cffdbba4cb541199a447416b37ca45
 - `hardware/ref_design/board/mcu.kicad_sch` 080a7e2143d4b999192fa458f4c550112e933c52
 - `hardware/ref_design/board/mcu_power.kicad_sch` b994e45467e2b21e4fd9085c86b90b034d78c351
 - `hardware/ref_design/board/power.kicad_sch` fe37406611536d354edfc64c0210c89698bad0df
 - `hardware/ref_design/board/usb_charger.kicad_sch` 48d861d4ac36d8852018858b4d54e1e4229fb958
-- `hardware/ref_design/case/case.scad` 6e431b93cf1ba70116b48caee52bb5871ba524c6
-- `hardware/ref_design/case/export.py` efa9e4d263843be883d4247af4827f1d851b32a4
+- `hardware/ref_design/case/case.scad` af69698eb5f95d7cb61e4fb9bc8dbe32b3d0ed55
+- `hardware/ref_design/case/export.py` 41fdd1f0834187e938832421a83506032ccec9a5
 
 ## Ratings (DFMEA)
 
@@ -247,9 +264,12 @@ IEC 62133-2 and UN38.3 (the cell), USB 2.0 cl. 7.2 (power), IEC 61000-4-2 and EN
 ANSI/NCSL Z540.3 (test uncertainty ratio). Clause numbers quoted here are from memory: check
 them against the purchased standards.
 
-## Status on 2026-10-25
+## Status on 2026-10-26
 
-Seeded by Claude at 76955d2 on 2026-10-24, attacked by two models, then re-seeded on
-2026-10-25 for 684a609, the board being ordered (PLAN.md); the re-seed was attacked by two
-models again the same day and their 39 accepted findings applied (PLAN.md section l). Every
-requirement is PROPOSED and APPROVALS.md is empty; the order gate fails, as it should.
+Seeded by Claude at 76955d2 on 2026-10-24, attacked by two models, re-seeded on 2026-10-25 for
+684a609 and attacked again (39 findings applied, PLAN.md section l); both reviewers then
+declined sign-off with 18 objections. On 2026-10-26 the register was re-seeded for be437f8,
+the board being ordered (the 3.5 in panel back, the new placement, the one-piece top), the
+board-level checks were re-run, the 18 objections answered (PLAN.md section g) and the order
+gate trimmed to what the copper, the BOM and the fab files freeze. Every requirement is
+PROPOSED and APPROVALS.md is empty; the order gate fails, as it should.

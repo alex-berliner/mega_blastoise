@@ -13,16 +13,22 @@ part change in design.py makes the evidence stale through the row's part: covers
   inrush     VER-99   VBUS capacitance and what charges VSYS at a plug-in
   backlight  VER-137  worst-case LED current and the halves' match at the minimum duty
   cutoff     VER-138  where the 3.50 V cutoff fires after the gain calibration pinmap.md describes
-  screws     VER-147  M2 screw engagement in the case's pilots
+  screws     VER-147  M2 screw engagement in the case's pilots, the side ones and the end ones apart
   mlcc       VER-142  MLCCs against the case's screw bosses (pcbnew)
   th1        VER-164  TH1 against the cell's hole; bare copper facing the cell (pcbnew)
-  cellgap    VER-181  the pushed cell's end to the routed FR4 edge, after tolerances
+  cellgap    VER-181  a worst-case cell to the routed FR4 edge on every side, after tolerances
   cpl        VER-176  the CPL fab.py writes against each footprint's pads' centre (pcbnew)
   drill      VER-131  the drill files fab.py writes: plated and unplated apart, every hole placed
   vbus       VER-177  the lowest VBUS that over-stresses a part (a faulty source)
   bom        VER-167  every contact class has its bought parts in docs/bom.md
   holes      VER-114  every drilled hole 0.30 mm or larger (pcbnew)
-  swell      VER-182  free height above a worst-case cell, under the deck and the panel
+  swell      VER-182  free height above a worst-case cell, under whatever lies over its pocket
+  edge       VER-18   copper to every routed edge, part courtyards inside the outline (pcbnew)
+  plugs      VER-184  J2 (the cell) and J4 (the speaker) keyed apart, and how far apart they sit
+
+Helpers (they print numbers a bench procedure uses and always exit 0):
+  tsband [C] the TS voltage band VER-133, VER-135 and VER-68 accept at the measured ambient
+  cvload     the load resistor window that holds U2 in CV without terminating (VER-134, VER-145)
 
 cpl and drill import board/tools/fab.py, point its OUT at a temp dir and run its own export
 (kicad-cli, a second or two), so they read the files that would be uploaded, never fab.py's
@@ -53,8 +59,17 @@ CV_TOL = 0.01            # BQ24073 VBAT(REG) 4.2 V +-1% (SLUS810N; design.py and
 I_3V3_AT_CUTOFF = 0.15   # A: REQ-PWR-15's 3V3 budget, the load the cutoff is read under
 OPAMP_VOS = 0.0045       # V: MCP6002 input offset, maximum (pin_review/u6.json)
 R_TOL = 0.01             # every resistor in design.py's RES table is 1%
-PANEL_MAX_MA = 80.0      # ER-TFT024IPS-3 backlight, 4 LEDs in parallel, 80 mA maximum (pin_review/panel.json)
-LED_MAX_MA = 20.0        # one LED: the drawing's 4 x 20 mA (pin_review/panel.json)
+PANEL_MAX_MA = 120.0     # ER-TFT035IPS-6 backlight, 6 LEDs in parallel, 120 mA (pin_review/panel.json: 'If 120 mA',
+                         # read as the limit since the table prints '110 120' without columns)
+LED_MAX_MA = 20.0        # one LED: 120 mA over the six (pin_review/panel.json)
+LEDS_PER_PIN = 3         # the drawing's LED-K1 and LED-K2 carry three LEDs each (pin_review/panel.json pins 2, 3)
+# The charger's pre-charge, termination and TS bias, from memory of SLUS810N until VER-34 quotes its
+# Electrical Characteristics into pin_review/u2.json (u2.json holds only 75 uA, 0.30 V and 2.1 V)
+K_PRE, K_TERM = 0.10, 0.10           # pre-charge and termination currents as a share of the fast-charge current
+V_LOWV = (2.9, 3.1)                  # V: the pre-charge to fast-charge threshold, its band
+I_TS, I_TS_TOL = 75e-6, 0.10         # A: TS bias current; its tolerance taken wide (+-10%) until VER-34
+TH1_B, TH1_R25, TH1_TOL = 3950.0, 10e3, 0.01   # design.py TH1: 10k B3950 1% (SDNT1005X103F3950FTF)
+CV_LOAD = 133.0                      # ohm: the per-unit CV screen's load (VER-134), E96, inside cvload's window
 # RP2350 GPIO input leakage, maximum over the chip's temperature range: the datasheet's IO
 # electrical characteristics table, quoted from memory (+-1 uA, as the RP2040's): VER-34 cites it
 I_LEAK = 1e-6
@@ -116,14 +131,24 @@ def cutouts():
     return tuple(float(x) for x in m.groups())
 
 
-def min_duty():
-    """The firmware's lowest backlight duty, from docs/pinmap.md's Backlight section (O-R21)."""
+def backlight_section():
     text = open(os.path.join(REF, "docs", "pinmap.md")).read()
     sect = re.search(r"^## Backlight.*?(?=^## )", text, re.M | re.S)
-    m = re.search(r"lowest level at about (\d+)%", sect.group(0) if sect else "")
+    return sect.group(0) if sect else ""
+
+
+def min_duty():
+    """The firmware's lowest backlight duty, from docs/pinmap.md's Backlight section (O-R21)."""
+    m = re.search(r"lowest level at about (\d+)%", backlight_section())
     if not m:
         sys.exit("design_numbers: pinmap.md's Backlight section names no 'lowest level at about N%'")
     return int(m.group(1)) / 100
+
+
+def max_duty():
+    """The firmware's highest backlight duty: pinmap.md's 'highest level N%' (or 'cap the duty at N%'), else 100%."""
+    m = re.search(r"(?:highest level|cap the duty) at (?:about )?(\d+)%", backlight_section())
+    return (int(m.group(1)) / 100, "pinmap.md") if m else (1.0, "pinmap.md names no lower maximum")
 
 
 def fab_module():
@@ -163,13 +188,24 @@ def backlight():
     v = 3.3
     nom = v * r61 / (r60 + r61) / rs
     ref_hi = v * (1 + VREG_TOL) * r61 * (1 + R_TOL) / (r60 * (1 - R_TOL) + r61 * (1 + R_TOL))
-    sink_hi = (ref_hi + OPAMP_VOS) / (rs * (1 - R_TOL))
+    dmax, src = max_duty()
+    sink_hi = (ref_hi * dmax + OPAMP_VOS) / (rs * (1 - R_TOL))
     total = 2 * sink_hi * 1e3
-    print(f"R60 {r60:g}, R61 {r61:g}, sense {rs:g} ohm: nominal {nom * 1e3:.1f} mA a sink, {2 * nom * 1e3:.1f} mA in all")
-    print(f"worst case at 100% duty (3V3 +{VREG_TOL:.0%}, R61 +1%, R60 -1%, offset +{OPAMP_VOS * 1e3:.1f} mV, "
+    print(f"R60 {r60:g}, R61 {r61:g}, sense {rs:g} ohm: nominal {nom * 1e3:.1f} mA a sink, {2 * nom * 1e3:.1f} mA in all "
+          "at 100% duty")
+    print(f"the firmware's highest duty: {dmax:.0%} ({src})")
+    print(f"worst case at {dmax:.0%} duty (3V3 +{VREG_TOL:.0%}, R61 +1%, R60 -1%, offset +{OPAMP_VOS * 1e3:.1f} mV, "
           f"sense -1%): {sink_hi * 1e3:.1f} mA a sink, {total:.1f} mA in all (panel maximum {PANEL_MAX_MA:g} mA)")
-    print(f"two LEDs share each sink: {sink_hi * 1e3:.1f} mA against {2 * LED_MAX_MA:g} mA for the pair "
-          "(one LED's share is not controlled: VER-43 measures each LED on the breakout; VER-62 sees only a pair)")
+    print(f"{LEDS_PER_PIN} LEDs share each sink: {sink_hi * 1e3 / LEDS_PER_PIN:.1f} mA an LED on average against "
+          f"{LED_MAX_MA:g} mA (one LED's share is not controlled: VER-43 measures each cathode pin on the breakout)")
+    # what would pass: the highest duty, or the largest R61 at 100%
+    d_ok = (PANEL_MAX_MA / 2e3 * rs * (1 - R_TOL) - OPAMP_VOS) / ref_hi
+    print(f"to stay within {PANEL_MAX_MA:g} mA: cap the duty at {math.floor(d_ok * 1000) / 10:.1f}% or less (firmware), "
+          "or lower R61 (BOM):")
+    for alt in (3.6e3, 3.65e3, 3.74e3, 3.83e3):
+        rh = v * (1 + VREG_TOL) * alt * (1 + R_TOL) / (r60 * (1 - R_TOL) + alt * (1 + R_TOL))
+        t = 2 * (rh + OPAMP_VOS) / (rs * (1 - R_TOL)) * 1e3
+        print(f"  R61 {alt / 1e3:g}k: {t:.1f} mA worst case at 100%, {v * alt / (r60 + alt) / rs * 2e3:.1f} mA nominal")
     duty = min_duty()
     ref_min = v * r61 / (r60 + r61) * duty
     dev = OPAMP_VOS / ref_min
@@ -218,26 +254,32 @@ def cutoff():
 
 
 def screws():
+    """REQ-MEC-09, split per pilot (F's objection): the four side screws (H1-H4, under the screen band) want
+    4.0 mm of thread (2 x d) and their tip 0.5 mm short of the pilot's end; the two end screws (H5, H6, under
+    the button ends, whose pilots stop 0.6 mm under the face) want 3.0 mm and the tip 0.1 mm short."""
     e = scad()
-    need = ["cell", "cell_top", "pcb_t", "cell_pocket", "floor_t", "screw_cb", "screw_l", "glass_gap", "panel_t",
-            "tape_t", "face_t", "dome_h", "flange_t", "lip_t"]
+    need = ["z_top_cu", "screw_cb", "screw_l", "side_engage", "deck_engage"]
     miss = [n for n in need if n not in e]
     if miss:
         print("case.scad: could not read " + " ".join(miss))
         return result(False)
-    z_board = e["floor_t"] + e["cell"][2] - e["cell_top"] - e["pcb_t"] - e["cell_pocket"]
-    z_top = z_board + e["pcb_t"]
-    case_h = z_top + e["glass_gap"] + e["panel_t"] + e["tape_t"] + e["face_t"]
-    tip = e["screw_cb"][1] + e["screw_l"]
-    engage = tip - z_top
-    island = min(6.0, case_h - z_top - 0.8)
-    deck = e["dome_h"] + e["flange_t"] + e["lip_t"] - 0.6
-    print(f"board top at z {z_top:.2f}; M2 x {e['screw_l']:g} from a {e['screw_cb'][1]:g} mm counterbore: tip at "
-          f"z {tip:.2f}")
-    print(f"thread into the island's pilots {engage:.2f} mm of {island:.2f}; into the decks' {engage:.2f} of {deck:.2f}")
-    print(f"engagement {engage / 2:.1f} x d (REQ-MEC-09: 4.0 mm, 2 x d); the island's pilots would take "
-          f"M2 x {math.floor(island - 0.5 + z_top - e['screw_cb'][1]):d}, the decks' at most {deck:.2f} mm of thread")
-    return result(engage >= 4.0 and tip <= z_top + min(island, deck) - 0.0)
+    z_top, cb = e["z_top_cu"], e["screw_cb"][1]
+    ok = True
+    for label, length, pilot, want, short in (
+            ("side (H1-H4)", e.get("screw_l_side", e["screw_l"]), e["side_engage"], 4.0, 0.5),
+            ("end (H5, H6)", e.get("screw_l_end", e["screw_l"]), e["deck_engage"], 3.0, 0.1)):
+        tip = cb + length
+        thread = tip - z_top
+        spare = z_top + pilot - tip
+        lo, hi = want + z_top - cb, pilot - short + z_top - cb
+        fits = [n for n in range(4, 13) if lo - 1e-9 <= n <= hi + 1e-9]
+        good = thread >= want - 1e-9 and spare >= short - 1e-9
+        ok &= good
+        print(f"{label}: M2 x {length:g} from a {cb:g} mm counterbore, tip at z {tip:.2f}, board top at z {z_top:.2f}: "
+              f"{thread:.2f} mm of thread in a {pilot:.2f} mm pilot, tip {spare:.2f} mm short of its end "
+              f"(want {want:g} mm and {short:g} mm): {'ok' if good else 'fails'}; lengths that meet it: "
+              + (", ".join(f"M2 x {n}" for n in fits) or "none"))
+    return result(ok)
 
 
 def board():
@@ -303,19 +345,27 @@ def th1(b=None):
 
 
 def cellgap():
-    """O-R7: the gap from a worst-case cell to the routed FR4 edge, the cell pushed against the
-    tub pocket's right wall (assembly.md step 5), after the fab and print tolerances (REQ-BAT-08)."""
+    """O-R7 and round 2's objections: the gap from a worst-case cell to the routed FR4 edge on every face it can
+    rest against (the tub's pocket wall on each side; assembly.md step 5 pushes it to the right wall), after the
+    fab and print tolerances (REQ-BAT-08). The pocket sits cell_pocket_fit inside the hole all round, so the gap
+    at the pushed end and the long sides is that fit whatever the hole's size: widening one end alone fixes
+    nothing (seeded in VER-129). It also prints what would pass."""
     e = scad()
     (hx0, hy0), (hx1, hy1) = e["cell_hole"]
     fit = e["cell_pocket_fit"]
     tol = ROUTE_TOL + PRINT_TOL + SCREW_FLOAT
-    print(f"board hole {hx1 - hx0:.1f} x {hy1 - hy0:.1f} mm; the tub's pocket {fit:g} mm inside it each side "
+    hl, hw = hx1 - hx0, hy1 - hy0
+    print(f"board hole {hl:.1f} x {hw:.1f} mm; the tub's pocket {fit:g} mm inside it each side "
           f"(case.scad cell_pocket_fit); tolerances: routing {ROUTE_TOL:g}, print {PRINT_TOL:g}, the board's float "
           f"on its screws {SCREW_FLOAT:g} mm ({tol:.2f} mm in all)")
     ok = True
     for label, (cl, cw, _) in (("worst-case", e["cell"]), ("nominal", e["cell_nom"])):
+        if cw > hw - 2 * fit + 1e-9 or cl > hl - 2 * fit + 1e-9:
+            print(f"  {label} cell {cl:g} x {cw:g} does not fit the pocket")
+            ok = False
+            continue
         sides = {"right end (pushed, at TH1)": fit,
-                 "left end (its leads, J2)": (hx1 - hx0) - fit - cl,
+                 "left end (its leads, J2)": hl - fit - cl,
                  "each long side (at worst against the pocket's wall)": fit}
         for side, nom in sides.items():
             need = 1.5 if "left" in side else 0.5
@@ -324,6 +374,13 @@ def cellgap():
             ok &= good
             print(f"  {label} cell {cl:g} x {cw:g}, {side}: {nom:.2f} mm nominal, {worst:.2f} mm after tolerances "
                   f"(REQ-BAT-08: {need:g}): {'ok' if good else 'too close'}")
+    f_need = 0.5 + tol
+    cl, cw = e["cell"][0], e["cell"][1]
+    print(f"what passes: the pocket {f_need:.2f} mm inside the hole on every side; then")
+    print(f"  with this hole ({hl:.1f} x {hw:.1f}): a cell of at most {hl - f_need - 1.5 - tol:.2f} x "
+          f"{hw - 2 * f_need:.2f} mm (its spec sheet, VER-37, and incoming inspection, VER-49)")
+    print(f"  with the worst-case {cl:g} x {cw:g} cell: a hole of at least {cl + f_need + 1.5 + tol:.2f} x "
+          f"{cw + 2 * f_need:.2f} mm (+{cl + f_need + 1.5 + tol - hl:.2f} in x, +{cw + 2 * f_need - hw:.2f} in y: copper)")
     return result(ok)
 
 
@@ -495,25 +552,264 @@ def holes():
 
 
 def swell():
+    """The free height above a worst-case cell, under whatever lies over the tub's pocket (case.scad): the
+    panel's back, the panel frame's walls, the ends' underside past the band, the band's underside elsewhere."""
     e = scad()
-    cell_t, top = e["cell"][2], e["cell_top"]
-    deck_under = e["dome_h"] + e["flange_t"] + e["lip_t"] - e["top_t"]
-    panel = e["glass_gap"]
-    print(f"worst-case cell {cell_t} mm, its top {top} mm over the board; the deck's underside {deck_under:.2f} mm, "
-          f"the panel's back {panel:.2f} mm over the board")
-    free = min(deck_under, panel) - top
-    print(f"free height above the cell: {deck_under - top:.2f} mm under the deck, {panel - top:.2f} mm under the panel; "
-          f"swelling of 10% of {e['cell_nom'][2]} mm: {0.1 * e['cell_nom'][2]:.2f} mm")
-    return result(free >= 0.1 * e["cell_nom"][2] - 1e-9)
+    need = ["cell", "cell_top", "cell_hole", "cell_pocket_fit", "panel_w", "panel_l", "panel_fit", "frame_wall",
+            "frame_h", "glass_gap", "z_ceil", "z_top_cu", "z_deck_under", "joint_y", "joint_w"]
+    miss = [n for n in need if n not in e]
+    if miss:
+        print("case.scad: could not read " + " ".join(miss))
+        return result(False)
+    cell_t, top, f = e["cell"][2], e["cell_top"], e["cell_pocket_fit"]
+    (hx0, hy0), (hx1, hy1) = e["cell_hole"]
+    px0, px1, py0, py1 = hx0 + f, hx1 - f, hy0 + f, hy1 - f           # the pocket: where the cell can be
+    pw, pl = (e["panel_w"]) / 2, (e["panel_l"]) / 2
+    fw, fl = (e["panel_w"] + e["panel_fit"]) / 2 + e["frame_wall"], (e["panel_l"] + e["panel_fit"]) / 2 + e["frame_wall"]
+    ends = e["joint_y"] - e["joint_w"]
+
+    def over(x0, x1, y0, y1):
+        return x0 < px1 and x1 > px0 and y0 < py1 and y1 > py0
+    regions = [("the panel's back", (-pw, pw, -pl, pl), e["glass_gap"]),
+               ("the panel frame's walls", (-fw, fw, -fl, fl), e["z_ceil"] - e["frame_h"] - e["z_top_cu"]),
+               ("the ends' underside (past the band)", (-99, 99, ends, 99), e["z_deck_under"] - e["z_top_cu"]),
+               ("the ends' underside (seat 1's)", (-99, 99, -99, -ends), e["z_deck_under"] - e["z_top_cu"]),
+               ("the band's underside", (-99, 99, -ends, ends), e["z_ceil"] - e["z_top_cu"])]
+    print(f"worst-case cell {cell_t} mm, its top {top} mm over the board; its pocket x {px0:.2f} to {px1:.2f}, "
+          f"y {py0:.2f} to {py1:.2f} (case frame)")
+    free = None
+    for name, box, h in regions:
+        if over(*box):
+            print(f"  over the cell: {name}, {h:.2f} mm over the board: {h - top:.2f} mm free")
+            free = h - top if free is None else min(free, h - top)
+        else:
+            print(f"  not over the cell: {name} ({h:.2f} mm over the board)")
+    want = 0.1 * e["cell_nom"][2]
+    print(f"free height above the cell: {free:.2f} mm; swelling of 10% of {e['cell_nom'][2]} mm: {want:.2f} mm")
+    return result(free is not None and free >= want - 1e-9)
+
+
+COPPER_EDGE = 0.30   # mm: REQ-FAB-03's copper to a routed edge (JLC's figure, to confirm on the dated page: VER-17)
+EDGE_ALLOWED = {"J1"}   # parts whose body stands past the outline by design: the USB-C receptacle's face on its tab
+
+
+def edge():
+    """VER-18: every copper feature (pours, tracks, vias, pads) at least COPPER_EDGE from every routed edge (the
+    outline, the cell's hole, the speaker's hole), every courtyard inside the outline (J1 by design excepted),
+    every silkscreen text wholly on the board, and the narrowest FR4 web between two routed edges, printed. The
+    edges are the board polygon pcbnew builds from Edge.Cuts (arcs as chords)."""
+    pcbnew, b = board()
+    mm = pcbnew.ToMM
+    outl = pcbnew.SHAPE_POLY_SET()
+    b.GetBoardPolygonOutlines(outl, False)
+    contours = []
+    for i in range(outl.OutlineCount()):
+        rings = [outl.Outline(i)] + [outl.Hole(i, k) for k in range(outl.HoleCount(i))]
+        for k, ring in enumerate(rings):
+            pts = [(mm(ring.CPoint(n).x), mm(ring.CPoint(n).y)) for n in range(ring.PointCount())]
+            xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+            contours.append(("outline" if k == 0 else f"{max(xs) - min(xs):.1f} x {max(ys) - min(ys):.1f} mm hole", pts))
+    cell = 1.0
+    grid = {}
+    segs = []
+    for ci, (_, pts) in enumerate(contours):
+        for n in range(len(pts)):
+            a, c = pts[n], pts[(n + 1) % len(pts)]
+            segs.append((a, c, ci))
+            for gx in range(int(math.floor((min(a[0], c[0]) - 1) / cell)), int(math.floor((max(a[0], c[0]) + 1) / cell)) + 1):
+                for gy in range(int(math.floor((min(a[1], c[1]) - 1) / cell)), int(math.floor((max(a[1], c[1]) + 1) / cell)) + 1):
+                    grid.setdefault((gx, gy), []).append(len(segs) - 1)
+
+    def seg_dist(p, a, c):
+        dx, dy = c[0] - a[0], c[1] - a[1]
+        L = dx * dx + dy * dy
+        t = 0.0 if L == 0 else max(0.0, min(1.0, ((p[0] - a[0]) * dx + (p[1] - a[1]) * dy) / L))
+        return math.hypot(p[0] - a[0] - t * dx, p[1] - a[1] - t * dy)
+
+    def near(p, skip=None):
+        """(distance, contour) to the nearest routed edge within about 1 mm, or (None, None)."""
+        best = (None, None)
+        for si in grid.get((int(math.floor(p[0] / cell)), int(math.floor(p[1] / cell))), ()):
+            a, c, ci = segs[si]
+            if ci == skip:
+                continue
+            d = seg_dist(p, a, c)
+            if best[0] is None or d < best[0]:
+                best = (d, ci)
+        return best
+
+    def densify(pts, closed=True, step=0.05):
+        out = []
+        rng = len(pts) if closed else len(pts) - 1
+        for n in range(rng):
+            a, c = pts[n], pts[(n + 1) % len(pts)]
+            k = max(1, int(math.hypot(c[0] - a[0], c[1] - a[1]) / step))
+            out += [(a[0] + (c[0] - a[0]) * j / k, a[1] + (c[1] - a[1]) * j / k) for j in range(k)]
+        return out or list(pts)
+
+    found = {}
+
+    def note(what, d, p, ci):
+        if d is None:
+            return
+        key = (what, contours[ci][0])
+        if key not in found or d < found[key][0]:
+            found[key] = (d, p, contours[ci][0])
+    for z in b.Zones():
+        if z.GetIsRuleArea():
+            continue
+        for layer in z.GetLayerSet().Seq():
+            fp = z.GetFilledPolysList(layer)
+            for i in range(fp.OutlineCount()):
+                o = fp.Outline(i)
+                pts = [(mm(o.CPoint(n).x), mm(o.CPoint(n).y)) for n in range(o.PointCount())]
+                for p in densify(pts):
+                    d, ci = near(p)
+                    note(f"{z.GetNetname()} pour on {b.GetLayerName(layer)}", d, p, ci)
+    for t in b.GetTracks():
+        half = mm(t.GetWidth()) / 2 if t.GetClass() != "PCB_VIA" else mm(t.GetWidth(pcbnew.F_Cu)) / 2
+        a, c = (mm(t.GetStart().x), mm(t.GetStart().y)), (mm(t.GetEnd().x), mm(t.GetEnd().y))
+        for p in densify([a, c], closed=False) + [c]:
+            d, ci = near(p)
+            note(f"{'via' if t.GetClass() == 'PCB_VIA' else 'track'} {t.GetNetname()}", None if d is None else d - half, p, ci)
+    courtyard_out = []
+    for f in b.GetFootprints():
+        ref = f.GetReference()
+        for p in f.Pads():
+            for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+                if not p.IsOnLayer(layer):
+                    continue
+                poly = p.GetEffectivePolygon(layer, pcbnew.ERROR_INSIDE)
+                for i in range(poly.OutlineCount()):
+                    o = poly.Outline(i)
+                    pts = [(mm(o.CPoint(n).x), mm(o.CPoint(n).y)) for n in range(o.PointCount())]
+                    for q in densify(pts):
+                        d, ci = near(q)
+                        note(f"pad {ref}.{p.GetNumber()}", d, q, ci)
+        if ref in EDGE_ALLOWED:
+            continue
+        worst = None
+        for layer in (pcbnew.F_CrtYd, pcbnew.B_CrtYd):
+            cy = f.GetCourtyard(layer)
+            for i in range(cy.OutlineCount()):
+                o = cy.Outline(i)
+                pts = [(mm(o.CPoint(n).x), mm(o.CPoint(n).y)) for n in range(o.PointCount())]
+                for q in densify(pts, step=0.1):
+                    if not outl.Contains(pcbnew.VECTOR2I(pcbnew.FromMM(q[0]), pcbnew.FromMM(q[1]))):
+                        d, ci = near(q)
+                        if worst is None or (d or 9) > worst[0]:
+                            worst = (d or 9.0, contours[ci][0] if ci is not None else "outline")
+        if worst:
+            courtyard_out.append(f"{ref} {worst[0]:.2f} mm past the {worst[1]}")
+    # board texts on the silkscreens (the name, BOARD_REV, test-pad names): a corner of one off the board or
+    # inside a hole is not printed
+    lost_text = []
+    for d in b.GetDrawings():
+        if d.GetLayer() not in (pcbnew.F_SilkS, pcbnew.B_SilkS) or not isinstance(d, pcbnew.PCB_TEXT):
+            continue
+        bb = d.GetBoundingBox()
+        corners = [(bb.GetLeft(), bb.GetTop()), (bb.GetRight(), bb.GetTop()), (bb.GetLeft(), bb.GetBottom()),
+                   (bb.GetRight(), bb.GetBottom())]
+        if not all(outl.Contains(pcbnew.VECTOR2I(int(x), int(y))) for x, y in corners):
+            p = d.GetPosition()
+            lost_text.append(f"'{d.GetText()}' ({b.GetLayerName(d.GetLayer())}, at {mm(p.x):.1f}, {mm(p.y):.1f})")
+    rows = sorted((d, f"{w}", p, c) for (w, _), (d, p, c) in found.items())
+    bad = [r for r in rows if r[0] < COPPER_EDGE - 1e-6]
+    print(f"routed edges: {len(contours)} contours ({', '.join(c for c, _ in contours)}); copper within about 1 mm "
+          f"of one: {len(rows)} features")
+    for d, w, p, c in rows[:12]:
+        print(f"  {d:.3f} mm  {w} at ({p[0]:.2f}, {p[1]:.2f}), to the {c}")
+    print(f"copper closer than {COPPER_EDGE:.2f} mm to a routed edge (REQ-FAB-03): {len(bad)}"
+          + (": " + "; ".join(f"{w} {d:.3f} mm ({c})" for d, w, p, c in bad) if bad else ""))
+    print("courtyards past the outline or into a hole (J1 by design excepted): "
+          + (", ".join(sorted(set(courtyard_out))) or "none"))
+    print("silkscreen texts not wholly on the board (off its edge or in a hole): " + ("; ".join(lost_text) or "none"))
+    webs = []
+    for ci, (name, pts) in enumerate(contours):
+        best = None
+        for p in densify(pts, step=0.1):
+            d, cj = near(p, skip=ci)
+            if d is not None and (best is None or d < best[0]):
+                best = (d, p, contours[cj][0])
+        if best:
+            webs.append((best[0], name, best[2], best[1]))
+    for d, a, c, p in sorted(webs)[:3]:
+        print(f"narrowest FR4 web: {d:.2f} mm between the {a} and the {c} at ({p[0]:.1f}, {p[1]:.1f})")
+    return result(not bad and not courtyard_out and not lost_text)
+
+
+def plugs():
+    """VER-184 (DF-170): the cell's plug must not fit the speaker's header. Today J2 and J4 are the same PicoBlade
+    part, so it does whatever the distances; they are printed (centre to centre, pcbnew) with the speaker's lead
+    length, to show the speaker cannot reach J2."""
+    parts, _ = design()
+    j2, j4 = parts["J2"], parts["J4"]
+    same = (j2["fp"], j2["lcsc"]) == (j4["fp"], j4["lcsc"])
+    pcbnew, b = board()
+    mm = pcbnew.ToMM
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+    pos = {r: (mm(fps[r].GetPosition().x), mm(fps[r].GetPosition().y)) for r in ("J2", "J4")}
+    sx, sy = [float(v) for v in re.search(r"SPEAKER = dict\(at=\(([\d.]+), ([\d.]+)\)",
+                                          open(os.path.join(BOARD, "placement.py")).read()).groups()]
+    lead = 35.0      # mm: the GSPK151035PN's leads (bom.md, placement.py)
+    print(f"J2 {j2['value']} ({j2['lcsc']}) at ({pos['J2'][0]:.2f}, {pos['J2'][1]:.2f}); "
+          f"J4 {j4['value']} ({j4['lcsc']}) at ({pos['J4'][0]:.2f}, {pos['J4'][1]:.2f}): "
+          f"{math.dist(pos['J2'], pos['J4']):.1f} mm apart")
+    print(f"the speaker's centre ({sx}, {sy}) is {math.dist((sx, sy), pos['J2']):.1f} mm from J2: its {lead:g} mm "
+          "leads cannot reach J2; the cell's lead length is not known until VER-37 and VER-49, and with the case open "
+          "the cell can sit anywhere")
+    print("J2 and J4 are " + ("the same part: the cell's plug fits J4 (DF-170)" if same else "different parts: keyed apart"))
+    return result(not same)
+
+
+def ntc(t_c, r25=TH1_R25, beta=TH1_B):
+    return r25 * math.exp(beta * (1 / (t_c + 273.15) - 1 / 298.15))
+
+
+def tsband():
+    """The TS voltage a good unit shows at the measured ambient: I_TS into TH1, with I_TS's tolerance, TH1's 1%
+    R25 and B, and the ambient reading +-2 C (the meter and the board's own warmth)."""
+    amb = [float(a) for a in sys.argv[2:]] or [18.0, 20.0, 22.0, 25.0, 28.0]
+    print(f"TS = I_TS x TH1: I_TS {I_TS * 1e6:g} uA +-{I_TS_TOL:.0%} (from memory until VER-34), TH1 {TH1_R25 / 1e3:g}k "
+          f"B{TH1_B:g} +-{TH1_TOL:.0%}, the ambient +-2 C")
+    for t in amb:
+        lo = I_TS * (1 - I_TS_TOL) * ntc(t + 2, TH1_R25 * (1 - TH1_TOL), TH1_B * (1 + TH1_TOL))
+        hi = I_TS * (1 + I_TS_TOL) * ntc(t - 2, TH1_R25 * (1 + TH1_TOL), TH1_B * (1 - TH1_TOL))
+        print(f"  ambient {t:.1f} C: TS {lo:.3f}-{hi:.3f} V (nominal {I_TS * ntc(t):.3f} V)")
+    print("a fixed 10k in TH1's place reads about 0.75 V at any temperature: VER-135's finger step tells it apart")
+    return 0
+
+
+def cvload():
+    """The load in J2's place that keeps U2 in CV without terminating, on any unit: above the pre-charge
+    threshold at the pre-charge current (it leaves pre-charge), and drawing more than the termination current
+    at the regulated voltage (it never terminates). Both currents scale with the unit's own ISET current."""
+    parts, _ = design()
+    r5 = ohms(parts["R5"]["value"])
+    ichg = (242e-3, 295e-3)           # REQ-BAT-02.R: 890 / R5 with KISET's tolerance (pin_review/u2.json pin 16)
+    vreg = (4.2 * (1 - CV_TOL), 4.2 * (1 + CV_TOL))
+    lo = max(V_LOWV[1] / (K_PRE * i) for i in ichg)          # must leave pre-charge on the lowest-current unit
+    hi = min(vreg[0] / (K_TERM * i) for i in ichg)           # must not terminate on the highest-current unit
+    print(f"R5 {r5:g}: fast charge {ichg[0] * 1e3:.0f}-{ichg[1] * 1e3:.0f} mA; pre-charge and termination "
+          f"{K_PRE:.0%} and {K_TERM:.0%} of it (from memory until VER-34); V_LOWV {V_LOWV[0]}-{V_LOWV[1]} V; "
+          f"VREG {vreg[0]:.3f}-{vreg[1]:.3f} V")
+    print(f"window: {lo:.1f} ohm (leaves pre-charge) to {hi:.1f} ohm (never terminates); its geometric middle "
+          f"{math.sqrt(lo * hi):.1f} ohm")
+    for r in (130.0, CV_LOAD):
+        print(f"  {r:g} ohm 1%: {r * 0.99 - lo:+.1f} ohm over the low end, {hi - r * 1.01:+.1f} ohm under the high end")
+    print("the window holds only if pre-charge and termination track ISET within a few %: VER-34 quotes SLUS810N's "
+          "KPRECHG and KTERM limits")
+    return 0
 
 
 CHECKS = {"holes": holes, "swell": swell, "inrush": inrush, "backlight": backlight, "cutoff": cutoff, "screws": screws,
-          "mlcc": mlcc, "th1": th1, "cellgap": cellgap, "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom}
+          "mlcc": mlcc, "th1": th1, "cellgap": cellgap, "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom,
+          "edge": edge, "plugs": plugs, "tsband": tsband, "cvload": cvload}
 
 
 def main():
-    if len(sys.argv) != 2 or sys.argv[1] not in CHECKS:
-        print(__doc__.split("\n\n")[2] if "--list" in sys.argv else __doc__)
+    if len(sys.argv) < 2 or sys.argv[1] not in CHECKS or (len(sys.argv) > 2 and sys.argv[1] != "tsband"):
+        print(__doc__.split("\n\n")[2] + "\n\n" + __doc__.split("\n\n")[3] if "--list" in sys.argv else __doc__)
         return 0 if "--list" in sys.argv else 2
     return CHECKS[sys.argv[1]]()
 

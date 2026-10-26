@@ -12,8 +12,9 @@ into a scratch directory (git clone --shared, nothing written to this repository
 working register is committed there as a base, and each fault resets to that base, commits
 its change as "Alex" (or with a Claude trailer where that is the fault) and runs the clone's
 own check_trace.py. The clone signs its commits with a throwaway SSH key named in a
-throwaway allowed-signers file, so an approval line counts there the way Alex's will
-(O-R4); a fault that wants an unsigned commit makes one on purpose.
+throwaway allowed-signers file and pinned in the clone's README, so an approval line counts
+there the way Alex's will (O-R4, round 2); a second allowed key signs where a fault wants
+another key, and a fault that wants an unsigned commit makes one on purpose.
 
 A third kind runs design_numbers.py in the clone (pcbnew and kicad-cli): a fault there must
 leave the check at RESULT: FAIL (a comment in fab.py must not pass the CPL or drill check:
@@ -110,7 +111,7 @@ FAULTS = [
     ("duplicate VER id", "structure", "duplicate ID VER-01",
      lambda d: csv_edit(d, "verification.csv", "VER-01", _dup=True)),
     ("dangling DF id in a gate", "structure", "DF-999 is referenced but not defined",
-     lambda d: text_edit(d, "gates.md", "| VER-98 VER-148 DFMEA:COVERAGE |", "| VER-98 VER-148 DFMEA:COVERAGE DF-999 |")),
+     lambda d: text_edit(d, "gates.md", "| VER-98 DFMEA:COVERAGE |", "| VER-98 DFMEA:COVERAGE DF-999 |")),
     ("action priority off the AIAG-VDA table", "structure", "(AIAG-VDA table)",
      lambda d: csv_edit(d, "dfmea.csv", "DF-04", action_priority="L")),
     ("PASS without a commit", "structure", "PASS needs commit",
@@ -147,8 +148,9 @@ FAULTS = [
      lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Verified by", "VER-65, VER-11")),
     ("a live risk detected by a retired check", "structure", "DF-35: detects VER-11, which is RETIRED",
      lambda d: csv_edit(d, "dfmea.csv", "DF-35", detects=lambda x: x + " VER-11", detection=lambda x: x + "; VER-11")),
-    ("a gate criterion naming a retired check", "structure", "G-ORD-08: needs VER-11, which is RETIRED",
-     lambda d: text_edit(d, "gates.md", "| VER-30 VER-12 |", "| VER-30 VER-12 VER-11 |")),
+    ("a gate criterion naming a retired check", "structure", "G-EVT-04: needs VER-11, which is RETIRED",
+     lambda d: text_edit(d, "gates.md", "| VER-12 VER-30 VER-13 VER-31 VER-70 VER-71 VER-72 VER-83 VER-84 |",
+                         "| VER-12 VER-30 VER-13 VER-31 VER-70 VER-71 VER-72 VER-83 VER-84 VER-11 |")),
     ("vp_map status changed with no evidence", "structure", "with no evidence",
      lambda d: csv_edit(d, "vp_map.csv", "4", status_now="no")),
     ("requirement with no Verified by", "structure", "field 'Verified by' missing or empty",
@@ -187,7 +189,7 @@ FAULTS = [
      "the design baseline does not name hardware/ref_design/board/battler.kicad_pcb",
      lambda d: text_edit(d, "README.md", "- `hardware/ref_design/board/battler.kicad_pcb`", "- `hardware/ref_design/board/battler_old.kicad_pcb`")),
     ("an advisory-only check made binding", "gate", "VER-40 NOT_RUN",
-     lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 |", "| VER-40 |")),
+     lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| VER-40 VER-21 VER-27 |")),
     # the second review (2026-10-25)
     ("O-R3: an inspection PASS on a design file it does not cover", "structure", "VER-28: needs its saved output under",
      lambda d: csv_edit(d, "verification.csv", "VER-28", last_result="PASS", commit=HEAD7, date=TODAY,
@@ -202,7 +204,30 @@ FAULTS = [
      lambda d: csv_edit(d, "dfmea.csv", "DF-92", prevention=lambda x: x.replace("Similar:", "Like:"))),
     ("F-R14: a live check cites a RETIRED row", "structure", "VER-148: cites DF-106, which is RETIRED",
      lambda d: csv_edit(d, "verification.csv", "VER-148", pass_limit=lambda x: x + " (as DF-106)")),
+    # round 2's sign-off objections (2026-10-26)
+    ("round 2 (O): an ORDER check that no step of PLAN.md section (d) names", "structure",
+     "VER-131: an ORDER check that no step of PLAN.md section (d) names",
+     lambda d: plan_d_drop(d, "VER-131")),
+    ("round 2 (F): a requirement whose only check moved to a later phase", "structure",
+     "REQ-PWR-13: Phase ORDER, but its earliest live check (VER-99) is EVT",
+     lambda d: csv_edit(d, "verification.csv", "VER-99", phase="EVT")),
+    ("round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE", "gate", "parts in no DFMEA row: R64",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-153", item="the ILIM resistor", failure_mode="the ILIM resistor open")),
+    ("round 2 (F): detection rating 2 on a single 'detects' check", "structure",
+     "DF-95: detection_rating 2 needs two or more independent 'detects' checks",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-95", detection_rating="2", action_priority="L")),
 ]
+
+
+def plan_d_drop(d, vid):
+    """Take one check out of PLAN.md section (d) only (it may be named elsewhere in the plan)."""
+    path = os.path.join(d, "PLAN.md")
+    s = open(path, encoding="utf-8").read()
+    m = re.search(r"^## \(d\).*?(?=^## )", s, re.M | re.S)
+    if not m or vid not in m.group(0):
+        raise SystemExit(f"seed_faults: {vid} not in PLAN.md section (d)")
+    sect = re.sub(r"(?<![\w-])" + re.escape(vid) + r"(?![\w-])", vid.replace("-", " "), m.group(0))
+    open(path, "w", encoding="utf-8").write(s[:m.start()] + sect + s[m.end():])
 
 
 def borrow_evidence(d, vid, donor):
@@ -223,21 +248,38 @@ def git(repo, *args, env=None):
     return r.stdout.strip()
 
 
-def commit(repo, msg, sign=True):
+def commit(repo, msg, sign=True, key=None):
     git(repo, "add", "-A")
-    git(repo, "commit", "-q", "--no-verify", "-S" if sign else "--no-gpg-sign", "-m", msg)
+    pre = ["-c", f"user.signingkey={key}"] if key else []
+    git(repo, *pre, "commit", "-q", "--no-verify", "-S" if sign else "--no-gpg-sign", "-m", msg)
     return git(repo, "rev-parse", "HEAD")
 
 
+KEYS = {}
+
+
 def setup_signing(repo, tmp):
-    """A throwaway SSH key and allowed-signers file, so the clone's 'Alex' signs as Alex will."""
-    key = os.path.join(tmp, "seed_key")
-    subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "seed", "-f", key], check=True)
+    """Two throwaway SSH keys in a throwaway allowed-signers file, so the clone's 'Alex' signs as Alex will:
+    'alex' is the key README.md pins, 'other' is a second key the file also allows (round 2's objection:
+    a good signature from it must not count)."""
+    lines = []
+    for name in ("alex", "other"):
+        key = os.path.join(tmp, f"seed_key_{name}")
+        subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", name, "-f", key], check=True)
+        KEYS[name] = key
+        lines.append(f'{name}@example.invalid namespaces="git" {open(key + ".pub").read().strip()}\n')
     allowed = os.path.join(tmp, "allowed_signers")
-    open(allowed, "w").write(f'alex@example.invalid namespaces="git" {open(key + ".pub").read().strip()}\n')
-    for k, v in (("gpg.format", "ssh"), ("user.signingkey", key), ("gpg.ssh.allowedSignersFile", allowed),
+    open(allowed, "w").write("".join(lines))
+    for k, v in (("gpg.format", "ssh"), ("user.signingkey", KEYS["alex"]), ("gpg.ssh.allowedSignersFile", allowed),
                  ("commit.gpgsign", "true")):
         git(repo, "config", k, v)
+
+
+def pin_key(repo):
+    """README's '- Signing key:' line for the clone's 'alex' key (committed with the base, signed by it)."""
+    fp = subprocess.run(["ssh-keygen", "-lf", KEYS["alex"] + ".pub"], capture_output=True, text=True).stdout.split()[1]
+    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "Pinned key (Alex writes the line",
+              f"- Signing key: `{fp}`\n\nPinned key (Alex writes the line")
 
 
 def rebaseline(repo):
@@ -433,7 +475,7 @@ def g_order_branch_moves(repo, base):
     with open(os.path.join(wt, "hardware/ref_design/board/tools/silk.py"), "a") as f:
         f.write("# a silk change on the order branch\n")
     commit(wt, "silk change on the order branch")
-    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-island-45`",
+    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
               "- Order branch: `seeded-order`")
     commit(repo, "README names the seeded order branch")
     return "order"
@@ -477,6 +519,36 @@ def g_tp_near_hole(repo, base):
     return ("py", code)
 
 
+def g_other_key(repo, base):
+    """Round 2: a commit signed by another key in the allowed-signers file gives %G? = G, and must not count."""
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-06 | APPROVED | - | - | Alex | 2026-10-26 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
+    commit(repo, "approve REQ-PRD-06 (signed with the other key)", key=KEYS["other"])
+    return None
+
+
+def g_bulk_edited(repo, base):
+    """Round 2: a bulk 'REQ-ALL@<commit>' line covers a requirement only while its statement is unchanged."""
+    approve(os.path.join(repo, "hardware/vv"), f"| A-001 | REQ-ALL@{base[:7]} | APPROVED | - | - | Alex | 2026-10-26 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
+    commit(repo, "approve every requirement as worded at the base")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Statement",
+                "The closed case shall measure at most 80 x 160 mm in plan.")
+    commit(repo, "loosen REQ-PRD-06")
+    return None
+
+
+def g_cellgap_right_end(repo, base):
+    """Round 2: widening only the hole's right end (the first proposed fix) leaves VER-181 failing."""
+    p = os.path.join(repo, "hardware/ref_design/case/case.scad")
+    s = open(p).read()
+    old = "cell_hole = [[-27.0, 6.0], [27.0, 43.0]]"
+    if old not in s:
+        raise SystemExit("seed_faults: case.scad's cell_hole line moved")
+    open(p, "w").write(s.replace(old, "cell_hole = [[-27.0, 6.0], [27.5, 43.0]]", 1))
+    return ("dn", [["cellgap"]])
+
+
 GIT_FAULTS = [
     ("row result disagrees with its evidence", "structure", "the row says FAIL", g_result_disagrees),
     ("evidence past its valid_days", "report", "expired", g_expired),
@@ -507,6 +579,13 @@ GIT_FAULTS = [
      "CHG-01: 'What to re-run' omits VER-52", g_chg_omits),
     ("O-R1: a comment in fab.py does not pass the CPL or drill check", "dn", "RESULT: FAIL", g_fab_comment),
     ("O-R14: a back-side test point next to the cell's hole fails th1", "dn", "RESULT: FAIL", g_tp_near_hole),
+    # round 2's sign-off objections (2026-10-26)
+    ("round 2 (O): an approval signed by another key in the allowed-signers file", "structure",
+     "A-001 pending: signed with another key", g_other_key),
+    ("round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it", "structure",
+     "REQ-PRD-06: Status APPROVED but releases/APPROVALS.md has no committed line for it", g_bulk_edited),
+    ("round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing", "dn", "RESULT: FAIL",
+     g_cellgap_right_end),
 ]
 
 
@@ -565,7 +644,8 @@ def main():
         setup_signing(repo, tmp)
         shutil.rmtree(os.path.join(repo, "hardware/vv"))
         shutil.copytree(VV, os.path.join(repo, "hardware/vv"), ignore=shutil.ignore_patterns("__pycache__"))
-        base = commit(repo, "the working register, as a base for seeded faults")
+        pin_key(repo)
+        base = commit(repo, "the working register and the clone's pinned key, as a base for seeded faults")
         trace = os.path.join(repo, "hardware/vv/tools/check_trace.py")
         rc, out = run(None, trace=trace)
         clone_ok = rc == 0

@@ -63,6 +63,9 @@ CHECKS = {
     "VER-167": ("bom", ["python3", DN, "bom"], False),
     "VER-176": ("cpl", ["python3", DN, "cpl"], True),
     "VER-177": ("vbus", ["python3", DN, "vbus"], False),
+    "VER-18": ("edge", ["python3", DN, "edge"], True),
+    "VER-184": ("plugs", ["python3", DN, "plugs"], True),
+    # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
 

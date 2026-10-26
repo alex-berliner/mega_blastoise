@@ -1,17 +1,19 @@
 # The plan: from here to 5 boards, then 30
 
-**Not ready to order.** The board being ordered is `hardware/ref_design` at **684a609**
-(branch ref-design-island-45, 2026-10-24 12:49). On 2026-10-25 this register was re-seeded
-for it: the first run (2026-10-24) had described 76955d2, a design two days older (DEF-47).
-The same day two models attacked the re-seed; their 39 accepted findings (O-R1 to O-R23,
-F-R1 to F-R16, none disputed) are applied (section l). The order gate fails 27 of its 31 counted
-criteria (section i); the default mode passes.
+**Not ready to order.** The board being ordered is `hardware/ref_design` at **be437f8**
+(branch ref-design-35in, 2026-10-26; the board itself is final at 62b01f2, the later commits
+are docs and print kits). On 2026-10-26 this register, which described 684a609, was
+re-seeded for it, the board-level checks that found real problems were re-run, round 2's 18
+sign-off objections were answered (section g) and the order gate was trimmed to what the
+copper, the BOM and the fab files freeze (section d). The default mode passes; the order gate
+fails, as it should (section i).
 
-Contents: (a) the system on one page; (b) what changed in the design; (c) the first run's
-pre-order findings, re-checked; (d) before the 5-board order; (e) the case gate, EVT, DVT and
-PVT; (f) decisions for Alex; (g) the first run's sign-off objections and where each landed;
-(h) what this plan still cannot catch; (i) the gate today; (j) past bugs and what catches
-them; (k) the ID ledger of the first run's debate; (l) the second review's ID ledger.
+Contents: (a) the system on one page; (b) what changed in the design; (c) the board at
+be437f8: what the checks find; (d) before the 5-board order, and what moved where; (e) the
+case gate, EVT, DVT and PVT; (f) decisions for Alex; (g) round 2's sign-off objections and
+where each landed; (h) what this plan still cannot catch; (i) the gate today; (j) past bugs and
+what catches them; (k) the ID ledger of the first run's debate; (l) the second review's ID
+ledger; (m) the first run's sign-off objections.
 
 ## (a) The system on one page
 
@@ -21,18 +23,20 @@ temperature), JLC can make it, it fits the case, and it survives use. It covers
 `hardware/ref_design` and Alex's `hardware/prod_board` with `hardware/prod_case`, each with
 its own evidence.
 
-**The chain.** Requirements (requirements.md: 133, of which 130 live and PROPOSED, 3
-RETIRED) -> DFMEA rows (dfmea.csv: 177, of which 145 live: 53 H, 65 M, 27 L; 32 RETIRED) ->
-checks (verification.csv: 182: 14 PASS, 9 FAIL, 52 NOT_RUN, 102
-NOT_BUILT, 2 CUT, 3 RETIRED) -> gates (gates.md: ORDER, CASE, EVT, DVT, PVT) ->
-release and change records (releases/) -> defects (defects.md: 55: 22 OPEN, 20 FIXED, 6 CLOSED, 7 RETIRED). Alex's decisions
-live in one file, releases/APPROVALS.md, which only he edits, in commits signed with his key.
+**The chain.** Requirements (requirements.md) -> DFMEA rows (dfmea.csv) -> checks
+(verification.csv) -> gates (gates.md: ORDER, CASE, EVT, DVT, PVT) -> release and change
+records (releases/) -> defects (defects.md). Alex's decisions live in one file,
+releases/APPROVALS.md, which only he writes lines in, in commits signed with the key README
+pins. The counts are in section (i).
 
 **What check_trace.py enforces** (`python3 hardware/vv/tools/check_trace.py`):
 
 - Every ID exists; every check is reached by a gate, a requirement or an H row no later than
   its own phase (O-1). A check that only ADVISORY criteria name is advisory and PHASE:<p>
-  does not count it (VER-40, F's objection).
+  does not count it (VER-40).
+- Every ORDER check is named by a step of section (d) below, so the checklist and the gate
+  cannot drift apart (round 2, O). A requirement has a live check no later than its Phase, so a
+  check moved later cannot leave it behind (round 2, F).
 - Every PASS or FAIL rests on a saved output under evidence/ with a COMMIT and RESULT
   header: TOOLS for an analysis or a test, WHO and ARTEFACT for an inspection or a demo
   (O-4, F-3, O-R3). Only VER-104 and VER-124 point at the design file their covers name.
@@ -40,337 +44,336 @@ live in one file, releases/APPROVALS.md, which only he edits, in commits signed 
   anything under hardware/vv is uncommitted (O-R2).
 - Evidence goes stale when what it covers changes: a committed file (regexes as whole words),
   a part in design.py, a release of built units (stale only when a change record asks for a
-  re-run), or its age. A 'covers' glob matches committed files only (F's objection). At DVT
-  and PVT a check of phase EVT or later that is a test or covers a release, whatever its
-  method, must cover a release record of that phase (O's objection, O-R11). A change record's
-  'What to re-run' must list every bench test tied to a part its commits changed (O-R21).
+  re-run), or its age. At DVT and PVT a check of phase EVT or later that is a test or covers a
+  release must cover a release record of that phase (O-R11). A change record's 'What to
+  re-run' must list every bench test tied to a part its commits changed (O-R21).
 - A DFMEA row is DONE only when all its 'detects' checks pass; its detection rating cannot be
-  better than they allow; an occurrence of 3 needs 'Similar: <board and part>' (O-R8), 2 or
-  less built hardware, 1 a stated exclusion.
+  better than they allow (2 or 1 needs two or more checks: round 2, F); an occurrence of 3 needs
+  'Similar: <board and part>' (O-R8), 2 or less built hardware, 1 a stated exclusion.
 - Approvals, acceptances, deferrals and waivers count only from lines in a commit signed with
-  Alex's key, never a merge or a Claude commit (O-R4); until signing is set up every line is
-  pending. An acceptance, a waiver and a deferral hold only up to the phase they name; an
-  approved statement edited later needs approving again.
-- RETIRED: a requirement, risk, check or defect whose subject left the design keeps its ID and
-  names the commit that removed it; no live row may lean on a retired check or cite a retired
-  id outside 'Was: ...' (O-R9, F-R14).
+  the one key README pins, whose pin line was itself committed signed by that key (round 2,
+  O): never a merge, a Claude commit, an unsigned commit or another allowed key. A bulk
+  'REQ-ALL@<commit>' or 'DF-H@<commit>' line covers what is unchanged since that commit, each
+  ID checked on its own. An acceptance, a waiver and a deferral hold only up to their phase.
+- RETIRED: a requirement, risk, check, defect or gate criterion whose subject left the design
+  keeps its ID and names the commit that removed it; no live row may lean on a retired check
+  or cite a retired id outside 'Was: ...' (O-R9, F-R14).
 - Each defect names its Gate; R4 holds it there and at every later gate, not before (O-R5).
-- The design baseline in README.md names every design path (design.py, placement.py,
-  board/lib, battler.kicad_pcb, battler.kicad_pro, the schematics, the board/tools tree,
-  case.scad, case/export.py: F-R13) and must equal HEAD, or the default mode fails (DEF-47).
-  After a release, a commit touching any of them needs a change record (R6). README names the
-  order branch: a design commit on it after 684a609 warns in the default mode and fails the
-  order gate (R8, O-R13), even before it is merged here.
+- The design baseline in README.md names every design path and must equal HEAD, or the
+  default mode fails (DEF-47: on 2026-10-26 the rebase onto be437f8 failed it at once, as
+  designed). README names the order branch: a design commit on it after be437f8 warns in the
+  default mode and fails the order gate (R8, O-R13).
 
-`tools/seed_faults.py` seeds 63 faults and catches every one (VER-129): 41 on a copy of the
-register, 22 in a scratch clone with real git history and signed commits, two of those
-design_numbers.py runs (O-R1, O-R14).
-`tools/design_numbers.py` recomputes the pre-order numbers this plan quotes; its CPL and
-drill checks run fab.py's own export into a temp dir and read the files it writes (O-R1).
-`tools/run_checks.py` runs it and the other quick checks and writes their evidence.
+`tools/seed_faults.py` seeds faults one at a time and catches every one (VER-129; the count is
+in section i). `tools/design_numbers.py` recomputes the pre-order numbers this plan quotes; its
+CPL and drill checks run fab.py's own export into a temp dir and read the files it writes
+(O-R1). `tools/run_checks.py` runs it and the other quick checks and writes their evidence.
 
-## (b) What changed in the design (76955d2 to 684a609)
+## (b) What changed in the design (684a609 to be437f8)
 
-`git diff 76955d2 684a609 -- hardware/ref_design`: 153 files. What touches this register:
+`git diff --stat 684a609 be437f8 -- hardware/ref_design`: 118 files, most of them the case's
+images, print kits and the viewer. What touches this register:
 
-| Change | Commit | Register effect |
+| Change | Commits | Register effect |
 |---|---|---|
-| TP4056 and its load sharing (D5, D6, D7, Q2, Q4, R6, R39, R40, R47, C9) became a BQ24073 power path (C15220, VQFN-16): OVP 6.6 V, OUT 4.4 V, USB500 475 mA, 270 mA charge (242-295), 5 h timer, TS on TH1; R64 on ILIM; R38 1k became 10k | 2d1124d | DF-01-03, 05, 10-19, 34, 37, 38, 40, 41, 99, 104-106, 110, 111 RETIRED; DF-144-153 new; VER-11 RETIRED; DEF-03-06, 38 RETIRED; DEF-43 CLOSED; REQ-PWR-06 RETIRED |
-| ME6211 became the RT9013-33GB (C47773) | 1fd0956 | DF-29, 30 RETIRED; DF-155, 157, 158 new; DEF-09 RETIRED; REQ-PWR-03 RETIRED |
-| ER-TFT035IPS-6 (3.5in, ILI9488) became the ER-TFT024IPS-3 (2.4in, ST7789V, 4 LEDs, 80 mA); J3's map; R61 3.9k to 2.4k | 53e21c8 | DF-120 RETIRED; DF-159 new; REQ-DSP-01, 02, 05, 11, 12 rewritten; DEF-39 CLOSED |
-| D-pads and A/B/X/Y through two chained 74HC165s (U8, U9, RN1-RN4, R65, C52, C53) | 2d1124d | DF-160-165 new; DEF-49 (the pill margin) |
-| Start and Select on 4 mm metal domes (SW20-SW23 on Dome_4mm_Round); seat 2's Start also powers on (Q7, D8, R62, R63) | 2d1124d | DF-124 RETIRED; DF-166-168 new; VER-09 RETIRED; VER-178, VER-180 new; REQ-BTN-08 new |
-| The cell in a 54.0 x 37.0 mm hole in the board; TH1 at the hole's right edge; the tub pocketed under the cell | 2d1124d and the case after it | DF-04, 84, 85, 108 rewritten; DF-169, 171 new; DEF-37 rewritten; DEF-51 new |
-| The speaker on a PicoBlade J4 (no soldering), on the board's top in the right bezel | 7da6a90, 0c1e3ac | DF-112 RETIRED; DF-170 new |
-| J6 (UART), the revision strap R48-R51 and C41 removed; debug buttons and latch parts moved; GPIO map re-picked (routing levers) | 86bf694 | DF-63, 140 RETIRED; VER-59 RETIRED; REQ-MCU-05 RETIRED; DEF-20 RETIRED; DF-122 rewritten |
-| The case: 77.4 x 132.7 x 9.55 mm (7.7 at the decks); the island, two decks, the tub; six M2 x 6 screws; arm hooks | case.scad since 2026-10-21 | REQ-PRD-06, MEC-05, 09, 10 rewritten; DEF-31 rewritten |
+| The panel back to the ER-TFT035IPS-6 (ILI9488, 320 x 480, six LEDs on two cathode pins, 120 mA); J3's map restored (SCK on panel pin 36, D/C on 37, IM2-0 high, panel pins 4-6 not connected); R61 2.4k to 3.9k (C51721) | 79de1f7, ada53ea | REQ-PRD-02.R, REQ-DSP-01, 02, 05-09, 11, 12 rewritten; DF-44, 57, 59, 60, 130, 159 rewritten; DF-180 new (the 18-bit redraw; Was: DF-120); VER-43, 60, 61, 62, 137 rewritten; DEF-39 reopened; vp #58 un-cut |
+| The board re-placed: 72.4 x 151.64 mm (was 127.7); the cell's 54.0 x 37.0 mm hole under the glass's seat-2 half; TH1 at (127.8, 79.0); the shift registers and the backlight's sinks in the ends' spines; the speaker sunk in an 11.0 x 16.0 mm hole at the right edge; J4's mouth towards the speaker | 9cff0d3, afa322e | DF-04, 62, 97, 156, 165, 170, 171 rewritten; DF-178 (the 1.0 mm rim), DF-179 (copper at the routed edges) new; VER-18 built; VER-90, 166 rewritten; DEF-56, DEF-57 new |
+| Routed: 0 unconnected, DRC 0 errors, with schematic parity; route.py's maze reaches 40 mm; one GND via by U3's NC pad nudged 0.08 mm by hand in the board file (a rebuild brings it back) | 62b01f2 | VER-01 to 04 re-run; the hand edit is in (c) and (h) |
+| The case: the one-piece top (the island, the decks and their arm hooks gone), 77.4 x 156.64 x 9.6 mm (7.7 at the button ends); the cell under the panel; the D-pad opening 0.60 | 2c73cea, d23d5c1, ec7859c, 382870c | REQ-PRD-06, MEC-02, 05, 08, 09, 10 rewritten; DF-84, 107, 119 rewritten; DF-89 RETIRED; DF-181 new; VER-07, 48, 92, 113, 147, 182 rewritten; DEF-51 CLOSED; DEF-31 restated |
+| Docs: bom.md (the panel, M2 x 6, 44 part numbers, 118 placements, the board's size), assembly.md (the one-piece top), pinmap.md (113 mA, an 18% minimum duty), design_review.md | e672f90, 03df0f2 | DEF-21's list re-checked: bringup.md's display steps are still the 2.4 in panel's (n) |
 
-## (c) The first run's pre-order findings, re-checked at 684a609
+What stayed: every other part, value, LCSC number and net (design.py's diff is the panel's
+comment, its pin map and R61), board/lib, fab.py and silk.py. So the drill, CPL and
+order-number findings stand as they were.
 
-Every number below comes from `tools/design_numbers.py` at 4a86173 (evidence in
-`evidence/2026-10-25_*`) unless it says otherwise.
+## (c) The board at be437f8: what the checks find
 
-| Finding (2026-10-24) | At 684a609 | Check |
+Every number below comes from `tools/design_numbers.py` run on be437f8's design files
+(evidence `evidence/2026-10-26_*`, recorded in section i's commit) unless it says otherwise.
+The four checks the brief asked to re-run first:
+
+| Check | At be437f8 | Verdict |
 |---|---|---|
-| The drill file mixes plated and unplated holes | Still true: one MixedPlating file; the unplated holes are J1's two 0.65 mm pegs, SW20-SW23's four 0.5 mm holes and H1-H6 (2.2 mm). Every hole is 0.30 mm or more. VER-131 now parses the drill files fab.py's own export writes (O-R1); J1's four 0.60 mm plated slots are on its list | VER-131 FAIL, VER-114 PASS, DEF-32 |
-| J1 and J2 off their pads in the CPL (1.46 and 0.60 mm) | Still true, measured against the pads' centre: J1 1.50 mm, J2 0.95, J4 0.95 (the same footprint), J3 0.23. VER-176 now reads the CPL fab.py writes, row by row (O-R1) | VER-176 FAIL, DEF-33 |
-| C9 0.9 mm from a screw boss | C9 is gone (2d1124d). The nearest MLCC is C14 (100n 0402 on 3V3), its pad 4.40 mm from H4's centre; the nearest bulk cap C34, 9.16 mm from H3 | VER-142 PASS, DEF-38 RETIRED |
-| TH1 at the cell's edge, not its centre | TH1 sits 0.80 mm outside the hole's right edge by design, facing the cell's end across the FR4 edge and an air gap (0-0.5 mm when the cell is pushed home). The geometry passes; the lag is unmeasured. New (O-R7): the pushed cell's end is 0.25 mm from the routed FR4 edge, -0.15 mm after routing, print and screw-float tolerances, against REQ-BAT-08's 0.5 mm | VER-164 PASS, VER-181 FAIL, VER-87 not built, DF-04 H, DF-85 H, DEF-37, DEF-53 |
-| The 3.50 V cutoff may never fire | Still true with the RT9013: with 3V3 +2%, 120 mV of dropout at 150 mA and a -1% CV, the lowest reading in dropout is 3.521 V. In regulation the CV calibration alone puts the cutoff at a true 3.465-3.535 V. New (O-R15): GPIO47's pad leakage through 235 kohm moves VBAT's reading 0.47 V per uA; REQ-BAT-12's window allows about 53 nA that changes with temperature (the 1 uA maximum is quoted from memory until VER-34) | VER-138 FAIL, DEF-40 |
-| Backlight 122.5 mA against 120 mA | Fixed by the panel change: 78.0 mA worst case against the new panel's 80 mA (39.0 mA a sink). New: two LEDs share each sink, so one LED's share is not controlled | VER-137 PASS, DEF-39 CLOSED, DF-159 |
-| Screws engage 1.4 mm | Now M2 x 6: 3.2 mm of thread (1.6 x d) in the island's 4.95 mm pilots and the decks' 3.30 mm. bom.md still buys M2 x 8, which would run past the decks' pilots | VER-147 FAIL, DEF-31 |
-| No firmware pin map for this board | pinmap.md is generated from design.py now, but no firmware is: the fw crate is rp235xa, 4096K, ST7796, and fw-ref-board (a01f6fb) predates the routing levers: PWR_HOLD on GPIO2 (P2_START here), SR_PL on GPIO28 (BL_PWM here) | VER-149-151 not built, DEF-34 |
-| Start/Select pills and caps not in the BOM | Start/Select are metal domes now; bom.md still says the Start/Select strip is not used and buys no domes, Kapton dots or Start/Select caps | VER-167 FAIL, DEF-42 |
-| Inrush 265 uC against 50 uC (a written deviation) | Gone: VBUS carries C1 alone (10 uF, 50 uC at 5.0 V) and U2's input switch is the only path to VSYS | VER-99 PASS, DEF-43 CLOSED |
-| Charge window up to 49 C (R39/R40) | Now 3.5-47.2 C nominal from the BQ24073's fixed TS thresholds. No series or parallel resistor fixes both edges (O-R6); a 10k NTC with B near 4250 on the same pads gives about 4.9-45.5 C | VER-32 not built, DF-147 H, DEF-48 |
-| 3V3 under 3.135 V through the unplug (Q2, D7) | Gone: no hand-over gap. 3V3 is about 3.33 V at a 3.50 V cell at worst case | REQ-PWR-05 rewritten, VER-70 |
-| No OVP on VBUS | U2 has OVP (6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN over its 6 V above VBUS 6.9 V, and EN1 over its 7 V above 9.5 V | VER-177 FAIL, DEF-50 |
-| Cell swelling: 0.5 mm gap holding a 0.45 mm foam pad | No foam: a 4.5 mm cell has 0.30 mm free under the deck, 0.80 mm under the panel | VER-182 FAIL (split from VER-20, O-R21), DEF-51 |
-| U1's JLC rotation in doubt | assembly.md now states JLC's footprint is KiCad's turned 180 degrees; still to see in the dry run | VER-28, DEF-14 |
-| TP11-TP14 facing the pouch | Gone: no back-side pad within 1 mm of the hole: the nearest is TP11 at 6.2 mm, now read from all 11 flipped footprints on the board, not placement.py's text (O-R14) | VER-164 PASS |
-| E9 pull-downs on AMP_EN and BL_PWM; GPIO47 above IOVDD when off; legacy USB hosts; reversed cell | Still true (R37 100k; R60 + R61 102.4k; R17/R18 470k/470k; charging starts before enumeration; no polarity protection) | DF-45, 47, 95, 66, 55 |
-| Docs disagree with the design | 26 stale statements in 8 files, mostly the TP4056 and the old latch in bringup.md, assembly.md and bom.md; the second review added bom.md's board size and foam pad and u4.json's old GPIO numbers | VER-39 FAIL, DEF-21 |
+| The cell's gap, every side (VER-181) | the tub's pocket is still 0.25 mm inside the 54.0 x 37.0 mm hole on every side, so a worst-case 52 x 36 cell is 0.25 mm from the routed edge at the pushed end and on both long sides (-0.15 mm after 0.40 mm of routing, print and screw tolerances), and 1.75 mm at its lead end (1.35 after, against 1.5); a nominal 50 x 34 cell fails the same three faces at -0.15 mm and passes its lead end (3.35 mm). What passes: the pocket 0.9 mm inside the hole with a cell of at most 51.2 x 35.2 mm, or a hole of at least 54.8 x 37.8 mm | still failing (DEF-53, DEC-27) |
+| J1's pick-and-place offset (VER-176) | the CPL fab.py writes still places J1 1.50 mm from its pads' centre; J2 and J4 0.95 mm, J3 0.23 mm; 44 BOM lines, 118 CPL rows | still failing (DEF-33) |
+| The drill file (VER-131) | one MixedPlating Excellon of 628 holes and 4 slots: J1's four 0.60 mm plated slots and every via sit with the unplated SW20-SW23 vents (0.5 mm), J1's pegs (0.65 mm) and H1-H6 (2.2 mm) | still failing (DEF-32) |
+| The cell's plug into J4 (DF-170, VER-184 new) | J2 and J4 are still both the 53261-0271 (C177225). They now sit on opposite long edges, 64.2 mm apart centre to centre, and the speaker's 35 mm leads cannot reach J2 (67.1 mm), but with the case open the cell can be anywhere | risk lower, cause unchanged: VER-184 FAIL (a DVT check), DEC-33 |
 
-New at 684a609: the pill margin dropped from 10 kohm to about 3.7 kohm with the 10k pull-ups
-(DEF-49, DF-164); the backlight simulation runs for the old panel (DEF-45); a fixed 10k at
-TH1 would silently disable the temperature pause (DF-146); opening the case pulls the cell
-on its leads (DF-169); J4 takes the cell's plug (DF-170); the strips beside the hole carry
-seat 2's buttons and the latch (DF-171); a Start dome held at rest keeps the device on
-(DF-167); U2's battery FET failing short leaves only the PCM (DF-151); no fuse in the cell
-path (DF-172). From the second review: the cell's gap at the pushed end (DEF-53, VER-181);
-JLC's order-number marker is not on the board (DEF-55, REQ-FAB-05).
+What else the re-run finds, new or changed at be437f8:
+
+| Finding | Numbers | Where |
+|---|---|---|
+| **The backlight is over the panel's 120 mA again** | 122.4 mA at 100% duty at worst case (61.2 mA a pin, 20.4 mA an LED on average): 79de1f7 brought back the first run's finding with the panel; a duty cap at 97.9% or R61 3.74k passes | VER-137 FAIL, DEF-39 reopened, DF-130, DEC-31 |
+| **The board's name, REV 1 and build text are routed away** | silk.py writes them at y 57.6-63.2 on the back; the cell's hole runs y 57.0-94.0 there. BOOT and RST are written at negative coordinates (off the board); the speaker's label sits in its hole. KiCad's DRC called the first three 'cosmetic' silk warnings | VER-18 FAIL, DEF-57, DEC-28 |
+| **Copper 0.20 mm from the routed holes** | GND pours on both layers 0.20 mm from the cell's and the speaker's holes; J2's mounting pad 0.275 mm from the left edge; J2's and J4's courtyards 0.22 and 0.12 mm past the outline; REQ-FAB-03 asks 0.30 mm (JLC's figure to confirm) | VER-18 FAIL, DEF-56, DF-179, DEC-32 |
+| A 1.00 mm FR4 bar beside the speaker's hole | the speaker's hole leaves 1.00 mm to the board's right edge over 16 mm (case.scad asserts 0.9) | DF-178 |
+| The 18-bit redraw | the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 92 ms at 40 MHz, 184 ms at 20 MHz | DF-180 (H), REQ-DSP-11, DEC-13 |
+| The panel's mechanics are estimates | its outline, active area, thickness and FPC shape are the old 3.5 in design's (its datasheet could not be downloaded on 2026-10-26); they set J3's place | DF-61, DF-123, VER-136, VER-152 |
+| A hand edit in the board file | one GND via moved 0.08 mm by hand; the next build_pcb run undoes it | (h); VER-143 must rebuild and re-run DRC |
+| Swelling room | 0.80 mm under the panel's back (0.30 under a deck at 684a609): passes | VER-182 PASS, DEF-51 CLOSED |
+| Screws | M2 x 6 gives 3.2 mm of thread in the side pilots (want 4.0; M2 x 7 passes, its tip 0.8 mm short) and 3.2 mm of the end pilots' 3.30 (ok) | VER-147 FAIL, DEF-31, DEC-18 |
+| Unchanged | cutoff 3.521 V at the worst corner (VER-138 FAIL); VBUS fault reach 6.9 V (VER-177 FAIL); bom.md's domes and Start/Select caps (VER-167 FAIL); TH1 0.80 mm from the hole's edge, no back pad within 1 mm (nearest TP3, 5.5 mm: VER-164 PASS); nearest MLCC C53, 11.40 mm from H5 (VER-142 PASS); every hole 0.30 mm or more (VER-114 PASS); VBUS 10 uF (VER-99 PASS) | as named |
 
 ## (d) Before the 5-board order
 
-In order. Effort is Claude's unless it says Alex. The parts lead time (up to about 21 days)
-runs in parallel, so step 0.2 goes first.
+Round 2's two reviewers called the order gate (67 checks, 10-12 days) too heavy for a 5-board
+test order. It now holds only what the copper, the BOM and the fab files freeze, or what would
+make the five boards useless or unsafe. Every ORDER check is named in a step below
+(check_trace fails otherwise). Effort is Claude's unless it says Alex.
 
 | # | Step | IDs | Effort |
 |---|---|---|---|
-| 0.1 | **Alex confirms 684a609** as the order candidate. A later commit to ref-design-island-45 that touches a design path fails the default mode and R7 until its rows are re-checked. Clean the main checkout's uncommitted battler.kicad_pro before any fab run (O-34). | DEF-30, D1 | Alex: 5 min |
-| 0.2 | **Order everything with a lead time** (`--shopping --gate evt`): RP2354B and L2 pre-order at JLC; cells from a seller with a datasheet (D23); the panel, an FH12 breakout, an RP2350B dev board; two GSPK151035PN and a 53261-0271; domes and Start/Select strips; calipers, a 4.096 V reference, clip leads, a LiPo bag, a USB-C breakout, 130 ohm resistors. | VER-41, VER-37, VER-43, VER-128, VER-180 | Alex: 1 h, about $100-150 |
-| 0.3 | **Run the register on every commit**: one line in scripts/check.sh, `python3 hardware/vv/tools/check_trace.py` (outside hardware/vv, so it waits for Alex's OK). This is what would have caught DEF-47. | DEF-47, O-48 | 15 min |
-| 0.4 | **Alex sets up commit signing** (README, 'Approvals': SSH key, allowed-signers file). Until then no APPROVALS.md line counts, so R1, R3 and every waiver stay open (O-R4). | D30 | Alex: 10 min |
-| 1 | **Copper and BOM decisions** (each can move copper, so they come first): D5 TH1's B value (BOM only), D27 the cell's gap at the pushed end (hole or pad), D28 JLC's order-number marker (silk or a paid option), D22 the cell-path fuse, D17 the VBUS fault reach, D7 the cutoff with the pad leakage (a reference is copper), D24 the pull-up arrays; then the dome footprint against its drawing. | DF-147, DF-85, DEF-53, DEF-55, DF-172, DF-101, DF-116, DF-164, VER-178 | 1 day with Alex's answers |
-| 2 | **Fab outputs**: separate drill files in fab.py; a centroid table for J1-J4 (VER-131 and VER-176 already read fab.py's real output and fail today); fab content check over the exported files with the plated slots, the dome vents and the JLC marker; JLC's dated limits in a data file; edges; the IPC-D-356 netlist with the net ties merged; reproducible outputs; gerbv against the board's own hole list; contacts as placed; check_pcb failing on non-silk warnings. | VER-131, VER-176, VER-132, VER-17, VER-18, VER-26, VER-24, VER-27, VER-162, VER-04, DEF-32, DEF-33, DEF-36 | 1.5 days |
-| 2.5 | **The claims script** (check_claims.py, moved to ORDER): every '<ref> <value>', GPIO, pin, test point and dimension quoted in hardware/vv, ref_design/docs and pin_review against design.py, case.scad and pin_review, run by the default mode; then its seeded fault (a GPIO changed and rebaselined must fail: F-R6). | VER-161, G-ORD-26, DEF-54 | 1 day |
-| 3 | **Power-path analyses**: hot plug at U2's IN and the enables; DC bias; ratings and the 3V3 budget; the charge window from SLUS810N's TS limits; the latch table (both Starts); the mating peak; heat per mode; back-power; the backlight sim re-run on design.py's values; audio; shelf. | VER-12, VER-30, VER-31, VER-32, VER-33, VER-140, VER-144, VER-159, VER-05, VER-100, VER-103 | 2.5 days |
-| 4 | **Datasheets and part identity**: the pin gate reads both rating schemas and its open findings, refuses a waiver with no A-NNN line, compares each IC's lcsc and mpn with design.py and refuses reviews of removed parts (DEF-26, O-R20); the RP2350's input leakage and the BQ24073's OVP minimum into the reviews; archive; errata; application circuits; GPIO mux; LCSC identity; BOM, CPL and PCB fields; land patterns; rotation table. | VER-36, VER-35, VER-16, VER-34, VER-15, VER-14, VER-130, VER-125, VER-29 | 2 days |
-| 5 | **Firmware for the ordered chip**: pins generated from design.py; an rp235xb self-test at 2048K; the image against the flash budget. | VER-149, VER-150, VER-151, DEF-34 | 1 day |
-| 6 | **The board against the case and the ESTIMATEs**: heights from drawings; the XY chain; placement drift; connector mouths; calipers on a real cell and plug, the panel's FPC and the speaker. | VER-06, VER-112, VER-174, VER-51, VER-19, VER-165, VER-152 | 1 day plus calipers |
-| 7 | **The panel and the cell**: the ER-TFT024IPS-3 lit through the breakout with J3's map; the FPC fold; the tail; the cell's spec sheet, cell.json, capacity, incoming inspection. | VER-43, VER-136, VER-44, VER-37, VER-160, VER-153, VER-49 | an evening each once parts arrive, plus 5 h unattended |
-| 8 | **Test access and proof the checkers fail**: every bring-up probe point has copper; seed faults into check_netlist, check_pins, check_pcb, check_fit, check_contact_fp. | VER-115, VER-158, VER-22 | 1 day |
-| 9 | **Reviews**: the DFMEA review (Alex and two models); the gear list; the speaker's rating; the bridge table; the clean-room review (advisory). | VER-98, VER-116, VER-128, VER-148, VER-40 | Alex: half a day |
-| 10 | **Alex's decisions** in APPROVALS.md, in signed commits: the requirements; the H rows that can only be detected on built units, accepted for ORDER (D19; 53 live H rows after the re-rating, 17 more than before); waivers W-01 and W-02; u4 pin 58's waiver (D29). | R1, R3, G-ORD-06, G-ORD-13 | Alex: 2 h |
-| 11 | **Release and order**: the release run from a clean tag; the release record; the dry run (valid 7 days); stock on order day (valid 1 day); `check_trace.py --gate order` exits 0; order 5 assembled and 5 bare boards. | VER-143, VER-42, VER-28, VER-41, G-ORD-11, G-ORD-21 | 1 day |
+| 0.1 | **Alex confirms be437f8** as the order candidate (DEC-01). A later commit to ref-design-35in that touches a design path makes the default mode warn and the order gate fail (R8) until the register is re-checked and the baseline moved. Clean the main checkout's uncommitted battler.kicad_pro before any fab run (O-34). | DEF-30 | Alex: 5 min |
+| 0.2 | **Order everything with a lead time** (`--shopping --gate evt`): RP2354B and L2 pre-order at JLC; cells from a seller with a datasheet (DEC-23); the ER-TFT035IPS-6, an FH12 breakout, an RP2350B dev board; two GSPK151035PN and a 53261-0271; domes and Start/Select strips; calipers, a 4.096 V reference, clip leads, a LiPo bag, a USB-C breakout, 133 ohm resistors. | VER-41, VER-37, VER-43, VER-49 | Alex: 1 h, about $100-150 |
+| 0.3 | **Run the register on every commit**: one line in scripts/check.sh, `python3 hardware/vv/tools/check_trace.py` (outside hardware/vv, so it waits for Alex's OK). It would have caught DEF-39's return in 79de1f7. | DEF-47 | 15 min |
+| 0.4 | **Alex pins a signing key** (README, 'Approvals': a hardware key or a passphrase key never in an agent). Until then no APPROVALS.md line counts (DEC-30). | | Alex: 15 min |
+| 1 | **Copper, silk and BOM decisions**, then one design pass in ref_design (outside this register) and a re-route where copper moves: DEC-28 silk.py (the board's name, BOARD_REV and labels out of the holes, the JLC marker), DEC-32 the pours' edge clearance to 0.3 mm and J2 0.1 mm in, DEC-27 the cell's gap (a cell spec and the pocket, or the hole), DEC-31 the backlight's full scale, DEC-05 TH1's B, DEC-17 the VBUS reach, DEC-24 the pull-ups, DEC-22 the fuse and DEC-33 J4 (copper now, or accepted for EVT and done at DVT). | VER-18, VER-181, VER-137, VER-32, VER-177 | Alex: 1 h; the design pass half a day, a re-route about 2 h if J2, J4 or a fuse move |
+| 2 | **Re-run the scripted checks** after step 1 (`run_checks.py`, about 10 min, then VER-129 on its own): netlist, pin gate, ERC, DRC, contact footprints, inrush, holes, MLCC, TH1, CPL, drill, VBUS, cutoff, backlight, cell gap, edges. | VER-01, VER-02, VER-03, VER-04, VER-08, VER-99, VER-114, VER-142, VER-164, VER-176, VER-131, VER-177, VER-138, VER-137, VER-181, VER-18, VER-129 | 30 min |
+| 3 | **Fab outputs** (VER-131 and VER-176 read fab.py's real output and fail today): separate drill files and a centroid table in fab.py; the fab content check over the exported files (the combs' paste, mask and keep-outs, the plated slots, the vents, the JLC marker, every silk text on the board); JLC's dated limits; the IPC-D-356 netlist with the net ties merged; BOM, CPL and PCB fields against design.py; the rotation table; land patterns; contacts as placed; the dome footprint against its drawing; the release run that makes the files twice and compares them. | VER-131, VER-176, VER-132, VER-17, VER-26, VER-130, VER-29, VER-125, VER-162, VER-178, VER-143 | 2 days |
+| 4 | **Layout reviews** (round 2: these were in no step): the copied core against Raspberry Pi's RP2350B minimal design (with the second 4.7 uF on 1V1); the USB pair's stubs; the GPIO mux and PWM slices; the back-power path table. | VER-23, VER-108, VER-15, VER-159 | 1 day |
+| 5 | **Power-path analyses that can move copper or the BOM**: the latch table (both Starts); the charge window from SLUS810N's TS limits; the cutoff with the pad leakage; the mating peak against the PCM (and the fuse); the VBUS fault reach; the backlight; inrush. | VER-33, VER-32, VER-138, VER-140, VER-177, VER-137, VER-99 | 1.5 days |
+| 6 | **Datasheets and part identity**: the pin gate reads both rating schemas, its open findings and waivers, and IC identity (DEF-26, O-R20); the application circuits and every number this register quotes from memory (RP2350 leakage, OVP minimum, I_TS, pre-charge and termination, the ILI9488's SPI cycles); LCSC identity; the watchdog rule and FM8002A polarity (both pass). | VER-36, VER-34, VER-14, VER-104, VER-124 | 1.5 days |
+| 7 | **The board against the case**: heights from drawings and check_fit; the XY chain and the pill print on the fit kit; placement drift; connector mouths; the MLCC keep-out and TH1 (both pass); the ESTIMATE ledger, the panel's first. | VER-112, VER-06, VER-174, VER-51, VER-19, VER-165, VER-142, VER-164, VER-152 | 1 day plus calipers |
+| 8 | **The panel and the cell, parts in hand**: the ER-TFT035IPS-6 lit through the breakout with J3's map and its redraw timed; the FPC folded into a breakout in J3's place; the tail's thickness; the cell's spec sheet, cell.json and the incoming inspection ready. | VER-43, VER-136, VER-44, VER-37, VER-160, VER-49 | Alex and Claude: an evening each once parts arrive |
+| 9 | **Test access and firmware size**: every bring-up probe point has copper (the probes table and its script); the game inside 2 MB with a flash map. | VER-158, VER-151 | half a day |
+| 10 | **Reviews**: the DFMEA review (Alex and two models); the advisory clean-room, return-path and gerbv reviews if time allows (VER-40, VER-21, VER-27). | VER-98 | Alex: half a day |
+| 11 | **Alex's decisions** in APPROVALS.md, in signed commits: one `REQ-ALL@<commit>` line for the requirements he agrees with (round 2: not 130 lines), deferrals by ID; the H rows that only built units can detect, accepted for ORDER (`--gate order --verbose` lists them; one `DF-H@<commit>` line or one per row); u4 pin 58's waiver (DEC-29). | R1, R3 | Alex: 1 h |
+| 12 | **Release and order**: the release record; the dry run (valid 7 days); stock on order day (valid 1 day); `check_trace.py --gate order` exits 0; order 5 assembled and 5 bare boards. | VER-42, VER-28, VER-41 | 1 day |
 
-Rough total: about 10-12 working days of Claude's work, 3-4 hours of Alex's, and up to three
-weeks of parts lead time in parallel. Re-seeding the register for 684a609 took about one day
-(this run), not the half day the first run estimated.
+prod_board's own order list (`--gate order --board prod_board`, Alex's board, evaluated
+apart): VER-10, VER-119, VER-120, VER-121, VER-122, VER-163.
+
+Rough total: about 8.5 working days of Claude's work (it was 10-12), 3-4 hours of Alex's, a
+design pass of half a day in ref_design, and up to three weeks of parts lead time in parallel.
+The ORDER checks for ref_design went from 67 not passing to 45 (12 pass); a further 23 run
+on the first boards or the DVT spin instead.
+
+**What moved where on 2026-10-26** (round 2's proportionality objection, O and F):
+
+| Check | Was | Now | Why |
+|---|---|---|---|
+| VER-05 backlight sim, VER-100 audio sim, VER-35 datasheet archive, VER-116 gear, VER-128 speaker rating | ORDER | EVT (G-EVT-16) | BOM values or bench readiness; the bench sees the same things on unit 1 |
+| VER-12 hot-plug sim, VER-30 DC bias, VER-13 copper IR drop, VER-31 ratings and the 3V3 budget | ORDER | EVT (G-EVT-04) | each could change a BOM value or a DVT clamp, not the five boards; VER-13 was reached by nothing but PHASE:ORDER (F) |
+| VER-144 heat per mode | ORDER | EVT (G-EVT-06) | it sets a firmware rule before the touch test |
+| VER-148 bridge table, VER-149 pin file, VER-150 rp235xb self-test, VER-16 errata | ORDER | EVT (G-EVT-08) | test tooling and the stepping, needed when the boards arrive |
+| VER-153 capacity per lot, VER-103 shelf estimate | ORDER | EVT (G-EVT-10) | no copper or BOM decision depends on them (O); R5 follows the spec sheet |
+| VER-161 claims script | ORDER | CASE (G-CASE-06) | it keeps quoted values honest; this re-seed read every row against be437f8 |
+| VER-22 seeded faults for the design checkers | ORDER | DVT (G-DVT-05) | the checkers must be proven before the DVT copper freezes |
+| VER-21 return paths, VER-27 gerbv view | ORDER | advisory (G-ORD-12) | their scripted siblings (VER-04, VER-131, VER-132) are binding (F) |
+| VER-24 reproducibility, VER-25 combs in the gerbers, VER-115 test points by hand | ORDER | CUT, folded into VER-143, VER-132 (b), VER-158 | the same file read twice |
+| VER-34 inherited claims | ORDER, reached by nothing | ORDER, in G-ORD-01 | it supplies the constants design_numbers.py quotes from memory (F) |
 
 ## (e) The case gate, EVT, DVT and PVT
 
 ### Case gate (before the printed case is released and the EVT units are assembled)
 
-The Z stack with swelling (VER-20, 0.30 mm under the deck today), the buttons under the shell
-(VER-07), no openings (VER-113), the screws (VER-147, 3.2 mm today), the Start/Select strip
-against the domes (VER-180), the printed case with real parts and its feel (VER-48, VER-50),
-incoming silicone, caps and domes (VER-126), the case release (VER-173). Before any unit is
-assembled (G-CASE-06): the docs fixed (DEF-21's list; VER-39 and the claims script VER-161),
-every contact class bought (VER-167), and the opening steps changed so J2 is unplugged before
-the tub lifts (DF-169). Exit: `--gate case` exits 0.
+The Z stack (VER-20) with swelling (VER-182 passes: 0.80 mm under the panel), the buttons
+under the shell (VER-07), no openings (VER-113), the screws per pilot (VER-147: the side
+screws fail at 3.2 mm), the Start/Select strip against the domes (VER-180), the printed case
+with real parts and its feel (VER-48, VER-50), incoming silicone, caps and domes (VER-126), the
+case release (VER-173). Before any unit is assembled (G-CASE-06): the docs fixed (DEF-21's
+list; VER-39 and the claims script VER-161), every contact class bought (VER-167), and the
+opening steps changed so J2 is unplugged before the tub lifts (DF-169). Exit: `--gate case`
+exits 0.
 
 ### EVT: the 5 assembled boards
 
-Day one, before any assembled unit is powered: pill resistance and comb leakage on a bare
-board from the same order (G-EVT-12). Then unit 1's first article inspection (VER-166,
-VER-109) before any other unit is powered.
+Day one, before any unit is powered: bringup.md matches the design (VER-39 in G-EVT-02; today
+its display steps are the 2.4 in panel's and its power steps the TP4056's, DEF-21 (a)-(d),
+(n)), the gear is on the bench (G-EVT-16), and pill resistance and comb leakage are measured
+on a bare board from the same order (G-EVT-12). Then unit 1's first article inspection
+(VER-166, VER-109) before any other unit is powered.
 
 Per unit, in this order: unpowered resistances and diode tests (VER-52, VER-53: TP1 8.5-10
-kohm from R38 with the R14/D3/R15 and R43/EN1 paths in parallel, TP3 above 1 kohm rules out U2's BAT bridged to its pad); first power from a 100 mA bench
-supply with JP1 cut (VER-74); the charge-path screen with USB in and no cell (VER-133: TP2
-4.30-4.50 V, TP3 peak 4.25 V or less, TP7 0.70-0.80 V); the cell current with charging off
-(VER-169); CV into a 130 ohm load (VER-134: 4.158-4.242 V); TS by a finger and a 4.7k
-(VER-135). Only then a real cell, attended, in a LiPo bag (VER-172).
+kohm from R38 with the R14/D3/R15 and R43/EN1 paths in parallel, TP3 above 1 kohm rules out
+U2's BAT bridged to its pad); first power from a 100 mA bench supply with JP1 cut (VER-74);
+the charge-path screen with USB in and no cell (VER-133: TP2 4.30-4.50 V, TP3 peak 4.25 V or
+less, TP7 within `design_numbers.py tsband`'s band at the measured ambient); the cell current
+with charging off (VER-169); CV into a 133 ohm load (VER-134: 4.158-4.242 V; the window from
+`design_numbers.py cvload`); TS by a finger and a 4.7k (VER-135). Only then a real cell,
+attended, in a LiPo bag (VER-172).
 
 Unit allocation (gates.md): unit 1 FAI, full bring-up, golden readings, the charge timer into
-a load (VER-145) and SR_CLK (VER-179); units 2 and 3 bring-up, soak and thermal; unit 4 abuse,
-ESD screen, near-field, drop, button life and fault injection (it never ships); unit 5 spare.
+a load (VER-145) and SR_CLK (VER-179, now 176 mm of track across the board); units 2 and 3
+bring-up, soak and thermal; unit 4 abuse, ESD screen, near-field, drop, button life and fault
+injection (it never ships); unit 5 spare.
 
-Exit: `--gate evt` exits 0 (G-EVT-01 to G-EVT-14; G-EVT-15 is prod_board's).
+Exit: `--gate evt` exits 0 (G-EVT-01 to G-EVT-16; G-EVT-15 is prod_board's).
 
 ### DVT: the revised spin
 
 Candidates, decided from EVT's results. BOM-only (each bumps BOARD_REV): 4.7k pull-downs on
-AMP_EN and BL_PWM (DF-45, DF-47); R18 56k (DF-95, with D7); RN1-RN4 47k if not done before
-(DF-164); R14 47k and R43 220k if not done before (DF-101). Copper: reverse-polarity
-protection or a keyed connector on CELL_P (DF-55); series-resistor footprints on the button
-nets and the Start domes (DF-100); a wider cell hole at its right end if D27 chose the pad
-for EVT (DF-85); a cell with an NTC lead (DF-04). No resistor footprint on TS can fix the
-charge window (O-R6), so DF-147 is TH1's B value or the cell's own limit. Exit: `--gate dvt` exits 0: every test of phase EVT or later re-run on the
-DVT spin (its result covers a REL-...-DVT record), durability, ESD with a real gun, every
-defect CLOSED or RETIRED.
+AMP_EN and BL_PWM (DF-45, DF-47); R18 56k (DF-95, with DEC-07); RN1-RN4 47k if not done
+before (DF-164); R14 47k and R43 220k if not done before (DF-101); R61 3.74k if the firmware
+cap was chosen for EVT (DF-130). Copper: J4 keyed apart from J2 (DF-170, G-DVT-06, if not
+done before the order); reverse-polarity protection or a keyed connector on CELL_P (DF-55);
+series-resistor footprints on the button nets and the Start domes (DF-100); a fuse in CELL_P
+if accepted away for EVT (DF-172); the cell's hole or pocket if DEC-27 chose a stopgap; a
+wider rim beside the speaker (DF-178); a cell with an NTC lead (DF-04). No resistor footprint
+on TS can fix the charge window (O-R6), so DF-147 is TH1's B value or the cell's own limit.
+Exit: `--gate dvt` exits 0: every test of phase EVT or later re-run on the DVT spin (its
+result covers a REL-...-DVT record), durability, ESD with a real gun, every defect CLOSED or
+RETIRED.
 
 ### PVT: the 30-board run
 
 Exit: `--gate pvt` exits 0: a complete release record (tag, baseline, hashes, BOARD_REV,
-locked BOM, the no-substitution list in releases/TEMPLATE.md, the case section); FAI on the
-first PVT unit; a record per unit; every cell inspected; first-pass yield 90% or more; every
-test re-run on the PVT units. Before any unit is sold or given away: UN38.3 and MSDS,
-emissions, marking, the fire-enclosure decision (G-PVT-06, DF-87).
+locked BOM, the no-substitution list in releases/TEMPLATE.md, which now names the hand-fitted
+panel, cell, speaker and domes too, the case section); FAI on the first PVT unit; a record per
+unit; every cell inspected; first-pass yield 90% or more; every test re-run on the PVT units.
+Before any unit is sold or given away: UN38.3 and MSDS, emissions, marking, the
+fire-enclosure decision (G-PVT-06, DF-87).
 
 ## (f) Decisions for Alex
 
 Each goes into releases/APPROVALS.md (requirements, acceptances, deferrals with a scope,
-waivers) or into a commit. Claude's proposal follows each. Numbers are kept from the first run
-where the decision survives.
+waivers) or into a commit. Claude's proposal follows each. The decisions are DEC-nn since
+2026-10-26: round 2 (O) found 'D2' or 'D8' read as the diodes D2 and D8. The numbers are the
+old ones (D5 is DEC-05).
 
 **The design and the order**
 
-- **D1. Is 684a609 the order candidate?** Proposed: yes (this brief). It goes into the
+- **DEC-01. Is be437f8 the order candidate?** Proposed: yes (this brief). It goes into the
   release record (DEF-30).
-- **D2. Are the RP2354B and L2 pre-ordered?** Both were out at JLC and LCSC on 2026-10-21 and
-  are on the no-substitution list.
-- **D3. Will any of the 30 be sold or given away?** That decides the SALE items (UN38.3,
+- **DEC-02. Are the RP2354B and L2 pre-ordered?** Both were out at JLC and LCSC on 2026-10-21
+  and are on the no-substitution list.
+- **DEC-03. Will any of the 30 be sold or given away?** That decides the SALE items (UN38.3,
   emissions, marking, DF-87).
 
-**Before the order: copper or BOM**
+**Before the order: copper, silk or BOM**
 
-- **D5. The charge window's hot edge is 47.2 C nominal** (TH1 against U2's fixed TS
-  thresholds; DEF-48, DF-147). The first proposal (two DNP footprints) cannot work (O-R6): a
-  parallel resistor that brings the hot edge to 45 C drags the cold edge to -11.6 C, and a
-  series one makes the hot edge hotter. Proposed: (a) a BOM-only TH1 change to a 0402 10k
-  NTC with B near 4250 if JLC stocks one (same pads, about 4.9-45.5 C); else (b) accept
-  47.2 C against the cell's datasheet charge limit. REQ-BAT-03 and VER-32 are now one-sided:
-  hot edge at or under 45 C (or the cell's limit), cold edge at or over 0 C, at 99.9% of units.
-- **D27. The cell's end is 0.25 mm from the routed FR4 edge** (O-R7; DEF-53, DF-85 now H,
-  VER-181 FAIL at -0.15 mm after tolerances). Options: (a) D25's soft silicone pad fills the
-  gap and also couples TH1 (no copper; the gap is then a pad, not air); (b) widen the hole's
-  right end by about 0.5 mm (copper, and TH1 moves with it); (c) restate REQ-BAT-08. Proposed:
-  (b) if the copper is reopened for D5 or D28 anyway, else (a) for EVT with REQ-BAT-08
-  re-worded to allow a pad at the pushed end.
-- **D28. JLC's order-number marker** (O-R19; DEF-55): 'JLCJLCJLCJLC' is in neither
-  battler.kicad_pcb nor silk.py, so JLC prints its number where it likes (DF-125: on a comb or
-  the BOARD_REV text). Proposed: add the marker to silk.py on the back, away from the combs
-  (a design change and a new baseline). The alternative is JLC's paid 'remove order number'
-  option with REQ-FAB-05 restated.
-- **D22. A fuse in the cell path** (O's objection; DF-172). Today a short downstream of J2
-  (C3 cracked, U2's BAT pin bridged to its pad, a lead worn through at the hole's edge, a
-  reversed cell, U2's battery FET failed short) ends only at the cell's PCM, on an unbranded
-  cell. Proposed: a 1206 fast-acting fuse of about 2 A, rated 6 V or more, in CELL_P between
-  J2 and JP5, placed by JLC. It adds about 30-60 mohm (10-20 mV at 0.3 A, under the cutoff's
-  margin) and passes the mating peak (roughly 10-15 A for microseconds, an I2t far below a
-  2 A fuse's melting point: VER-140 checks it). A PTC is the second choice: resettable, but
-  0.1-0.5 ohm and a slow trip. The alternative is to accept the PCM as the only layer for EVT,
-  since the 5 units stay with Alex.
-- **D17. A faulty USB source reaches U3's EN at 6.9 V** (DEF-50, DF-101). Proposed: R14 47k
-  and R43 220k (BOM only): the reach goes to about 9.1 V (EN) and 12.4 V (EN1); at VBUS 4.4 V
-  PWR_EN still reads 2.8 V and EN1 2.5 V, over their thresholds. 20 V needs a clamp (copper).
-  Or accept for EVT.
-- **D7 with D10. The cutoff and R18, decided together** (O's objection). The cutoff can fire
-  35 mV low after a CV calibration and never fire on a high-3V3 unit (VER-138: 3.521 V).
-  R18 = 56k would keep GPIO47 under IOVDD + 0.5 V when off (DF-95), but it cuts the ratio from
-  0.5 to 0.106, so each ADC count becomes about 7.6 mV of VBAT instead of 1.6 mV, and the
-  ADC's offset and INL grow 4.7 times against REQ-BAT-12's 50 mV window. Proposed: keep
-  470k/470k and waive GPIO47's few microamps by name (the pin review already argues it);
-  replace the CV calibration with the bench calibration at 3.50 V (REQ-TST-06); add a firmware
-  rule that a reading which stops falling under a steady load is a dropout and shuts down.
-  The alternative is a 3.6 V cutoff (costs play time) or a voltage reference (copper).
-  New (O-R15): GPIO47's pad leakage through the divider's 235 kohm source. If the RP2350's
-  maximum is 1 uA (quoted from memory; VER-34 reads the table), it moves VBAT's reading by
-  0.47 V, and REQ-BAT-12's 50 mV window tolerates only about 53 nA that drifts with
-  temperature. A bench calibration at 3.50 V removes the room-temperature part only. Decide
-  D7 after VER-34 gives the number: if the guaranteed leakage is that large, 470k/470k cannot
-  meet REQ-BAT-12 by analysis, and the choice is a lower divider (more off-state drain),
-  a buffer, or REQ-BAT-12 stated at 25 C with a measured drift on unit 4.
-- **D24. The pill margin** (DEF-49, DF-164): the 10k pull-ups and the 74HC165's 0.94 V VIL
-  read a pill as pressed only under about 3.7 kohm. Proposed: RN1-RN4 at 47k (BOM only, a
-  4 x 0402 array; its LCSC number to find): about 18 kohm of margin, and the comb leakage
-  limit (100 Mohm) is unchanged.
-- **D11. E9 pull-downs**: 4.7k on AMP_EN (R37) and BL_PWM, BOM only, or rely on firmware and
-  the stepping (DF-45, DF-47). Proposed: wait for VER-75's stepping; both failures are
-  low severity.
+- **DEC-28. silk.py: the board's texts and JLC's marker** (DEF-57, DEF-55). The board's name,
+  'REV 1' and the build line sit in the cell's hole; BOOT and RST are off the board; the
+  speaker's label is in its hole. Proposed: move them in silk.py to a clear patch on the back
+  (VER-18 then checks every text is on the board) and add the 'JLCJLCJLCJLC' marker there. No
+  copper moves; a rebuild and a new baseline. The alternative for the marker is JLC's paid
+  removal option with REQ-FAB-05 restated; there is none for BOARD_REV, which the FAI and every
+  BOM-only change rely on.
+- **DEC-32. Copper at the routed edges** (DEF-56, DF-179): the pours 0.20 mm from both holes,
+  J2's mounting pad 0.275 mm from the left edge. Proposed: raise the pours' edge clearance to
+  0.3 mm in build_pcb.py and move J2 0.1 mm in, with the next rebuild; or show JLC's dated page
+  accepts 0.2 mm and restate REQ-FAB-03.
+- **DEC-27. The cell's gap on every side** (DEF-53, DF-85, VER-181). A worst-case 52 x 36 cell
+  is -0.15 mm from the edge after tolerances at the pushed end and both long sides, and 1.35 mm
+  at its lead end. Widening one end cannot help (the pocket follows the hole: seeded in
+  VER-129). Options, re-costed: (a) buy a cell whose spec sheet guarantees 51.2 x 35.2 mm or
+  less with its PCM (VER-37, DEC-23), set case.scad's worst case to it and move the pocket 0.9
+  mm inside the hole: no copper; (b) a 54.8 x 37.8 mm hole with the pocket 0.9 mm inside it:
+  copper, TH1 moves 0.4 mm and the strips lose 0.4 mm each; (c) restate REQ-BAT-08 to count the
+  printed pocket wall as the barrier: it does not hold either, since the FR4 edge can stand
+  0.15 mm inside the wall's line. Proposed: (a), with (b) at DVT if no such cell is sold.
+- **DEC-31. The backlight's full scale** (DEF-39, DF-130, DF-159): 122.4 mA worst case against
+  the panel's 120 mA. Proposed: R61 3.74k (BOM only: 117.7 mA worst case, 108 mA nominal,
+  barely dimmer), or a 97% cap written in pinmap.md (no BOM change; VER-137 reads it).
+- **DEC-05. The charge window's hot edge is 47.2 C nominal** (TH1 against U2's fixed TS
+  thresholds; DEF-48, DF-147). Proposed: (a) a BOM-only TH1 change to an 0402 10k NTC with B
+  near 4250 if JLC stocks one (same pads, about 4.9-45.5 C); else (b) accept 47.2 C against the
+  cell's datasheet. REQ-BAT-03 and VER-32 are one-sided.
+- **DEC-22. A fuse in the cell path** (DF-172). A short downstream of J2 ends only at the cell's
+  PCM. Proposed for this order: accept the PCM as the only layer for the five EVT units, which
+  stay with Alex and charge attended in a LiPo bag (VER-172); a 1206 fast fuse of about 2 A in
+  CELL_P between J2 and JP5 in the DVT copper. If copper is re-routed anyway (DEC-33 now), add
+  the fuse in the same pass.
+- **DEC-33. J4 keyed apart from J2** (DF-170, VER-184): only copper removes the cause (round 2,
+  O). J4 as a JST SH SM02B-SRSS-TB (2-pin, 1.0 mm) with the speaker's leads re-terminated, or
+  another 2-pin header the cell's PicoBlade plug cannot enter. Proposed: accept the procedural
+  layer for EVT (J2 and J4 on opposite edges, 64.2 mm apart; assembly.md plugs J2 while J4 is
+  empty; the five units are Alex's) and change J4 in the DVT copper (G-DVT-06). If Alex prefers
+  it now, it costs a local re-route by J4.
+- **DEC-17. A faulty USB source reaches U3's EN at 6.9 V** (DEF-50, DF-101). Proposed: R14 47k
+  and R43 220k (BOM only): the reach goes to about 9.1 V (EN) and 12.4 V (EN1); 20 V needs a
+  clamp (copper). Or accept for EVT.
+- **DEC-07. The cutoff and R18, decided together.** The cutoff can fire 35 mV low after a CV
+  calibration and never fire on a high-3V3 unit (VER-138: 3.521 V); GPIO47's pad leakage moves
+  VBAT's reading 0.47 V per uA through 235 kohm. Proposed: decide after VER-34 quotes the
+  RP2350's leakage: keep 470k/470k, the bench calibration at 3.50 V (REQ-TST-06) and a
+  firmware dropout rule if the leakage allows it; else a lower divider, a buffer, or
+  REQ-BAT-12 stated at 25 C. A voltage reference needs copper.
+- **DEC-24. The pill margin** (DEF-49, DF-164): RN1-RN4 at 47k (BOM only) restores about 18
+  kohm of margin.
+- **DEC-11. E9 pull-downs**: 4.7k on AMP_EN (R37) and BL_PWM, BOM only, or rely on firmware
+  and the stepping (VER-75). Proposed: wait for the stepping.
 
-**Requirement numbers** (all 129 live ones are PROPOSED)
+**Requirement numbers** (all live ones are PROPOSED; one signed `REQ-ALL@<commit>` line
+approves those Alex agrees with)
 
-- **D4.** Play time 4 h; charge time: REQ-PRD-04 said 3.0 h from a 1.5 A source, its
-  allocation REQ-PRD-04.R 4.0 h from 0.5 A (the BQ24073's USB500 limit is 475 mA). Both now
-  say 0.5 A (F-R12); the time is yours to set, no tighter than the allocation. 100,000
-  presses; $45 a unit (REQ-PRD-09 now cites VER-117's re-run of cost.py, not bom.md's figure).
-  Proposed: DEFERRED with scope EVT for REQ-PRD-03.R, REQ-PRD-04.R and REQ-BAT-02.R until the
-  cell's spec sheet and a capacity sample exist; a deferral now ends at its scope.
-- **D8.** Legacy USB hosts: U2 charges from plug-in inside 475 mA, before enumeration
-  (REQ-PWR-12). Proposed: accept.
-- **D9.** The derating rule's two exceptions: GPIO47 (with D7) and the panel's VCI and VDDI at
-  up to 3.366 V against 3.3 V (DF-96). Proposed: accept both.
-- **D12.** The backlight halves at the minimum duty: each sink within +-25% of nominal at 29%
-  (REQ-DSP-12, re-worded; +-20.1% today). Proposed: accept.
-- **D14.** Flash budget 1.6 MB; off current 60 uA at 45 C; lot capacity 600 mAh; and the
+- **DEC-04.** Play time 4 h; charge time 4.0 h from 0.5 A (the BQ24073's USB500 limit is 475
+  mA); 100,000 presses; $45 a unit. Proposed: DEFERRED with scope EVT for REQ-PRD-03.R,
+  REQ-PRD-04.R and REQ-BAT-02.R until the cell's spec sheet and a capacity sample exist.
+- **DEC-08.** Legacy USB hosts: U2 charges from plug-in inside 475 mA (REQ-PWR-12). Accept.
+- **DEC-09.** The derating rule's two exceptions: GPIO47 (with DEC-07) and the panel's VCI and
+  VDDI at up to 3.366 V against 3.3 V (DF-96). Accept both.
+- **DEC-12.** The backlight halves at the minimum duty: each sink within +-25% at 18%
+  (+-20.2% today). Accept.
+- **DEC-13. The redraw time** (back with the ILI9488; DF-180, REQ-DSP-11): a full 18-bit frame
+  is 92 ms at 40 MHz. Proposed: REQ-DSP-11 at 120 ms full-screen and 50 ms for a text update,
+  measured on the breakout before the order (VER-43); the battle screens redraw in parts.
+- **DEC-14.** Flash budget 1.6 MB; off current 60 uA at 45 C; lot capacity 600 mAh; the
   BQ24073's 5 h timer as the charge timeout (REQ-BAT-13).
-- **D15.** USB input low end: run from 4.40 V with a cell, 4.75 V without (REQ-PWR-01, the
-  BQ24073's VIN-DPM). Decide after VER-80.
-- **D16.** prod_board: which product requirements apply to your board (the .P allocations).
-- **REQ-PWR-13 and VER-99.** The first run carried VER-99 as a pass that only proved a
-  deviation (265 uC). At 684a609 there is no deviation: VBUS holds 10 uF (50 uC at 5.0 V) and
-  U2's switch is the only path to VSYS, so VER-99 passes on the limit itself and DEF-43 is
-  CLOSED. REQ-PWR-13 waits for Alex's approval like every other requirement.
+- **DEC-15.** USB input low end: run from 4.40 V with a cell, 4.75 V without. Decide after
+  VER-80.
+- **DEC-16.** prod_board: which product requirements apply to your board (the .P allocations).
 
 **Before the case release**
 
-- **D18. Swelling room and screws.** A 4.5 mm cell has 0.30 mm free under the deck (REQ-BAT-07
-  asks 0.4; VER-182): deepen the tub's pocket by 0.1-0.2 mm, or accept 0.3 mm for EVT. Screws: M2 x 7 in
-  the island's four pilots (4.2 mm of thread), the decks' two stay M2 x 6 (3.2 mm, their
-  pilots allow 3.3), or accept 3.2 mm for EVT and count stripped bosses in VER-92. bom.md's
-  M2 x 8 must change either way.
-- **D25. TH1's coupling to the cell** (DF-04): a 0.5 mm silicone thermal pad bridging the
+- **DEC-18. Screws** (DEF-31, VER-147): REQ-MEC-09 is now per pilot (round 2, F). Proposed: M2
+  x 7 in the four side pilots (4.2 mm of thread, the tip 0.8 mm short), M2 x 6 in the two end
+  pilots (3.2 mm of their 3.30); case.scad gets screw_l_side and screw_l_end, bom.md two
+  lines. Or accept 3.2 mm at the sides for EVT and count stripped bosses in VER-92.
+- **DEC-25. TH1's coupling to the cell** (DF-04): a 0.5 mm silicone thermal pad bridging the
   hole's edge to the cell's end, or accept the lag for EVT and measure it (VER-87).
-- **D26. Opening the case** (DF-169, DF-170): change assembly.md so J2 is unplugged before the
-  tub lifts away, and the cell sits in its pocket before its plug goes near the board.
+- **DEC-26. Opening the case** (DF-169): change assembly.md so J2 is unplugged before the tub
+  lifts away.
 
 **The cell**
 
-- **D23. A cell sold with a datasheet** (O's objection): buy the 403450 from a seller that
-  publishes a datasheet with the PCM named (DW01 or equivalent, with its thresholds and
-  short-circuit delay) and a UN38.3 summary, rather than relying on an AliExpress seller's
-  e-mail. It makes VER-37, VER-88, VER-140 and G-PVT-06 tractable and lowers the occurrence of
-  the PCM-only rows (DF-151, DF-172).
+- **DEC-23. A cell sold with a datasheet**: a 403450 whose seller publishes its size with the
+  PCM (DEC-27 needs 51.2 x 35.2 mm or less), the PCM's thresholds and a UN38.3 summary.
 
-**Risk acceptances and waivers**
+**Risk acceptances, waivers and signing**
 
-- **D19.** 25 H rows can only be detected on built units (or need a decision first), so the
-  order gate needs Alex's acceptance for ORDER: DF-04, DF-26, DF-55, DF-67, DF-69, DF-70,
-  DF-72, DF-74, DF-79, DF-86, DF-87, DF-88, DF-100, DF-103, DF-108, DF-115, DF-117, DF-146,
-  DF-147, DF-148, DF-151, DF-167, DF-169, DF-171, DF-172. Take each row's pre-order action
-  first (D5, D22, D25, D26). DF-87 (the printed case is not a fire enclosure): proposed through
-  DVT, as hobby units kept by their builder. The other 11 H rows (DF-07, DF-57, DF-68, DF-76,
-  DF-121, DF-122, DF-123, DF-126, DF-127, DF-128, DF-129) can be DONE before the order once
-  their ORDER checks pass.
-- **D20.** Sign W-01 (G-ORD-06, the latch replica) and W-02 (G-ORD-13, the perfboard of a
-  power path that left in 2d1124d)?
-- **D29. u4.json pin 58's waiver** (GPIO47 above IOVDD when off) was written by the design
-  session, not by you (O-R20). Once VER-36 is built it fails until an A-NNN line of yours
-  cites it. Decide with D7.
-- **D30. Commit signing** (O-R4): every commit here has the same author, so only a signature
-  tells your approvals from a Claude commit without a trailer or a merge. Set it up once
-  (README, 'Approvals'). Proposed: yes, before any approval line.
-- **D19 update.** The second review re-rated occurrence on every part never built (O-R8: 3
-  now needs 'Similar:') and four rows to severity 7 (O-R23), so 53 live rows are H: new are
-  DF-06, DF-09, DF-25, DF-32, DF-54, DF-58, DF-75, DF-80, DF-85, DF-102, DF-135, DF-144,
-  DF-145, DF-152, DF-155, DF-170 and prod_board's DF-176. `check_trace.py --gate order
-  --verbose` lists those still to accept or close.
+- **DEC-19.** The H rows that only built units can detect, or that wait for a decision, need
+  Alex's acceptance for ORDER (R3); `check_trace.py --gate order --verbose` lists them. Take
+  each row's pre-order action first. DF-87 (the printed case is not a fire enclosure):
+  proposed through DVT, as hobby units kept by their builder. DF-170 and DF-172: for EVT, with
+  DEC-33 and DEC-22. DF-180: decide with DEC-13.
+- **DEC-20.** W-01 and W-02 are no longer needed: G-ORD-06 names VER-33 and G-ORD-13 is
+  RETIRED (round 2, O).
+- **DEC-21.** DVT: reverse-polarity protection or a keyed connector on CELL_P (DF-55).
+- **DEC-29. u4.json pin 58's waiver** (GPIO47 above IOVDD when off) was written by the design
+  session, not by Alex. Once VER-36 is built it fails until an A-NNN line of his cites it.
+  Decide with DEC-07.
+- **DEC-30. A pinned signing key** (round 2, O): pin a key Claude cannot use (README,
+  'Approvals'). Until then no approval counts.
 
-**Disputed findings.** The second review left none disputed: every one of its 39 findings
-was accepted or revised by the other model and is applied (section l).
-- **D21.** DVT: reverse-polarity protection or a keyed connector on CELL_P (DF-55).
+Retired decisions: DEC-06 (3V3 through the unplug: no gap with the BQ24073), DEC-10 (folded
+into DEC-07). DEC-13 came back with the ILI9488.
 
-Retired decisions: D6 (3V3 through the unplug: no gap with the BQ24073), D13 (the ILI9488's
-redraw: the panel changed), D10 (folded into D7).
+## (g) Round 2's sign-off objections and where each landed
 
-## (g) The first run's sign-off objections and where each landed
+Both reviewers of the 684a609 register declined sign-off with these 18. All 18 are answered
+here; where a fix is partial or the objection did not hold, the row says why.
 
-| Objection (O: Opus, F: Fable) | What was done |
-|---|---|
-| O blocker: the register described a superseded design | Re-seeded at 684a609 (this commit range); the baseline names every design path and drift fails the default mode; DEF-47 records why nothing caught it; a realistic estimate (about a day for the re-seed) in (d) |
-| O major: R6 and R7 missed the copper and the fab scripts | DESIGN_PATHS and the baseline cover battler.kicad_pcb, last_route.ses, build_pcb.py, route.py, silk.py, fab.py and board/lib; seeded fault: a silk.py change after a release fails R6 |
-| O major: DVT and PVT accepted EVT bench results | ver_ok at DVT and PVT needs a test of phase EVT or later to cover a release of that phase; gates.md's text matches; seeded fault |
-| O major: DEFERRED never expired | DEFERRED needs a scope in APPROVALS.md and ends after it (R1 says so); seeded faults for a missing scope and an ended deferral |
-| O major: the order gate broke O-9 | VER-40 is advisory-only (named only by G-ORD-12's ADVISORY), so PHASE:ORDER skips it; the doc sweep (VER-39), the claims script (VER-161) and the BOM coverage (VER-167) moved to G-CASE-06, before assembly; DEF-41 is FIXED and held by R4 at the case gate. Not moved: VER-115 and VER-158 (test access) stay at ORDER because a missing probe pad is a copper change |
-| O major: no decision on a fuse in the cell path | D22 with a proposal; DF-172 (H) |
-| O major: 'nothing dropped' could not be verified | The ID ledger in (k): all 115 IDs, where each landed, and 30 that cannot be traced (19 never named, 11 named only as a merge) |
-| O minor: VER-99 presented as done | At 684a609 there is no deviation to present (section f, 'REQ-PWR-13 and VER-99'): VER-99 now checks the limit itself and passes; DEF-43 CLOSED with that changed check; REQ-PWR-13 still awaits Alex |
-| O minor: D10 needs D7 | D7 and D10 decided together, with the ADC numbers |
-| O minor: the cell source is weak | D23 |
-| O minor: seeded faults missed R5, R6, acceptances, waivers, part: staleness | 12 faults in a scratch clone: R5, R6, an acceptance past its scope, a signed waiver, a waiver in a Claude commit, part: staleness, a deferral past its scope, an EVT result at DVT, an untracked covers file, a statement edited after approval, a result that disagrees with its evidence, expired evidence |
-| F major: the F-32 advisory cut was not applied | As O's: advisory-only checks; seeded fault: making G-ORD-12 binding shows VER-40 failing |
-| F major: G-ORD-07 could not be met (DF-61) | DF-61 out of G-ORD-07 (met through G-ORD-04's VER-43 and VER-136); gates.md and check_trace's R3 text now say a later-phase detects check needs an acceptance |
-| F minor: T checks without evidence headers | Every A and T PASS or FAIL needs the header; seeded fault (VER-43) |
-| F minor: TRACKED included untracked files | `git ls-files --cached` only; seeded fault in the clone |
-| F minor: VER-09's evidence in the old format | VER-09 RETIRED (the 3-ring left in 2d1124d) and its file deleted; all 2026-10-24 evidence replaced by fresh runs |
-| F minor: the ID table | (k) |
-
-Not fixed: none of the objections. Two points are partial by choice: VER-115 and VER-158 stay at
-ORDER (above), and DEF-47 stays FIXED, not CLOSED, until scripts/check.sh runs check_trace
-(step 0.3, outside hardware/vv).
+| # | Objection | What was done | State |
+|---|---|---|---|
+| O1 major | the cell's gap understated: it fails on every side, and widening the right end would leave VER-181 failing | DEF-53, DF-85, REQ-BAT-08, VER-181, G-ORD-07 and DEC-27 restated on every side; cellgap prints what passes; DEC-27's options re-costed (a cell spec and the pocket, or a 54.8 x 37.8 mm hole); seeded fault: only the right end widened keeps VER-181 failing | fixed |
+| O2 major | 'G' only proves some key in a user-global file; README told Alex to sign with an unprotected key | check_trace counts a line only when `%GF` equals the fingerprint README pins and the pin line is itself signed by that key; it warns while the pinned key is a software key; README asks for an ed25519-sk key or a passphrase key never in an agent; seeded fault: a line signed by another allowed key does not count | fixed as far as a file can: a process running as alex that holds an unlocked key can still sign; only a touch key closes that, and Alex chooses it (DEC-30) |
+| O3 major | five ORDER checks (VER-13, 21, 23, 25, 108) in no step; prod_board's list missing | section (d) names every ORDER check (VER-23 and VER-108 in step 4; VER-13 moved to EVT; VER-21 advisory; VER-25 folded into VER-132) and prod_board's list; check_trace fails on an ORDER check no step names; seeded fault | fixed |
+| O4 minor | APPROVALS.md's header described the old rule | header rewritten: signing with the pinned key is required; unsigned, other-key and merged lines are pending or errors | fixed |
+| O5 minor | REQ-TST-06 named CHG_DONE_N; make it VER-161's first seeded case | REQ-TST-06 says CHG_STAT_N | fixed; the seeded case waits for VER-161, which is not built |
+| O6 minor | PLAN statements disagreeing with the tool: step 0.1, section (c)'s source, the 129 count, the template's marker spot | step 0.1 says the default mode warns and R8 fails; (c) names its evidence dates; counts come from the tool (section i); the template's marker goes in the clear patch silk.py names, and DEF-57 moves the BOARD_REV text out of the cell's hole first | fixed; the marker's coordinates wait for DEC-28 |
+| O7 minor | per-unit screens a good unit can fail: TS at 25 C only; the 130 ohm window | VER-133, VER-135 and VER-68 take the band from `design_numbers.py tsband` at the measured ambient (0.70-1.04 V at 22 C); VER-134 uses 133 ohm from `cvload`'s window (128-141 ohm; 130 sat 0.6 ohm from its edge) | fixed; I_TS, pre-charge and termination are still quoted from memory until VER-34 |
+| O8 minor | DF-170 offered only a procedure | DEC-33 offers the copper (J4 a JST SH 2-pin, now or at DVT); VER-184 (FAIL) shows the cause; G-DVT-06 makes the DVT spin fix it | fixed; Alex chooses when |
+| O9 minor | G-ORD-13 and G-ORD-06 needed signatures that prove nothing | G-ORD-13 RETIRED in 2d1124d (check_trace now knows a RETIRED criterion); G-ORD-06 names VER-33; W-01 and W-02 kept as IDs, not needed | fixed |
+| O10 minor | decision IDs collide with diodes | D1-D30 renamed DEC-01 to DEC-30 in every file | fixed |
+| O11 minor | VER-153 at ORDER; 127 signatures for a 5-board order | VER-153 at EVT; bulk lines `REQ-ALL@<commit>` and `DF-H@<commit>`, each ID still checked on its own (seeded fault: an edited statement is not covered); the order gate trimmed (section d) | fixed |
+| O12 minor | bring-up docs not gated before first power | VER-39 in G-EVT-02 and stated as an EVT day-one precondition (e); bringup.md's display section is the 2.4 in panel's, logged as DEF-21 (n) | fixed in the register; bringup.md itself is outside hardware/vv |
+| F1 major | as O1 | as O1 | fixed |
+| F2 minor | REQ-MCU-06: GPIO28 is PWM2 A, GPIO31 PWM3 B | not changed: the RP2350's table maps GPIO 0-31 to slices (n >> 1) & 7 and 32-47 to 8 + ((n >> 1) & 3), so GPIO28 is slice 6 A and GPIO31 slice 7 B (`grep -n "PIN_28\|PIN_31" ~/.cargo/registry/src/*/embassy-rp-0.8.0/src/pwm.rs`: 'PWM_SLICE6, ChannelAPin', 'PWM_SLICE7, ChannelBPin'). VER-15 now derives each slice from the table, as asked | objection did not hold; its request applied |
+| F3 minor | stale names: REQ-TST-06, vp 212's C41, placement.py and design.py comments | REQ-TST-06 and vp 212 fixed; the comments (outside hardware/vv) logged in DEF-21 (p); VER-39 now covers placement.py | fixed in the register |
+| F4 minor | gate logic: a check re-phased leaves its requirement; no DFMEA:COVERAGE fault; DF-95 and DF-96 rated 2 on one check | a requirement must have a live check no later than its Phase; DFMEA:COVERAGE seeded (R64 unnamed); D of 2 or 1 needs two checks, DF-95 and DF-96 now D4 and DF-95's prevention says the condition is by design | fixed, three seeded faults |
+| F5 minor | REQ-MEC-09 unmeetable for the end screws | split per pilot: 4.0 mm in the side pilots, 3.0 mm in the end pilots; M2 x 7 at the sides passes | fixed |
+| F6 minor | VER-13, 21, 27, 34 reached only by PHASE:ORDER; effort | VER-13 to EVT (G-EVT-04); VER-21 and VER-27 advisory; VER-34 in G-ORD-01; the gate trimmed | fixed |
 
 ## (h) What this plan still cannot catch
 
@@ -378,93 +381,62 @@ ORDER (above), and DEF-47 stays FIXED, not CLOSED, until scripts/check.sh runs c
 - **Time.** Cell ageing and swelling over years, ENIG wear, tape creep, slow flux migration.
 - **Faults nobody listed.** The DFMEA names every part, but only the failure modes someone
   thought of; seeded faults prove a checker fails on the faults seeded.
-- **Datasheet numbers this register quotes from memory.** design_numbers.py names its
-  constants (RT9013 +-2%, CV +-1%, the 74HC165's VIL, the MCP6002's offset); VER-34's source
-  audit must confirm each.
-- **Bench honesty, approvals, standards, JLC's side, firmware beyond the self-test, use**: as
-  the first run listed them.
-- **A design that moves again.** Another session may commit to ref-design-island-45. Any
-  change to a design path fails the default mode and every gate until its rows are re-checked;
-  the register cannot re-check them itself.
-- **The first run's lost ideas.** 30 debate IDs cannot be traced to any text (k).
-- **Quoted values until VER-161 exists.** The claims script is not built, so a GPIO, a count
-  or a dimension quoted in a row can still drift from design.py unseen (DEF-54). Its seeded
-  fault (F-R6) waits for it.
-- **Approvals before signing.** Until D30 is done no approval counts, and nothing can tell an
-  unsigned line of Alex's from anyone else's.
-- **Typed tolerances in design_numbers.py.** The RP2350's input leakage, JLC's routing
-  tolerance (0.2 mm), its minimum plated slot (0.50 mm) and the print's wall tolerance are
-  quoted, not read from a dated source (VER-34, VER-17, VER-174).
+- **Numbers this register quotes from memory.** design_numbers.py names them (the RP2350's
+  leakage, I_TS, pre-charge and termination shares, V_LOWV, the ILI9488's SPI cycles, JLC's
+  0.30 mm and 0.2 mm tolerances); VER-34 and VER-17 must replace each with a quoted page.
+- **The panel's mechanics.** Its datasheet could not be downloaded on 2026-10-26, so its
+  outline, thickness and FPC shape are the old design's numbers; only a real panel (VER-43,
+  VER-136, VER-152) can show J3's place is right.
+- **A hand edit in the board file.** 62b01f2 moved one GND via by hand; any rebuild (a silk.py
+  or rule change, DEC-28, DEC-32) undoes it. The release run must rebuild, re-run DRC and
+  record the result, not trust the committed file.
+- **A key that a process can use.** A pinned software key is only as safe as its passphrase
+  habit (DEC-30).
+- **Bench honesty, standards, JLC's side, firmware beyond the self-test, use**: as the first
+  run listed them.
+- **A design that moves again.** Another session may commit to ref-design-35in. Any change to a
+  design path fails the default mode and every gate until its rows are re-checked; the
+  register cannot re-check them itself.
+- **Quoted values until VER-161 exists.** A GPIO, a count or a dimension quoted in a row can
+  still drift from design.py unseen (DEF-54).
 
 ## (i) The gate today
 
-At d3f66ea, the evidence commit after fc862fa (14 PASS, 9 FAIL, 52 NOT_RUN, 102 NOT_BUILT,
-2 CUT, 3 RETIRED):
-
-```
-$ python3 hardware/vv/tools/check_trace.py
-STRUCTURE: OK (4 warnings)
-  requirements 133 {'PROPOSED': 130, 'RETIRED': 3}
-  DFMEA rows 177 (live: 53 H, 65 M, 27 L; 32 RETIRED)
-  checks 182 {'PASS': 14, 'FAIL': 9, 'NOT_RUN': 52, 'NOT_BUILT': 102, 'CUT': 2, 'RETIRED': 3}
-  defects 55 {'OPEN': 22, 'FIXED': 20, 'CLOSED': 6, 'RETIRED': 7}
-  approvals by Alex: 0 counted (signed); commit signing not set up, so none can count yet
-  order branch: ref-design-island-45 has no design commit after 684a609
-  design baseline: matches HEAD
-  warnings: the pass bands of VER-67, VER-88, VER-134 and VER-139 are 1.4-2.2 x their DMM's
-  accuracy (want 4 x)
-exit 0
-
-$ python3 hardware/vv/tools/check_trace.py --gate order
-  PASS  R5, R6 (no release yet), R7, R8
-  INFO  G-ORD-05, G-ORD-12 (advisory); N/A G-ORD-25 (prod_board)
-  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06 to G-ORD-11, G-ORD-13 to G-ORD-24, G-ORD-26
-        (the FAILs among them: VER-131 drill, VER-176 CPL, VER-181 the cell's gap,
-        VER-138 cutoff, VER-177 VBUS)
-  FAIL  G-ORD-22: 67 ORDER checks not passing (VER-40 excluded as advisory)
-  FAIL  R1 127 PROPOSED; R2 56 requirements with an ORDER check not passing;
-        R3 52 H rows neither accepted nor DONE; R4 17 OPEN defects with Gate ORDER
-RESULT: FAIL (27 of 31 not met); 1 N/A, 2 advisory
-```
-
-The case gate fails 10 of 13, EVT 18 of 21, DVT 9 of 12, PVT 10 of 13, and prod_board's order
-gate 5 of 7 (24 criteria N/A; R3 now reads its DFMEA rows, O-R12). The checks that pass: the
-netlist, the pin gate, ERC, DRC with parity, both 4-ring contact footprints, inrush, holes,
-the backlight's worst case, the MLCC keep-out, TH1's geometry (now from the board), two
-inspections (VER-104, VER-124) and the seeded faults (VER-129, 63 of 63).
+GATE_TODAY
 
 ## (j) Past bugs and what catches them
 
 | Defect | What happened | Caught now by | When |
 |---|---|---|---|
-| DEF-01 | U1's REF on VBUS back-fed PWR_EN | VER-159, VER-127 | before the order |
+| DEF-01 | U1's REF on VBUS back-fed PWR_EN | VER-159, VER-127 | before the order, EVT |
 | DEF-02 | R15 at 10k cut the pill margin | VER-33, VER-78 | before the order |
-| DEF-03-06, 09 | the TP4056 power path's hand-over, hot plug and CE limits | RETIRED with those parts (2d1124d, 1fd0956); the BQ24073's are VER-12, VER-70-72 | |
+| DEF-03-06, 09 | the TP4056 power path's hand-over, hot plug and CE limits | RETIRED with those parts (2d1124d, 1fd0956); the BQ24073's are VER-12, VER-70-72 | EVT |
 | DEF-07, 08 | J6 swapped; 22 ohm USB resistors | VER-02 (CLOSED) | every change |
-| DEF-10 | no PWR_HOLD pull-down | VER-02, VER-77, VER-16 | before the order |
+| DEF-10 | no PWR_HOLD pull-down | VER-02, VER-77, VER-16 | EVT |
 | DEF-11 | R5 kept from the bigger cell | VER-160, VER-37, VER-66 | before the order |
 | DEF-12, 13, 29 | parts out of stock | VER-41 (valid 1 day), VER-14 | order day |
 | DEF-14 | U1's JLC rotation | VER-29, VER-28 | before the order |
 | DEF-15-19, 25 | case fits and openings | VER-48, VER-92, VER-126, VER-07, VER-113, VER-20 | case gate |
-| DEF-20, 38 | J6's mouth; C9 by a boss | RETIRED with the parts; the classes are VER-165 and VER-142 | |
-| DEF-21 | docs disagree with the design (23 statements) | VER-39 (FAIL), VER-161 | case gate |
-| DEF-26-28 | the pin gate's blind spots; guessed heights; analyses not in the repo | VER-36, VER-112, VER-22, design_numbers.py | before the order |
+| DEF-21 | docs disagree with the design (bringup.md's display and power steps among them) | VER-39 (FAIL), VER-161 | case gate; bringup.md before first power |
+| DEF-26-28 | the pin gate's blind spots; guessed heights; analyses not in the repo | VER-36, VER-112, design_numbers.py | before the order |
 | DEF-30, 47 | the order candidate not recorded; the register drifted | VER-42, the baseline rule, VER-129 | every change once check.sh runs it |
-| DEF-31 | screws engage 3.2 mm | VER-147 (FAIL) | case gate |
+| DEF-31 | screws engage 3.2 mm | VER-147 (FAIL, per pilot) | case gate |
 | DEF-32, 33 | the drill file; the CPL offsets | VER-131, VER-176 (both FAIL) | before the order |
-| DEF-34 | no firmware for the ordered chip | VER-149-151 | before the order |
-| DEF-35, 52 | the trace gate's own holes; then words, typed results and unsigned approvals still passing it | VER-129 (63 seeded faults) | every change |
-| DEF-36 | check_pcb passes non-silk warnings | VER-04, VER-22 | before the order |
+| DEF-34 | no firmware for the ordered chip | VER-149, VER-150 (EVT), VER-151 | EVT, before the order |
+| DEF-35, 52 | the trace gate's own holes | VER-129 | every change |
+| DEF-36 | check_pcb passes non-silk warnings, and called the routed-away BOARD_REV cosmetic | VER-04, VER-22, VER-18 | before the order |
 | DEF-37, 48 | TH1's coupling; the 47 C hot edge | VER-164, VER-87, VER-32 | before the order and EVT |
-| DEF-39, 43 | backlight over its limit; inrush | VER-137, VER-99 (both CLOSED) | every change |
+| DEF-39 | backlight over 120 mA: closed with the 2.4 in panel, back with the 3.5 in | VER-137 (FAIL) | before the order |
 | DEF-40 | the cutoff may never fire | VER-138 (FAIL), VER-139, VER-155, VER-156 | before the order |
 | DEF-41, 42 | assembly next to a live cell; Start/Select parts not bought | VER-91, VER-167 (FAIL) | case gate |
-| DEF-45 | the backlight sim runs for the old panel | VER-05 | before the order |
+| DEF-43, 51 | inrush; swelling room | VER-99, VER-182 (both CLOSED) | every change |
+| DEF-45 | the backlight sim does not read design.py | VER-05 | EVT |
 | DEF-46 | bench cell emulation | VER-70, VER-67 | EVT |
-| DEF-49, 50, 51 | the pill margin; the VBUS fault reach; swelling room | VER-45, VER-177 (FAIL), VER-182 (FAIL) | before the order and the case gate |
-| DEF-53 | the pushed cell 0.25 mm from the FR4 edge | VER-181 (FAIL) | before the order |
-| DEF-54 | rows still written for 76955d2 after the re-seed | VER-161 (not built), the retired-citation rule | before the order |
-| DEF-55 | JLC's order-number marker not on the board | VER-132 (k) | before the order |
+| DEF-49, 50 | the pill margin; the VBUS fault reach | VER-45, VER-177 (FAIL) | before the order |
+| DEF-53 | a worst-case cell 0.25 mm from the FR4 edge on every side | VER-181 (FAIL) | before the order |
+| DEF-54 | rows still written for an older design after a re-seed | VER-161 (not built), the retired-citation rule | case gate |
+| DEF-55, 57 | JLC's marker not on the board; the board's name and BOARD_REV in the cell's hole | VER-132 (k), VER-18 (FAIL) | before the order |
+| DEF-56 | copper 0.20 mm from the routed holes | VER-18 (FAIL) | before the order |
 
 ## (k) The ID ledger of the first run's debate
 
@@ -495,7 +467,7 @@ as merged with another.
 | O-15 | merged with F-20 and F-21; F-20 is the export-origin item of VER-132 | PLAN (g) | VER-132 (h) |
 | O-16 | the CPL uses footprint origins | DEF-33 | DEF-33; VER-176 (FAIL) |
 | O-17 | no text kept: the first run saved its debate only as counts (115 agreed, 0 dropped) and no file names this ID | nowhere | not traceable |
-| O-18 | named in D1 as needing J6 or the strap (R48-R51), which left in 86bf694 | PLAN (f) | moot at 684a609: RTT/USB CDC logs (REQ-MCU-04) |
+| O-18 | named in DEC-01 as needing J6 or the strap (R48-R51), which left in 86bf694 | PLAN (f) | moot at 684a609: RTT/USB CDC logs (REQ-MCU-04) |
 | O-19 | bench cell emulation must hold 3.50 V: CHG_OFF high | DEF-46, PLAN (c) | DEF-46; VER-70, VER-67 |
 | O-20 | no text kept: the first run saved its debate only as counts (115 agreed, 0 dropped) and no file names this ID | nowhere | not traceable |
 | O-21 | backlight worst-case tolerance (with F-7) | REQ-DSP-05, REQ-DSP-12, DEF-39, PLAN (g) | VER-137 (PASS, 78.0 mA); DEF-39 CLOSED |
@@ -539,7 +511,7 @@ as merged with another.
 | O-59 | panel bond under press and heat | REQ-MEC-10 | REQ-MEC-10; VER-154 |
 | O-60 | no gain from a no-cell charger edge | REQ-TST-06, DEF-40, PLAN (g) | REQ-TST-06; VER-156 |
 | O-61 | connector mating budget | REQ-TST-07 | REQ-TST-07; VER-157 |
-| O-62 | the self-test's UART needs J6 (D1) | PLAN (f) | moot: J6 left in 86bf694; logs over RTT or USB CDC |
+| O-62 | the self-test's UART needs J6 (DEC-01) | PLAN (f) | moot: J6 left in 86bf694; logs over RTT or USB CDC |
 | O-63 | bench calibration at 3.50 V | REQ-TST-06, PLAN (g) | REQ-TST-06; VER-155 |
 | F-1 | the gate fails when HEAD's design is not the baseline | DEF-30, PLAN (a) | R7; now also a structure error (DEF-47) |
 | F-2 | covers regexes match whole words | DEF-35, PLAN (a) | parse_covers() |
@@ -573,7 +545,7 @@ as merged with another.
 | F-30 | no text kept: the first run saved its debate only as counts (115 agreed, 0 dropped) and no file names this ID | nowhere | not traceable |
 | F-31 | a design commit after a release needs a change record | PLAN (a) | R6, now over the copper and fab scripts too |
 | F-32 | cut the latch replica and the perfboard; G-ORD-12 advisory (with O-10) | VER-47, VER-123, G-ORD-06, G-ORD-12, G-ORD-13, PLAN (f) ... | advisory-only checks (VER-40) out of PHASE: |
-| F-33 | defer play time, charge time and charge current | REQ-PRD-03.R, REQ-PRD-04.R, REQ-BAT-02.R, PLAN (f) | PLAN decision D4; DEFERRED now needs a scope |
+| F-33 | defer play time, charge time and charge current | REQ-PRD-03.R, REQ-PRD-04.R, REQ-BAT-02.R, PLAN (f) | PLAN decision DEC-04; DEFERRED now needs a scope |
 | F-34 | no text kept: the first run saved its debate only as counts (115 agreed, 0 dropped) and no file names this ID | nowhere | not traceable |
 | F-35 | merged with O-41; the record names no content | PLAN (g) | not traceable |
 | F-36 | TH1 at the cell's edge (with O-30) | DEF-37, PLAN (g) | DEF-37 (open) |
@@ -586,7 +558,7 @@ as merged with another.
 | F-43 | a LiPo bag in the gear list | VER-116 | VER-116, VER-172 |
 | F-44 | firmware for the ordered chip (with O-37) | vp #56, REQ-MCU-11, DEF-34, PLAN (g) | REQ-MCU-11; DEF-34 (open) |
 | F-45 | un-cut vp #180 (with O-25) | vp #180, PLAN (g) | REQ-DSP-11 |
-| F-46 | R18 = 56k for GPIO47 | DF-95, REQ-PWR-14, PLAN (f) | PLAN decision D7 (with the cutoff) |
+| F-46 | R18 = 56k for GPIO47 | DF-95, REQ-PWR-14, PLAN (f) | PLAN decision DEC-07 (with the cutoff) |
 | F-47 | merged with O-13; the record names no content | PLAN (g) | not traceable |
 | F-48 | heat budget per mode (with O-47) | REQ-THM-04 | REQ-THM-04; VER-144 |
 | F-49 | pill and comb tests on a bare board from the order | REQ-BTN-01, G-ORD-05, G-EVT-12 | G-EVT-12; G-ORD-05 advisory |
@@ -605,10 +577,10 @@ other model revised a fix, the revision is what was applied.
 | O-R1 | VER-176 and VER-131 passed on a word in fab.py | design_numbers.py cpl and drill run fab.py's export into a temp dir and read the CPL and the Excellon files; seeded (a comment in fab.py keeps both at FAIL); DEF-52 |
 | O-R2 | uncommitted register and evidence edits opened the gate | R5 fails on anything uncommitted under hardware/vv; evidence counts only when committed and unchanged; DEF-35 reopened with DEF-52; three seeded faults |
 | O-R3 | inspections and demos passed on any repository file | every PASS needs a header under evidence/, with WHO and ARTEFACT for I and D; only VER-104 and VER-124 keep the in-file pointer; two seeded faults |
-| O-R4 (revised) | approvals counted from any commit without a Claude trailer | a line counts only from a commit git shows as signed (%G? = G), never a merge; pending where signing is not set up; README 'Approvals'; D30; the clone signs with a throwaway key; two seeded faults |
+| O-R4 (revised) | approvals counted from any commit without a Claude trailer | a line counts only from a commit git shows as signed (%G? = G), never a merge; pending where signing is not set up; README 'Approvals'; DEC-30; the clone signs with a throwaway key; two seeded faults |
 | O-R5 | R4 at ORDER blocked by case and docs defects | every defect has a Gate; DEF-21, 31, 37, 42, 51 are CASE; two seeded faults |
-| O-R6 | D5's footprints cannot give 0-45 C | D5 rewritten (a higher-B TH1 or accept 47.2 C); REQ-BAT-03 and VER-32 one-sided; DF-147, DEF-48 |
-| O-R7 | the pushed cell's end 0.25 mm from the FR4 edge | design_numbers.py cellgap, VER-181 (FAIL); DF-85 H; DEF-53; D27 |
+| O-R6 | DEC-05's footprints cannot give 0-45 C | DEC-05 rewritten (a higher-B TH1 or accept 47.2 C); REQ-BAT-03 and VER-32 one-sided; DF-147, DEF-48 |
+| O-R7 | the pushed cell's end 0.25 mm from the FR4 edge | design_numbers.py cellgap, VER-181 (FAIL); DF-85 H; DEF-53; DEC-27 |
 | O-R8 | occurrence 3 on parts never built | rows on new parts re-rated 4-8; O = 3 needs 'Similar:' (check_trace rule, seeded); 17 rows newly H |
 | O-R9 | checks still written for 76955d2 | VER-29, 33, 36, 77, 89, 130, 132, 148, 159, 166 rewritten; counts and outline derived, not typed; a live row citing a RETIRED id fails; DEF-54 |
 | O-R10 | latch checks covered only seat 1's Start | VER-33 (both paths, D8, Q7, R62, R63, SW23 in covers), VER-78 and VER-79 on SW21 and SW23 through 1 kohm |
@@ -616,12 +588,12 @@ other model revised a fix, the revision is what was applied.
 | O-R12 | prod_board's gate evaluated no DFMEA row | df_scope includes 'both'; ref_design rows relabelled; DF-174 to DF-177 for prod_board's contacts; VER-183; G-EVT-15 |
 | O-R13 (revised) | the design-hash rule saw only this branch | README's parsed 'Order branch' line; default mode warns and R8 fails the order gate on a design commit after 684a609; battler.kicad_pro in the baseline; VER-143 refuses a drifted tree; seeded |
 | O-R14 | VER-164 saw 2 of 11 back-side footprints | th1 reads every flipped footprint and TH1 from the board (pcbnew); seeded (TP11 moved next to the hole fails) |
-| O-R15 | the cutoff analysis left out GPIO47's leakage | cutoff prints the leakage band (0.47 V per uA through 235 kohm); D7 waits for VER-34's number |
+| O-R15 | the cutoff analysis left out GPIO47's leakage | cutoff prints the leakage band (0.47 V per uA through 235 kohm); DEC-07 waits for VER-34's number |
 | O-R16 | DF-159's detection cannot see one LED | VER-43 measures each LED by its own cathode pin; design_numbers backlight says so; DF-159 detection reworded |
 | O-R17 (revised) | latch and TS numbers off the circuit | REQ-PWR-11 cites VER-33's computed bands; REQ-THM-03 and VER-68 0.49 V; VER-52 TP1 8.5-10 kohm from the full network |
 | O-R18 | EN1 at its absolute maximum; OVP nominal | REQ-PWR-02, VER-12, VER-71: EN1 <= 6.7 V, VBUS under OVP's minimum less 0.2 V (VER-34 takes the minimum into u2.json) |
-| O-R19 | the JLC marker is not on the board | REQ-FAB-05 note; VER-132 (k); DEF-55; D28 |
-| O-R20 (revised) | the pin gate accepts anyone's waiver, never checks identity | VER-36: waivers cite an A-NNN line, lcsc and mpn compared with design.py, reviews of removed parts fail, acceptance list generated; D29 |
+| O-R19 | the JLC marker is not on the board | REQ-FAB-05 note; VER-132 (k); DEF-55; DEC-28 |
+| O-R20 (revised) | the pin gate accepts anyone's waiver, never checks identity | VER-36: waivers cite an A-NNN line, lcsc and mpn compared with design.py, reviews of removed parts fail, acceptance list generated; DEC-29 |
 | O-R21 | partial scripts recorded as full PASSes | VER-20 split (VER-182 is the swell script); VER-131 now whole; MIN_DUTY read from pinmap.md; check_trace refuses a CHG record that omits a bench test of a changed part (seeded) |
 | O-R22 | no check read the real fab output; VER-27, VER-28 lists | VER-131 and VER-176 read the export; VER-27 compares against the board's own hole list (slots, vents); VER-28 adds J5, SW18, SW19 |
 | O-R23 | lost main functions rated 6 | DF-58, DF-109, DF-160, DF-163 at S7; VER-103 re-derives the off budget without D5; VER-102 at 0.5 A |
@@ -636,7 +608,7 @@ other model revised a fix, the revision is what was applied.
 | F-R9 (revised) | VER-36's acceptance list named old reviews | as O-R20; VER-159 names U2 pins 7 and 9 |
 | F-R10 | units.csv counted J6 matings | mating_j4 |
 | F-R11 (revised) | VER-78 said 10 kohm against 1 kohm | 1 kohm in VER-78, VER-33 and REQ-PWR-08; VER-33 reports the largest series resistance that still turns on |
-| F-R12 (revised) | charge-time source current | REQ-PRD-04 and VER-102 at 0.5 A; the 3.0 vs 4.0 h choice is Alex's (D4) |
+| F-R12 (revised) | charge-time source current | REQ-PRD-04 and VER-102 at 0.5 A; the 3.0 vs 4.0 h choice is Alex's (DEC-04) |
 | F-R13 (revised) | R6 and the baseline left out schematics and scripts | the schematics, battler.kicad_pro, the board/tools tree and case/export.py in DESIGN_PATHS and the baseline; positions.json's sha256 in the release record |
 | F-R14 (revised) | VER-148 and DF-144 leaned on retired or wrong examples | VER-148 names DF-146 and DF-148; DF-144's variant list corrected; VER-109 reads U2's marking; the retired-citation rule (seeded) |
 | F-R15 | VER-52's TP1 band ignored the second path | as O-R17 |
@@ -646,3 +618,29 @@ Not done here, by design: the new check scripts (check_claims.py, check_bom_cpl.
 check_fab_content.py, latch.py, temp_window.py, release.py, the extended check_pins.py) are
 work items in section (d); design changes (the drill flag, the marker, the hole) wait for
 Alex's decisions; files outside hardware/vv (pin_review, docs) are logged under DEF-21.
+
+## (m) The first run's sign-off objections and where each landed (history)
+
+| Objection (O: Opus, F: Fable) | What was done |
+|---|---|
+| O blocker: the register described a superseded design | Re-seeded at 684a609 (this commit range); the baseline names every design path and drift fails the default mode; DEF-47 records why nothing caught it; a realistic estimate (about a day for the re-seed) in (d) |
+| O major: R6 and R7 missed the copper and the fab scripts | DESIGN_PATHS and the baseline cover battler.kicad_pcb, last_route.ses, build_pcb.py, route.py, silk.py, fab.py and board/lib; seeded fault: a silk.py change after a release fails R6 |
+| O major: DVT and PVT accepted EVT bench results | ver_ok at DVT and PVT needs a test of phase EVT or later to cover a release of that phase; gates.md's text matches; seeded fault |
+| O major: DEFERRED never expired | DEFERRED needs a scope in APPROVALS.md and ends after it (R1 says so); seeded faults for a missing scope and an ended deferral |
+| O major: the order gate broke O-9 | VER-40 is advisory-only (named only by G-ORD-12's ADVISORY), so PHASE:ORDER skips it; the doc sweep (VER-39), the claims script (VER-161) and the BOM coverage (VER-167) moved to G-CASE-06, before assembly; DEF-41 is FIXED and held by R4 at the case gate. Not moved: VER-115 and VER-158 (test access) stay at ORDER because a missing probe pad is a copper change |
+| O major: no decision on a fuse in the cell path | DEC-22 with a proposal; DF-172 (H) |
+| O major: 'nothing dropped' could not be verified | The ID ledger in (k): all 115 IDs, where each landed, and 30 that cannot be traced (19 never named, 11 named only as a merge) |
+| O minor: VER-99 presented as done | At 684a609 there is no deviation to present (section f, 'REQ-PWR-13 and VER-99'): VER-99 now checks the limit itself and passes; DEF-43 CLOSED with that changed check; REQ-PWR-13 still awaits Alex |
+| O minor: D10 needs D7 (now DEC-10, DEC-07) | DEC-07 and DEC-10 decided together, with the ADC numbers |
+| O minor: the cell source is weak | DEC-23 |
+| O minor: seeded faults missed R5, R6, acceptances, waivers, part: staleness | 12 faults in a scratch clone: R5, R6, an acceptance past its scope, a signed waiver, a waiver in a Claude commit, part: staleness, a deferral past its scope, an EVT result at DVT, an untracked covers file, a statement edited after approval, a result that disagrees with its evidence, expired evidence |
+| F major: the F-32 advisory cut was not applied | As O's: advisory-only checks; seeded fault: making G-ORD-12 binding shows VER-40 failing |
+| F major: G-ORD-07 could not be met (DF-61) | DF-61 out of G-ORD-07 (met through G-ORD-04's VER-43 and VER-136); gates.md and check_trace's R3 text now say a later-phase detects check needs an acceptance |
+| F minor: T checks without evidence headers | Every A and T PASS or FAIL needs the header; seeded fault (VER-43) |
+| F minor: TRACKED included untracked files | `git ls-files --cached` only; seeded fault in the clone |
+| F minor: VER-09's evidence in the old format | VER-09 RETIRED (the 3-ring left in 2d1124d) and its file deleted; all 2026-10-24 evidence replaced by fresh runs |
+| F minor: the ID table | (k) |
+
+Not fixed: none of the objections. Two points are partial by choice: VER-115 and VER-158 stay at
+ORDER (above), and DEF-47 stays FIXED, not CLOSED, until scripts/check.sh runs check_trace
+(step 0.3, outside hardware/vv).

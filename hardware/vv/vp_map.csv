@@ -22,7 +22,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 21,Test-point coverage review,VER-115 VER-158,,partly,partly,"TP1-TP16 include PWR_EN, CHG_TEMP (TP7, the BQ24073's TS node since 2d1124d), AMP_SHDN, BL_REF, 1V1 and the panel's SPI (design.py)"
 22,Placement-vs-case consistency after manual edits,VER-19,,no,no,
 23,Exact 3D interference check (not boxes),VER-06 VER-112,,partly,partly,
-24,"check_fit extended for the new stack (cell on a 1.2 mm spacer over the core, speaker over a 6 mm hole, ribs at 0.5 mm)",VER-06 VER-20,,no,partly,"the cell sits in a hole in the board since 2026-10-21 (2d1124d), its top 1.6 mm over the board at worst case: check_fit checks the decks over it; VER-20's swell script reads 0.30 mm free under the deck"
+24,"check_fit extended for the new stack (cell on a 1.2 mm spacer over the core, speaker over a 6 mm hole, ribs at 0.5 mm)",VER-06 VER-182 VER-20,,no,partly,"the cell sits in a hole in the board since 2026-10-21 (2d1124d), its top 1.6 mm over the board at worst case; since 9cff0d3 it lies under the glass's seat-2 half: VER-182's swell script reads 0.80 mm free under the panel's back (0.30 mm under a deck at 684a609)"
 25,Z-axis tolerance stack-up,VER-20,,no,no,
 26,Cell swelling allowance,VER-20 DF-84,,no,no,
 27,Insulation and sharp-edge check under the cell,VER-06 VER-109 DF-85,,no,no,
@@ -56,7 +56,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 55,Pin map vs RP2350 peripheral function table,VER-15,,partly,partly,
 56,Generated Rust pin definitions compiled against embassy-rp (rp235xb),VER-149 VER-150 VER-76,,no,no,"generated pins and an rp235xb build moved to the order gate (F-44, O-56)"
 57,Bring-up firmware written before boards arrive,VER-76,,no,no,
-58,ILI9488 driver developed on an off-the-shelf module first,CUT,part removed in 53e21c8 (the ILI9488 panel); the ST7789V is lit on a breakout by VER-43,no,no,
+58,ILI9488 driver developed on an off-the-shelf module first,VER-43,,no,no,un-cut 2026-10-26: the ILI9488 panel came back in 79de1f7; VER-43 lights it on a breakout from an RP2350B dev board and times its 18-bit redraw (DF-180)
 59,Panel validated on its own via an FPC breakout,VER-43,,no,no,
 60,Backlight current per cathode pin and sink loop check,VER-62 VER-05,,simulated,simulated,
 61,Battery ADC calibration sweep,VER-67 VER-155,,no,no,
@@ -210,7 +210,7 @@ num,title,maps_to,cut_reason,status_file,status_now,evidence
 209,Conformal coating decision and biased humidity A/B test,DF-74,,no,no,
 210,Speaker magnet stray field on the core's power inductor and the crystal area,DF-97,,no,no,
 211,"Panel-glass init values (VCOM, gamma, inversion, frame rate) from EastRising, a flicker trim and a 24 h static-HUD image-retention test",CUT,panel tuning in firmware; the self-test uses EastRising's init values,no,no,
-212,RF immunity pre-scan (EN 55035 / IEC 61000-4-3 style) with DNP RF filter footprints added now,VER-95,,no,partly,"DNP 1206 footprints C41 (CHG_TEMP), C42/C43 (CC1/CC2) in design.py; none on LCD_RST, though pin_review/panel.json mentions a C44 (DEF-21)"
+212,RF immunity pre-scan (EN 55035 / IEC 61000-4-3 style) with DNP RF filter footprints added now,VER-95,,no,partly,"DNP 1206 footprints C42/C43 (CC1/CC2) in design.py (C41 on CHG_TEMP left in 86bf694); none on LCD_RST, though pin_review/panel.json mentions a C44 (DEF-21)"
 213,"ENIG solder-joint integrity acceptance: thermal cycling with a live self-test, plus a sacrificial third board",VER-97,,no,no,
 214,"Field firmware-update flow: hashed single-slot image, flash layout fenced by a partition table, pull-the-cable update test",CUT,application firmware (update flow); the self-test image must not touch OTP (VER-76),no,no,
 215,"FPC tail versus the FH12-50S spec: thickness, stiffener, plating and retention measured on the real panel",VER-44,,no,no,
