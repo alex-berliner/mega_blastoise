@@ -1,0 +1,639 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: 24-hour PCB production. Fast Delivery to United States.
+      - generic [ref=e8]:
+        - link " Coupons" [ref=e9] [cursor=pointer]:
+          - /url: /coupon-center
+          - generic [ref=e10]: 
+          - generic [ref=e11]: Coupons
+        - link " APP Download" [ref=e12] [cursor=pointer]:
+          - /url: https://jlcone.com/download
+          - generic [ref=e13]: 
+          - generic [ref=e14]: APP Download
+        - generic [ref=e15]: USD
+    - navigation "Parts navigation" [ref=e24]:
+      - generic [ref=e25]:
+        - text:    
+        - generic [ref=e26]:
+          - link "Assembly Parts Lib" [ref=e27] [cursor=pointer]:
+            - /url: /
+            - generic [aria-hidden] [ref=e28]: 
+          - link "Assembly Parts Lib" [ref=e30] [cursor=pointer]:
+            - /url: /parts
+            - generic [ref=e32]: For PCBA Only
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - 'combobox "Search by keyword or part #" [ref=e36]'
+          - button "Upload BOM" [ref=e38] [cursor=pointer]:
+            - generic [aria-hidden] [ref=e39]: 
+        - button "Search" [ref=e41] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e42]: 
+      - generic [ref=e43]:
+        - text: 
+        - link "Parts Cart" [ref=e44] [cursor=pointer]:
+          - /url: https://jlcpcb.com/user-center/smtPrivateLibrary/partsCart/
+          - generic [ref=e45]:
+            - generic [aria-hidden] [ref=e46]: 
+            - generic: "0"
+        - button "Sign In" [ref=e50] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e52]: 
+      - text:  
+    - navigation "Parts sections" [ref=e53]:
+      - generic [ref=e55]:
+        - link "Products" [ref=e57] [cursor=pointer]:
+          - /url: /parts/all-electronic-components
+          - generic [aria-hidden] [ref=e58]: 
+        - list [ref=e61]:
+          - listitem [ref=e62]:
+            - link "In Stock Parts" [ref=e63] [cursor=pointer]:
+              - /url: /parts/in-stock-parts
+          - listitem [ref=e65]:
+            - link "Bom Tool" [ref=e66] [cursor=pointer]:
+              - /url: https://jlcpcb.com/parts/bom-tool
+          - listitem [ref=e68]:
+            - link "Request a Quote" [ref=e69] [cursor=pointer]:
+              - /url: /parts/request-quote
+          - listitem [ref=e71]:
+            - generic [ref=e72] [cursor=pointer]:
+              - generic [ref=e73]: Support
+              - generic [aria-hidden] [ref=e74]: 
+    - main [ref=e75]:
+      - generic [ref=e77]:
+        - text:               
+        - generic [ref=e78]:
+          - navigation "Breadcrumb" [ref=e79]:
+            - list [ref=e80]:
+              - listitem [ref=e81]:
+                - link "JLCPCB" [ref=e82] [cursor=pointer]:
+                  - /url: https://jlcpcb.com
+              - listitem [ref=e83]:
+                - link "Parts Library" [ref=e86] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts
+              - listitem [ref=e87]:
+                - link "All Components" [ref=e90] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/all-electronic-components
+              - listitem [ref=e91]:
+                - link "Connectors" [ref=e94] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/1st/Connectors_8
+              - listitem [ref=e95]:
+                - link "Wire To Board Connector" [ref=e98] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/2nd/Connectors/Wire_To_Board_Connector_2132
+              - listitem [ref=e99]:
+                - generic [ref=e102]: "532610271"
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - generic [ref=e106]:
+                - generic [ref=e107]:
+                  - img "532610271" [ref=e111]
+                  - generic [ref=e112]:
+                    - button [ref=e113] [cursor=pointer]:
+                      - img "532610271 thumbnail 1" [ref=e116]
+                    - button [ref=e117] [cursor=pointer]:
+                      - img "532610271 thumbnail 2" [ref=e120]
+                    - button [ref=e121] [cursor=pointer]:
+                      - img "532610271 thumbnail 3" [ref=e124]
+                    - button [ref=e125] [cursor=pointer]:
+                      - img "532610271 thumbnail 4" [ref=e128]
+                  - paragraph [ref=e129]: "* Images are for reference only"
+                  - generic [ref=e130]:
+                    - button "" [ref=e131] [cursor=pointer]
+                    - button "" [ref=e133] [cursor=pointer]
+                    - button "" [ref=e135] [cursor=pointer]
+                - generic [ref=e137]:
+                  - generic [ref=e138]:
+                    - heading "532610271" [level=1] [ref=e139]
+                    - button "" [ref=e140] [cursor=pointer]
+                    - generic [ref=e142]: Extended
+                  - generic [ref=e143]:
+                    - generic [ref=e144]:
+                      - term [ref=e145]: Manufacturer
+                      - definition [ref=e146]:
+                        - generic [ref=e147]:
+                          - heading [level=2] [ref=e148]:
+                            - link "MOLEX" [ref=e149] [cursor=pointer]:
+                              - /url: https://jlcpcb.com/parts/manufacturers/MOLEX?brand=385285312455118849
+                          - button "" [ref=e150] [cursor=pointer]
+                    - generic [ref=e152]:
+                      - term [ref=e153]: "MFR.Part #"
+                      - definition [ref=e154]:
+                        - generic [ref=e155]:
+                          - generic [ref=e156]: "532610271"
+                          - button "" [ref=e157] [cursor=pointer]
+                    - generic [ref=e159]:
+                      - term [ref=e160]: "JLCPCB Part #"
+                      - definition [ref=e161]:
+                        - generic [ref=e162]:
+                          - generic [ref=e163]: C177225
+                          - button "" [ref=e164] [cursor=pointer]
+                    - generic [ref=e166]:
+                      - term [ref=e167]: Package
+                      - definition [ref=e168]:
+                        - generic [ref=e169]:
+                          - generic [ref=e170]: SMD,P=1.25mm,Surface Mount，Right Angle
+                          - button "" [ref=e171] [cursor=pointer]
+                    - generic [ref=e173]:
+                      - term [ref=e174]: Description
+                      - definition [ref=e175]:
+                        - generic [ref=e176]:
+                          - generic [ref=e177]: "-40℃~+105℃ 1 1.25mm 125V 1A 1x2P 2 2P 3.4mm 5.2mm 7.65mm Auxiliary Solder Pin Glass fiber reinforced PA Phosphor bronze PicoBlade(MX 1.25) Surface Mount, Right Angle Tin UL94V-0 White SMD,P=1.25mm,卧贴 Wire To Board Connector ROHS"
+                          - button "" [ref=e178] [cursor=pointer]
+                    - generic [ref=e180]:
+                      - term [ref=e181]: EasyEDA Libraries
+                      - definition [ref=e182]:
+                        - button "PCB Footprint or Symbol" [ref=e183] [cursor=pointer]
+                    - generic [ref=e184]:
+                      - term [ref=e185]: ECCN
+                      - definition [ref=e186]: EAR99
+                    - generic [ref=e187]:
+                      - term [ref=e188]: Datasheet
+                      - definition [ref=e189]:
+                        - generic [ref=e190]:
+                          - img [aria-hidden] [ref=e191] [cursor=pointer]
+                          - link "Download" [ref=e193] [cursor=pointer]:
+                            - /url: https://www.molex.com/content/dam/molex/molex-dot-com/products/automated/en-us/salesdrawingpdf/532/53261/532610271_sd.pdf?inline
+                    - generic [ref=e194]:
+                      - term [ref=e195]: Source
+                      - definition [ref=e196]: JLCPCB
+                    - generic [ref=e197]:
+                      - term [ref=e198]: Assembly Type
+                      - definition [ref=e199]:
+                        - generic [ref=e200]: SMT Assembly
+                    - generic [ref=e202]:
+                      - term [ref=e203]: PCBA Type
+                      - definition [ref=e204]:
+                        - generic [ref=e205]: Economic and Standard
+                    - generic [ref=e207]:
+                      - term [ref=e208]:
+                        - text: MSL Level
+                        - generic [ref=e209] [cursor=pointer]: 
+                      - definition [ref=e210]: MSL 1
+                  - generic [ref=e211]:
+                    - generic [aria-hidden] [ref=e212]: 
+                    - paragraph [ref=e213]: "Note: The purchased components are stored in your JLCPCB parts library for future PCBA orders only, and cannot be shipped separately."
+              - text:             
+              - generic [ref=e214]:
+                - navigation "Detail sections" [ref=e215]:
+                  - tablist [ref=e218]:
+                    - tab "Specifications" [selected] [ref=e219] [cursor=pointer]
+                    - tab "PCB Assembly Tips" [ref=e221] [cursor=pointer]
+                    - tab "PCB Footprint/Symbol" [ref=e223] [cursor=pointer]
+                - generic [ref=e228]:
+                  - region [ref=e229]:
+                    - generic [ref=e230]:
+                      - generic [ref=e231]:
+                        - heading "532610271 Specifications" [level=2] [ref=e234]
+                        - generic [ref=e235]:
+                          - paragraph [ref=e236]: 532610271 technical specifications, attributes, and parameters.
+                          - button "Report an Error?" [ref=e237] [cursor=pointer]
+                      - table [ref=e240]:
+                        - rowgroup [ref=e241]:
+                          - row [ref=e242]:
+                            - columnheader [ref=e243]
+                            - columnheader "Attributes" [ref=e244]
+                            - columnheader "Value" [ref=e245]
+                        - rowgroup [ref=e246]:
+                          - row [ref=e247]:
+                            - cell [ref=e248]:
+                              - checkbox "Select Category" [checked] [disabled] [ref=e250]
+                            - cell "Category" [ref=e251]
+                            - cell "Connectors/Wire To Board Connector" [ref=e252]
+                          - row [ref=e253]:
+                            - cell [ref=e254]:
+                              - checkbox "Select Manufacturer" [ref=e256] [cursor=pointer]
+                            - cell "Manufacturer" [ref=e257]
+                            - cell [ref=e258]:
+                              - link "MOLEX" [ref=e259] [cursor=pointer]:
+                                - /url: /parts/manufacturers/MOLEX?brand=385285312455118849
+                          - row [ref=e260]:
+                            - cell [ref=e261]:
+                              - checkbox "Select Package" [ref=e263] [cursor=pointer]
+                            - cell "Package" [ref=e264]
+                            - cell "SMD,P=1.25mm,Surface Mount，Right Angle" [ref=e265]
+                          - row [ref=e266]:
+                            - cell [ref=e267]:
+                              - checkbox "Select Operating Temperature" [ref=e269] [cursor=pointer]
+                            - cell "Operating Temperature" [ref=e270]
+                            - cell "-40℃~+105℃" [ref=e271]
+                          - row [ref=e272]:
+                            - cell [ref=e273]:
+                              - checkbox "Select Number of Rows" [ref=e275] [cursor=pointer]
+                            - cell "Number of Rows" [ref=e276]
+                            - cell "1" [ref=e277]
+                          - row [ref=e278]:
+                            - cell [ref=e279]:
+                              - checkbox "Select Voltage Rating" [ref=e281] [cursor=pointer]
+                            - cell "Voltage Rating" [ref=e282]
+                            - cell "125V" [ref=e283]
+                          - row [ref=e284]:
+                            - cell [ref=e285]:
+                              - checkbox "Select Color" [ref=e287] [cursor=pointer]
+                            - cell "Color" [ref=e288]
+                            - cell "White" [ref=e289]
+                          - row [ref=e290]:
+                            - cell [ref=e291]:
+                              - checkbox "Select Current Rating" [ref=e293] [cursor=pointer]
+                            - cell "Current Rating" [ref=e294]
+                            - cell "1A" [ref=e295]
+                          - row [ref=e296]:
+                            - cell [ref=e297]:
+                              - checkbox "Select Pins Structure" [ref=e299] [cursor=pointer]
+                            - cell "Pins Structure" [ref=e300]
+                            - cell "1x2P" [ref=e301]
+                          - row [ref=e302]:
+                            - cell [ref=e303]:
+                              - checkbox "Select Mounting Type" [ref=e305] [cursor=pointer]
+                            - cell "Mounting Type" [ref=e306]
+                            - cell "Surface Mount, Right Angle" [ref=e307]
+                          - row [ref=e308]:
+                            - cell [ref=e309]:
+                              - checkbox "Select Flame Retardant Rating" [ref=e311] [cursor=pointer]
+                            - cell "Flame Retardant Rating" [ref=e312]
+                            - cell "UL94V-0" [ref=e313]
+                          - row [ref=e314]:
+                            - cell [ref=e315]:
+                              - checkbox "Select Y-Width of Bottom Edge on Board" [ref=e317] [cursor=pointer]
+                            - cell "Y-Width of Bottom Edge on Board" [ref=e318]
+                            - cell "5.2mm" [ref=e319]
+                          - row [ref=e320]:
+                            - cell [ref=e321]:
+                              - checkbox "Select X-Length of Bottom Edge on Board (Spacing Line)" [ref=e323] [cursor=pointer]
+                            - cell "X-Length of Bottom Edge on Board (Spacing Line)" [ref=e324]
+                            - cell "7.65mm" [ref=e325]
+                          - row [ref=e326]:
+                            - cell [ref=e327]:
+                              - checkbox "Select Reference Series" [ref=e329] [cursor=pointer]
+                            - cell "Reference Series" [ref=e330]
+                            - cell "PicoBlade(MX 1.25)" [ref=e331]
+                          - row [ref=e332]:
+                            - cell [ref=e333]:
+                              - checkbox "Select Contact Plating" [ref=e335] [cursor=pointer]
+                            - cell "Contact Plating" [ref=e336]
+                            - cell "Tin" [ref=e337]
+                          - row [ref=e338]:
+                            - cell [ref=e339]:
+                              - checkbox "Select Number of Pins" [ref=e341] [cursor=pointer]
+                            - cell "Number of Pins" [ref=e342]
+                            - cell "2P" [ref=e343]
+                          - row [ref=e344]:
+                            - cell [ref=e345]:
+                              - checkbox "Select Pitch" [ref=e347] [cursor=pointer]
+                            - cell "Pitch" [ref=e348]
+                            - cell "1.25mm" [ref=e349]
+                          - row [ref=e350]:
+                            - cell [ref=e351]:
+                              - checkbox "Select Contact Material" [ref=e353] [cursor=pointer]
+                            - cell "Contact Material" [ref=e354]
+                            - cell "Phosphor Bronze" [ref=e355]
+                          - row [ref=e356]:
+                            - cell [ref=e357]:
+                              - checkbox "Select Supplementary Features" [ref=e359] [cursor=pointer]
+                            - cell "Supplementary Features" [ref=e360]
+                            - cell "Auxiliary Solder Pin" [ref=e361]
+                          - row [ref=e362]:
+                            - cell [ref=e363]:
+                              - checkbox "Select Z-Height of the Board" [ref=e365] [cursor=pointer]
+                            - cell "Z-Height of the Board" [ref=e366]
+                            - cell "3.4mm" [ref=e367]
+                          - row [ref=e368]:
+                            - cell [ref=e369]:
+                              - checkbox "Select Plastic Material" [ref=e371] [cursor=pointer]
+                            - cell "Plastic Material" [ref=e372]
+                            - cell "Glass fiber reinforced PA" [ref=e373]
+                          - row [ref=e374]:
+                            - cell [ref=e375]:
+                              - checkbox "Select Number of PINs Per Row" [ref=e377] [cursor=pointer]
+                            - cell "Number of PINs Per Row" [ref=e378]
+                            - cell "2" [ref=e379]
+                      - generic [ref=e380]:
+                        - generic [ref=e381]: "Results remaining: 96260"
+                        - button "View Similar" [ref=e382] [cursor=pointer]
+                  - region [ref=e383]:
+                    - generic [ref=e384]:
+                      - heading "PCB Assembly Tips" [level=2] [ref=e387]
+                      - paragraph [ref=e388]:
+                        - text: From components to fully assembled PCBs. JLCPCB supports PCB assembly for the 532610271. Sign up to receive and
+                        - link "start your assembly today" [ref=e389] [cursor=pointer]:
+                          - /url: https://cart.jlcpcb.com/quote?from=audrey1
+                        - text: →
+                      - list [ref=e390]:
+                        - listitem [ref=e391]:
+                          - generic [ref=e392]: "1"
+                          - paragraph [ref=e394]: Step 1 - Pre-order the parts you need from JLCPCB.
+                        - listitem [ref=e395]:
+                          - generic [ref=e396]: "2"
+                          - paragraph [ref=e398]: Step 2 - Place a PCBA order to have those parts assembled onto your boards.
+                        - listitem [ref=e399]:
+                          - generic [ref=e400]: "3"
+                          - paragraph [ref=e401]: Step 3 - JLCPCB manufactures and assembles your boards in as fast as 3 days.
+                      - generic [ref=e402]:
+                        - img "JLCPCB Assembly Tutorial" [ref=e404]
+                        - button "Play video" [ref=e405] [cursor=pointer]
+                      - link "Learn more about JLCPCB Assembly " [ref=e410] [cursor=pointer]:
+                        - /url: /pcb-assembly
+                        - generic [ref=e411]: Learn more about JLCPCB Assembly
+                        - generic [ref=e412]: 
+                  - region [ref=e413]:
+                    - generic [ref=e414]:
+                      - generic [ref=e415]:
+                        - heading "532610271 Schematic Symbol & PCB Footprint" [level=2] [ref=e418]
+                        - paragraph [ref=e419]: The 532610271 schematic symbol and PCB footprint are available in the EasyEDA PCB design tool.
+                      - figure [ref=e420]:
+                        - iframe [ref=e421]:
+                          - generic [ref=f3e2]:
+                            - generic [ref=f3e3]:
+                              - link [ref=f3e4] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                              - link "EasyEDA - An Easier and Powerful Electronic Circuit Design Tool" [ref=f3e8] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                            - generic [ref=f3e9]:
+                              - img [ref=f3e11]:
+                                - generic [ref=f3e15]:
+                                  - generic [ref=f3e18]:
+                                    - generic [ref=f3e20]: "1"
+                                    - generic [ref=f3e21]: "1"
+                                  - generic [ref=f3e22]:
+                                    - generic [ref=f3e24]: "2"
+                                    - generic [ref=f3e25]: "2"
+                                  - generic [ref=f3e26]:
+                                    - generic [ref=f3e28]: "3"
+                                    - generic [ref=f3e29]: "3"
+                                  - generic [ref=f3e30]:
+                                    - generic [ref=f3e32]: "4"
+                                    - generic [ref=f3e33]: "4"
+                              - generic [ref=f3e34]:
+                                - generic [ref=f3e35] [cursor=pointer]: 
+                                - generic [ref=f3e37] [cursor=pointer]: 
+                                - generic [ref=f3e39] [cursor=pointer]: 
+                            - generic [ref=f3e41]:
+                              - img [ref=f3e43]:
+                                - generic:
+                                  - generic: "1"
+                                  - generic: "2"
+                                  - generic: "4"
+                                  - generic: "3"
+                              - generic [ref=f3e69]:
+                                - generic [ref=f3e70] [cursor=pointer]: 
+                                - generic [ref=f3e72] [cursor=pointer]: 
+                                - generic [ref=f3e74] [cursor=pointer]: 
+                            - link "Free Trial" [ref=f3e77] [cursor=pointer]:
+                              - /url: https://pro.easyeda.com/editor#tab=*!4872e6a4a6ab4859a6a5a30d00880505(device)e327d039d92f43d6827174f0f1451049|!2fb78234dea24ad89598ac2dace4d2c7(device)e327d039d92f43d6827174f0f1451049
+                            - link "Report Error" [ref=f3e78] [cursor=pointer]:
+                              - /url: https://easyeda.com/page/report-part-error?code=C177225
+                            - generic [ref=f3e79]:
+                              - text: Can't open? Please refer at
+                              - link "this tutorial" [ref=f3e80] [cursor=pointer]:
+                                - /url: https://oshwlab.com/article/How-to-open-preview-parts-in-easyeda-editor-from-lcsc-or-jlcpcb
+            - complementary [ref=e424]:
+              - generic [ref=e425]:
+                - generic [ref=e426]:
+                  - generic [ref=e427]:
+                    - paragraph [ref=e428]: "In Stock: 36,708"
+                    - generic [ref=e429]:
+                      - generic [ref=e430]: "Minimum: 1"
+                      - generic [ref=e432]: "Full Reel: 1600"
+                  - generic [ref=e433]:
+                    - textbox "Quantity" [ref=e434]: "1"
+                    - generic [ref=e435]:
+                      - generic [ref=e436]: $0.14
+                      - button "" [ref=e438] [cursor=pointer]
+                  - button " Add to My Part Lib for Assembly" [ref=e440] [cursor=pointer]:
+                    - generic [ref=e441]: 
+                    - generic [ref=e442]: Add to My Part Lib for Assembly
+                  - paragraph [ref=e443]: "Available Order Qty: 35,725"
+                  - generic [ref=e444]:
+                    - generic [ref=e445]:
+                      - generic [ref=e446]: Qty
+                      - generic [ref=e447]: Unit Price
+                    - generic [ref=e448] [cursor=pointer]:
+                      - generic [ref=e449]: 1+
+                      - generic [ref=e450]: $0.1418
+                    - generic [ref=e451] [cursor=pointer]:
+                      - generic [ref=e452]: 50+
+                      - generic [ref=e453]: $0.1180
+                    - generic [ref=e454] [cursor=pointer]:
+                      - generic [ref=e455]: 150+
+                      - generic [ref=e456]: $0.1063
+                    - generic [ref=e457] [cursor=pointer]:
+                      - generic [ref=e458]: 500+
+                      - generic [ref=e459]: $0.0973
+                    - generic [ref=e460] [cursor=pointer]:
+                      - generic [ref=e461]: 3200+
+                      - generic [ref=e462]: $0.0902
+                    - generic [ref=e463] [cursor=pointer]:
+                      - generic [ref=e464]: 4800+
+                      - generic [ref=e465]: $0.0866
+                - generic [ref=e467]:
+                  - heading "Related Products" [level=3] [ref=e468]
+                  - list [ref=e469]:
+                    - listitem [ref=e470] [cursor=pointer]:
+                      - link [ref=e471]:
+                        - /url: /partdetail/MOLEX-532610971/C379029
+                        - img "recommended parts-532610971" [ref=e475]
+                        - generic [ref=e476]:
+                          - paragraph [ref=e477]: "532610971"
+                          - paragraph [ref=e478]: MOLEX
+                          - paragraph [ref=e479]: $0.2693
+                    - listitem [ref=e480] [cursor=pointer]:
+                      - link [ref=e481]:
+                        - /url: /partdetail/MOLEX-532610671/C99277
+                        - img "recommended parts-532610671" [ref=e485]
+                        - generic [ref=e486]:
+                          - paragraph [ref=e487]: "532610671"
+                          - paragraph [ref=e488]: MOLEX
+                          - paragraph [ref=e489]: $0.1365
+                    - listitem [ref=e490] [cursor=pointer]:
+                      - link [ref=e491]:
+                        - /url: /partdetail/MOLEX-532610571/C392176
+                        - img "recommended parts-532610571" [ref=e495]
+                        - generic [ref=e496]:
+                          - paragraph [ref=e497]: "532610571"
+                          - paragraph [ref=e498]: MOLEX
+                          - paragraph [ref=e499]: $0.2396
+                    - listitem [ref=e500] [cursor=pointer]:
+                      - link [ref=e501]:
+                        - /url: /partdetail/XUNPU-WAFER_GH1_2512PWB/C22370221
+                        - img "recommended parts-WAFER-GH1.25-12PWB" [ref=e505]
+                        - generic [ref=e506]:
+                          - paragraph [ref=e507]: WAFER-GH1.25-12PWB
+                          - paragraph [ref=e508]: XUNPU
+                          - paragraph [ref=e509]: $0.2516
+                    - listitem [ref=e510] [cursor=pointer]:
+                      - link [ref=e511]:
+                        - /url: /partdetail/AmphenolICC-1011483020110LF/C17358445
+                        - img "recommended parts-10114830-20110LF" [ref=e515]
+                        - generic [ref=e516]:
+                          - paragraph [ref=e517]: 10114830-20110LF
+                          - paragraph [ref=e518]: Amphenol ICC
+                          - paragraph [ref=e519]: $1.1636
+                    - listitem [ref=e520] [cursor=pointer]:
+                      - link [ref=e521]:
+                        - /url: /partdetail/HRS_Hirose-DF14A_20P_1_25H_56/C597888
+                        - img "recommended parts-DF14A-20P-1.25H(56)" [ref=e525]
+                        - generic [ref=e526]:
+                          - paragraph [ref=e527]: DF14A-20P-1.25H(56)
+                          - paragraph [ref=e528]: HRS(Hirose)
+                          - paragraph [ref=e529]: $3.2485
+    - contentinfo [ref=e530]:
+      - generic [ref=e531]:
+        - generic [ref=e532]:
+          - generic [ref=e533]:
+            - button " Online Chat >" [ref=e534] [cursor=pointer]:
+              - generic [ref=e535]: 
+              - text: Online Chat >
+            - generic [ref=e536]: Chat with our live agent for fast reply.
+            - generic [ref=e537]: "Mon-Fri: 24 hours, Sat: 9am-6pm, GMT+8"
+          - generic [ref=e538]:
+            - link " Email Us >" [ref=e539] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help/contact
+              - generic [ref=e540]: 
+              - text: Email Us >
+            - generic [ref=e541]: Contact us at support@jlcpcb.com
+            - generic [ref=e542]: Typically reply within hours.
+          - generic [ref=e543]:
+            - link " Help Center >" [ref=e544] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help
+              - generic [ref=e545]: 
+              - text: Help Center >
+            - generic [ref=e546]: Get instant answers.
+            - generic [ref=e547]: 24/7 Available.
+        - text:                
+        - generic [ref=e549]:
+          - generic [ref=e550]:
+            - generic [ref=e551]: Services & Tools
+            - generic [ref=e552]:
+              - link "Electronic Parts" [ref=e553] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts
+              - link "BOM Tool" [ref=e554] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/bom-tool
+              - link "Request a Quote" [ref=e555] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/request-quote
+              - link "Manufacturers" [ref=e556] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/manufacturers
+              - link "PCB Assembly" [ref=e557] [cursor=pointer]:
+                - /url: https://jlcpcb.com/pcb-assembly
+          - generic [ref=e558]:
+            - generic [ref=e559]: Support
+            - generic [ref=e560]:
+              - link "Contact Us" [ref=e561] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/contact/Electronic Components
+              - link "How to Order" [ref=e562] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/article/how-to-build-your-own-parts-library-in-jlcpcb
+              - link "User Guides" [ref=e563] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/catalog/191-PCBA-Parts-Sourcing
+              - link "Sourcing Tips" [ref=e564] [cursor=pointer]:
+                - /url: https://jlcpcb.com/blog/category/components-sourcing
+              - link "Payment Methods" [ref=e565] [cursor=pointer]:
+                - /url: https://jlcpcb.com/payments
+          - generic [ref=e566]:
+            - generic [ref=e567]: Company
+            - generic [ref=e568]:
+              - link "About Us" [ref=e569] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us
+              - link "Quality Assurance" [ref=e570] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/quality-control
+              - link "How We Work" [ref=e571] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/how-it-works
+              - link "Certifications" [ref=e572] [cursor=pointer]:
+                - /url: https://jlcpcb.com/certifications
+              - link "Security" [ref=e573] [cursor=pointer]:
+                - /url: https://jlcpcb.com/privacy-security
+              - link "JLCAPI" [ref=e574] [cursor=pointer]:
+                - /url: https://api.jlcpcb.com/
+              - link "News" [ref=e575] [cursor=pointer]:
+                - /url: https://jlcpcb.com/news
+              - link "Cooperation" [ref=e576] [cursor=pointer]:
+                - /url: https://jlcpcb.com/cooperation
+              - link "Careers" [ref=e577] [cursor=pointer]:
+                - /url: https://jlcpcb.com/careers
+          - generic [ref=e578]:
+            - generic [ref=e579]: Electronics
+            - generic [ref=e580]:
+              - link "EasyEDA" [ref=e581] [cursor=pointer]:
+                - /url: https://easyeda.com
+              - link "JLCPCB" [ref=e582] [cursor=pointer]:
+                - /url: https://jlcpcb.com
+              - link "JLCDFM" [ref=e583] [cursor=pointer]:
+                - /url: https://jlcdfm.com
+              - link "LCSC" [ref=e584] [cursor=pointer]:
+                - /url: https://www.lcsc.com
+              - link "OSHWLAB" [ref=e585] [cursor=pointer]:
+                - /url: https://oshwlab.com/
+          - generic [ref=e586]:
+            - generic [ref=e587]: Mechanical
+            - generic [ref=e588]:
+              - link "JLC3DP" [ref=e589] [cursor=pointer]:
+                - /url: https://jlc3dp.com
+              - link "JLCCNC" [ref=e590] [cursor=pointer]:
+                - /url: https://jlccnc.com
+              - link "JLCMC" [ref=e591] [cursor=pointer]:
+                - /url: https://jlcmc.com
+          - generic [ref=e592]:
+            - generic [ref=e593]: 
+            - generic [ref=e594]:
+              - generic [ref=e595]:
+                - paragraph [ref=e596]: Download JLCONE Desktop—Get $524 Exclusive Coupons
+                - generic [ref=e597]:
+                  - generic [ref=e598]:
+                    - link " Windows" [ref=e599] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=e600]:
+                        - generic [ref=e601]: 
+                        - generic [ref=e602]: Windows
+                    - link " MAC" [ref=e603] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=e604]:
+                        - generic [ref=e605]: 
+                        - generic [ref=e606]: MAC
+                  - generic [ref=e607]:
+                    - link " Android" [ref=e608] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=e609]:
+                        - generic [ref=e610]: 
+                        - generic [ref=e611]: Android
+                    - link " IOS" [ref=e612] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=e613]:
+                        - generic [ref=e614]: 
+                        - generic [ref=e615]: IOS
+              - generic [ref=e616]:
+                - paragraph [ref=e617]: CONNECT WITH US
+                - generic [ref=e618]:
+                  - link "Facebook" [ref=e619] [cursor=pointer]:
+                    - /url: https://www.facebook.com/jlcpcb
+                    - generic [ref=e620]: 
+                  - link "Twitter" [ref=e621] [cursor=pointer]:
+                    - /url: https://twitter.com/jlcpcb
+                    - generic [ref=e622]: 
+                  - link "Instagram" [ref=e623] [cursor=pointer]:
+                    - /url: https://www.instagram.com/jlcpcb
+                    - generic [ref=e624]: 
+                  - link "YouTube" [ref=e625] [cursor=pointer]:
+                    - /url: https://www.youtube.com/JLCPCB
+                    - generic [ref=e626]: 
+                  - link "LinkedIn" [ref=e627] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/jlcpcb
+                    - generic [ref=e628]: 
+                  - link "Reddit" [ref=e629] [cursor=pointer]:
+                    - /url: https://www.reddit.com/r/JLCPCBLab/
+                    - generic [ref=e630]: 
+        - generic [ref=e632]:
+          - generic [ref=e633]: © 2026 JLCPCB.COM All Rights Reserved.
+          - link "Privacy Policy" [ref=e634] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Privacy-Policy
+          - link "Terms & Conditions" [ref=e635] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Terms-%26-Conditions
+          - link "Cookies Policy" [ref=e636] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/JLCPCB-Cookie-Notice
+          - link "Do Not Sell or Share My Personal Information" [ref=e637] [cursor=pointer]:
+            - /url: https://jlcpcb.com/privacy-policy/do-not-sell-or-share-my-personal-information
+    - generic:
+      - generic [ref=e638]:
+        - generic [ref=e640]:
+          - text: Welcome back, may I help you?
+          - button "Chat Now" [ref=e643] [cursor=pointer]
+        - textbox "Write a message" [ref=e645]
+      - iframe [ref=e649]:
+        - generic [ref=f4e5] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=e650]

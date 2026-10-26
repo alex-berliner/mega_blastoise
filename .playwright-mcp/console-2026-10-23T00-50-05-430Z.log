@@ -1,0 +1,11 @@
+[    1122ms] [ERROR] Access to XMLHttpRequest at 'https://rs.jlcpcb.com/webResource/jlcpcb/config.json' from origin 'https://jlcpcb.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://jlcpcb.com/partdetail/C42411119:0
+[    1122ms] [WARNING] 初始化apm failed: Error: HTTP error! status: 0
+    at n.onreadystatechange (https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:1:53667) @ https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:0
+[    1122ms] [WARNING] 初始化apm failed: Error: Network error
+    at n.onerror (https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:1:53748) @ https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:0
+[    1122ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://rs.jlcpcb.com/webResource/jlcpcb/config.json:0
+[    1637ms] [ERROR] Failed to load resource: the server responded with a status of 429 () @ https://jlcpcb.com/api/activityCoupons/selectCouponsModuleList:0
+[    1638ms] [ERROR] [http] 请求错误: Request failed with status code 429 @ https://assets.jlcpcb.com/web-resources/component-platform-static/CanaryLane/latest/_next/static/chunks/796-1ea4ecff765a57e2.js:0
+[    1639ms] Uncaught (in promise) AxiosError: Request failed with status code 429
+    at et (https://assets.jlcpcb.com/web-resources/component-platform-static/CanaryLane/latest/_next/static/chunks/942-8d98a364fbf67d49.js:0:27908)
+    at y (https://assets.jlcpcb.com/web-resources/component-platform-static/CanaryLane/latest/_next/static/chunks/942-8d98a364fbf67d49.js:0:33958)

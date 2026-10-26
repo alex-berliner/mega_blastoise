@@ -1,0 +1,6 @@
+[    1023ms] [ERROR] Access to XMLHttpRequest at 'https://rs.jlcpcb.com/webResource/jlcpcb/config.json' from origin 'https://jlcpcb.com' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ https://jlcpcb.com/partdetail/RaspberryPi-RP2350B/C42415655:0
+[    1024ms] [WARNING] 初始化apm failed: Error: HTTP error! status: 0
+    at n.onreadystatechange (https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:1:53667) @ https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:0
+[    1024ms] [WARNING] 初始化apm failed: Error: Network error
+    at n.onerror (https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:1:53748) @ https://rs.jlcpcb.com/webResource/jlcpcb/monitor_1.3.5.js?v=2:0
+[    1024ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://rs.jlcpcb.com/webResource/jlcpcb/config.json:0

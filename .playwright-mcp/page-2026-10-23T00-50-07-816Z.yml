@@ -1,0 +1,552 @@
+- generic [active] [ref=f15e1]:
+  - generic [ref=f15e2]:
+    - generic [ref=f15e5]:
+      - generic [ref=f15e6]: 24-hour PCB production. Fast Delivery to United States.
+      - generic [ref=f15e8]:
+        - link " Coupons" [ref=f15e9] [cursor=pointer]:
+          - /url: /coupon-center
+          - generic [ref=f15e10]: 
+          - generic [ref=f15e11]: Coupons
+        - link " APP Download" [ref=f15e12] [cursor=pointer]:
+          - /url: https://jlcone.com/download
+          - generic [ref=f15e13]: 
+          - generic [ref=f15e14]: APP Download
+        - generic [ref=f15e15]: USD
+    - navigation "Parts navigation" [ref=f15e24]:
+      - generic [ref=f15e25]:
+        - text:    
+        - generic [ref=f15e26]:
+          - link "Assembly Parts Lib" [ref=f15e27] [cursor=pointer]:
+            - /url: /
+            - generic [aria-hidden] [ref=f15e28]: 
+          - link "Assembly Parts Lib" [ref=f15e30] [cursor=pointer]:
+            - /url: /parts
+            - generic [ref=f15e32]: For PCBA Only
+      - generic [ref=f15e34]:
+        - generic [ref=f15e35]:
+          - 'combobox "Search by keyword or part #" [ref=f15e36]'
+          - button "Upload BOM" [ref=f15e38] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f15e39]: 
+        - button "Search" [ref=f15e41] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f15e42]: 
+      - generic [ref=f15e43]:
+        - text: 
+        - link "Parts Cart" [ref=f15e44] [cursor=pointer]:
+          - /url: https://jlcpcb.com/user-center/smtPrivateLibrary/partsCart/
+          - generic [ref=f15e45]:
+            - generic [aria-hidden] [ref=f15e46]: 
+            - generic: "0"
+        - button "Sign In" [ref=f15e50] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f15e52]: 
+      - text:  
+    - navigation "Parts sections" [ref=f15e53]:
+      - generic [ref=f15e55]:
+        - link "Products" [ref=f15e57] [cursor=pointer]:
+          - /url: /parts/all-electronic-components
+          - generic [aria-hidden] [ref=f15e58]: 
+        - list [ref=f15e61]:
+          - listitem [ref=f15e62]:
+            - link "In Stock Parts" [ref=f15e63] [cursor=pointer]:
+              - /url: /parts/in-stock-parts
+          - listitem [ref=f15e65]:
+            - link "Bom Tool" [ref=f15e66] [cursor=pointer]:
+              - /url: https://jlcpcb.com/parts/bom-tool
+          - listitem [ref=f15e68]:
+            - link "Request a Quote" [ref=f15e69] [cursor=pointer]:
+              - /url: /parts/request-quote
+          - listitem [ref=f15e71]:
+            - generic [ref=f15e72] [cursor=pointer]:
+              - generic [ref=f15e73]: Support
+              - generic [aria-hidden] [ref=f15e74]: 
+    - main [ref=f15e75]:
+      - generic [ref=f15e77]:
+        - text:               
+        - generic [ref=f15e78]:
+          - navigation "Breadcrumb" [ref=f15e79]:
+            - list [ref=f15e80]:
+              - listitem [ref=f15e81]:
+                - link "JLCPCB" [ref=f15e82] [cursor=pointer]:
+                  - /url: https://jlcpcb.com
+              - listitem [ref=f15e83]:
+                - link "Parts Library" [ref=f15e86] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts
+              - listitem [ref=f15e87]:
+                - link "All Components" [ref=f15e90] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/all-electronic-components
+              - listitem [ref=f15e91]:
+                - link "Inductors, Coils, Chokes" [ref=f15e94] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/1st/Inductors_Coils_Chokes_3
+              - listitem [ref=f15e95]:
+                - link "Molding Power Inductors" [ref=f15e98] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/2nd/Inductors_Coils_Chokes/Molding_Power_Inductors_3741
+              - listitem [ref=f15e99]:
+                - generic [ref=f15e102]: AOTA-B201610S3R3-101-T
+          - generic [ref=f15e103]:
+            - generic [ref=f15e104]:
+              - generic [ref=f15e106]:
+                - generic [ref=f15e107]:
+                  - img "AOTA-B201610S3R3-101-T" [ref=f15e111]
+                  - generic [ref=f15e112]:
+                    - button [ref=f15e113] [cursor=pointer]:
+                      - img "AOTA-B201610S3R3-101-T thumbnail 1" [ref=f15e116]
+                    - button [ref=f15e117] [cursor=pointer]:
+                      - img "AOTA-B201610S3R3-101-T thumbnail 2" [ref=f15e120]
+                    - button [ref=f15e121] [cursor=pointer]:
+                      - img "AOTA-B201610S3R3-101-T thumbnail 3" [ref=f15e124]
+                  - paragraph [ref=f15e125]: "* Images are for reference only"
+                  - generic [ref=f15e126]:
+                    - button "" [ref=f15e127] [cursor=pointer]
+                    - button "" [ref=f15e129] [cursor=pointer]
+                    - button "" [ref=f15e131] [cursor=pointer]
+                - generic [ref=f15e133]:
+                  - generic [ref=f15e134]:
+                    - heading "AOTA-B201610S3R3-101-T" [level=1] [ref=f15e135]
+                    - button "" [ref=f15e136] [cursor=pointer]
+                    - generic [ref=f15e138]: Extended
+                  - generic [ref=f15e139]:
+                    - generic [ref=f15e140]:
+                      - term [ref=f15e141]: Manufacturer
+                      - definition [ref=f15e142]:
+                        - generic [ref=f15e143]:
+                          - heading [level=2] [ref=f15e144]:
+                            - link "Abracon LLC" [ref=f15e145] [cursor=pointer]:
+                              - /url: https://jlcpcb.com/parts/manufacturers/Abracon_LLC?brand=385285309602992129
+                          - button "" [ref=f15e146] [cursor=pointer]
+                    - generic [ref=f15e148]:
+                      - term [ref=f15e149]: "MFR.Part #"
+                      - definition [ref=f15e150]:
+                        - generic [ref=f15e151]:
+                          - generic [ref=f15e152]: AOTA-B201610S3R3-101-T
+                          - button "" [ref=f15e153] [cursor=pointer]
+                    - generic [ref=f15e155]:
+                      - term [ref=f15e156]: "JLCPCB Part #"
+                      - definition [ref=f15e157]:
+                        - generic [ref=f15e158]:
+                          - generic [ref=f15e159]: C42411119
+                          - button "" [ref=f15e160] [cursor=pointer]
+                    - generic [ref=f15e162]:
+                      - term [ref=f15e163]: Package
+                      - definition [ref=f15e164]:
+                        - generic [ref=f15e165]:
+                          - generic [ref=f15e166]: "0806"
+                          - button "" [ref=f15e167] [cursor=pointer]
+                    - generic [ref=f15e169]:
+                      - term [ref=f15e170]: Description
+                      - definition [ref=f15e171]:
+                        - generic [ref=f15e172]:
+                          - generic [ref=f15e173]: 115mΩ 2.1A 2.4A 3.3uH Molded inductor 0806 Molding Power Inductors ROHS
+                          - button "" [ref=f15e174] [cursor=pointer]
+                    - generic [ref=f15e176]:
+                      - term [ref=f15e177]: EasyEDA Libraries
+                      - definition [ref=f15e178]:
+                        - button "PCB Footprint or Symbol" [ref=f15e179] [cursor=pointer]
+                    - generic [ref=f15e180]:
+                      - term [ref=f15e181]: ECCN
+                      - definition [ref=f15e182]: EAR99
+                    - generic [ref=f15e183]:
+                      - term [ref=f15e184]: Datasheet
+                      - definition [ref=f15e185]:
+                        - generic [ref=f15e186]:
+                          - img [aria-hidden] [ref=f15e187] [cursor=pointer]
+                          - link "Download" [ref=f15e189] [cursor=pointer]:
+                            - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8567843503114027008-C42411119.pdf?response-content-disposition=attachment%3B%20filename%3DC42411119.pdf%3B%20filename%2A%3DUTF-8%27%27C42411119.pdf&x-oss-date=20261023T005005Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vWGv2Cmrls5bOqcBGInjdmRN52v6%2BesTz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qfZb1lY%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWmpmxNRG%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIv3oO5KKWD5sagAGEZfPcDTrj%2BcfioKtp%2BpeR7MA6Jpx%2FZ1nCgJjCmkxYlLtEpfV1nw9huqSl97cW70MESHCzzPoCQklL9Ts6Ni%2F0DpS6mnGRq14gGpvZ32O5YdTIzMPsRIVsnhDfrDehzvC980OcMm%2FmUrKLBQ98mtep4A6xbNpZz2yCan6MUO2MfyAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXcQG6wfMRqAr79z73HQZPj5S%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=bdc5cf4c86b0f6931673e88695f6e70bb0646eda8464ac4afa199cc7dce7b4b3
+                    - generic [ref=f15e190]:
+                      - term [ref=f15e191]: Source
+                      - definition [ref=f15e192]: JLCPCB
+                    - generic [ref=f15e193]:
+                      - term [ref=f15e194]: Assembly Type
+                      - definition [ref=f15e195]:
+                        - generic [ref=f15e196]: SMT Assembly
+                    - generic [ref=f15e198]:
+                      - term [ref=f15e199]: PCBA Type
+                      - definition [ref=f15e200]:
+                        - generic [ref=f15e201]: Economic and Standard
+                  - generic [ref=f15e203]:
+                    - generic [aria-hidden] [ref=f15e204]: 
+                    - paragraph [ref=f15e205]: "Note: The purchased components are stored in your JLCPCB parts library for future PCBA orders only, and cannot be shipped separately."
+              - text:            
+              - generic [ref=f15e206]:
+                - navigation "Detail sections" [ref=f15e207]:
+                  - tablist [ref=f15e210]:
+                    - tab "Specifications" [selected] [ref=f15e211] [cursor=pointer]
+                    - tab "PCB Assembly Tips" [ref=f15e213] [cursor=pointer]
+                    - tab "Documents" [ref=f15e215] [cursor=pointer]
+                    - tab "PCB Footprint/Symbol" [ref=f15e217] [cursor=pointer]
+                - generic [ref=f15e222]:
+                  - region [ref=f15e223]:
+                    - generic [ref=f15e224]:
+                      - generic [ref=f15e225]:
+                        - heading "AOTA-B201610S3R3-101-T Specifications" [level=2] [ref=f15e228]
+                        - generic [ref=f15e229]:
+                          - paragraph [ref=f15e230]: AOTA-B201610S3R3-101-T technical specifications, attributes, and parameters.
+                          - button "Report an Error?" [ref=f15e231] [cursor=pointer]
+                      - table [ref=f15e234]:
+                        - rowgroup [ref=f15e235]:
+                          - row [ref=f15e236]:
+                            - columnheader [ref=f15e237]
+                            - columnheader "Attributes" [ref=f15e238]
+                            - columnheader "Value" [ref=f15e239]
+                        - rowgroup [ref=f15e240]:
+                          - row [ref=f15e241]:
+                            - cell [ref=f15e242]:
+                              - checkbox "Select Category" [checked] [disabled] [ref=f15e244]
+                            - cell "Category" [ref=f15e245]
+                            - cell "Inductors, Coils, Chokes/Molding Power Inductors" [ref=f15e246]
+                          - row [ref=f15e247]:
+                            - cell [ref=f15e248]:
+                              - checkbox "Select Manufacturer" [ref=f15e250] [cursor=pointer]
+                            - cell "Manufacturer" [ref=f15e251]
+                            - cell [ref=f15e252]:
+                              - link "Abracon LLC" [ref=f15e253] [cursor=pointer]:
+                                - /url: /parts/manufacturers/Abracon_LLC?brand=385285309602992129
+                          - row [ref=f15e254]:
+                            - cell [ref=f15e255]:
+                              - checkbox "Select Package" [ref=f15e257] [cursor=pointer]
+                            - cell "Package" [ref=f15e258]
+                            - cell "0806" [ref=f15e259]
+                          - row [ref=f15e260]:
+                            - cell [ref=f15e261]:
+                              - checkbox "Select Current - Saturation(Isat)" [ref=f15e263] [cursor=pointer]
+                            - cell "Current - Saturation(Isat)" [ref=f15e264]
+                            - cell "2.4A" [ref=f15e265]
+                          - row [ref=f15e266]:
+                            - cell [ref=f15e267]:
+                              - checkbox "Select Inductance" [ref=f15e269] [cursor=pointer]
+                            - cell "Inductance" [ref=f15e270]
+                            - cell "3.3uH" [ref=f15e271]
+                          - row [ref=f15e272]:
+                            - cell [ref=f15e273]:
+                              - checkbox "Select Type" [ref=f15e275] [cursor=pointer]
+                            - cell "Type" [ref=f15e276]
+                            - cell "Molded inductor" [ref=f15e277]
+                          - row [ref=f15e278]:
+                            - cell [ref=f15e279]:
+                              - checkbox "Select Current Rating" [ref=f15e281] [cursor=pointer]
+                            - cell "Current Rating" [ref=f15e282]
+                            - cell "2.1A" [ref=f15e283]
+                          - row [ref=f15e284]:
+                            - cell [ref=f15e285]:
+                              - checkbox "Select DC Resistance(DCR)" [ref=f15e287] [cursor=pointer]
+                            - cell "DC Resistance(DCR)" [ref=f15e288]
+                            - cell "115mΩ" [ref=f15e289]
+                      - generic [ref=f15e290]:
+                        - generic [ref=f15e291]: "Results remaining: 10043"
+                        - button "View Similar" [ref=f15e292] [cursor=pointer]
+                  - region [ref=f15e293]:
+                    - generic [ref=f15e294]:
+                      - heading "PCB Assembly Tips" [level=2] [ref=f15e297]
+                      - paragraph [ref=f15e298]:
+                        - text: From components to fully assembled PCBs. JLCPCB supports PCB assembly for the AOTA-B201610S3R3-101-T. Sign up to receive and
+                        - link "start your assembly today" [ref=f15e299] [cursor=pointer]:
+                          - /url: https://cart.jlcpcb.com/quote?from=audrey1
+                        - text: →
+                      - list [ref=f15e300]:
+                        - listitem [ref=f15e301]:
+                          - generic [ref=f15e302]: "1"
+                          - paragraph [ref=f15e304]: Step 1 - Pre-order the parts you need from JLCPCB.
+                        - listitem [ref=f15e305]:
+                          - generic [ref=f15e306]: "2"
+                          - paragraph [ref=f15e308]: Step 2 - Place a PCBA order to have those parts assembled onto your boards.
+                        - listitem [ref=f15e309]:
+                          - generic [ref=f15e310]: "3"
+                          - paragraph [ref=f15e311]: Step 3 - JLCPCB manufactures and assembles your boards in as fast as 3 days.
+                      - generic [ref=f15e312]:
+                        - img "JLCPCB Assembly Tutorial" [ref=f15e314]
+                        - button "Play video" [ref=f15e315] [cursor=pointer]
+                      - link "Learn more about JLCPCB Assembly " [ref=f15e320] [cursor=pointer]:
+                        - /url: /pcb-assembly
+                        - generic [ref=f15e321]: Learn more about JLCPCB Assembly
+                        - generic [ref=f15e322]: 
+                  - region [ref=f15e323]:
+                    - generic [ref=f15e324]:
+                      - generic [ref=f15e325]:
+                        - heading "AOTA-B201610S3R3-101-T Documents" [level=2] [ref=f15e328]
+                        - paragraph [ref=f15e329]: AOTA-B201610S3R3-101-T datasheets or manufacturer documentation.
+                      - paragraph [ref=f15e330]:
+                        - text: "Datasheet:"
+                        - link "AOTA-B201610S3R3-101-T Datasheet (PDF)" [ref=f15e331] [cursor=pointer]:
+                          - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8567843503114027008-C42411119.pdf?response-content-disposition=attachment%3B%20filename%3DC42411119.pdf%3B%20filename%2A%3DUTF-8%27%27C42411119.pdf&x-oss-date=20261023T005005Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vWGv2Cmrls5bOqcBGInjdmRN52v6%2BesTz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qfZb1lY%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWmpmxNRG%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIv3oO5KKWD5sagAGEZfPcDTrj%2BcfioKtp%2BpeR7MA6Jpx%2FZ1nCgJjCmkxYlLtEpfV1nw9huqSl97cW70MESHCzzPoCQklL9Ts6Ni%2F0DpS6mnGRq14gGpvZ32O5YdTIzMPsRIVsnhDfrDehzvC980OcMm%2FmUrKLBQ98mtep4A6xbNpZz2yCan6MUO2MfyAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXcQG6wfMRqAr79z73HQZPj5S%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=bdc5cf4c86b0f6931673e88695f6e70bb0646eda8464ac4afa199cc7dce7b4b3
+                  - region [ref=f15e332]:
+                    - generic [ref=f15e333]:
+                      - generic [ref=f15e334]:
+                        - heading "AOTA-B201610S3R3-101-T Schematic Symbol & PCB Footprint" [level=2] [ref=f15e337]
+                        - paragraph [ref=f15e338]: The AOTA-B201610S3R3-101-T schematic symbol and PCB footprint are available in the EasyEDA PCB design tool.
+                      - figure [ref=f15e339]:
+                        - iframe [ref=f15e340]:
+                          - generic [ref=f18e2]:
+                            - generic [ref=f18e3]:
+                              - link [ref=f18e4] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                              - link "EasyEDA - An Easier and Powerful Electronic Circuit Design Tool" [ref=f18e8] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                            - generic [ref=f18e9]:
+                              - img [ref=f18e11]:
+                                - generic [ref=f18e15]:
+                                  - generic [ref=f18e16]:
+                                    - generic [ref=f18e18]: "2"
+                                    - generic [ref=f18e19]: "2"
+                                  - generic [ref=f18e20]:
+                                    - generic [ref=f18e22]: "1"
+                                    - generic [ref=f18e23]: "1"
+                              - generic [ref=f18e29]:
+                                - generic [ref=f18e30] [cursor=pointer]: 
+                                - generic [ref=f18e32] [cursor=pointer]: 
+                                - generic [ref=f18e34] [cursor=pointer]: 
+                            - generic [ref=f18e36]:
+                              - img [ref=f18e38]:
+                                - generic:
+                                  - generic: "2"
+                                  - generic: "1"
+                              - generic [ref=f18e53]:
+                                - generic [ref=f18e54] [cursor=pointer]: 
+                                - generic [ref=f18e56] [cursor=pointer]: 
+                                - generic [ref=f18e58] [cursor=pointer]: 
+                            - link "Free Trial" [ref=f18e61] [cursor=pointer]:
+                              - /url: https://pro.easyeda.com/editor#tab=*!467231cf767d4e9c92a9dcb6735a1b1c(device)b516b5165d974d84bdeb0d3e5afbc7be|!e0ed98e8b34f4575bf86a50c2ba2639c(device)b516b5165d974d84bdeb0d3e5afbc7be
+                            - link "Report Error" [ref=f18e62] [cursor=pointer]:
+                              - /url: https://easyeda.com/page/report-part-error?code=C42411119
+                            - generic [ref=f18e63]:
+                              - text: Can't open? Please refer at
+                              - link "this tutorial" [ref=f18e64] [cursor=pointer]:
+                                - /url: https://oshwlab.com/article/How-to-open-preview-parts-in-easyeda-editor-from-lcsc-or-jlcpcb
+            - complementary [ref=f15e343]:
+              - generic [ref=f15e344]:
+                - generic [ref=f15e345]:
+                  - generic [ref=f15e346]:
+                    - paragraph [ref=f15e347]: "In Stock: 224"
+                    - generic [ref=f15e348]:
+                      - generic [ref=f15e349]: "Minimum: 26"
+                      - generic [ref=f15e351]: "Full Reel: 3000"
+                  - generic [ref=f15e352]:
+                    - textbox "Quantity" [ref=f15e353]: "26"
+                    - generic [ref=f15e354]:
+                      - generic [ref=f15e355]:
+                        - generic [ref=f15e356]: $9.38
+                        - button "Save $30.00" [ref=f15e357] [cursor=pointer]
+                      - button "" [ref=f15e358] [cursor=pointer]
+                  - button " Pre-order" [ref=f15e360] [cursor=pointer]:
+                    - generic [ref=f15e361]: 
+                    - generic [ref=f15e362]: Pre-order
+                  - generic [ref=f15e363]:
+                    - paragraph [ref=f15e364]: Pre-order Items Pricing
+                    - paragraph [ref=f15e365]: "Estimated unit price: $0.3608"
+                  - generic [ref=f15e366]:
+                    - generic [ref=f15e367]: "Recent Order:"
+                    - generic [ref=f15e368]:
+                      - generic [ref=f15e369]: 300pcs
+                      - generic [ref=f15e370]: "Unit Price: $0.28"
+                      - generic [ref=f15e371]: By 77****7A
+                - generic [ref=f15e373]:
+                  - heading "Related Products" [level=3] [ref=f15e374]
+                  - list [ref=f15e375]:
+                    - listitem [ref=f15e376] [cursor=pointer]:
+                      - link [ref=f15e377]:
+                        - /url: /partdetail/31512495-FPA201612D2R2MT0/C29780712
+                        - img "recommended parts-FPA201612D-2R2MT0" [ref=f15e381]
+                        - generic [ref=f15e382]:
+                          - paragraph [ref=f15e383]: FPA201612D-2R2MT0
+                          - paragraph [ref=f15e384]: cjiang (Changjiang Microelectronics Tech)
+                          - paragraph [ref=f15e385]: $0.1395
+                    - listitem [ref=f15e386] [cursor=pointer]:
+                      - link [ref=f15e387]:
+                        - /url: /partdetail/GUDIAN-GDIM201610D_R47MTF19R/C49237844
+                        - img "recommended parts-GDIM201610D-R47MTF-19R" [ref=f15e391]
+                        - generic [ref=f15e392]:
+                          - paragraph [ref=f15e393]: GDIM201610D-R47MTF-19R
+                          - paragraph [ref=f15e394]: GUDIAN
+                          - paragraph [ref=f15e395]: $0.0560
+                    - listitem [ref=f15e396] [cursor=pointer]:
+                      - link [ref=f15e397]:
+                        - /url: /partdetail/24155001-SMTC2016101R0MT/C22463859
+                        - img "recommended parts-SMTC201610-1R0MT" [ref=f15e401]
+                        - generic [ref=f15e402]:
+                          - paragraph [ref=f15e403]: SMTC201610-1R0MT
+                          - paragraph [ref=f15e404]: SXN(Shun Xiang Nuo Elec)
+                          - paragraph [ref=f15e405]: $0.0411
+                    - listitem [ref=f15e406] [cursor=pointer]:
+                      - link [ref=f15e407]:
+                        - /url: /partdetail/MetalLions-MTQH201612SR22MBT/C53368480
+                        - img "recommended parts-MTQH201612SR22MBT" [ref=f15e411]
+                        - generic [ref=f15e412]:
+                          - paragraph [ref=f15e413]: MTQH201612SR22MBT
+                          - paragraph [ref=f15e414]: MetalLions
+                          - paragraph [ref=f15e415]: $0.0390
+                    - listitem [ref=f15e416] [cursor=pointer]:
+                      - link [ref=f15e417]:
+                        - /url: /partdetail/31512493-FPA201612D1R0MT0/C29780710
+                        - img "recommended parts-FPA201612D-1R0MT0" [ref=f15e421]
+                        - generic [ref=f15e422]:
+                          - paragraph [ref=f15e423]: FPA201612D-1R0MT0
+                          - paragraph [ref=f15e424]: cjiang (Changjiang Microelectronics Tech)
+                          - paragraph [ref=f15e425]: $0.1395
+                    - listitem [ref=f15e426] [cursor=pointer]:
+                      - link [ref=f15e427]:
+                        - /url: /partdetail/ZE-ZEPIM201608S1R0M/C48945421
+                        - img "recommended parts-ZEPIM201608S-1R0M" [ref=f15e431]
+                        - generic [ref=f15e432]:
+                          - paragraph [ref=f15e433]: ZEPIM201608S-1R0M
+                          - paragraph [ref=f15e434]: ZE
+                          - paragraph [ref=f15e435]: $0.0377
+    - contentinfo [ref=f15e436]:
+      - generic [ref=f15e437]:
+        - generic [ref=f15e438]:
+          - generic [ref=f15e439]:
+            - button " Online Chat >" [ref=f15e440] [cursor=pointer]:
+              - generic [ref=f15e441]: 
+              - text: Online Chat >
+            - generic [ref=f15e442]: Chat with our live agent for fast reply.
+            - generic [ref=f15e443]: "Mon-Fri: 24 hours, Sat: 9am-6pm, GMT+8"
+          - generic [ref=f15e444]:
+            - link " Email Us >" [ref=f15e445] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help/contact
+              - generic [ref=f15e446]: 
+              - text: Email Us >
+            - generic [ref=f15e447]: Contact us at support@jlcpcb.com
+            - generic [ref=f15e448]: Typically reply within hours.
+          - generic [ref=f15e449]:
+            - link " Help Center >" [ref=f15e450] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help
+              - generic [ref=f15e451]: 
+              - text: Help Center >
+            - generic [ref=f15e452]: Get instant answers.
+            - generic [ref=f15e453]: 24/7 Available.
+        - text:                
+        - generic [ref=f15e455]:
+          - generic [ref=f15e456]:
+            - generic [ref=f15e457]: Services & Tools
+            - generic [ref=f15e458]:
+              - link "Electronic Parts" [ref=f15e459] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts
+              - link "BOM Tool" [ref=f15e460] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/bom-tool
+              - link "Request a Quote" [ref=f15e461] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/request-quote
+              - link "Manufacturers" [ref=f15e462] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/manufacturers
+              - link "PCB Assembly" [ref=f15e463] [cursor=pointer]:
+                - /url: https://jlcpcb.com/pcb-assembly
+          - generic [ref=f15e464]:
+            - generic [ref=f15e465]: Support
+            - generic [ref=f15e466]:
+              - link "Contact Us" [ref=f15e467] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/contact/Electronic Components
+              - link "How to Order" [ref=f15e468] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/article/how-to-build-your-own-parts-library-in-jlcpcb
+              - link "User Guides" [ref=f15e469] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/catalog/191-PCBA-Parts-Sourcing
+              - link "Sourcing Tips" [ref=f15e470] [cursor=pointer]:
+                - /url: https://jlcpcb.com/blog/category/components-sourcing
+              - link "Payment Methods" [ref=f15e471] [cursor=pointer]:
+                - /url: https://jlcpcb.com/payments
+          - generic [ref=f15e472]:
+            - generic [ref=f15e473]: Company
+            - generic [ref=f15e474]:
+              - link "About Us" [ref=f15e475] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us
+              - link "Quality Assurance" [ref=f15e476] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/quality-control
+              - link "How We Work" [ref=f15e477] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/how-it-works
+              - link "Certifications" [ref=f15e478] [cursor=pointer]:
+                - /url: https://jlcpcb.com/certifications
+              - link "Security" [ref=f15e479] [cursor=pointer]:
+                - /url: https://jlcpcb.com/privacy-security
+              - link "JLCAPI" [ref=f15e480] [cursor=pointer]:
+                - /url: https://api.jlcpcb.com/
+              - link "News" [ref=f15e481] [cursor=pointer]:
+                - /url: https://jlcpcb.com/news
+              - link "Cooperation" [ref=f15e482] [cursor=pointer]:
+                - /url: https://jlcpcb.com/cooperation
+              - link "Careers" [ref=f15e483] [cursor=pointer]:
+                - /url: https://jlcpcb.com/careers
+          - generic [ref=f15e484]:
+            - generic [ref=f15e485]: Electronics
+            - generic [ref=f15e486]:
+              - link "EasyEDA" [ref=f15e487] [cursor=pointer]:
+                - /url: https://easyeda.com
+              - link "JLCPCB" [ref=f15e488] [cursor=pointer]:
+                - /url: https://jlcpcb.com
+              - link "JLCDFM" [ref=f15e489] [cursor=pointer]:
+                - /url: https://jlcdfm.com
+              - link "LCSC" [ref=f15e490] [cursor=pointer]:
+                - /url: https://www.lcsc.com
+              - link "OSHWLAB" [ref=f15e491] [cursor=pointer]:
+                - /url: https://oshwlab.com/
+          - generic [ref=f15e492]:
+            - generic [ref=f15e493]: Mechanical
+            - generic [ref=f15e494]:
+              - link "JLC3DP" [ref=f15e495] [cursor=pointer]:
+                - /url: https://jlc3dp.com
+              - link "JLCCNC" [ref=f15e496] [cursor=pointer]:
+                - /url: https://jlccnc.com
+              - link "JLCMC" [ref=f15e497] [cursor=pointer]:
+                - /url: https://jlcmc.com
+          - generic [ref=f15e498]:
+            - generic [ref=f15e499]: 
+            - generic [ref=f15e500]:
+              - generic [ref=f15e501]:
+                - paragraph [ref=f15e502]: Download JLCONE Desktop—Get $524 Exclusive Coupons
+                - generic [ref=f15e503]:
+                  - generic [ref=f15e504]:
+                    - link " Windows" [ref=f15e505] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f15e506]:
+                        - generic [ref=f15e507]: 
+                        - generic [ref=f15e508]: Windows
+                    - link " MAC" [ref=f15e509] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f15e510]:
+                        - generic [ref=f15e511]: 
+                        - generic [ref=f15e512]: MAC
+                  - generic [ref=f15e513]:
+                    - link " Android" [ref=f15e514] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f15e515]:
+                        - generic [ref=f15e516]: 
+                        - generic [ref=f15e517]: Android
+                    - link " IOS" [ref=f15e518] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f15e519]:
+                        - generic [ref=f15e520]: 
+                        - generic [ref=f15e521]: IOS
+              - generic [ref=f15e522]:
+                - paragraph [ref=f15e523]: CONNECT WITH US
+                - generic [ref=f15e524]:
+                  - link "Facebook" [ref=f15e525] [cursor=pointer]:
+                    - /url: https://www.facebook.com/jlcpcb
+                    - generic [ref=f15e526]: 
+                  - link "Twitter" [ref=f15e527] [cursor=pointer]:
+                    - /url: https://twitter.com/jlcpcb
+                    - generic [ref=f15e528]: 
+                  - link "Instagram" [ref=f15e529] [cursor=pointer]:
+                    - /url: https://www.instagram.com/jlcpcb
+                    - generic [ref=f15e530]: 
+                  - link "YouTube" [ref=f15e531] [cursor=pointer]:
+                    - /url: https://www.youtube.com/JLCPCB
+                    - generic [ref=f15e532]: 
+                  - link "LinkedIn" [ref=f15e533] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/jlcpcb
+                    - generic [ref=f15e534]: 
+                  - link "Reddit" [ref=f15e535] [cursor=pointer]:
+                    - /url: https://www.reddit.com/r/JLCPCBLab/
+                    - generic [ref=f15e536]: 
+        - generic [ref=f15e538]:
+          - generic [ref=f15e539]: © 2026 JLCPCB.COM All Rights Reserved.
+          - link "Privacy Policy" [ref=f15e540] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Privacy-Policy
+          - link "Terms & Conditions" [ref=f15e541] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Terms-%26-Conditions
+          - link "Cookies Policy" [ref=f15e542] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/JLCPCB-Cookie-Notice
+          - link "Do Not Sell or Share My Personal Information" [ref=f15e543] [cursor=pointer]:
+            - /url: https://jlcpcb.com/privacy-policy/do-not-sell-or-share-my-personal-information
+    - generic:
+      - generic [ref=f15e544]:
+        - generic [ref=f15e546]:
+          - text: Welcome back, may I help you?
+          - button "Chat Now" [ref=f15e549] [cursor=pointer]
+        - textbox "Write a message" [ref=f15e551]
+      - iframe [ref=f15e555]:
+        - generic [ref=f19e5] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=f15e556]

@@ -1,0 +1,6 @@
+[     343ms] [WARNING] [.WebGL-0x3524001ae600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels @ http://127.0.0.1:8765/views/2026-10-23-deck-lip/:408
+[     350ms] [WARNING] [.WebGL-0x3524001ae600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels @ http://127.0.0.1:8765/views/2026-10-23-deck-lip/:0
+[     544ms] [WARNING] [.WebGL-0x3524001ae600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels @ http://127.0.0.1:8765/views/2026-10-23-deck-lip/:0
+[    1870ms] [WARNING] [.WebGL-0x3524001ae600]GL Driver Message (OpenGL, Performance, GL_CLOSE_PATH_NV, High): GPU stall due to ReadPixels (this message will no longer repeat) @ http://127.0.0.1:8765/views/2026-10-23-deck-lip/:0
+[    2704ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://127.0.0.1:8765/favicon.ico:0
+[  663652ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://127.0.0.1:8765/assembly-cell-on-board/:0

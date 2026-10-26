@@ -1,0 +1,245 @@
+- generic [active] [ref=f22e1]:
+  - generic [ref=f22e4]:
+    - generic [ref=f22e5]:
+      - link "AliExpress logo" [ref=f22e6] [cursor=pointer]:
+        - /url: https://www.aliexpress.us
+        - text: AliExpress
+      - button "All Categories" [ref=f22e9]:
+        - img "All Categories" [ref=f22e10]
+    - generic [ref=f22e12]:
+      - generic [ref=f22e14]:
+        - combobox "You can type an item name or keyword to search." [ref=f22e15]
+        - button "Search by image" [ref=f22e19] [cursor=pointer]
+        - button "You can click this button to search." [ref=f22e21] [cursor=pointer]
+      - generic [ref=f22e22]:
+        - button "You can scan the QR code to download the AliExpress app." [ref=f22e23] [cursor=pointer]
+        - button "You can select a country, region or language for shopping on AliExpress us. The current language is English." [ref=f22e33] [cursor=pointer]
+        - button "You can register, sign in or view more information about your account." [ref=f22e38] [cursor=pointer]
+        - link "0 items in cart." [ref=f22e46] [cursor=pointer]:
+          - /url: //www.aliexpress.us/p/shoppingcart/index.html
+          - generic: "0"
+  - generic [ref=f22e62]:
+    - generic [ref=f22e64] [cursor=pointer]
+    - generic [ref=f22e66] [cursor=pointer]
+    - generic [ref=f22e68] [cursor=pointer]
+  - contentinfo [ref=f22e140]:
+    - generic [ref=f22e142]:
+      - generic [ref=f22e143]:
+        - generic [ref=f22e145]:
+          - term [ref=f22e146]:
+            - heading "Help" [level=4] [ref=f22e147]
+          - definition [ref=f22e148]:
+            - link "Help Center" [ref=f22e149] [cursor=pointer]:
+              - /url: //so.aliexpress.com/s/ByrCmn?language=en_US
+            - text: ","
+            - link "Disputes & Reports" [ref=f22e150] [cursor=pointer]:
+              - /url: //report.aliexpress.com
+            - text: ","
+            - link "Return&refund policy" [ref=f22e151] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/ssr/300000437/PinKTaDpEb?disableNav=YES&pha_manifest=ssr&_immersiveMode=true
+            - text: ","
+            - link "Report IPR infringement" [ref=f22e152] [cursor=pointer]:
+              - /url: https://ipp.aidcgroup.net/#/ippHome
+            - text: ","
+            - link "DSA/OSA Information" [ref=f22e153] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/p/transparencycenter/dsa.html
+            - text: ","
+            - link "Information and contacts for Brazil" [ref=f22e154] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/ssr/300000414/informaes-e-contato-para-o-brasil-e57p63?disableNav=YES&pha_manifest=ssr&_immersiveMode=true
+            - text: ","
+            - link "Integrity Compliance" [ref=f22e155] [cursor=pointer]:
+              - /url: https://aidc.jubao.alibaba.com
+            - text: ","
+            - link "Transparency Center" [ref=f22e156] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/p/transparencycenter/index.html
+            - text: ","
+            - link "Submit report (non-registered users)" [ref=f22e157] [cursor=pointer]:
+              - /url: https://m.aliexpress.com/p/complaint-center/index.html#/complaint/report
+            - text: ","
+            - link "Recalls," [ref=f22e158] [cursor=pointer]:
+              - /url: https://helpcenter.aliexpress.com/s/BuyerHelp/knowledge?categoryId=1000110454&language=en_US&m_station=BuyerHelp&questionId=1061297473&regulation=US-product-recall
+            - link "Return Policy" [ref=f22e159] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/ssr/300000437/G7ZED4yXte?disableNav=YES&pha_manifest=ssr&_immersiveMode=true
+        - generic [ref=f22e161]:
+          - term [ref=f22e162]:
+            - heading "AliExpress Multi-Language Sites" [level=4] [ref=f22e163]
+          - definition [ref=f22e164]:
+            - link "Russian" [ref=f22e165] [cursor=pointer]:
+              - /url: //ru.aliexpress.com
+            - text: ","
+            - link "Portuguese" [ref=f22e166] [cursor=pointer]:
+              - /url: //pt.aliexpress.com
+            - text: ","
+            - link "Spanish" [ref=f22e167] [cursor=pointer]:
+              - /url: //es.aliexpress.com
+            - text: ","
+            - link "French" [ref=f22e168] [cursor=pointer]:
+              - /url: //fr.aliexpress.com
+            - text: ","
+            - link "German" [ref=f22e169] [cursor=pointer]:
+              - /url: //de.aliexpress.com
+            - text: ","
+            - link "Italian" [ref=f22e170] [cursor=pointer]:
+              - /url: //it.aliexpress.com
+            - text: ","
+            - link "Dutch" [ref=f22e171] [cursor=pointer]:
+              - /url: //nl.aliexpress.com
+            - text: ","
+            - link "Turkish" [ref=f22e172] [cursor=pointer]:
+              - /url: //tr.aliexpress.com
+            - text: ","
+            - link "Japanese" [ref=f22e173] [cursor=pointer]:
+              - /url: //ja.aliexpress.com
+            - text: ","
+            - link "Korean" [ref=f22e174] [cursor=pointer]:
+              - /url: //ko.aliexpress.com
+            - text: ","
+            - link "Thai" [ref=f22e175] [cursor=pointer]:
+              - /url: //th.aliexpress.com
+            - text: ","
+            - link "Arabic" [ref=f22e176] [cursor=pointer]:
+              - /url: //ar.aliexpress.com
+            - text: ","
+            - link "Hebrew" [ref=f22e177] [cursor=pointer]:
+              - /url: //he.aliexpress.com
+            - text: ","
+            - link "Polish" [ref=f22e178] [cursor=pointer]:
+              - /url: //pl.aliexpress.com
+      - generic [ref=f22e180]:
+        - term [ref=f22e181]:
+          - heading "Browse by Category" [level=4] [ref=f22e182]
+        - definition [ref=f22e183]:
+          - generic [ref=f22e184]:
+            - link "All Popular" [ref=f22e185] [cursor=pointer]:
+              - /url: //www.aliexpress.com/popular.html
+            - text: ","
+            - link "Product" [ref=f22e186] [cursor=pointer]:
+              - /url: //www.aliexpress.com/wholesale.html
+            - text: ","
+            - link "Promotion" [ref=f22e187] [cursor=pointer]:
+              - /url: //www.aliexpress.com/promotion.html
+            - text: ","
+            - link "Low Price" [ref=f22e188] [cursor=pointer]:
+              - /url: //www.aliexpress.com/price.html
+            - text: ","
+            - link "Great Value" [ref=f22e189] [cursor=pointer]:
+              - /url: //www.aliexpress.com/cheap.html
+            - text: ","
+            - link "Reviews" [ref=f22e190] [cursor=pointer]:
+              - /url: //www.aliexpress.com/reviews.html
+            - text: ","
+            - link "Wiki" [ref=f22e191] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/p/wiki/home.html
+            - text: ","
+            - link "Blog" [ref=f22e192] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/p/blog/home.html
+            - text: ","
+            - link "Video" [ref=f22e193] [cursor=pointer]:
+              - /url: https://www.aliexpress.com/p/video/home.html
+      - generic [ref=f22e195]:
+        - term [ref=f22e196]:
+          - heading "Alibaba Group" [level=4] [ref=f22e197]
+        - definition [ref=f22e198]:
+          - link "Alibaba Group Website" [ref=f22e199] [cursor=pointer]:
+            - /url: http://www.alibabagroup.com/en/global/home
+          - text: ","
+          - link "AliExpress" [ref=f22e200] [cursor=pointer]:
+            - /url: //www.aliexpress.com/
+          - text: ","
+          - link "Alimama" [ref=f22e201] [cursor=pointer]:
+            - /url: http://www.alimama.com/
+          - text: ","
+          - link "Fliggy" [ref=f22e202] [cursor=pointer]:
+            - /url: http://www.fliggy.com/
+          - text: ","
+          - link "Alibaba Cloud" [ref=f22e203] [cursor=pointer]:
+            - /url: http://www.alibabacloud.com
+          - text: ","
+          - link "Alibaba International" [ref=f22e204] [cursor=pointer]:
+            - /url: http://www.alibaba.com/
+          - text: ","
+          - link "AliTelecom" [ref=f22e205] [cursor=pointer]:
+            - /url: http://aliqin.tmall.com/
+          - text: ","
+          - link "DingTalk" [ref=f22e206] [cursor=pointer]:
+            - /url: http://www.dingtalk.com/
+          - text: ","
+          - link "Juhuasuan" [ref=f22e207] [cursor=pointer]:
+            - /url: http://ju.taobao.com/
+          - text: ","
+          - link "Taobao Marketplace" [ref=f22e208] [cursor=pointer]:
+            - /url: http://www.taobao.com/
+          - text: ","
+          - link "Tmall" [ref=f22e209] [cursor=pointer]:
+            - /url: http://www.tmall.com/
+          - text: ","
+          - link "Taobao Global" [ref=f22e210] [cursor=pointer]:
+            - /url: https://world.taobao.com/
+          - text: ","
+          - link "AliOS" [ref=f22e211] [cursor=pointer]:
+            - /url: http://www.alios.cn/
+          - text: ","
+          - link "1688" [ref=f22e212] [cursor=pointer]:
+            - /url: http://www.1688.com/
+    - generic [ref=f22e214]:
+      - link "Intellectual Property Protection" [ref=f22e215] [cursor=pointer]:
+        - /url: https://ipp.aidcgroup.net/#/ippHome
+      - text: "-"
+      - link "Privacy Policy" [ref=f22e216] [cursor=pointer]:
+        - /url: https://campaign.aliexpress.com/wow/gcp/app-redirect-terms/index
+      - text: "-"
+      - generic [ref=f22e217]:
+        - link "Cookie Preferences" [ref=f22e218] [cursor=pointer]:
+          - /url: //www.aliexpress.com/p/cookie-setting/index.html
+        - text: "-"
+      - link "Sitemap" [ref=f22e219] [cursor=pointer]:
+        - /url: https://www.aliexpress.com/sitemap.html
+      - text: "-"
+      - link "Terms of Use" [ref=f22e220] [cursor=pointer]:
+        - /url: https://terms.alicdn.com/legal-agreement/terms/suit_bu1_aliexpress/suit_bu1_aliexpress202204182115_66077.html
+      - text: "-"
+      - link "Information for EU consumers" [ref=f22e221] [cursor=pointer]:
+        - /url: https://cdn.contract.alibaba.com/terms/c_platform_service_agreement/20260106183827470/20260106183827470.html?lng=en
+      - text: "-"
+      - link "Legal Information / Imprint" [ref=f22e223] [cursor=pointer]:
+        - /url: https://terms.alicdn.com/legal-agreement/terms/c_end_product_protocol/20230928165112460/20230928165112460.html
+      - text: "-"
+      - link "Transaction Services Agreement for non-EU/UK Consumers" [ref=f22e224] [cursor=pointer]:
+        - /url: https://rulechannel.alibaba.com/icbu?type=detail&ruleId=2054&cId=1304#/rule/detail?cId=1304&ruleId=2054
+      - text: "-"
+      - link "Terms and Conditions for EU/EEA/UK Consumers" [ref=f22e225] [cursor=pointer]:
+        - /url: https://campaign.aliexpress.com/wow/gcp-plus/ae/tupr?_immersiveMode=true&pha_manifest=upr&disableNav=YES&wh_pid=300000414/pt8AMcBikk
+      - text: "-"
+      - link "User Information Legal Enquiry Guide" [ref=f22e226] [cursor=pointer]:
+        - /url: https://terms.alicdn.com/legal-agreement/terms/data_processing_agreement_others/20231101174825691/20231101174825691.html
+      - text: ©️2010-2025 AliExpress.com. All rights reserved.
+      - link [ref=f22e227] [cursor=pointer]:
+        - /url: https://zzlz.gsxt.gov.cn/businessCheck/verifKey.do?showType=p&serial=91330108MACUEGT78K-SAIC_SHOW_10000091330108MACUEGT78K1783934792025&signData=MEYCIQDhB1Y1o7gD9/BMgwkWkQZ2ROKRFMviBExfpVBcWz3t7gIhANBC1pvM9xUuadcvYA6nIppH8wrAy/iPJ/sqb0oijfyP
+        - img "增值电信业务经营许可证" [ref=f22e228]
+      - link "增值电信业务经营许可证 浙B2-20120091-8" [ref=f22e229] [cursor=pointer]:
+        - /url: https://beian.miit.gov.cn/
+      - link [ref=f22e230] [cursor=pointer]:
+        - /url: https://beian.mps.gov.cn/#/query/webSearch?code=33010802014622
+        - img "浙公网安备" [ref=f22e231]
+        - text: 浙公网安备33010802014622号
+      - link "浙ICP备2024067534号-11" [ref=f22e232] [cursor=pointer]:
+        - /url: https://beian.miit.gov.cn/
+  - generic [ref=f22e233]:
+    - generic [ref=f22e234]: 关闭
+    - iframe [ref=f22e236]:
+      - generic [ref=f26e1]:
+        - iframe [ref=f26e2]:
+          - generic [ref=f27e2]:
+            - generic [ref=f27e5]: We need to check if you are a robot.
+            - iframe [ref=f27e10]:
+              - generic [ref=f31e2]:
+                - generic [ref=f31e3]:
+                  - checkbox "I'm not a robot" [ref=f31e7]
+                  - generic [aria-hidden] [ref=f31e11]: I'm not a robot
+                - generic [ref=f31e12]: reCAPTCHA
+        - generic [ref=f26e3]:
+          - generic "z76I_C2qllqp0wEUzSi1AQ|at4o4g|sXrfPQ_0|Bfi3jQ|1" [ref=f26e4]
+          - generic [ref=f26e6]:
+            - generic [ref=f26e7] [cursor=pointer]
+            - link "Click to feedback >" [ref=f26e9] [cursor=pointer]:
+              - /url: https://acs.aliexpress.us//h5/mtop.aliexpress.pdp.pc.query/1.0/_____tmd_____/page/feedback?rand=S3WxGHAgAt756EpznwfNzJq2AFA2qBNla3j6EINUS8We9dazM_iKElp8DwVSHZUevpC41Bx7RzivXIj9RnZgdg&x5secdata=xg2a53c265a5e5cc3ckkcfbe88fc2daa965aa9d30114cd28b5011792944354a-1168960602a-1317347523abaxc3eajrecaptcha33b301e4ba84dd59c08d32d6df88495c586__bx__acs.aliexpress.us:443/h5/mtop.aliexpress.pdp.pc.query/1.0&uuid=cfbe88fc2daa965aa9d30114cd28b501&type=11

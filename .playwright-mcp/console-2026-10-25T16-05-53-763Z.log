@@ -1,0 +1,13 @@
+[     770ms] [LOG] [pixel-tracker]: init @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/index.js:0
+[     777ms] [WARNING] Setting secure=true because sameSite=None requires secure cookies @ https://assets.alicdn.com/g/lzd_sec/LWSC-G/index.js:0
+[     943ms] [LOG] [Cookie Guard] 当前页面 "detail" 不在允许的页面列表中，跳过初始化 {allowedPages: Array(3), currentPage: detail} @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/loader.js:0
+[     973ms] [WARNING] 'et' should been 'EXP','CLK','SLD','INPUT','SYS', 'OTHER' @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/gep-sdk.js:0
+[     981ms] [LOG] [poplayer-web-container] init {positionSign: PC_Product_Detail_Page} @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/pop-layer.js:0
+[    1118ms] [LOG] Sun Oct 25 2026 12:05:54 GMT-0400 (Eastern Daylight Time) @ https://assets.aliexpress-media.com/g/AWSC/et/1.83.41/et_f.js:1
+[    1268ms] [LOG] load css succ @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/index.js:0
+[    1396ms] [WARNING] 将根据已有的meta标签来设置缩放比例 @ https://assets.alicdn.com/g/??mtb/lib-flexible/0.3.2/flexible.js,mtb/lib-windvane/3.0.6/windvane.js:0
+[    1398ms] [WARNING] Setting secure=true because sameSite=None requires secure cookies @ https://assets.alicdn.com/g/lzd_sec/LWSC-G/index.js:0
+[    1409ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://assets.alicdn.com/g/lzd_sec/epssw/0.0.65/epssw.js:5
+[    1409ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://assets.alicdn.com/g/lzd_sec/epssw/0.0.65/epssw.js:5
+[    1471ms] [LOG] load succ @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/index.js:0
+[    1522ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1483203006415954. @ https://connect.facebook.net/en_US/fbevents.js:205

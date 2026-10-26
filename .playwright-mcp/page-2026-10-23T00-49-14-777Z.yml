@@ -1,0 +1,893 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e5]:
+      - generic [ref=e6]: 24-hour PCB production. Fast Delivery to United States.
+      - generic [ref=e8]:
+        - link " Coupons" [ref=e9] [cursor=pointer]:
+          - /url: /coupon-center
+          - generic [ref=e10]: 
+          - generic [ref=e11]: Coupons
+        - link " APP Download" [ref=e12] [cursor=pointer]:
+          - /url: https://jlcone.com/download
+          - generic [ref=e13]: 
+          - generic [ref=e14]: APP Download
+        - generic [ref=e15]: USD
+    - navigation "Parts navigation" [ref=e24]:
+      - generic [ref=e25]:
+        - text:    
+        - generic [ref=e26]:
+          - link "Assembly Parts Lib" [ref=e27] [cursor=pointer]:
+            - /url: /
+            - generic [aria-hidden] [ref=e28]: 
+          - link "Assembly Parts Lib" [ref=e30] [cursor=pointer]:
+            - /url: /parts
+            - generic [ref=e32]: For PCBA Only
+      - generic [ref=e34]:
+        - generic [ref=e35]:
+          - 'combobox "Search by keyword or part #" [ref=e36]'
+          - button "Upload BOM" [ref=e38] [cursor=pointer]:
+            - generic [aria-hidden] [ref=e39]: 
+        - button "Search" [ref=e41] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e42]: 
+      - generic [ref=e43]:
+        - text: 
+        - link "Parts Cart" [ref=e44] [cursor=pointer]:
+          - /url: https://jlcpcb.com/user-center/smtPrivateLibrary/partsCart/
+          - generic [ref=e45]:
+            - generic [aria-hidden] [ref=e46]: 
+            - generic: "0"
+        - button "Sign In" [ref=e50] [cursor=pointer]:
+          - generic [aria-hidden] [ref=e52]: 
+      - text:  
+    - navigation "Parts sections" [ref=e53]:
+      - generic [ref=e55]:
+        - link "Products" [ref=e57] [cursor=pointer]:
+          - /url: /parts/all-electronic-components
+          - generic [aria-hidden] [ref=e58]: 
+        - list [ref=e61]:
+          - listitem [ref=e62]:
+            - link "In Stock Parts" [ref=e63] [cursor=pointer]:
+              - /url: /parts/in-stock-parts
+          - listitem [ref=e65]:
+            - link "Bom Tool" [ref=e66] [cursor=pointer]:
+              - /url: https://jlcpcb.com/parts/bom-tool
+          - listitem [ref=e68]:
+            - link "Request a Quote" [ref=e69] [cursor=pointer]:
+              - /url: /parts/request-quote
+          - listitem [ref=e71]:
+            - generic [ref=e72] [cursor=pointer]:
+              - generic [ref=e73]: Support
+              - generic [aria-hidden] [ref=e74]: 
+    - main [ref=e75]:
+      - generic [ref=e77]:
+        - text:               
+        - generic [ref=e78]:
+          - navigation "Breadcrumb" [ref=e79]:
+            - list [ref=e80]:
+              - listitem [ref=e81]:
+                - link "JLCPCB" [ref=e82] [cursor=pointer]:
+                  - /url: https://jlcpcb.com
+              - listitem [ref=e83]:
+                - link "Parts Library" [ref=e86] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts
+              - listitem [ref=e87]:
+                - link "All Components" [ref=e90] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/all-electronic-components
+              - listitem [ref=e91]:
+                - link "Embedded Processors & Controllers" [ref=e94] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/1st/Embedded_Processors_Controllers_18
+              - listitem [ref=e95]:
+                - link "Microcontrollers (MCU/MPU/SOC)" [ref=e98] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/2nd/Embedded_Processors_Controllers/Microcontrollers_(MCU_MPU_SOC)_2584
+              - listitem [ref=e99]:
+                - generic [ref=e102]: RP2354B
+          - generic [ref=e103]:
+            - generic [ref=e104]:
+              - generic [ref=e106]:
+                - generic [ref=e107]:
+                  - img "RP2354B" [ref=e111]
+                  - generic [ref=e112]:
+                    - button [ref=e113] [cursor=pointer]:
+                      - img "RP2354B thumbnail 1" [ref=e116]
+                    - button [ref=e117] [cursor=pointer]:
+                      - img "RP2354B thumbnail 2" [ref=e120]
+                    - button [ref=e121] [cursor=pointer]:
+                      - img "RP2354B thumbnail 3" [ref=e124]
+                  - paragraph [ref=e125]: "* Images are for reference only"
+                  - generic [ref=e126]:
+                    - button "" [ref=e127] [cursor=pointer]
+                    - button "" [ref=e129] [cursor=pointer]
+                    - button "" [ref=e131] [cursor=pointer]
+                - generic [ref=e133]:
+                  - generic [ref=e134]:
+                    - heading "RP2354B" [level=1] [ref=e135]
+                    - button "" [ref=e136] [cursor=pointer]
+                    - generic [ref=e138]: Extended
+                  - generic [ref=e139]:
+                    - generic [ref=e140]:
+                      - term [ref=e141]: Manufacturer
+                      - definition [ref=e142]:
+                        - generic [ref=e143]:
+                          - heading [level=2] [ref=e144]:
+                            - link "Raspberry Pi" [ref=e145] [cursor=pointer]:
+                              - /url: https://jlcpcb.com/parts/manufacturers/Raspberry_Pi?brand=385285311012278273
+                          - button "" [ref=e146] [cursor=pointer]
+                    - generic [ref=e148]:
+                      - term [ref=e149]: "MFR.Part #"
+                      - definition [ref=e150]:
+                        - generic [ref=e151]:
+                          - generic [ref=e152]: RP2354B
+                          - button "" [ref=e153] [cursor=pointer]
+                    - generic [ref=e155]:
+                      - term [ref=e156]: "JLCPCB Part #"
+                      - definition [ref=e157]:
+                        - generic [ref=e158]:
+                          - generic [ref=e159]: C39843328
+                          - button "" [ref=e160] [cursor=pointer]
+                    - generic [ref=e162]:
+                      - term [ref=e163]: Package
+                      - definition [ref=e164]:
+                        - generic [ref=e165]:
+                          - generic [ref=e166]: QFN-80-EP(10x10)
+                          - button "" [ref=e167] [cursor=pointer]
+                    - generic [ref=e169]:
+                      - term [ref=e170]: Description
+                      - definition [ref=e171]:
+                        - generic [ref=e172]:
+                          - generic [ref=e173]: 2MB 48 External pin reset (NRST)、True random number generator (TRNG) OTP QFN-80-EP(10x10) Microcontrollers (MCU/MPU/SOC) ROHS
+                          - button "" [ref=e174] [cursor=pointer]
+                    - generic [ref=e176]:
+                      - term [ref=e177]: EasyEDA Libraries
+                      - definition [ref=e178]:
+                        - button "PCB Footprint or Symbol" [ref=e179] [cursor=pointer]
+                    - generic [ref=e180]:
+                      - term [ref=e181]: ECCN
+                      - definition [ref=e182]: EAR99
+                    - generic [ref=e183]:
+                      - term [ref=e184]: Datasheet
+                      - definition [ref=e185]:
+                        - generic [ref=e186]:
+                          - img [aria-hidden] [ref=e187] [cursor=pointer]
+                          - link "Download" [ref=e189] [cursor=pointer]:
+                            - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8603050869667471360-C39843328.pdf?response-content-disposition=attachment%3B%20filename%3DC39843328.pdf%3B%20filename%2A%3DUTF-8%27%27C39843328.pdf&x-oss-date=20261023T004911Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vWGv2Cmrls5bOqcBGInjdmRN52v6%2BesTz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qfZb1lY%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWmpmxNRG%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIv3oO5KKWD5sagAGEZfPcDTrj%2BcfioKtp%2BpeR7MA6Jpx%2FZ1nCgJjCmkxYlLtEpfV1nw9huqSl97cW70MESHCzzPoCQklL9Ts6Ni%2F0DpS6mnGRq14gGpvZ32O5YdTIzMPsRIVsnhDfrDehzvC980OcMm%2FmUrKLBQ98mtep4A6xbNpZz2yCan6MUO2MfyAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXcQG6wfMRqAr79z73HQZPj5S%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=12358f8711987d07141afac783815f2626a0efbda3b945b80901cd9a2c1e7bbb
+                    - generic [ref=e190]:
+                      - term [ref=e191]: Source
+                      - definition [ref=e192]: JLCPCB
+                    - generic [ref=e193]:
+                      - term [ref=e194]: Assembly Type
+                      - definition [ref=e195]:
+                        - generic [ref=e196]: SMT Assembly
+                    - generic [ref=e198]:
+                      - term [ref=e199]: PCBA Type
+                      - definition [ref=e200]:
+                        - generic [ref=e201]: Economic and Standard
+                    - generic [ref=e203]:
+                      - term [ref=e204]:
+                        - text: MSL Level
+                        - generic [ref=e205] [cursor=pointer]: 
+                      - definition [ref=e206]: MSL 3
+                  - generic [ref=e207]:
+                    - generic [aria-hidden] [ref=e208]: 
+                    - paragraph [ref=e209]: "Note: The purchased components are stored in your JLCPCB parts library for future PCBA orders only, and cannot be shipped separately."
+              - text:             
+              - generic [ref=e210]:
+                - navigation "Detail sections" [ref=e211]:
+                  - tablist [ref=e214]:
+                    - tab "Specifications" [selected] [ref=e215] [cursor=pointer]
+                    - tab "PCB Assembly Tips" [ref=e217] [cursor=pointer]
+                    - tab "PCB Footprint/Symbol" [ref=e219] [cursor=pointer]
+                - generic [ref=e224]:
+                  - region [ref=e225]:
+                    - generic [ref=e226]:
+                      - generic [ref=e227]:
+                        - heading "RP2354B Specifications" [level=2] [ref=e230]
+                        - generic [ref=e231]:
+                          - paragraph [ref=e232]: RP2354B technical specifications, attributes, and parameters.
+                          - button "Report an Error?" [ref=e233] [cursor=pointer]
+                      - table [ref=e236]:
+                        - rowgroup [ref=e237]:
+                          - row [ref=e238]:
+                            - columnheader [ref=e239]
+                            - columnheader "Attributes" [ref=e240]
+                            - columnheader "Value" [ref=e241]
+                        - rowgroup [ref=e242]:
+                          - row [ref=e243]:
+                            - cell [ref=e244]:
+                              - checkbox "Select Category" [checked] [disabled] [ref=e246]
+                            - cell "Category" [ref=e247]
+                            - cell "Embedded Processors & Controllers/Microcontrollers (MCU/MPU/SOC)" [ref=e248]
+                          - row [ref=e249]:
+                            - cell [ref=e250]:
+                              - checkbox "Select Manufacturer" [ref=e252] [cursor=pointer]
+                            - cell "Manufacturer" [ref=e253]
+                            - cell [ref=e254]:
+                              - link "Raspberry Pi" [ref=e255] [cursor=pointer]:
+                                - /url: /parts/manufacturers/Raspberry_Pi?brand=385285311012278273
+                          - row [ref=e256]:
+                            - cell [ref=e257]:
+                              - checkbox "Select Package" [ref=e259] [cursor=pointer]
+                            - cell "Package" [ref=e260]
+                            - cell "QFN-80-EP(10x10)" [ref=e261]
+                          - row [ref=e262]:
+                            - cell [ref=e263]:
+                              - checkbox "Select Operating Temperature" [ref=e265] [cursor=pointer]
+                            - cell "Operating Temperature" [ref=e266]
+                            - cell "-20℃~+85℃" [ref=e267]
+                          - row [ref=e268]:
+                            - cell [ref=e269]:
+                              - checkbox "Select CPU Maximum Speed" [ref=e271] [cursor=pointer]
+                            - cell "CPU Maximum Speed" [ref=e272]
+                            - cell "150MHz" [ref=e273]
+                          - row [ref=e274]:
+                            - cell [ref=e275]:
+                              - checkbox "Select Program Memory Type" [ref=e277] [cursor=pointer]
+                            - cell "Program Memory Type" [ref=e278]
+                            - cell "OTP" [ref=e279]
+                          - row [ref=e280]:
+                            - cell [ref=e281]:
+                              - checkbox "Select Program Storage Size" [ref=e283] [cursor=pointer]
+                            - cell "Program Storage Size" [ref=e284]
+                            - cell "2MB" [ref=e285]
+                          - row [ref=e286]:
+                            - cell [ref=e287]:
+                              - checkbox "Select RAM Size" [ref=e289] [cursor=pointer]
+                            - cell "RAM Size" [ref=e290]
+                            - cell "520KB" [ref=e291]
+                          - row [ref=e292]:
+                            - cell [ref=e293]:
+                              - checkbox "Select Core Size" [ref=e295] [cursor=pointer]
+                            - cell "Core Size" [ref=e296]
+                            - cell "32 Bit" [ref=e297]
+                          - row [ref=e298]:
+                            - cell [ref=e299]:
+                              - checkbox "Select CPU Core" [ref=e301] [cursor=pointer]
+                            - cell "CPU Core" [ref=e302]
+                            - cell "ARM Cortex-M33" [ref=e303]
+                          - row [ref=e304]:
+                            - cell [ref=e305]:
+                              - checkbox "Select Number of I/O" [ref=e307] [cursor=pointer]
+                            - cell "Number of I/O" [ref=e308]
+                            - cell "48" [ref=e309]
+                          - row [ref=e310]:
+                            - cell [ref=e311]:
+                              - checkbox "Select Features" [ref=e313] [cursor=pointer]
+                            - cell "Features" [ref=e314]
+                            - cell "External pin reset (NRST)、True random number generator (TRNG)" [ref=e315]
+                          - row [ref=e316]:
+                            - cell [ref=e317]:
+                              - checkbox "Select ADC (Bit)" [ref=e319] [cursor=pointer]
+                            - cell "ADC (Bit)" [ref=e320]
+                            - cell "12bit" [ref=e321]
+                          - row [ref=e322]:
+                            - cell [ref=e323]:
+                              - checkbox "Select Oscillator Type" [ref=e325] [cursor=pointer]
+                            - cell "Oscillator Type" [ref=e326]
+                            - cell "Built-in+External" [ref=e327]
+                      - generic [ref=e328]:
+                        - generic [ref=e329]: "Results remaining: 68024"
+                        - button "View Similar" [ref=e330] [cursor=pointer]
+                  - region [ref=e331]:
+                    - generic [ref=e332]:
+                      - heading "PCB Assembly Tips" [level=2] [ref=e335]
+                      - paragraph [ref=e336]:
+                        - text: From components to fully assembled PCBs. JLCPCB supports PCB assembly for the RP2354B. Sign up to receive and
+                        - link "start your assembly today" [ref=e337] [cursor=pointer]:
+                          - /url: https://cart.jlcpcb.com/quote?from=audrey1
+                        - text: →
+                      - list [ref=e338]:
+                        - listitem [ref=e339]:
+                          - generic [ref=e340]: "1"
+                          - paragraph [ref=e342]: Step 1 - Pre-order the parts you need from JLCPCB.
+                        - listitem [ref=e343]:
+                          - generic [ref=e344]: "2"
+                          - paragraph [ref=e346]: Step 2 - Place a PCBA order to have those parts assembled onto your boards.
+                        - listitem [ref=e347]:
+                          - generic [ref=e348]: "3"
+                          - paragraph [ref=e349]: Step 3 - JLCPCB manufactures and assembles your boards in as fast as 3 days.
+                      - generic [ref=e350]:
+                        - img "JLCPCB Assembly Tutorial" [ref=e352]
+                        - button "Play video" [ref=e353] [cursor=pointer]
+                      - link "Learn more about JLCPCB Assembly " [ref=e358] [cursor=pointer]:
+                        - /url: /pcb-assembly
+                        - generic [ref=e359]: Learn more about JLCPCB Assembly
+                        - generic [ref=e360]: 
+                  - region [ref=e361]:
+                    - generic [ref=e362]:
+                      - generic [ref=e363]:
+                        - heading "RP2354B Schematic Symbol & PCB Footprint" [level=2] [ref=e366]
+                        - paragraph [ref=e367]: The RP2354B schematic symbol and PCB footprint are available in the EasyEDA PCB design tool.
+                      - figure [ref=e368]:
+                        - iframe [ref=e369]:
+                          - generic [ref=f3e2]:
+                            - generic [ref=f3e3]:
+                              - link [ref=f3e4] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                              - link "EasyEDA - An Easier and Powerful Electronic Circuit Design Tool" [ref=f3e8] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                            - generic [ref=f3e9]:
+                              - img [ref=f3e11]:
+                                - generic [ref=f3e15]:
+                                  - generic [ref=f3e18]:
+                                    - generic [ref=f3e20]: GPIO4
+                                    - generic [ref=f3e21]: "1"
+                                  - generic [ref=f3e22]:
+                                    - generic [ref=f3e24]: GPIO5
+                                    - generic [ref=f3e25]: "2"
+                                  - generic [ref=f3e26]:
+                                    - generic [ref=f3e28]: GPIO6
+                                    - generic [ref=f3e29]: "3"
+                                  - generic [ref=f3e30]:
+                                    - generic [ref=f3e32]: GPIO7
+                                    - generic [ref=f3e33]: "4"
+                                  - generic [ref=f3e34]:
+                                    - generic [ref=f3e36]: IOVDD
+                                    - generic [ref=f3e37]: "5"
+                                  - generic [ref=f3e38]:
+                                    - generic [ref=f3e40]: GPIO8
+                                    - generic [ref=f3e41]: "6"
+                                  - generic [ref=f3e42]:
+                                    - generic [ref=f3e44]: GPIO9
+                                    - generic [ref=f3e45]: "7"
+                                  - generic [ref=f3e46]:
+                                    - generic [ref=f3e48]: GPIO10
+                                    - generic [ref=f3e49]: "8"
+                                  - generic [ref=f3e50]:
+                                    - generic [ref=f3e52]: GPIO11
+                                    - generic [ref=f3e53]: "9"
+                                  - generic [ref=f3e54]:
+                                    - generic [ref=f3e56]: DVDD
+                                    - generic [ref=f3e57]: "10"
+                                  - generic [ref=f3e58]:
+                                    - generic [ref=f3e60]: GPIO12
+                                    - generic [ref=f3e61]: "11"
+                                  - generic [ref=f3e62]:
+                                    - generic [ref=f3e64]: GPIO13
+                                    - generic [ref=f3e65]: "12"
+                                  - generic [ref=f3e66]:
+                                    - generic [ref=f3e68]: GPIO14
+                                    - generic [ref=f3e69]: "13"
+                                  - generic [ref=f3e70]:
+                                    - generic [ref=f3e72]: GPIO15
+                                    - generic [ref=f3e73]: "14"
+                                  - generic [ref=f3e74]:
+                                    - generic [ref=f3e76]: IOVDD
+                                    - generic [ref=f3e77]: "15"
+                                  - generic [ref=f3e78]:
+                                    - generic [ref=f3e80]: GPIO16
+                                    - generic [ref=f3e81]: "16"
+                                  - generic [ref=f3e82]:
+                                    - generic [ref=f3e84]: GPIO17
+                                    - generic [ref=f3e85]: "17"
+                                  - generic [ref=f3e86]:
+                                    - generic [ref=f3e88]: GPIO18
+                                    - generic [ref=f3e89]: "18"
+                                  - generic [ref=f3e90]:
+                                    - generic [ref=f3e92]: GPIO19
+                                    - generic [ref=f3e93]: "19"
+                                  - generic [ref=f3e94]:
+                                    - generic [ref=f3e96]: GPIO20
+                                    - generic [ref=f3e97]: "20"
+                                  - generic [ref=f3e98]:
+                                    - generic [ref=f3e100]: GPIO21
+                                    - generic [ref=f3e101]: "21"
+                                  - generic [ref=f3e102]:
+                                    - generic [ref=f3e104]: GPIO22
+                                    - generic [ref=f3e105]: "22"
+                                  - generic [ref=f3e106]:
+                                    - generic [ref=f3e108]: GPIO23
+                                    - generic [ref=f3e109]: "23"
+                                  - generic [ref=f3e110]:
+                                    - generic [ref=f3e112]: IOVDD
+                                    - generic [ref=f3e113]: "24"
+                                  - generic [ref=f3e114]:
+                                    - generic [ref=f3e116]: GPIO24
+                                    - generic [ref=f3e117]: "25"
+                                  - generic [ref=f3e118]:
+                                    - generic [ref=f3e120]: GPIO25
+                                    - generic [ref=f3e121]: "26"
+                                  - generic [ref=f3e122]:
+                                    - generic [ref=f3e124]: GPIO26
+                                    - generic [ref=f3e125]: "27"
+                                  - generic [ref=f3e126]:
+                                    - generic [ref=f3e128]: GPIO27
+                                    - generic [ref=f3e129]: "28"
+                                  - generic [ref=f3e130]:
+                                    - generic [ref=f3e132]: IOVDD
+                                    - generic [ref=f3e133]: "29"
+                                  - generic [ref=f3e134]:
+                                    - generic [ref=f3e136]: XIN
+                                    - generic [ref=f3e137]: "30"
+                                  - generic [ref=f3e138]:
+                                    - generic [ref=f3e140]: XOUT
+                                    - generic [ref=f3e141]: "31"
+                                  - generic [ref=f3e142]:
+                                    - generic [ref=f3e144]: DVDD
+                                    - generic [ref=f3e145]: "32"
+                                  - generic [ref=f3e146]:
+                                    - generic [ref=f3e148]: SWCLK
+                                    - generic [ref=f3e149]: "33"
+                                  - generic [ref=f3e150]:
+                                    - generic [ref=f3e152]: SWDIO
+                                    - generic [ref=f3e153]: "34"
+                                  - generic [ref=f3e154]:
+                                    - generic [ref=f3e156]: RUN
+                                    - generic [ref=f3e157]: "35"
+                                  - generic [ref=f3e158]:
+                                    - generic [ref=f3e160]: GPIO28
+                                    - generic [ref=f3e161]: "36"
+                                  - generic [ref=f3e162]:
+                                    - generic [ref=f3e164]: GPIO29
+                                    - generic [ref=f3e165]: "37"
+                                  - generic [ref=f3e166]:
+                                    - generic [ref=f3e168]: GPIO30
+                                    - generic [ref=f3e169]: "38"
+                                  - generic [ref=f3e170]:
+                                    - generic [ref=f3e172]: GPIO31
+                                    - generic [ref=f3e173]: "39"
+                                  - generic [ref=f3e174]:
+                                    - generic [ref=f3e176]: GPIO32
+                                    - generic [ref=f3e177]: "40"
+                                  - generic [ref=f3e178]:
+                                    - generic [ref=f3e180]: IOVDD
+                                    - generic [ref=f3e181]: "41"
+                                  - generic [ref=f3e182]:
+                                    - generic [ref=f3e184]: GPIO33
+                                    - generic [ref=f3e185]: "42"
+                                  - generic [ref=f3e186]:
+                                    - generic [ref=f3e188]: GPIO34
+                                    - generic [ref=f3e189]: "43"
+                                  - generic [ref=f3e190]:
+                                    - generic [ref=f3e192]: GPIO35
+                                    - generic [ref=f3e193]: "44"
+                                  - generic [ref=f3e194]:
+                                    - generic [ref=f3e196]: GPIO36
+                                    - generic [ref=f3e197]: "45"
+                                  - generic [ref=f3e198]:
+                                    - generic [ref=f3e200]: GPIO37
+                                    - generic [ref=f3e201]: "46"
+                                  - generic [ref=f3e202]:
+                                    - generic [ref=f3e204]: GPIO38
+                                    - generic [ref=f3e205]: "47"
+                                  - generic [ref=f3e206]:
+                                    - generic [ref=f3e208]: GPIO39
+                                    - generic [ref=f3e209]: "48"
+                                  - generic [ref=f3e210]:
+                                    - generic [ref=f3e212]: GPIO40_ADC0
+                                    - generic [ref=f3e213]: "49"
+                                  - generic [ref=f3e214]:
+                                    - generic [ref=f3e216]: IOVDD
+                                    - generic [ref=f3e217]: "50"
+                                  - generic [ref=f3e218]:
+                                    - generic [ref=f3e220]: DVDD
+                                    - generic [ref=f3e221]: "51"
+                                  - generic [ref=f3e222]:
+                                    - generic [ref=f3e224]: GPIO41_ADC1
+                                    - generic [ref=f3e225]: "52"
+                                  - generic [ref=f3e226]:
+                                    - generic [ref=f3e228]: GPIO42_ADC2
+                                    - generic [ref=f3e229]: "53"
+                                  - generic [ref=f3e230]:
+                                    - generic [ref=f3e232]: GPIO43_ADC3
+                                    - generic [ref=f3e233]: "54"
+                                  - generic [ref=f3e234]:
+                                    - generic [ref=f3e236]: GPIO44_ADC4
+                                    - generic [ref=f3e237]: "55"
+                                  - generic [ref=f3e238]:
+                                    - generic [ref=f3e240]: GPIO45_ADC5
+                                    - generic [ref=f3e241]: "56"
+                                  - generic [ref=f3e242]:
+                                    - generic [ref=f3e244]: GPIO46_ADC6
+                                    - generic [ref=f3e245]: "57"
+                                  - generic [ref=f3e246]:
+                                    - generic [ref=f3e248]: GPIO47_ADC7
+                                    - generic [ref=f3e249]: "58"
+                                  - generic [ref=f3e250]:
+                                    - generic [ref=f3e252]: ADC_AVDD
+                                    - generic [ref=f3e253]: "59"
+                                  - generic [ref=f3e254]:
+                                    - generic [ref=f3e256]: IOVDD
+                                    - generic [ref=f3e257]: "60"
+                                  - generic [ref=f3e258]:
+                                    - generic [ref=f3e260]: VREG_AVDD
+                                    - generic [ref=f3e261]: "61"
+                                  - generic [ref=f3e262]:
+                                    - generic [ref=f3e264]: VREG_PGND
+                                    - generic [ref=f3e265]: "62"
+                                  - generic [ref=f3e266]:
+                                    - generic [ref=f3e268]: VREG_LX
+                                    - generic [ref=f3e269]: "63"
+                                  - generic [ref=f3e270]:
+                                    - generic [ref=f3e272]: VREG_VIN
+                                    - generic [ref=f3e273]: "64"
+                                  - generic [ref=f3e274]:
+                                    - generic [ref=f3e276]: VREG_FB
+                                    - generic [ref=f3e277]: "65"
+                                  - generic [ref=f3e278]:
+                                    - generic [ref=f3e280]: USB_DM
+                                    - generic [ref=f3e281]: "66"
+                                  - generic [ref=f3e282]:
+                                    - generic [ref=f3e284]: USB_DP
+                                    - generic [ref=f3e285]: "67"
+                                  - generic [ref=f3e286]:
+                                    - generic [ref=f3e288]: USB_OTP_VDD
+                                    - generic [ref=f3e289]: "68"
+                                  - generic [ref=f3e290]:
+                                    - generic [ref=f3e292]: QSPI_IOVDD
+                                    - generic [ref=f3e293]: "69"
+                                  - generic [ref=f3e294]:
+                                    - generic [ref=f3e296]: QSPI_SD3
+                                    - generic [ref=f3e297]: "70"
+                                  - generic [ref=f3e298]:
+                                    - generic [ref=f3e300]: QSPI_SCLK
+                                    - generic [ref=f3e301]: "71"
+                                  - generic [ref=f3e302]:
+                                    - generic [ref=f3e304]: QSPI_SD0
+                                    - generic [ref=f3e305]: "72"
+                                  - generic [ref=f3e306]:
+                                    - generic [ref=f3e308]: QSPI_SD2
+                                    - generic [ref=f3e309]: "73"
+                                  - generic [ref=f3e310]:
+                                    - generic [ref=f3e312]: QSPI_SD1
+                                    - generic [ref=f3e313]: "74"
+                                  - generic [ref=f3e314]:
+                                    - generic [ref=f3e316]: QSPI_SS
+                                    - generic [ref=f3e317]: "75"
+                                  - generic [ref=f3e318]:
+                                    - generic [ref=f3e320]: IOVDD
+                                    - generic [ref=f3e321]: "76"
+                                  - generic [ref=f3e322]:
+                                    - generic [ref=f3e324]: GPIO0
+                                    - generic [ref=f3e325]: "77"
+                                  - generic [ref=f3e326]:
+                                    - generic [ref=f3e328]: GPIO1
+                                    - generic [ref=f3e329]: "78"
+                                  - generic [ref=f3e330]:
+                                    - generic [ref=f3e332]: GPIO2
+                                    - generic [ref=f3e333]: "79"
+                                  - generic [ref=f3e334]:
+                                    - generic [ref=f3e336]: GPIO3
+                                    - generic [ref=f3e337]: "80"
+                                  - generic [ref=f3e338]:
+                                    - generic [ref=f3e340]: GND
+                                    - generic [ref=f3e341]: "81"
+                              - generic [ref=f3e342]:
+                                - generic [ref=f3e343] [cursor=pointer]: 
+                                - generic [ref=f3e345] [cursor=pointer]: 
+                                - generic [ref=f3e347] [cursor=pointer]: 
+                            - generic [ref=f3e349]:
+                              - img [ref=f3e351]:
+                                - generic:
+                                  - generic: "1"
+                                  - generic: "2"
+                                  - generic: "3"
+                                  - generic: "4"
+                                  - generic: "5"
+                                  - generic: "6"
+                                  - generic: "7"
+                                  - generic: "8"
+                                  - generic: "9"
+                                  - generic: "10"
+                                  - generic: "11"
+                                  - generic: "12"
+                                  - generic: "13"
+                                  - generic: "14"
+                                  - generic: "15"
+                                  - generic: "16"
+                                  - generic: "17"
+                                  - generic: "18"
+                                  - generic: "19"
+                                  - generic: "20"
+                                  - generic: "21"
+                                  - generic: "22"
+                                  - generic: "23"
+                                  - generic: "24"
+                                  - generic: "25"
+                                  - generic: "26"
+                                  - generic: "27"
+                                  - generic: "28"
+                                  - generic: "29"
+                                  - generic: "30"
+                                  - generic: "31"
+                                  - generic: "32"
+                                  - generic: "33"
+                                  - generic: "34"
+                                  - generic: "35"
+                                  - generic: "36"
+                                  - generic: "37"
+                                  - generic: "38"
+                                  - generic: "39"
+                                  - generic: "40"
+                                  - generic: "41"
+                                  - generic: "42"
+                                  - generic: "43"
+                                  - generic: "44"
+                                  - generic: "45"
+                                  - generic: "46"
+                                  - generic: "47"
+                                  - generic: "48"
+                                  - generic: "49"
+                                  - generic: "50"
+                                  - generic: "51"
+                                  - generic: "52"
+                                  - generic: "53"
+                                  - generic: "54"
+                                  - generic: "55"
+                                  - generic: "56"
+                                  - generic: "57"
+                                  - generic: "58"
+                                  - generic: "59"
+                                  - generic: "60"
+                                  - generic: "61"
+                                  - generic: "62"
+                                  - generic: "63"
+                                  - generic: "64"
+                                  - generic: "65"
+                                  - generic: "66"
+                                  - generic: "67"
+                                  - generic: "68"
+                                  - generic: "69"
+                                  - generic: "70"
+                                  - generic: "71"
+                                  - generic: "72"
+                                  - generic: "73"
+                                  - generic: "74"
+                                  - generic: "75"
+                                  - generic: "76"
+                                  - generic: "77"
+                                  - generic: "78"
+                                  - generic: "79"
+                                  - generic: "80"
+                                  - generic: "81"
+                              - generic [ref=f3e686]:
+                                - generic [ref=f3e687] [cursor=pointer]: 
+                                - generic [ref=f3e689] [cursor=pointer]: 
+                                - generic [ref=f3e691] [cursor=pointer]: 
+                            - link "Free Trial" [ref=f3e694] [cursor=pointer]:
+                              - /url: https://pro.easyeda.com/editor#tab=*!6c6a34880d2a4e33abd0dafd92b9c13f(device)e4323901316444339315dc6f00f06c82|!a2add2059f8b4e128387d057fda64d90(device)e4323901316444339315dc6f00f06c82
+                            - link "Report Error" [ref=f3e695] [cursor=pointer]:
+                              - /url: https://easyeda.com/page/report-part-error?code=C39843328
+                            - generic [ref=f3e696]:
+                              - text: Can't open? Please refer at
+                              - link "this tutorial" [ref=f3e697] [cursor=pointer]:
+                                - /url: https://oshwlab.com/article/How-to-open-preview-parts-in-easyeda-editor-from-lcsc-or-jlcpcb
+            - complementary [ref=e372]:
+              - generic [ref=e373]:
+                - generic [ref=e374]:
+                  - generic [ref=e375]:
+                    - paragraph [ref=e376]: "In Stock: 1"
+                    - generic [ref=e377]:
+                      - generic [ref=e378]: "Minimum: 6"
+                      - generic [ref=e380]: "Full Reel: 2500"
+                  - generic [ref=e381]:
+                    - textbox "Quantity" [ref=e382]: "6"
+                    - generic [ref=e383]:
+                      - generic [ref=e384]:
+                        - generic [ref=e385]: $9.14
+                        - button "Save $30.00" [ref=e386] [cursor=pointer]
+                      - button "" [ref=e387] [cursor=pointer]
+                  - button " Pre-order" [ref=e389] [cursor=pointer]:
+                    - generic [ref=e390]: 
+                    - generic [ref=e391]: Pre-order
+                  - generic [ref=e392]:
+                    - paragraph [ref=e393]: Pre-order Items Pricing
+                    - paragraph [ref=e394]: "Estimated unit price: $1.5240"
+                  - generic [ref=e395]:
+                    - generic [ref=e396]: "Recent Order:"
+                    - generic [ref=e397]:
+                      - generic [ref=e398]: 6pcs
+                      - generic [ref=e399]: "Unit Price: $1.50"
+                      - generic [ref=e400]: By 13****6A
+                - generic [ref=e402]:
+                  - heading "Related Products" [level=3] [ref=e403]
+                  - list [ref=e404]:
+                    - listitem [ref=e405] [cursor=pointer]:
+                      - link [ref=e406]:
+                        - /url: /partdetail/RaspberryPi-RP2354A/C41378174
+                        - img "recommended parts-RP2354A" [ref=e410]
+                        - generic [ref=e411]:
+                          - paragraph [ref=e412]: RP2354A
+                          - paragraph [ref=e413]: Raspberry Pi
+                          - paragraph [ref=e414]: $1.2640
+                    - listitem [ref=e415] [cursor=pointer]:
+                      - link [ref=e416]:
+                        - /url: /partdetail/RaspberryPi-RP2350B/C42415655
+                        - img "recommended parts-RP2350B" [ref=e420]
+                        - generic [ref=e421]:
+                          - paragraph [ref=e422]: RP2350B
+                          - paragraph [ref=e423]: Raspberry Pi
+                          - paragraph [ref=e424]: $1.2820
+                    - listitem [ref=e425] [cursor=pointer]:
+                      - link [ref=e426]:
+                        - /url: /partdetail/RaspberryPi-RP2350A/C42411118
+                        - img "recommended parts-RP2350A" [ref=e430]
+                        - generic [ref=e431]:
+                          - paragraph [ref=e432]: RP2350A
+                          - paragraph [ref=e433]: Raspberry Pi
+                          - paragraph [ref=e434]: $1.2934
+                    - listitem [ref=e435] [cursor=pointer]:
+                      - link [ref=e436]:
+                        - /url: /partdetail/MicrochipTech-PIC24FJ64GA310_IPF/C1342103
+                        - img "recommended parts-PIC24FJ64GA310-I/PF" [ref=e440]
+                        - generic [ref=e441]:
+                          - paragraph [ref=e442]: PIC24FJ64GA310-I/PF
+                          - paragraph [ref=e443]: Microchip Tech
+                          - paragraph [ref=e444]: $3.0904
+                    - listitem [ref=e445] [cursor=pointer]:
+                      - link [ref=e446]:
+                        - /url: /partdetail/560865-XMC1302_T028X0032AB/C540548
+                        - img "recommended parts-XMC1302-T028X0032 AB" [ref=e450]
+                        - generic [ref=e451]:
+                          - paragraph [ref=e452]: XMC1302-T028X0032 AB
+                          - paragraph [ref=e453]: Infineon Technologies
+                          - paragraph [ref=e454]: $2.0488
+                    - listitem [ref=e455] [cursor=pointer]:
+                      - link [ref=e456]:
+                        - /url: /partdetail/1429670-CY8C6347FMIBLD53T/C1339389
+                        - img "recommended parts-CY8C6347FMI-BLD53T" [ref=e460]
+                        - generic [ref=e461]:
+                          - paragraph [ref=e462]: CY8C6347FMI-BLD53T
+                          - paragraph [ref=e463]: Infineon/Cypress Semicon
+                          - paragraph [ref=e464]: $17.6885
+    - contentinfo [ref=e465]:
+      - generic [ref=e466]:
+        - generic [ref=e467]:
+          - generic [ref=e468]:
+            - button " Online Chat >" [ref=e469] [cursor=pointer]:
+              - generic [ref=e470]: 
+              - text: Online Chat >
+            - generic [ref=e471]: Chat with our live agent for fast reply.
+            - generic [ref=e472]: "Mon-Fri: 24 hours, Sat: 9am-6pm, GMT+8"
+          - generic [ref=e473]:
+            - link " Email Us >" [ref=e474] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help/contact
+              - generic [ref=e475]: 
+              - text: Email Us >
+            - generic [ref=e476]: Contact us at support@jlcpcb.com
+            - generic [ref=e477]: Typically reply within hours.
+          - generic [ref=e478]:
+            - link " Help Center >" [ref=e479] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help
+              - generic [ref=e480]: 
+              - text: Help Center >
+            - generic [ref=e481]: Get instant answers.
+            - generic [ref=e482]: 24/7 Available.
+        - text:                
+        - generic [ref=e484]:
+          - generic [ref=e485]:
+            - generic [ref=e486]: Services & Tools
+            - generic [ref=e487]:
+              - link "Electronic Parts" [ref=e488] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts
+              - link "BOM Tool" [ref=e489] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/bom-tool
+              - link "Request a Quote" [ref=e490] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/request-quote
+              - link "Manufacturers" [ref=e491] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/manufacturers
+              - link "PCB Assembly" [ref=e492] [cursor=pointer]:
+                - /url: https://jlcpcb.com/pcb-assembly
+          - generic [ref=e493]:
+            - generic [ref=e494]: Support
+            - generic [ref=e495]:
+              - link "Contact Us" [ref=e496] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/contact/Electronic Components
+              - link "How to Order" [ref=e497] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/article/how-to-build-your-own-parts-library-in-jlcpcb
+              - link "User Guides" [ref=e498] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/catalog/191-PCBA-Parts-Sourcing
+              - link "Sourcing Tips" [ref=e499] [cursor=pointer]:
+                - /url: https://jlcpcb.com/blog/category/components-sourcing
+              - link "Payment Methods" [ref=e500] [cursor=pointer]:
+                - /url: https://jlcpcb.com/payments
+          - generic [ref=e501]:
+            - generic [ref=e502]: Company
+            - generic [ref=e503]:
+              - link "About Us" [ref=e504] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us
+              - link "Quality Assurance" [ref=e505] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/quality-control
+              - link "How We Work" [ref=e506] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/how-it-works
+              - link "Certifications" [ref=e507] [cursor=pointer]:
+                - /url: https://jlcpcb.com/certifications
+              - link "Security" [ref=e508] [cursor=pointer]:
+                - /url: https://jlcpcb.com/privacy-security
+              - link "JLCAPI" [ref=e509] [cursor=pointer]:
+                - /url: https://api.jlcpcb.com/
+              - link "News" [ref=e510] [cursor=pointer]:
+                - /url: https://jlcpcb.com/news
+              - link "Cooperation" [ref=e511] [cursor=pointer]:
+                - /url: https://jlcpcb.com/cooperation
+              - link "Careers" [ref=e512] [cursor=pointer]:
+                - /url: https://jlcpcb.com/careers
+          - generic [ref=e513]:
+            - generic [ref=e514]: Electronics
+            - generic [ref=e515]:
+              - link "EasyEDA" [ref=e516] [cursor=pointer]:
+                - /url: https://easyeda.com
+              - link "JLCPCB" [ref=e517] [cursor=pointer]:
+                - /url: https://jlcpcb.com
+              - link "JLCDFM" [ref=e518] [cursor=pointer]:
+                - /url: https://jlcdfm.com
+              - link "LCSC" [ref=e519] [cursor=pointer]:
+                - /url: https://www.lcsc.com
+              - link "OSHWLAB" [ref=e520] [cursor=pointer]:
+                - /url: https://oshwlab.com/
+          - generic [ref=e521]:
+            - generic [ref=e522]: Mechanical
+            - generic [ref=e523]:
+              - link "JLC3DP" [ref=e524] [cursor=pointer]:
+                - /url: https://jlc3dp.com
+              - link "JLCCNC" [ref=e525] [cursor=pointer]:
+                - /url: https://jlccnc.com
+              - link "JLCMC" [ref=e526] [cursor=pointer]:
+                - /url: https://jlcmc.com
+          - generic [ref=e527]:
+            - generic [ref=e528]: 
+            - generic [ref=e529]:
+              - generic [ref=e530]:
+                - paragraph [ref=e531]: Download JLCONE Desktop—Get $524 Exclusive Coupons
+                - generic [ref=e532]:
+                  - generic [ref=e533]:
+                    - link " Windows" [ref=e534] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=e535]:
+                        - generic [ref=e536]: 
+                        - generic [ref=e537]: Windows
+                    - link " MAC" [ref=e538] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=e539]:
+                        - generic [ref=e540]: 
+                        - generic [ref=e541]: MAC
+                  - generic [ref=e542]:
+                    - link " Android" [ref=e543] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=e544]:
+                        - generic [ref=e545]: 
+                        - generic [ref=e546]: Android
+                    - link " IOS" [ref=e547] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=e548]:
+                        - generic [ref=e549]: 
+                        - generic [ref=e550]: IOS
+              - generic [ref=e551]:
+                - paragraph [ref=e552]: CONNECT WITH US
+                - generic [ref=e553]:
+                  - link "Facebook" [ref=e554] [cursor=pointer]:
+                    - /url: https://www.facebook.com/jlcpcb
+                    - generic [ref=e555]: 
+                  - link "Twitter" [ref=e556] [cursor=pointer]:
+                    - /url: https://twitter.com/jlcpcb
+                    - generic [ref=e557]: 
+                  - link "Instagram" [ref=e558] [cursor=pointer]:
+                    - /url: https://www.instagram.com/jlcpcb
+                    - generic [ref=e559]: 
+                  - link "YouTube" [ref=e560] [cursor=pointer]:
+                    - /url: https://www.youtube.com/JLCPCB
+                    - generic [ref=e561]: 
+                  - link "LinkedIn" [ref=e562] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/jlcpcb
+                    - generic [ref=e563]: 
+                  - link "Reddit" [ref=e564] [cursor=pointer]:
+                    - /url: https://www.reddit.com/r/JLCPCBLab/
+                    - generic [ref=e565]: 
+        - generic [ref=e567]:
+          - generic [ref=e568]: © 2026 JLCPCB.COM All Rights Reserved.
+          - link "Privacy Policy" [ref=e569] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Privacy-Policy
+          - link "Terms & Conditions" [ref=e570] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Terms-%26-Conditions
+          - link "Cookies Policy" [ref=e571] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/JLCPCB-Cookie-Notice
+          - link "Do Not Sell or Share My Personal Information" [ref=e572] [cursor=pointer]:
+            - /url: https://jlcpcb.com/privacy-policy/do-not-sell-or-share-my-personal-information
+    - generic:
+      - generic [ref=e573]:
+        - generic [ref=e575]:
+          - text: Welcome back, may I help you?
+          - button "Chat Now" [ref=e578] [cursor=pointer]
+        - textbox "Write a message" [ref=e580]
+      - iframe [ref=e584]:
+        - generic [ref=f4e5] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=e585]

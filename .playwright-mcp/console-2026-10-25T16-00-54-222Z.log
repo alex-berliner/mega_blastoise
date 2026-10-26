@@ -1,0 +1,16 @@
+[     481ms] [LOG] [pixel-tracker]: init @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/index.js:0
+[     494ms] [WARNING] Setting secure=true because sameSite=None requires secure cookies @ https://assets.alicdn.com/g/lzd_sec/LWSC-G/index.js:0
+[     990ms] [LOG] [Cookie Guard] 当前页面 "detail" 不在允许的页面列表中，跳过初始化 {allowedPages: Array(3), currentPage: detail} @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/loader.js:0
+[    1059ms] [WARNING] 将根据已有的meta标签来设置缩放比例 @ https://assets.alicdn.com/g/??mtb/lib-flexible/0.3.2/flexible.js,mtb/lib-windvane/3.0.6/windvane.js:0
+[    1063ms] [WARNING] Setting secure=true because sameSite=None requires secure cookies @ https://assets.alicdn.com/g/lzd_sec/LWSC-G/index.js:0
+[    1073ms] [ERROR] Permissions policy violation: accelerometer is not allowed in this document. @ https://assets.alicdn.com/g/lzd_sec/epssw/0.0.65/epssw.js:5
+[    1073ms] [WARNING] The deviceorientation events are blocked by permissions policy. See https://github.com/w3c/webappsec-permissions-policy/blob/master/features.md#sensor-features @ https://assets.alicdn.com/g/lzd_sec/epssw/0.0.65/epssw.js:5
+[    1122ms] [WARNING] 'et' should been 'EXP','CLK','SLD','INPUT','SYS', 'OTHER' @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/gep-sdk.js:0
+[    1142ms] [LOG] [poplayer-web-container] init {positionSign: PC_Product_Detail_Page} @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/pop-layer.js:0
+[    1232ms] [LOG] Sun Oct 25 2026 12:00:55 GMT-0400 (Eastern Daylight Time) @ https://assets.aliexpress-media.com/g/AWSC/et/1.83.41/et_f.js:1
+[    1378ms] [LOG] load css succ @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/index.js:0
+[    1517ms] [LOG] load succ @ https://assets.aliexpress-media.com/g/ae-fe/cosmos/0.0.454/pc/index.js:0
+[    2210ms] [WARNING] [Meta Pixel] - Duplicate Pixel ID: 1483203006415954. @ https://connect.facebook.net/en_US/fbevents.js:205
+[    2345ms] [WARNING] [GSI_LOGGER]: Your client application uses one of the Google One Tap prompt UI status methods that may stop functioning when FedCM becomes mandatory. Refer to the migration guide to update your code accordingly and opt-in to FedCM to test your changes. Learn more: https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#display_moment and https://developers.google.com/identity/gsi/web/guides/fedcm-migration?s=dc#skipped_moment @ https://accounts.google.com/gsi/client:86
+[    2352ms] [ERROR] Not signed in with the identity provider. @ https://www.aliexpress.us/item/3256808521080209.html:0
+[    3821ms] [ERROR] [GSI_LOGGER]: FedCM get() rejects with NetworkError: Error retrieving a token. @ https://accounts.google.com/gsi/client:87

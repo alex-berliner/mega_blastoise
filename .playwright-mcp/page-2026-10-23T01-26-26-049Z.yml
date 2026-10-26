@@ -1,0 +1,643 @@
+- generic [active] [ref=f347e1]:
+  - generic [ref=f347e2]:
+    - generic [ref=f347e5]:
+      - generic [ref=f347e6]: 24-hour PCB production. Fast Delivery to United States.
+      - generic [ref=f347e8]:
+        - link " Coupons" [ref=f347e9] [cursor=pointer]:
+          - /url: /coupon-center
+          - generic [ref=f347e10]: 
+          - generic [ref=f347e11]: Coupons
+        - link " APP Download" [ref=f347e12] [cursor=pointer]:
+          - /url: https://jlcone.com/download
+          - generic [ref=f347e13]: 
+          - generic [ref=f347e14]: APP Download
+        - generic [ref=f347e16] [cursor=pointer]
+    - navigation "Parts navigation" [ref=f347e23]:
+      - generic [ref=f347e24]:
+        - text:    
+        - generic [ref=f347e25]:
+          - link "Assembly Parts Lib" [ref=f347e26] [cursor=pointer]:
+            - /url: /
+            - generic [aria-hidden] [ref=f347e27]: 
+          - link "Assembly Parts Lib" [ref=f347e29] [cursor=pointer]:
+            - /url: /parts
+            - generic [ref=f347e31]: For PCBA Only
+      - generic [ref=f347e33]:
+        - generic [ref=f347e34]:
+          - 'combobox "Search by keyword or part #" [ref=f347e35]'
+          - button "Upload BOM" [ref=f347e37] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f347e38]: 
+        - button "Search" [ref=f347e40] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f347e41]: 
+      - generic [ref=f347e42]:
+        - text: 
+        - link "Parts Cart" [ref=f347e43] [cursor=pointer]:
+          - /url: https://jlcpcb.com/user-center/smtPrivateLibrary/partsCart/
+          - generic [ref=f347e44]:
+            - generic [aria-hidden] [ref=f347e45]: 
+            - generic: "0"
+        - button "Sign In" [ref=f347e49] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f347e51]: 
+      - text:  
+    - navigation "Parts sections" [ref=f347e52]:
+      - generic [ref=f347e54]:
+        - link "Products" [ref=f347e56] [cursor=pointer]:
+          - /url: /parts/all-electronic-components
+          - generic [aria-hidden] [ref=f347e57]: 
+        - list [ref=f347e60]:
+          - listitem [ref=f347e61]:
+            - link "In Stock Parts" [ref=f347e62] [cursor=pointer]:
+              - /url: /parts/in-stock-parts
+          - listitem [ref=f347e64]:
+            - link "Bom Tool" [ref=f347e65] [cursor=pointer]:
+              - /url: https://jlcpcb.com/parts/bom-tool
+          - listitem [ref=f347e67]:
+            - link "Request a Quote" [ref=f347e68] [cursor=pointer]:
+              - /url: /parts/request-quote
+          - listitem [ref=f347e70]:
+            - generic [ref=f347e71] [cursor=pointer]:
+              - generic [ref=f347e72]: Support
+              - generic [aria-hidden] [ref=f347e73]: 
+    - main [ref=f347e74]:
+      - generic [ref=f347e76]:
+        - text:               
+        - generic [ref=f347e77]:
+          - navigation "Breadcrumb" [ref=f347e78]:
+            - list [ref=f347e79]:
+              - listitem [ref=f347e80]:
+                - link "JLCPCB" [ref=f347e81] [cursor=pointer]:
+                  - /url: https://jlcpcb.com
+              - listitem [ref=f347e82]:
+                - link "Parts Library" [ref=f347e85] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts
+              - listitem [ref=f347e86]:
+                - link "All Components" [ref=f347e89] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/all-electronic-components
+              - listitem [ref=f347e90]:
+                - link "Connectors" [ref=f347e93] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/1st/Connectors_8
+              - listitem [ref=f347e94]:
+                - link "Wire To Board Connector" [ref=f347e97] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/2nd/Connectors/Wire_To_Board_Connector_2132
+              - listitem [ref=f347e98]:
+                - generic [ref=f347e101]: ZX-SH1.0-3PWT
+          - generic [ref=f347e102]:
+            - generic [ref=f347e103]:
+              - generic [ref=f347e105]:
+                - generic [ref=f347e106]:
+                  - img "ZX-SH1.0-3PWT" [ref=f347e110]
+                  - generic [ref=f347e111]:
+                    - button [ref=f347e112] [cursor=pointer]:
+                      - img "ZX-SH1.0-3PWT thumbnail 1" [ref=f347e115]
+                    - button [ref=f347e116] [cursor=pointer]:
+                      - img "ZX-SH1.0-3PWT thumbnail 2" [ref=f347e119]
+                    - button [ref=f347e120] [cursor=pointer]:
+                      - img "ZX-SH1.0-3PWT thumbnail 3" [ref=f347e123]
+                    - button [ref=f347e124] [cursor=pointer]:
+                      - img "ZX-SH1.0-3PWT thumbnail 4" [ref=f347e127]
+                  - paragraph [ref=f347e128]: "* Images are for reference only"
+                  - generic [ref=f347e129]:
+                    - button "" [ref=f347e130] [cursor=pointer]
+                    - button "" [ref=f347e132] [cursor=pointer]
+                    - button "" [ref=f347e134] [cursor=pointer]
+                - generic [ref=f347e136]:
+                  - generic [ref=f347e137]:
+                    - heading "ZX-SH1.0-3PWT" [level=1] [ref=f347e138]
+                    - button "" [ref=f347e139] [cursor=pointer]
+                    - generic [ref=f347e141]: Extended
+                  - generic [ref=f347e142]:
+                    - generic [ref=f347e143]:
+                      - term [ref=f347e144]: Manufacturer
+                      - definition [ref=f347e145]:
+                        - generic [ref=f347e146]:
+                          - heading [level=2] [ref=f347e147]:
+                            - link "Megastar" [ref=f347e148] [cursor=pointer]:
+                              - /url: https://jlcpcb.com/parts/manufacturers/Megastar?brand=385285358680543234
+                          - button "" [ref=f347e149] [cursor=pointer]
+                    - generic [ref=f347e151]:
+                      - term [ref=f347e152]: "MFR.Part #"
+                      - definition [ref=f347e153]:
+                        - generic [ref=f347e154]:
+                          - generic [ref=f347e155]: ZX-SH1.0-3PWT
+                          - button "" [ref=f347e156] [cursor=pointer]
+                    - generic [ref=f347e158]:
+                      - term [ref=f347e159]: "JLCPCB Part #"
+                      - definition [ref=f347e160]:
+                        - generic [ref=f347e161]:
+                          - generic [ref=f347e162]: C7430445
+                          - button "" [ref=f347e163] [cursor=pointer]
+                    - generic [ref=f347e165]:
+                      - term [ref=f347e166]: Package
+                      - definition [ref=f347e167]:
+                        - generic [ref=f347e168]:
+                          - generic [ref=f347e169]: SMD,P=1mm,Surface Mount，Right Angle
+                          - button "" [ref=f347e170] [cursor=pointer]
+                    - generic [ref=f347e172]:
+                      - term [ref=f347e173]: Description
+                      - definition [ref=f347e174]:
+                        - generic [ref=f347e175]:
+                          - generic [ref=f347e176]: "-40℃~+85℃ 1 1A 1mm 1x3P 3 3.15mm 3P 4.3mm 5.35mm 50V Auxiliary Solder Pin Beige Brass LCP SH Surface Mount, Right Angle Tin SMD,P=1mm,卧贴 Wire To Board Connector ROHS"
+                          - button "" [ref=f347e177] [cursor=pointer]
+                    - generic [ref=f347e179]:
+                      - term [ref=f347e180]: EasyEDA Libraries
+                      - definition [ref=f347e181]:
+                        - button "PCB Footprint or Symbol" [ref=f347e182] [cursor=pointer]
+                    - generic [ref=f347e183]:
+                      - term [ref=f347e184]: ECCN
+                      - definition [ref=f347e185]: "-"
+                    - generic [ref=f347e186]:
+                      - term [ref=f347e187]: Datasheet
+                      - definition [ref=f347e188]:
+                        - generic [ref=f347e189]:
+                          - img [aria-hidden] [ref=f347e190] [cursor=pointer]
+                          - link "Download" [ref=f347e192] [cursor=pointer]:
+                            - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8590906945161142272-C7430445.pdf?response-content-disposition=attachment%3B%20filename%3DC7430445.pdf%3B%20filename%2A%3DUTF-8%27%27C7430445.pdf&x-oss-date=20261023T012623Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vBec%2FG1ZNswpCscH6Jh0UkdNpfi6j91zz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qachrVQ%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWsquScAm%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIkKXze6KWD5sagAFAzH2RutFogO8ywmvTB%2FfCXfTZAMiB7qF5k66idXMTI8tpIEyIxIJXvdsYTkMYJ5wQnMMZDbv2OgZkU4eP%2BLxYXQ46mWwib3A0HRuDrp7DWLOIHTtNb9etntoxggHaD%2Bha4Qbkptb4WUFaB6%2BBfWWbgoU%2Bal3U%2BrJYDXnQmG3r%2FCAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXt2ur8LMuRGrX8cEqxUsdmV5%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=cecd0dbb67e463a083630f6a54ee88d7415c3c9f44303544b2ba3cf0c0be21e8
+                    - generic [ref=f347e193]:
+                      - term [ref=f347e194]: Source
+                      - definition [ref=f347e195]: JLCPCB
+                    - generic [ref=f347e196]:
+                      - term [ref=f347e197]: Assembly Type
+                      - definition [ref=f347e198]:
+                        - generic [ref=f347e199]: SMT Assembly
+                    - generic [ref=f347e201]:
+                      - term [ref=f347e202]: PCBA Type
+                      - definition [ref=f347e203]:
+                        - generic [ref=f347e204]: Economic and Standard
+                  - generic [ref=f347e206]:
+                    - generic [aria-hidden] [ref=f347e207]: 
+                    - paragraph [ref=f347e208]: "Note: The purchased components are stored in your JLCPCB parts library for future PCBA orders only, and cannot be shipped separately."
+              - text:            
+              - generic [ref=f347e209]:
+                - navigation "Detail sections" [ref=f347e210]:
+                  - tablist [ref=f347e213]:
+                    - tab "Specifications" [selected] [ref=f347e214] [cursor=pointer]
+                    - tab "PCB Assembly Tips" [ref=f347e216] [cursor=pointer]
+                    - tab "Documents" [ref=f347e218] [cursor=pointer]
+                    - tab "PCB Footprint/Symbol" [ref=f347e220] [cursor=pointer]
+                - generic [ref=f347e225]:
+                  - region [ref=f347e226]:
+                    - generic [ref=f347e227]:
+                      - generic [ref=f347e228]:
+                        - heading "ZX-SH1.0-3PWT Specifications" [level=2] [ref=f347e231]
+                        - generic [ref=f347e232]:
+                          - paragraph [ref=f347e233]: ZX-SH1.0-3PWT technical specifications, attributes, and parameters.
+                          - button "Report an Error?" [ref=f347e234] [cursor=pointer]
+                      - table [ref=f347e237]:
+                        - rowgroup [ref=f347e238]:
+                          - row [ref=f347e239]:
+                            - columnheader [ref=f347e240]
+                            - columnheader "Attributes" [ref=f347e241]
+                            - columnheader "Value" [ref=f347e242]
+                        - rowgroup [ref=f347e243]:
+                          - row [ref=f347e244]:
+                            - cell [ref=f347e245]:
+                              - checkbox "Select Category" [checked] [disabled] [ref=f347e247]
+                            - cell "Category" [ref=f347e248]
+                            - cell "Connectors/Wire To Board Connector" [ref=f347e249]
+                          - row [ref=f347e250]:
+                            - cell [ref=f347e251]:
+                              - checkbox "Select Manufacturer" [ref=f347e253] [cursor=pointer]
+                            - cell "Manufacturer" [ref=f347e254]
+                            - cell [ref=f347e255]:
+                              - link "Megastar" [ref=f347e256] [cursor=pointer]:
+                                - /url: /parts/manufacturers/Megastar?brand=385285358680543234
+                          - row [ref=f347e257]:
+                            - cell [ref=f347e258]:
+                              - checkbox "Select Package" [ref=f347e260] [cursor=pointer]
+                            - cell "Package" [ref=f347e261]
+                            - cell "SMD,P=1mm,Surface Mount，Right Angle" [ref=f347e262]
+                          - row [ref=f347e263]:
+                            - cell [ref=f347e264]:
+                              - checkbox "Select Operating Temperature" [ref=f347e266] [cursor=pointer]
+                            - cell "Operating Temperature" [ref=f347e267]
+                            - cell "-40℃~+85℃" [ref=f347e268]
+                          - row [ref=f347e269]:
+                            - cell [ref=f347e270]:
+                              - checkbox "Select Number of Rows" [ref=f347e272] [cursor=pointer]
+                            - cell "Number of Rows" [ref=f347e273]
+                            - cell "1" [ref=f347e274]
+                          - row [ref=f347e275]:
+                            - cell [ref=f347e276]:
+                              - checkbox "Select Voltage Rating" [ref=f347e278] [cursor=pointer]
+                            - cell "Voltage Rating" [ref=f347e279]
+                            - cell "50V" [ref=f347e280]
+                          - row [ref=f347e281]:
+                            - cell [ref=f347e282]:
+                              - checkbox "Select Color" [ref=f347e284] [cursor=pointer]
+                            - cell "Color" [ref=f347e285]
+                            - cell "Beige" [ref=f347e286]
+                          - row [ref=f347e287]:
+                            - cell [ref=f347e288]:
+                              - checkbox "Select Current Rating" [ref=f347e290] [cursor=pointer]
+                            - cell "Current Rating" [ref=f347e291]
+                            - cell "1A" [ref=f347e292]
+                          - row [ref=f347e293]:
+                            - cell [ref=f347e294]:
+                              - checkbox "Select Pins Structure" [ref=f347e296] [cursor=pointer]
+                            - cell "Pins Structure" [ref=f347e297]
+                            - cell "1x3P" [ref=f347e298]
+                          - row [ref=f347e299]:
+                            - cell [ref=f347e300]:
+                              - checkbox "Select Mounting Type" [ref=f347e302] [cursor=pointer]
+                            - cell "Mounting Type" [ref=f347e303]
+                            - cell "Surface Mount, Right Angle" [ref=f347e304]
+                          - row [ref=f347e305]:
+                            - cell [ref=f347e306]:
+                              - checkbox "Select Y-Width of Bottom Edge on Board" [ref=f347e308] [cursor=pointer]
+                            - cell "Y-Width of Bottom Edge on Board" [ref=f347e309]
+                            - cell "4.3mm" [ref=f347e310]
+                          - row [ref=f347e311]:
+                            - cell [ref=f347e312]:
+                              - checkbox "Select X-Length of Bottom Edge on Board (Spacing Line)" [ref=f347e314] [cursor=pointer]
+                            - cell "X-Length of Bottom Edge on Board (Spacing Line)" [ref=f347e315]
+                            - cell "5.35mm" [ref=f347e316]
+                          - row [ref=f347e317]:
+                            - cell [ref=f347e318]:
+                              - checkbox "Select Reference Series" [ref=f347e320] [cursor=pointer]
+                            - cell "Reference Series" [ref=f347e321]
+                            - cell "SH" [ref=f347e322]
+                          - row [ref=f347e323]:
+                            - cell [ref=f347e324]:
+                              - checkbox "Select Contact Plating" [ref=f347e326] [cursor=pointer]
+                            - cell "Contact Plating" [ref=f347e327]
+                            - cell "Tin" [ref=f347e328]
+                          - row [ref=f347e329]:
+                            - cell [ref=f347e330]:
+                              - checkbox "Select Number of Pins" [ref=f347e332] [cursor=pointer]
+                            - cell "Number of Pins" [ref=f347e333]
+                            - cell "3P" [ref=f347e334]
+                          - row [ref=f347e335]:
+                            - cell [ref=f347e336]:
+                              - checkbox "Select Contact Material" [ref=f347e338] [cursor=pointer]
+                            - cell "Contact Material" [ref=f347e339]
+                            - cell "Brass" [ref=f347e340]
+                          - row [ref=f347e341]:
+                            - cell [ref=f347e342]:
+                              - checkbox "Select Pitch" [ref=f347e344] [cursor=pointer]
+                            - cell "Pitch" [ref=f347e345]
+                            - cell "1mm" [ref=f347e346]
+                          - row [ref=f347e347]:
+                            - cell [ref=f347e348]:
+                              - checkbox "Select Supplementary Features" [ref=f347e350] [cursor=pointer]
+                            - cell "Supplementary Features" [ref=f347e351]
+                            - cell "Auxiliary Solder Pin" [ref=f347e352]
+                          - row [ref=f347e353]:
+                            - cell [ref=f347e354]:
+                              - checkbox "Select Z-Height of the Board" [ref=f347e356] [cursor=pointer]
+                            - cell "Z-Height of the Board" [ref=f347e357]
+                            - cell "3.15mm" [ref=f347e358]
+                          - row [ref=f347e359]:
+                            - cell [ref=f347e360]:
+                              - checkbox "Select Plastic Material" [ref=f347e362] [cursor=pointer]
+                            - cell "Plastic Material" [ref=f347e363]
+                            - cell "LCP" [ref=f347e364]
+                          - row [ref=f347e365]:
+                            - cell [ref=f347e366]:
+                              - checkbox "Select Number of PINs Per Row" [ref=f347e368] [cursor=pointer]
+                            - cell "Number of PINs Per Row" [ref=f347e369]
+                            - cell "3" [ref=f347e370]
+                      - generic [ref=f347e371]:
+                        - generic [ref=f347e372]: "Results remaining: 0"
+                        - button "Searching..." [disabled] [ref=f347e373]
+                  - region [ref=f347e374]:
+                    - generic [ref=f347e375]:
+                      - heading "PCB Assembly Tips" [level=2] [ref=f347e378]
+                      - paragraph [ref=f347e379]:
+                        - text: From components to fully assembled PCBs. JLCPCB supports PCB assembly for the ZX-SH1.0-3PWT. Sign up to receive and
+                        - link "start your assembly today" [ref=f347e380] [cursor=pointer]:
+                          - /url: https://cart.jlcpcb.com/quote?from=audrey1
+                        - text: →
+                      - list [ref=f347e381]:
+                        - listitem [ref=f347e382]:
+                          - generic [ref=f347e383]: "1"
+                          - paragraph [ref=f347e385]: Step 1 - Pre-order the parts you need from JLCPCB.
+                        - listitem [ref=f347e386]:
+                          - generic [ref=f347e387]: "2"
+                          - paragraph [ref=f347e389]: Step 2 - Place a PCBA order to have those parts assembled onto your boards.
+                        - listitem [ref=f347e390]:
+                          - generic [ref=f347e391]: "3"
+                          - paragraph [ref=f347e392]: Step 3 - JLCPCB manufactures and assembles your boards in as fast as 3 days.
+                      - generic [ref=f347e393]:
+                        - img "JLCPCB Assembly Tutorial" [ref=f347e395]
+                        - button "Play video" [ref=f347e396] [cursor=pointer]
+                      - link "Learn more about JLCPCB Assembly " [ref=f347e401] [cursor=pointer]:
+                        - /url: /pcb-assembly
+                        - generic [ref=f347e402]: Learn more about JLCPCB Assembly
+                        - generic [ref=f347e403]: 
+                  - region [ref=f347e404]:
+                    - generic [ref=f347e405]:
+                      - generic [ref=f347e406]:
+                        - heading "ZX-SH1.0-3PWT Documents" [level=2] [ref=f347e409]
+                        - paragraph [ref=f347e410]: ZX-SH1.0-3PWT datasheets or manufacturer documentation.
+                      - paragraph [ref=f347e411]:
+                        - text: "Datasheet:"
+                        - link "ZX-SH1.0-3PWT Datasheet (PDF)" [ref=f347e412] [cursor=pointer]:
+                          - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8590906945161142272-C7430445.pdf?response-content-disposition=attachment%3B%20filename%3DC7430445.pdf%3B%20filename%2A%3DUTF-8%27%27C7430445.pdf&x-oss-date=20261023T012623Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vBec%2FG1ZNswpCscH6Jh0UkdNpfi6j91zz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qachrVQ%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWsquScAm%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIkKXze6KWD5sagAFAzH2RutFogO8ywmvTB%2FfCXfTZAMiB7qF5k66idXMTI8tpIEyIxIJXvdsYTkMYJ5wQnMMZDbv2OgZkU4eP%2BLxYXQ46mWwib3A0HRuDrp7DWLOIHTtNb9etntoxggHaD%2Bha4Qbkptb4WUFaB6%2BBfWWbgoU%2Bal3U%2BrJYDXnQmG3r%2FCAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXt2ur8LMuRGrX8cEqxUsdmV5%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=cecd0dbb67e463a083630f6a54ee88d7415c3c9f44303544b2ba3cf0c0be21e8
+                  - region [ref=f347e413]:
+                    - generic [ref=f347e414]:
+                      - generic [ref=f347e415]:
+                        - heading "ZX-SH1.0-3PWT Schematic Symbol & PCB Footprint" [level=2] [ref=f347e418]
+                        - paragraph [ref=f347e419]: The ZX-SH1.0-3PWT schematic symbol and PCB footprint are available in the EasyEDA PCB design tool.
+                      - figure [ref=f347e420]:
+                        - iframe [ref=f347e421]:
+                          - generic [ref=f350e2]:
+                            - generic [ref=f350e3]:
+                              - link [ref=f350e4] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                              - link "EasyEDA - An Easier and Powerful Electronic Circuit Design Tool" [ref=f350e8] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                            - generic [ref=f350e9]:
+                              - img [ref=f350e11]:
+                                - generic [ref=f350e15]:
+                                  - generic [ref=f350e18]:
+                                    - generic [ref=f350e20]: "1"
+                                    - generic [ref=f350e21]: "1"
+                                  - generic [ref=f350e22]:
+                                    - generic [ref=f350e24]: "2"
+                                    - generic [ref=f350e25]: "2"
+                                  - generic [ref=f350e26]:
+                                    - generic [ref=f350e28]: "3"
+                                    - generic [ref=f350e29]: "3"
+                                  - generic [ref=f350e30]:
+                                    - generic [ref=f350e32]: "4"
+                                    - generic [ref=f350e33]: "4"
+                                  - generic [ref=f350e34]:
+                                    - generic [ref=f350e36]: "5"
+                                    - generic [ref=f350e37]: "5"
+                              - generic [ref=f350e38]:
+                                - generic [ref=f350e39] [cursor=pointer]: 
+                                - generic [ref=f350e41] [cursor=pointer]: 
+                                - generic [ref=f350e43] [cursor=pointer]: 
+                            - generic [ref=f350e45]:
+                              - img [ref=f350e47]:
+                                - generic:
+                                  - generic: "4"
+                                  - generic: "3"
+                                  - generic: "2"
+                                  - generic: "1"
+                                  - generic: "5"
+                              - generic [ref=f350e75]:
+                                - generic [ref=f350e76] [cursor=pointer]: 
+                                - generic [ref=f350e78] [cursor=pointer]: 
+                                - generic [ref=f350e80] [cursor=pointer]: 
+                            - link "Free Trial" [ref=f350e83] [cursor=pointer]:
+                              - /url: https://pro.easyeda.com/editor#tab=*!9e5007c2c50e4edeb2cee66bbc839267(device)5973862bad944c1595aaba3370fec066|!cd7640bc4f7a4c30bee76fb66eb812fd(device)5973862bad944c1595aaba3370fec066
+                            - link "Report Error" [ref=f350e84] [cursor=pointer]:
+                              - /url: https://easyeda.com/page/report-part-error?code=C7430445
+                            - generic [ref=f350e85]:
+                              - text: Can't open? Please refer at
+                              - link "this tutorial" [ref=f350e86] [cursor=pointer]:
+                                - /url: https://oshwlab.com/article/How-to-open-preview-parts-in-easyeda-editor-from-lcsc-or-jlcpcb
+            - complementary [ref=f347e424]:
+              - generic [ref=f347e425]:
+                - generic [ref=f347e426]:
+                  - generic [ref=f347e427]:
+                    - paragraph [ref=f347e428]: "In Stock: 58,125"
+                    - generic [ref=f347e429]:
+                      - generic [ref=f347e430]: "Minimum: 1"
+                      - generic [ref=f347e432]: "Full Reel: 2000"
+                  - generic [ref=f347e433]:
+                    - textbox "Quantity" [ref=f347e434]: "1"
+                    - generic [ref=f347e435]:
+                      - generic [ref=f347e436]: $0.06
+                      - button "" [ref=f347e438] [cursor=pointer]
+                  - button " Add to My Part Lib for Assembly" [ref=f347e440] [cursor=pointer]:
+                    - generic [ref=f347e441]: 
+                    - generic [ref=f347e442]: Add to My Part Lib for Assembly
+                  - paragraph [ref=f347e443]: "Available Order Qty: 56,164"
+                  - generic [ref=f347e444]:
+                    - generic [ref=f347e445]:
+                      - generic [ref=f347e446]: Qty
+                      - generic [ref=f347e447]: Unit Price
+                    - generic [ref=f347e448] [cursor=pointer]:
+                      - generic [ref=f347e449]: 1+
+                      - generic [ref=f347e450]: $0.0575
+                    - generic [ref=f347e451] [cursor=pointer]:
+                      - generic [ref=f347e452]: 50+
+                      - generic [ref=f347e453]: $0.0480
+                    - generic [ref=f347e454] [cursor=pointer]:
+                      - generic [ref=f347e455]: 150+
+                      - generic [ref=f347e456]: $0.0432
+                    - generic [ref=f347e457] [cursor=pointer]:
+                      - generic [ref=f347e458]: 500+
+                      - generic [ref=f347e459]: $0.0396
+                    - generic [ref=f347e460] [cursor=pointer]:
+                      - generic [ref=f347e461]: 2000+
+                      - generic [ref=f347e462]: $0.0367
+                    - generic [ref=f347e463] [cursor=pointer]:
+                      - generic [ref=f347e464]: 4000+
+                      - generic [ref=f347e465]: $0.0352
+                - generic [ref=f347e467]:
+                  - heading "Related Products" [level=3] [ref=f347e468]
+                  - list [ref=f347e469]:
+                    - listitem [ref=f347e470] [cursor=pointer]:
+                      - link [ref=f347e471]:
+                        - /url: /partdetail/Megastar-ZX_SH1_05PWT/C7430447
+                        - img "recommended parts-ZX-SH1.0-5PWT" [ref=f347e475]
+                        - generic [ref=f347e476]:
+                          - paragraph [ref=f347e477]: ZX-SH1.0-5PWT
+                          - paragraph [ref=f347e478]: Megastar
+                          - paragraph [ref=f347e479]: $0.0771
+                    - listitem [ref=f347e480] [cursor=pointer]:
+                      - link [ref=f347e481]:
+                        - /url: /partdetail/JLCPCBAssembly-ZX_SH1_04PWT/C9900259331
+                        - img "recommended parts-ZX-SH1.0-4PWT" [ref=f347e485]
+                        - generic [ref=f347e486]:
+                          - paragraph [ref=f347e487]: ZX-SH1.0-4PWT
+                          - paragraph [ref=f347e488]: JLCPCB Assembly
+                          - paragraph [ref=f347e489]: $0.0398
+                    - listitem [ref=f347e490] [cursor=pointer]:
+                      - link [ref=f347e491]:
+                        - /url: /partdetail/Megastar-ZX_SH1_08PWT/C7430450
+                        - img "recommended parts-ZX-SH1.0-8PWT" [ref=f347e495]
+                        - generic [ref=f347e496]:
+                          - paragraph [ref=f347e497]: ZX-SH1.0-8PWT
+                          - paragraph [ref=f347e498]: Megastar
+                          - paragraph [ref=f347e499]: $0.0933
+                    - listitem [ref=f347e500] [cursor=pointer]:
+                      - link [ref=f347e501]:
+                        - /url: /partdetail/Yuandi-WAFER_SHB1_0_14PWT_W1P/C22448480
+                        - img "recommended parts-WAFER-SHB1.0-14PWT-W1-P" [ref=f347e505]
+                        - generic [ref=f347e506]:
+                          - paragraph [ref=f347e507]: WAFER-SHB1.0-14PWT-W1-P
+                          - paragraph [ref=f347e508]: Yuandi
+                          - paragraph [ref=f347e509]: $0.1309
+                    - listitem [ref=f347e510] [cursor=pointer]:
+                      - link [ref=f347e511]:
+                        - /url: /partdetail/CAX-1_03PWTB/C48615276
+                        - img "recommended parts-1.0-3PWTB" [ref=f347e515]
+                        - generic [ref=f347e516]:
+                          - paragraph [ref=f347e517]: 1.0-3PWTB
+                          - paragraph [ref=f347e518]: CAX
+                          - paragraph [ref=f347e519]: $0.0432
+                    - listitem [ref=f347e520] [cursor=pointer]:
+                      - link [ref=f347e521]:
+                        - /url: /partdetail/XUNPU-WAFER_SH1_010PWB/C3029349
+                        - img "recommended parts-WAFER-SH1.0-10PWB" [ref=f347e525]
+                        - generic [ref=f347e526]:
+                          - paragraph [ref=f347e527]: WAFER-SH1.0-10PWB
+                          - paragraph [ref=f347e528]: XUNPU
+                          - paragraph [ref=f347e529]: $0.1821
+    - contentinfo [ref=f347e530]:
+      - generic [ref=f347e531]:
+        - generic [ref=f347e532]:
+          - generic [ref=f347e533]:
+            - button " Online Chat >" [ref=f347e534] [cursor=pointer]:
+              - generic [ref=f347e535]: 
+              - text: Online Chat >
+            - generic [ref=f347e536]: Chat with our live agent for fast reply.
+            - generic [ref=f347e537]: "Mon-Fri: 24 hours, Sat: 9am-6pm, GMT+8"
+          - generic [ref=f347e538]:
+            - link " Email Us >" [ref=f347e539] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help/contact
+              - generic [ref=f347e540]: 
+              - text: Email Us >
+            - generic [ref=f347e541]: Contact us at support@jlcpcb.com
+            - generic [ref=f347e542]: Typically reply within hours.
+          - generic [ref=f347e543]:
+            - link " Help Center >" [ref=f347e544] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help
+              - generic [ref=f347e545]: 
+              - text: Help Center >
+            - generic [ref=f347e546]: Get instant answers.
+            - generic [ref=f347e547]: 24/7 Available.
+        - text:                
+        - generic [ref=f347e549]:
+          - generic [ref=f347e550]:
+            - generic [ref=f347e551]: Services & Tools
+            - generic [ref=f347e552]:
+              - link "Electronic Parts" [ref=f347e553] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts
+              - link "BOM Tool" [ref=f347e554] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/bom-tool
+              - link "Request a Quote" [ref=f347e555] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/request-quote
+              - link "Manufacturers" [ref=f347e556] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/manufacturers
+              - link "PCB Assembly" [ref=f347e557] [cursor=pointer]:
+                - /url: https://jlcpcb.com/pcb-assembly
+          - generic [ref=f347e558]:
+            - generic [ref=f347e559]: Support
+            - generic [ref=f347e560]:
+              - link "Contact Us" [ref=f347e561] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/contact/Electronic Components
+              - link "How to Order" [ref=f347e562] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/article/how-to-build-your-own-parts-library-in-jlcpcb
+              - link "User Guides" [ref=f347e563] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/catalog/191-PCBA-Parts-Sourcing
+              - link "Sourcing Tips" [ref=f347e564] [cursor=pointer]:
+                - /url: https://jlcpcb.com/blog/category/components-sourcing
+              - link "Payment Methods" [ref=f347e565] [cursor=pointer]:
+                - /url: https://jlcpcb.com/payments
+          - generic [ref=f347e566]:
+            - generic [ref=f347e567]: Company
+            - generic [ref=f347e568]:
+              - link "About Us" [ref=f347e569] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us
+              - link "Quality Assurance" [ref=f347e570] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/quality-control
+              - link "How We Work" [ref=f347e571] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/how-it-works
+              - link "Certifications" [ref=f347e572] [cursor=pointer]:
+                - /url: https://jlcpcb.com/certifications
+              - link "Security" [ref=f347e573] [cursor=pointer]:
+                - /url: https://jlcpcb.com/privacy-security
+              - link "JLCAPI" [ref=f347e574] [cursor=pointer]:
+                - /url: https://api.jlcpcb.com/
+              - link "News" [ref=f347e575] [cursor=pointer]:
+                - /url: https://jlcpcb.com/news
+              - link "Cooperation" [ref=f347e576] [cursor=pointer]:
+                - /url: https://jlcpcb.com/cooperation
+              - link "Careers" [ref=f347e577] [cursor=pointer]:
+                - /url: https://jlcpcb.com/careers
+          - generic [ref=f347e578]:
+            - generic [ref=f347e579]: Electronics
+            - generic [ref=f347e580]:
+              - link "EasyEDA" [ref=f347e581] [cursor=pointer]:
+                - /url: https://easyeda.com
+              - link "JLCPCB" [ref=f347e582] [cursor=pointer]:
+                - /url: https://jlcpcb.com
+              - link "JLCDFM" [ref=f347e583] [cursor=pointer]:
+                - /url: https://jlcdfm.com
+              - link "LCSC" [ref=f347e584] [cursor=pointer]:
+                - /url: https://www.lcsc.com
+              - link "OSHWLAB" [ref=f347e585] [cursor=pointer]:
+                - /url: https://oshwlab.com/
+          - generic [ref=f347e586]:
+            - generic [ref=f347e587]: Mechanical
+            - generic [ref=f347e588]:
+              - link "JLC3DP" [ref=f347e589] [cursor=pointer]:
+                - /url: https://jlc3dp.com
+              - link "JLCCNC" [ref=f347e590] [cursor=pointer]:
+                - /url: https://jlccnc.com
+              - link "JLCMC" [ref=f347e591] [cursor=pointer]:
+                - /url: https://jlcmc.com
+          - generic [ref=f347e592]:
+            - generic [ref=f347e593]: 
+            - generic [ref=f347e594]:
+              - generic [ref=f347e595]:
+                - paragraph [ref=f347e596]: Download JLCONE Desktop—Get $524 Exclusive Coupons
+                - generic [ref=f347e597]:
+                  - generic [ref=f347e598]:
+                    - link " Windows" [ref=f347e599] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f347e600]:
+                        - generic [ref=f347e601]: 
+                        - generic [ref=f347e602]: Windows
+                    - link " MAC" [ref=f347e603] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f347e604]:
+                        - generic [ref=f347e605]: 
+                        - generic [ref=f347e606]: MAC
+                  - generic [ref=f347e607]:
+                    - link " Android" [ref=f347e608] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f347e609]:
+                        - generic [ref=f347e610]: 
+                        - generic [ref=f347e611]: Android
+                    - link " IOS" [ref=f347e612] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f347e613]:
+                        - generic [ref=f347e614]: 
+                        - generic [ref=f347e615]: IOS
+              - generic [ref=f347e616]:
+                - paragraph [ref=f347e617]: CONNECT WITH US
+                - generic [ref=f347e618]:
+                  - link "Facebook" [ref=f347e619] [cursor=pointer]:
+                    - /url: https://www.facebook.com/jlcpcb
+                    - generic [ref=f347e620]: 
+                  - link "Twitter" [ref=f347e621] [cursor=pointer]:
+                    - /url: https://twitter.com/jlcpcb
+                    - generic [ref=f347e622]: 
+                  - link "Instagram" [ref=f347e623] [cursor=pointer]:
+                    - /url: https://www.instagram.com/jlcpcb
+                    - generic [ref=f347e624]: 
+                  - link "YouTube" [ref=f347e625] [cursor=pointer]:
+                    - /url: https://www.youtube.com/JLCPCB
+                    - generic [ref=f347e626]: 
+                  - link "LinkedIn" [ref=f347e627] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/jlcpcb
+                    - generic [ref=f347e628]: 
+                  - link "Reddit" [ref=f347e629] [cursor=pointer]:
+                    - /url: https://www.reddit.com/r/JLCPCBLab/
+                    - generic [ref=f347e630]: 
+        - generic [ref=f347e632]:
+          - generic [ref=f347e633]: © 2026 JLCPCB.COM All Rights Reserved.
+          - link "Privacy Policy" [ref=f347e634] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Privacy-Policy
+          - link "Terms & Conditions" [ref=f347e635] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Terms-%26-Conditions
+          - link "Cookies Policy" [ref=f347e636] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/JLCPCB-Cookie-Notice
+          - link "Do Not Sell or Share My Personal Information" [ref=f347e637] [cursor=pointer]:
+            - /url: https://jlcpcb.com/privacy-policy/do-not-sell-or-share-my-personal-information
+    - generic:
+      - generic [ref=f347e638]:
+        - generic [ref=f347e640]:
+          - text: Welcome back, may I help you?
+          - button "Chat Now" [ref=f347e643] [cursor=pointer]
+        - textbox "Write a message" [ref=f347e645]
+      - iframe [ref=f347e649]:
+        - generic [ref=f351e5] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=f347e650]

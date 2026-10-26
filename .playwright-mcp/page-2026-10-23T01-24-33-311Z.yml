@@ -1,0 +1,622 @@
+- generic [active] [ref=f341e1]:
+  - generic [ref=f341e2]:
+    - generic [ref=f341e5]:
+      - generic [ref=f341e6]: 24-hour PCB production. Fast Delivery to United States.
+      - generic [ref=f341e8]:
+        - link " Coupons" [ref=f341e9] [cursor=pointer]:
+          - /url: /coupon-center
+          - generic [ref=f341e10]: 
+          - generic [ref=f341e11]: Coupons
+        - link " APP Download" [ref=f341e12] [cursor=pointer]:
+          - /url: https://jlcone.com/download
+          - generic [ref=f341e13]: 
+          - generic [ref=f341e14]: APP Download
+        - generic [ref=f341e16] [cursor=pointer]
+    - navigation "Parts navigation" [ref=f341e23]:
+      - generic [ref=f341e24]:
+        - text:    
+        - generic [ref=f341e25]:
+          - link "Assembly Parts Lib" [ref=f341e26] [cursor=pointer]:
+            - /url: /
+            - generic [aria-hidden] [ref=f341e27]: 
+          - link "Assembly Parts Lib" [ref=f341e29] [cursor=pointer]:
+            - /url: /parts
+            - generic [ref=f341e31]: For PCBA Only
+      - generic [ref=f341e33]:
+        - generic [ref=f341e34]:
+          - 'combobox "Search by keyword or part #" [ref=f341e35]'
+          - button "Upload BOM" [ref=f341e37] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f341e38]: 
+        - button "Search" [ref=f341e40] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f341e41]: 
+      - generic [ref=f341e42]:
+        - text: 
+        - link "Parts Cart" [ref=f341e43] [cursor=pointer]:
+          - /url: https://jlcpcb.com/user-center/smtPrivateLibrary/partsCart/
+          - generic [ref=f341e44]:
+            - generic [aria-hidden] [ref=f341e45]: 
+            - generic: "0"
+        - button "Sign In" [ref=f341e49] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f341e51]: 
+      - text:  
+    - navigation "Parts sections" [ref=f341e52]:
+      - generic [ref=f341e54]:
+        - link "Products" [ref=f341e56] [cursor=pointer]:
+          - /url: /parts/all-electronic-components
+          - generic [aria-hidden] [ref=f341e57]: 
+        - list [ref=f341e60]:
+          - listitem [ref=f341e61]:
+            - link "In Stock Parts" [ref=f341e62] [cursor=pointer]:
+              - /url: /parts/in-stock-parts
+          - listitem [ref=f341e64]:
+            - link "Bom Tool" [ref=f341e65] [cursor=pointer]:
+              - /url: https://jlcpcb.com/parts/bom-tool
+          - listitem [ref=f341e67]:
+            - link "Request a Quote" [ref=f341e68] [cursor=pointer]:
+              - /url: /parts/request-quote
+          - listitem [ref=f341e70]:
+            - generic [ref=f341e71] [cursor=pointer]:
+              - generic [ref=f341e72]: Support
+              - generic [aria-hidden] [ref=f341e73]: 
+    - main [ref=f341e74]:
+      - generic [ref=f341e76]:
+        - text:                
+        - generic [ref=f341e77]:
+          - navigation "Breadcrumb" [ref=f341e78]:
+            - list [ref=f341e79]:
+              - listitem [ref=f341e80]:
+                - link "JLCPCB" [ref=f341e81] [cursor=pointer]:
+                  - /url: https://jlcpcb.com
+              - listitem [ref=f341e82]:
+                - link "Parts Library" [ref=f341e85] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts
+              - listitem [ref=f341e86]:
+                - link "All Components" [ref=f341e89] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/all-electronic-components
+              - listitem [ref=f341e90]:
+                - link "Circuit Protection" [ref=f341e93] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/1st/Circuit_Protection_11
+              - listitem [ref=f341e94]:
+                - link "ESD and Surge Protection (TVS/ESD)" [ref=f341e97] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/2nd/Circuit_Protection/ESD_and_Surge_Protection_(TVS_ESD)_3035
+              - listitem [ref=f341e98]:
+                - generic [ref=f341e101]: SRV05-4.TCT
+          - generic [ref=f341e102]:
+            - generic [ref=f341e103]:
+              - generic [ref=f341e105]:
+                - generic [ref=f341e106]:
+                  - img "SRV05-4.TCT" [ref=f341e110]
+                  - generic [ref=f341e111]:
+                    - button [ref=f341e112] [cursor=pointer]:
+                      - img "SRV05-4.TCT thumbnail 1" [ref=f341e115]
+                    - button [ref=f341e116] [cursor=pointer]:
+                      - img "SRV05-4.TCT thumbnail 2" [ref=f341e119]
+                    - button [ref=f341e120] [cursor=pointer]:
+                      - img "SRV05-4.TCT thumbnail 3" [ref=f341e123]
+                    - button [ref=f341e124] [cursor=pointer]:
+                      - img "SRV05-4.TCT thumbnail 4" [ref=f341e127]
+                  - paragraph [ref=f341e128]: "* Images are for reference only"
+                  - generic [ref=f341e129]:
+                    - button "" [ref=f341e130] [cursor=pointer]
+                    - button "" [ref=f341e132] [cursor=pointer]
+                    - button "" [ref=f341e134] [cursor=pointer]
+                - generic [ref=f341e136]:
+                  - generic [ref=f341e137]:
+                    - heading "SRV05-4.TCT" [level=1] [ref=f341e138]
+                    - button "" [ref=f341e139] [cursor=pointer]
+                    - generic [ref=f341e141]: Extended
+                  - generic [ref=f341e142]:
+                    - generic [ref=f341e143]:
+                      - term [ref=f341e144]: Manufacturer
+                      - definition [ref=f341e145]:
+                        - generic [ref=f341e146]:
+                          - heading [level=2] [ref=f341e147]:
+                            - link "SEMTECH" [ref=f341e148] [cursor=pointer]:
+                              - /url: https://jlcpcb.com/parts/manufacturers/SEMTECH?brand=385285308990623747
+                          - button "" [ref=f341e149] [cursor=pointer]
+                    - generic [ref=f341e151]:
+                      - term [ref=f341e152]: "MFR.Part #"
+                      - definition [ref=f341e153]:
+                        - generic [ref=f341e154]:
+                          - generic [ref=f341e155]: SRV05-4.TCT
+                          - button "" [ref=f341e156] [cursor=pointer]
+                    - generic [ref=f341e158]:
+                      - term [ref=f341e159]: "JLCPCB Part #"
+                      - definition [ref=f341e160]:
+                        - generic [ref=f341e161]:
+                          - generic [ref=f341e162]: C13612
+                          - button "" [ref=f341e163] [cursor=pointer]
+                    - generic [ref=f341e165]:
+                      - term [ref=f341e166]: Package
+                      - definition [ref=f341e167]:
+                        - generic [ref=f341e168]:
+                          - generic [ref=f341e169]: SOT-23-6L
+                          - button "" [ref=f341e170] [cursor=pointer]
+                    - generic [ref=f341e172]:
+                      - term [ref=f341e173]: Description
+                      - definition [ref=f341e174]:
+                        - generic [ref=f341e175]:
+                          - generic [ref=f341e176]: "-55℃~+125℃ 12A@8/20us 17.5V 300W@8/20us 3pF 5V 5uA 6V Four channels IEC 61000-4-2、IEC 61000-4-5、IEC 61000-4-4 TVS Unidirectional SOT-23-6L ESD and Surge Protection (TVS/ESD) ROHS"
+                          - button "" [ref=f341e177] [cursor=pointer]
+                    - generic [ref=f341e179]:
+                      - term [ref=f341e180]: EasyEDA Libraries
+                      - definition [ref=f341e181]:
+                        - button "PCB Footprint or Symbol" [ref=f341e182] [cursor=pointer]
+                    - generic [ref=f341e183]:
+                      - term [ref=f341e184]: ECCN
+                      - definition [ref=f341e185]: EAR99
+                    - generic [ref=f341e186]:
+                      - term [ref=f341e187]: Datasheet
+                      - definition [ref=f341e188]:
+                        - generic [ref=f341e189]:
+                          - img [aria-hidden] [ref=f341e190] [cursor=pointer]
+                          - link "Download" [ref=f341e192] [cursor=pointer]:
+                            - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8586173054804234240-C13612.pdf?response-content-disposition=attachment%3B%20filename%3DC13612.pdf%3B%20filename%2A%3DUTF-8%27%27C13612.pdf&x-oss-date=20261023T012429Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vWGv2Cmrls5bOqcBGInjdmRN52v6%2BesTz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qfZb1lY%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWmpmxNRG%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIv3oO5KKWD5sagAGEZfPcDTrj%2BcfioKtp%2BpeR7MA6Jpx%2FZ1nCgJjCmkxYlLtEpfV1nw9huqSl97cW70MESHCzzPoCQklL9Ts6Ni%2F0DpS6mnGRq14gGpvZ32O5YdTIzMPsRIVsnhDfrDehzvC980OcMm%2FmUrKLBQ98mtep4A6xbNpZz2yCan6MUO2MfyAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXcQG6wfMRqAr79z73HQZPj5S%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=651f287e88730200e4b11802fa32fe24f52939015cf9d0b492022e04e47b4e69
+                    - generic [ref=f341e193]:
+                      - term [ref=f341e194]: Source
+                      - definition [ref=f341e195]: JLCPCB
+                    - generic [ref=f341e196]:
+                      - term [ref=f341e197]: Assembly Type
+                      - definition [ref=f341e198]:
+                        - generic [ref=f341e199]: SMT Assembly
+                    - generic [ref=f341e201]:
+                      - term [ref=f341e202]: PCBA Type
+                      - definition [ref=f341e203]:
+                        - generic [ref=f341e204]: Economic and Standard
+                    - generic [ref=f341e206]:
+                      - term [ref=f341e207]:
+                        - text: MSL Level
+                        - generic [ref=f341e208] [cursor=pointer]: 
+                      - definition [ref=f341e209]: MSL 1
+                  - generic [ref=f341e210]:
+                    - generic [aria-hidden] [ref=f341e211]: 
+                    - paragraph [ref=f341e212]: "Note: The purchased components are stored in your JLCPCB parts library for future PCBA orders only, and cannot be shipped separately."
+              - text:             
+              - generic [ref=f341e213]:
+                - navigation "Detail sections" [ref=f341e214]:
+                  - tablist [ref=f341e217]:
+                    - tab "Specifications" [selected] [ref=f341e218] [cursor=pointer]
+                    - tab "PCB Assembly Tips" [ref=f341e220] [cursor=pointer]
+                    - tab "Documents" [ref=f341e222] [cursor=pointer]
+                    - tab "PCB Footprint/Symbol" [ref=f341e224] [cursor=pointer]
+                - generic [ref=f341e229]:
+                  - region [ref=f341e230]:
+                    - generic [ref=f341e231]:
+                      - generic [ref=f341e232]:
+                        - heading "SRV05-4.TCT Specifications" [level=2] [ref=f341e235]
+                        - generic [ref=f341e236]:
+                          - paragraph [ref=f341e237]: SRV05-4.TCT technical specifications, attributes, and parameters.
+                          - button "Report an Error?" [ref=f341e238] [cursor=pointer]
+                      - table [ref=f341e241]:
+                        - rowgroup [ref=f341e242]:
+                          - row [ref=f341e243]:
+                            - columnheader [ref=f341e244]
+                            - columnheader "Attributes" [ref=f341e245]
+                            - columnheader "Value" [ref=f341e246]
+                        - rowgroup [ref=f341e247]:
+                          - row [ref=f341e248]:
+                            - cell [ref=f341e249]:
+                              - checkbox "Select Category" [checked] [disabled] [ref=f341e251]
+                            - cell "Category" [ref=f341e252]
+                            - cell "Circuit Protection/ESD and Surge Protection (TVS/ESD)" [ref=f341e253]
+                          - row [ref=f341e254]:
+                            - cell [ref=f341e255]:
+                              - checkbox "Select Manufacturer" [ref=f341e257] [cursor=pointer]
+                            - cell "Manufacturer" [ref=f341e258]
+                            - cell [ref=f341e259]:
+                              - link "SEMTECH" [ref=f341e260] [cursor=pointer]:
+                                - /url: /parts/manufacturers/SEMTECH?brand=385285308990623747
+                          - row [ref=f341e261]:
+                            - cell [ref=f341e262]:
+                              - checkbox "Select Package" [ref=f341e264] [cursor=pointer]
+                            - cell "Package" [ref=f341e265]
+                            - cell "SOT-23-6L" [ref=f341e266]
+                          - row [ref=f341e267]:
+                            - cell [ref=f341e268]:
+                              - checkbox "Select Operating Temperature" [ref=f341e270] [cursor=pointer]
+                            - cell "Operating Temperature" [ref=f341e271]
+                            - cell "-55℃~+125℃" [ref=f341e272]
+                          - row [ref=f341e273]:
+                            - cell [ref=f341e274]:
+                              - checkbox "Select Type" [ref=f341e276] [cursor=pointer]
+                            - cell "Type" [ref=f341e277]
+                            - cell "TVS" [ref=f341e278]
+                          - row [ref=f341e279]:
+                            - cell [ref=f341e280]:
+                              - checkbox "Select Junction Capacitance" [ref=f341e282] [cursor=pointer]
+                            - cell "Junction Capacitance" [ref=f341e283]
+                            - cell "3pF" [ref=f341e284]
+                          - row [ref=f341e285]:
+                            - cell [ref=f341e286]:
+                              - checkbox "Select Number of Channels" [ref=f341e288] [cursor=pointer]
+                            - cell "Number of Channels" [ref=f341e289]
+                            - cell "Four channels" [ref=f341e290]
+                          - row [ref=f341e291]:
+                            - cell [ref=f341e292]:
+                              - checkbox "Select Peak Pulse Power Dissipation (Ppp)" [ref=f341e294] [cursor=pointer]
+                            - cell "Peak Pulse Power Dissipation (Ppp)" [ref=f341e295]
+                            - cell "300W@8/20us" [ref=f341e296]
+                          - row [ref=f341e297]:
+                            - cell [ref=f341e298]:
+                              - checkbox "Select level of protection" [ref=f341e300] [cursor=pointer]
+                            - cell "level of protection" [ref=f341e301]
+                            - cell "IEC 61000-4-2、IEC 61000-4-5、IEC 61000-4-4" [ref=f341e302]
+                          - row [ref=f341e303]:
+                            - cell [ref=f341e304]:
+                              - checkbox "Select Clamping Voltage" [ref=f341e306] [cursor=pointer]
+                            - cell "Clamping Voltage" [ref=f341e307]
+                            - cell "17.5V" [ref=f341e308]
+                          - row [ref=f341e309]:
+                            - cell [ref=f341e310]:
+                              - checkbox "Select Polarity" [ref=f341e312] [cursor=pointer]
+                            - cell "Polarity" [ref=f341e313]
+                            - cell "Unidirectional" [ref=f341e314]
+                          - row [ref=f341e315]:
+                            - cell [ref=f341e316]:
+                              - checkbox "Select Peak Pulse Current (Ipp)" [ref=f341e318] [cursor=pointer]
+                            - cell "Peak Pulse Current (Ipp)" [ref=f341e319]
+                            - cell "12A@8/20us" [ref=f341e320]
+                          - row [ref=f341e321]:
+                            - cell [ref=f341e322]:
+                              - checkbox "Select Voltage - Breakdown" [ref=f341e324] [cursor=pointer]
+                            - cell "Voltage - Breakdown" [ref=f341e325]
+                            - cell "6V" [ref=f341e326]
+                          - row [ref=f341e327]:
+                            - cell [ref=f341e328]:
+                              - checkbox "Select Reverse Stand-Off Voltage (Vrwm)" [ref=f341e330] [cursor=pointer]
+                            - cell "Reverse Stand-Off Voltage (Vrwm)" [ref=f341e331]
+                            - cell "5V" [ref=f341e332]
+                          - row [ref=f341e333]:
+                            - cell [ref=f341e334]:
+                              - checkbox "Select Reverse Leakage Current (Ir)" [ref=f341e336] [cursor=pointer]
+                            - cell "Reverse Leakage Current (Ir)" [ref=f341e337]
+                            - cell "5uA" [ref=f341e338]
+                      - generic [ref=f341e339]:
+                        - generic [ref=f341e340]: "Results remaining: 0"
+                        - button "Searching..." [disabled] [ref=f341e341]
+                  - region [ref=f341e342]:
+                    - generic [ref=f341e343]:
+                      - heading "PCB Assembly Tips" [level=2] [ref=f341e346]
+                      - paragraph [ref=f341e347]:
+                        - text: From components to fully assembled PCBs. JLCPCB supports PCB assembly for the SRV05-4.TCT. Sign up to receive and
+                        - link "start your assembly today" [ref=f341e348] [cursor=pointer]:
+                          - /url: https://cart.jlcpcb.com/quote?from=audrey1
+                        - text: →
+                      - list [ref=f341e349]:
+                        - listitem [ref=f341e350]:
+                          - generic [ref=f341e351]: "1"
+                          - paragraph [ref=f341e353]: Step 1 - Pre-order the parts you need from JLCPCB.
+                        - listitem [ref=f341e354]:
+                          - generic [ref=f341e355]: "2"
+                          - paragraph [ref=f341e357]: Step 2 - Place a PCBA order to have those parts assembled onto your boards.
+                        - listitem [ref=f341e358]:
+                          - generic [ref=f341e359]: "3"
+                          - paragraph [ref=f341e360]: Step 3 - JLCPCB manufactures and assembles your boards in as fast as 3 days.
+                      - generic [ref=f341e361]:
+                        - img "JLCPCB Assembly Tutorial" [ref=f341e363]
+                        - button "Play video" [ref=f341e364] [cursor=pointer]
+                      - link "Learn more about JLCPCB Assembly " [ref=f341e369] [cursor=pointer]:
+                        - /url: /pcb-assembly
+                        - generic [ref=f341e370]: Learn more about JLCPCB Assembly
+                        - generic [ref=f341e371]: 
+                  - region [ref=f341e372]:
+                    - generic [ref=f341e373]:
+                      - generic [ref=f341e374]:
+                        - heading "SRV05-4.TCT Documents" [level=2] [ref=f341e377]
+                        - paragraph [ref=f341e378]: SRV05-4.TCT datasheets or manufacturer documentation.
+                      - paragraph [ref=f341e379]:
+                        - text: "Datasheet:"
+                        - link "SRV05-4.TCT Datasheet (PDF)" [ref=f341e380] [cursor=pointer]:
+                          - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8586173054804234240-C13612.pdf?response-content-disposition=attachment%3B%20filename%3DC13612.pdf%3B%20filename%2A%3DUTF-8%27%27C13612.pdf&x-oss-date=20261023T012429Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vWGv2Cmrls5bOqcBGInjdmRN52v6%2BesTz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qfZb1lY%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWmpmxNRG%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIv3oO5KKWD5sagAGEZfPcDTrj%2BcfioKtp%2BpeR7MA6Jpx%2FZ1nCgJjCmkxYlLtEpfV1nw9huqSl97cW70MESHCzzPoCQklL9Ts6Ni%2F0DpS6mnGRq14gGpvZ32O5YdTIzMPsRIVsnhDfrDehzvC980OcMm%2FmUrKLBQ98mtep4A6xbNpZz2yCan6MUO2MfyAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXcQG6wfMRqAr79z73HQZPj5S%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=651f287e88730200e4b11802fa32fe24f52939015cf9d0b492022e04e47b4e69
+                  - region [ref=f341e381]:
+                    - generic [ref=f341e382]:
+                      - generic [ref=f341e383]:
+                        - heading "SRV05-4.TCT Schematic Symbol & PCB Footprint" [level=2] [ref=f341e386]
+                        - paragraph [ref=f341e387]: The SRV05-4.TCT schematic symbol and PCB footprint are available in the EasyEDA PCB design tool.
+                      - figure [ref=f341e388]:
+                        - iframe [ref=f341e389]:
+                          - generic [ref=f344e2]:
+                            - generic [ref=f344e3]:
+                              - link [ref=f344e4] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                              - link "EasyEDA - An Easier and Powerful Electronic Circuit Design Tool" [ref=f344e8] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                            - generic [ref=f344e9]:
+                              - img [ref=f344e11]:
+                                - generic [ref=f344e15]:
+                                  - generic [ref=f344e17]:
+                                    - generic [ref=f344e19]: "1"
+                                    - generic [ref=f344e20]: "1"
+                                  - generic [ref=f344e21]:
+                                    - generic [ref=f344e23]: "2"
+                                    - generic [ref=f344e24]: "2"
+                                  - generic [ref=f344e25]:
+                                    - generic [ref=f344e27]: "3"
+                                    - generic [ref=f344e28]: "3"
+                                  - generic [ref=f344e29]:
+                                    - generic [ref=f344e31]: "4"
+                                    - generic [ref=f344e32]: "4"
+                                  - generic [ref=f344e33]:
+                                    - generic [ref=f344e35]: "5"
+                                    - generic [ref=f344e36]: "5"
+                                  - generic [ref=f344e40]:
+                                    - generic [ref=f344e42]: "6"
+                                    - generic [ref=f344e43]: "6"
+                              - generic [ref=f344e66]:
+                                - generic [ref=f344e67] [cursor=pointer]: 
+                                - generic [ref=f344e69] [cursor=pointer]: 
+                                - generic [ref=f344e71] [cursor=pointer]: 
+                            - generic [ref=f344e73]:
+                              - img [ref=f344e75]:
+                                - generic:
+                                  - generic: "3"
+                                  - generic: "2"
+                                  - generic: "1"
+                                  - generic: "6"
+                                  - generic: "5"
+                                  - generic: "4"
+                              - generic [ref=f344e106]:
+                                - generic [ref=f344e107] [cursor=pointer]: 
+                                - generic [ref=f344e109] [cursor=pointer]: 
+                                - generic [ref=f344e111] [cursor=pointer]: 
+                            - link "Free Trial" [ref=f344e114] [cursor=pointer]:
+                              - /url: https://pro.easyeda.com/editor#tab=*!7f5aed4de03b4cb3b9e04dab7f0d299c(device)2e711befcc7f420f82cd90cf1ccd8cd4|!ebc5370dc87d4461ad5320a48450ab14(device)2e711befcc7f420f82cd90cf1ccd8cd4
+                            - link "Report Error" [ref=f344e115] [cursor=pointer]:
+                              - /url: https://easyeda.com/page/report-part-error?code=C13612
+                            - generic [ref=f344e116]:
+                              - text: Can't open? Please refer at
+                              - link "this tutorial" [ref=f344e117] [cursor=pointer]:
+                                - /url: https://oshwlab.com/article/How-to-open-preview-parts-in-easyeda-editor-from-lcsc-or-jlcpcb
+            - complementary [ref=f341e392]:
+              - generic [ref=f341e393]:
+                - generic [ref=f341e394]:
+                  - generic [ref=f341e395]:
+                    - paragraph [ref=f341e396]: "In Stock: 102,495"
+                    - generic [ref=f341e397]:
+                      - generic [ref=f341e398]: "Minimum: 1"
+                      - generic [ref=f341e400]: "Full Reel: 3000"
+                  - generic [ref=f341e401]:
+                    - textbox "Quantity" [ref=f341e402]: "1"
+                    - generic [ref=f341e403]:
+                      - generic [ref=f341e404]: $0.16
+                      - button "" [ref=f341e406] [cursor=pointer]
+                  - button " Add to My Part Lib for Assembly" [ref=f341e408] [cursor=pointer]:
+                    - generic [ref=f341e409]: 
+                    - generic [ref=f341e410]: Add to My Part Lib for Assembly
+                  - paragraph [ref=f341e411]: "Available Order Qty: 101,353"
+                  - generic [ref=f341e412]:
+                    - generic [ref=f341e413]:
+                      - generic [ref=f341e414]: Qty
+                      - generic [ref=f341e415]: Unit Price
+                    - generic [ref=f341e416] [cursor=pointer]:
+                      - generic [ref=f341e417]: 1+
+                      - generic [ref=f341e418]: $0.1626
+                    - generic [ref=f341e419] [cursor=pointer]:
+                      - generic [ref=f341e420]: 50+
+                      - generic [ref=f341e421]: $0.1294
+                    - generic [ref=f341e422] [cursor=pointer]:
+                      - generic [ref=f341e423]: 150+
+                      - generic [ref=f341e424]: $0.1152
+                    - generic [ref=f341e425] [cursor=pointer]:
+                      - generic [ref=f341e426]: 500+
+                      - generic [ref=f341e427]: $0.0975
+                    - generic [ref=f341e428] [cursor=pointer]:
+                      - generic [ref=f341e429]: 3000+
+                      - generic [ref=f341e430]: $0.0897
+                    - generic [ref=f341e431] [cursor=pointer]:
+                      - generic [ref=f341e432]: 6000+
+                      - generic [ref=f341e433]: $0.0849
+                - generic [ref=f341e435]:
+                  - heading "Related Products" [level=3] [ref=f341e436]
+                  - list [ref=f341e437]:
+                    - listitem [ref=f341e438] [cursor=pointer]:
+                      - link [ref=f341e439]:
+                        - /url: /partdetail/ElecSuper-SRV054ATCT/C22363674
+                        - img "recommended parts-SRV05-4ATCT" [ref=f341e443]
+                        - generic [ref=f341e444]:
+                          - paragraph [ref=f341e445]: SRV05-4ATCT
+                          - paragraph [ref=f341e446]: ElecSuper
+                          - paragraph [ref=f341e447]: $0.0288
+                    - listitem [ref=f341e448] [cursor=pointer]:
+                      - link [ref=f341e449]:
+                        - /url: /partdetail/TECHPUBLIC-SRV054ATCT/C2827642
+                        - img "recommended parts-SRV05-4ATCT" [ref=f341e453]
+                        - generic [ref=f341e454]:
+                          - paragraph [ref=f341e455]: SRV05-4ATCT
+                          - paragraph [ref=f341e456]: TECH PUBLIC
+                          - paragraph [ref=f341e457]: $0.0419
+                    - listitem [ref=f341e458] [cursor=pointer]:
+                      - link [ref=f341e459]:
+                        - /url: /partdetail/SEMTECH-SRV08_4TCT/C3714561
+                        - img "recommended parts-SRV08-4.TCT" [ref=f341e463]
+                        - generic [ref=f341e464]:
+                          - paragraph [ref=f341e465]: SRV08-4.TCT
+                          - paragraph [ref=f341e466]: SEMTECH
+                          - paragraph [ref=f341e467]: $0.5741
+                    - listitem [ref=f341e468] [cursor=pointer]:
+                      - link [ref=f341e469]:
+                        - /url: /partdetail/STMicroelectronics-ESDA25SC6/C1973611
+                        - img "recommended parts-ESDA25SC6" [ref=f341e473]
+                        - generic [ref=f341e474]:
+                          - paragraph [ref=f341e475]: ESDA25SC6
+                          - paragraph [ref=f341e476]: STMicroelectronics
+                          - paragraph [ref=f341e477]: $0.2473
+                    - listitem [ref=f341e478] [cursor=pointer]:
+                      - link [ref=f341e479]:
+                        - /url: /partdetail/STMicroelectronics-USBLC62SC6/C7519
+                        - img "recommended parts-USBLC6-2SC6" [ref=f341e483]
+                        - generic [ref=f341e484]:
+                          - paragraph [ref=f341e485]: USBLC6-2SC6
+                          - paragraph [ref=f341e486]: STMicroelectronics
+                          - paragraph [ref=f341e487]: $0.1778
+                    - listitem [ref=f341e488] [cursor=pointer]:
+                      - link [ref=f341e489]:
+                        - /url: /partdetail/Slkor_SLKORMICRO_Elec-AZC19904/C5185900
+                        - img "recommended parts-AZC199-04" [ref=f341e493]
+                        - generic [ref=f341e494]:
+                          - paragraph [ref=f341e495]: AZC199-04
+                          - paragraph [ref=f341e496]: Slkor(SLKORMICRO Elec.)
+                          - paragraph [ref=f341e497]: $0.0426
+    - contentinfo [ref=f341e498]:
+      - generic [ref=f341e499]:
+        - generic [ref=f341e500]:
+          - generic [ref=f341e501]:
+            - button " Online Chat >" [ref=f341e502] [cursor=pointer]:
+              - generic [ref=f341e503]: 
+              - text: Online Chat >
+            - generic [ref=f341e504]: Chat with our live agent for fast reply.
+            - generic [ref=f341e505]: "Mon-Fri: 24 hours, Sat: 9am-6pm, GMT+8"
+          - generic [ref=f341e506]:
+            - link " Email Us >" [ref=f341e507] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help/contact
+              - generic [ref=f341e508]: 
+              - text: Email Us >
+            - generic [ref=f341e509]: Contact us at support@jlcpcb.com
+            - generic [ref=f341e510]: Typically reply within hours.
+          - generic [ref=f341e511]:
+            - link " Help Center >" [ref=f341e512] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help
+              - generic [ref=f341e513]: 
+              - text: Help Center >
+            - generic [ref=f341e514]: Get instant answers.
+            - generic [ref=f341e515]: 24/7 Available.
+        - text:                
+        - generic [ref=f341e517]:
+          - generic [ref=f341e518]:
+            - generic [ref=f341e519]: Services & Tools
+            - generic [ref=f341e520]:
+              - link "Electronic Parts" [ref=f341e521] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts
+              - link "BOM Tool" [ref=f341e522] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/bom-tool
+              - link "Request a Quote" [ref=f341e523] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/request-quote
+              - link "Manufacturers" [ref=f341e524] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/manufacturers
+              - link "PCB Assembly" [ref=f341e525] [cursor=pointer]:
+                - /url: https://jlcpcb.com/pcb-assembly
+          - generic [ref=f341e526]:
+            - generic [ref=f341e527]: Support
+            - generic [ref=f341e528]:
+              - link "Contact Us" [ref=f341e529] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/contact/Electronic Components
+              - link "How to Order" [ref=f341e530] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/article/how-to-build-your-own-parts-library-in-jlcpcb
+              - link "User Guides" [ref=f341e531] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/catalog/191-PCBA-Parts-Sourcing
+              - link "Sourcing Tips" [ref=f341e532] [cursor=pointer]:
+                - /url: https://jlcpcb.com/blog/category/components-sourcing
+              - link "Payment Methods" [ref=f341e533] [cursor=pointer]:
+                - /url: https://jlcpcb.com/payments
+          - generic [ref=f341e534]:
+            - generic [ref=f341e535]: Company
+            - generic [ref=f341e536]:
+              - link "About Us" [ref=f341e537] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us
+              - link "Quality Assurance" [ref=f341e538] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/quality-control
+              - link "How We Work" [ref=f341e539] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/how-it-works
+              - link "Certifications" [ref=f341e540] [cursor=pointer]:
+                - /url: https://jlcpcb.com/certifications
+              - link "Security" [ref=f341e541] [cursor=pointer]:
+                - /url: https://jlcpcb.com/privacy-security
+              - link "JLCAPI" [ref=f341e542] [cursor=pointer]:
+                - /url: https://api.jlcpcb.com/
+              - link "News" [ref=f341e543] [cursor=pointer]:
+                - /url: https://jlcpcb.com/news
+              - link "Cooperation" [ref=f341e544] [cursor=pointer]:
+                - /url: https://jlcpcb.com/cooperation
+              - link "Careers" [ref=f341e545] [cursor=pointer]:
+                - /url: https://jlcpcb.com/careers
+          - generic [ref=f341e546]:
+            - generic [ref=f341e547]: Electronics
+            - generic [ref=f341e548]:
+              - link "EasyEDA" [ref=f341e549] [cursor=pointer]:
+                - /url: https://easyeda.com
+              - link "JLCPCB" [ref=f341e550] [cursor=pointer]:
+                - /url: https://jlcpcb.com
+              - link "JLCDFM" [ref=f341e551] [cursor=pointer]:
+                - /url: https://jlcdfm.com
+              - link "LCSC" [ref=f341e552] [cursor=pointer]:
+                - /url: https://www.lcsc.com
+              - link "OSHWLAB" [ref=f341e553] [cursor=pointer]:
+                - /url: https://oshwlab.com/
+          - generic [ref=f341e554]:
+            - generic [ref=f341e555]: Mechanical
+            - generic [ref=f341e556]:
+              - link "JLC3DP" [ref=f341e557] [cursor=pointer]:
+                - /url: https://jlc3dp.com
+              - link "JLCCNC" [ref=f341e558] [cursor=pointer]:
+                - /url: https://jlccnc.com
+              - link "JLCMC" [ref=f341e559] [cursor=pointer]:
+                - /url: https://jlcmc.com
+          - generic [ref=f341e560]:
+            - generic [ref=f341e561]: 
+            - generic [ref=f341e562]:
+              - generic [ref=f341e563]:
+                - paragraph [ref=f341e564]: Download JLCONE Desktop—Get $524 Exclusive Coupons
+                - generic [ref=f341e565]:
+                  - generic [ref=f341e566]:
+                    - link " Windows" [ref=f341e567] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f341e568]:
+                        - generic [ref=f341e569]: 
+                        - generic [ref=f341e570]: Windows
+                    - link " MAC" [ref=f341e571] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f341e572]:
+                        - generic [ref=f341e573]: 
+                        - generic [ref=f341e574]: MAC
+                  - generic [ref=f341e575]:
+                    - link " Android" [ref=f341e576] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f341e577]:
+                        - generic [ref=f341e578]: 
+                        - generic [ref=f341e579]: Android
+                    - link " IOS" [ref=f341e580] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f341e581]:
+                        - generic [ref=f341e582]: 
+                        - generic [ref=f341e583]: IOS
+              - generic [ref=f341e584]:
+                - paragraph [ref=f341e585]: CONNECT WITH US
+                - generic [ref=f341e586]:
+                  - link "Facebook" [ref=f341e587] [cursor=pointer]:
+                    - /url: https://www.facebook.com/jlcpcb
+                    - generic [ref=f341e588]: 
+                  - link "Twitter" [ref=f341e589] [cursor=pointer]:
+                    - /url: https://twitter.com/jlcpcb
+                    - generic [ref=f341e590]: 
+                  - link "Instagram" [ref=f341e591] [cursor=pointer]:
+                    - /url: https://www.instagram.com/jlcpcb
+                    - generic [ref=f341e592]: 
+                  - link "YouTube" [ref=f341e593] [cursor=pointer]:
+                    - /url: https://www.youtube.com/JLCPCB
+                    - generic [ref=f341e594]: 
+                  - link "LinkedIn" [ref=f341e595] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/jlcpcb
+                    - generic [ref=f341e596]: 
+                  - link "Reddit" [ref=f341e597] [cursor=pointer]:
+                    - /url: https://www.reddit.com/r/JLCPCBLab/
+                    - generic [ref=f341e598]: 
+        - generic [ref=f341e600]:
+          - generic [ref=f341e601]: © 2026 JLCPCB.COM All Rights Reserved.
+          - link "Privacy Policy" [ref=f341e602] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Privacy-Policy
+          - link "Terms & Conditions" [ref=f341e603] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Terms-%26-Conditions
+          - link "Cookies Policy" [ref=f341e604] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/JLCPCB-Cookie-Notice
+          - link "Do Not Sell or Share My Personal Information" [ref=f341e605] [cursor=pointer]:
+            - /url: https://jlcpcb.com/privacy-policy/do-not-sell-or-share-my-personal-information
+    - generic:
+      - generic [ref=f341e606]:
+        - generic [ref=f341e608]:
+          - text: Welcome back, may I help you?
+          - button "Chat Now" [ref=f341e611] [cursor=pointer]
+        - textbox "Write a message" [ref=f341e613]
+      - iframe [ref=f341e617]:
+        - generic [ref=f345e5] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=f341e618]

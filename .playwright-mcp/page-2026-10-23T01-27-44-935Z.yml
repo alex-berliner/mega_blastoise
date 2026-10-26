@@ -1,0 +1,620 @@
+- generic [active] [ref=f352e1]:
+  - generic [ref=f352e2]:
+    - generic [ref=f352e5]:
+      - generic [ref=f352e6]: 24-hour PCB production. Fast Delivery to United States.
+      - generic [ref=f352e8]:
+        - link " Coupons" [ref=f352e9] [cursor=pointer]:
+          - /url: /coupon-center
+          - generic [ref=f352e10]: 
+          - generic [ref=f352e11]: Coupons
+        - link " APP Download" [ref=f352e12] [cursor=pointer]:
+          - /url: https://jlcone.com/download
+          - generic [ref=f352e13]: 
+          - generic [ref=f352e14]: APP Download
+        - generic [ref=f352e15]: USD
+    - navigation "Parts navigation" [ref=f352e23]:
+      - generic [ref=f352e24]:
+        - text:    
+        - generic [ref=f352e25]:
+          - link "Assembly Parts Lib" [ref=f352e26] [cursor=pointer]:
+            - /url: /
+            - generic [aria-hidden] [ref=f352e27]: 
+          - link "Assembly Parts Lib" [ref=f352e29] [cursor=pointer]:
+            - /url: /parts
+            - generic [ref=f352e31]: For PCBA Only
+      - generic [ref=f352e33]:
+        - generic [ref=f352e34]:
+          - 'combobox "Search by keyword or part #" [ref=f352e35]'
+          - button "Upload BOM" [ref=f352e37] [cursor=pointer]:
+            - generic [aria-hidden] [ref=f352e38]: 
+        - button "Search" [ref=f352e40] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f352e41]: 
+      - generic [ref=f352e42]:
+        - text: 
+        - link "Parts Cart" [ref=f352e43] [cursor=pointer]:
+          - /url: https://jlcpcb.com/user-center/smtPrivateLibrary/partsCart/
+          - generic [ref=f352e44]:
+            - generic [aria-hidden] [ref=f352e45]: 
+            - generic: "0"
+        - button "Sign In" [ref=f352e49] [cursor=pointer]:
+          - generic [aria-hidden] [ref=f352e51]: 
+      - text:  
+    - navigation "Parts sections" [ref=f352e52]:
+      - generic [ref=f352e54]:
+        - link "Products" [ref=f352e56] [cursor=pointer]:
+          - /url: /parts/all-electronic-components
+          - generic [aria-hidden] [ref=f352e57]: 
+        - list [ref=f352e60]:
+          - listitem [ref=f352e61]:
+            - link "In Stock Parts" [ref=f352e62] [cursor=pointer]:
+              - /url: /parts/in-stock-parts
+          - listitem [ref=f352e64]:
+            - link "Bom Tool" [ref=f352e65] [cursor=pointer]:
+              - /url: https://jlcpcb.com/parts/bom-tool
+          - listitem [ref=f352e67]:
+            - link "Request a Quote" [ref=f352e68] [cursor=pointer]:
+              - /url: /parts/request-quote
+          - listitem [ref=f352e70]:
+            - generic [ref=f352e71] [cursor=pointer]:
+              - generic [ref=f352e72]: Support
+              - generic [aria-hidden] [ref=f352e73]: 
+    - main [ref=f352e74]:
+      - generic [ref=f352e76]:
+        - text:                
+        - generic [ref=f352e77]:
+          - navigation "Breadcrumb" [ref=f352e78]:
+            - list [ref=f352e79]:
+              - listitem [ref=f352e80]:
+                - link "JLCPCB" [ref=f352e81] [cursor=pointer]:
+                  - /url: https://jlcpcb.com
+              - listitem [ref=f352e82]:
+                - link "Parts Library" [ref=f352e85] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts
+              - listitem [ref=f352e86]:
+                - link "All Components" [ref=f352e89] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/all-electronic-components
+              - listitem [ref=f352e90]:
+                - link "Power Management (PMIC)" [ref=f352e93] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/1st/Power_Management_(PMIC)_9
+              - listitem [ref=f352e94]:
+                - link "Voltage Regulators - Linear, Low Drop Out (LDO) Regulators" [ref=f352e97] [cursor=pointer]:
+                  - /url: https://jlcpcb.com/parts/2nd/Power_Management_(PMIC)/Voltage_Regulators_Linear_Low_Drop_Out_(LDO)_Regulators_2956
+              - listitem [ref=f352e98]:
+                - generic [ref=f352e101]: RT9013-33GB
+          - generic [ref=f352e102]:
+            - generic [ref=f352e103]:
+              - generic [ref=f352e105]:
+                - generic [ref=f352e106]:
+                  - img "RT9013-33GB" [ref=f352e110]
+                  - generic [ref=f352e111]:
+                    - button [ref=f352e112] [cursor=pointer]:
+                      - img "RT9013-33GB thumbnail 1" [ref=f352e115]
+                    - button [ref=f352e116] [cursor=pointer]:
+                      - img "RT9013-33GB thumbnail 2" [ref=f352e119]
+                    - button [ref=f352e120] [cursor=pointer]:
+                      - img "RT9013-33GB thumbnail 3" [ref=f352e123]
+                    - button [ref=f352e124] [cursor=pointer]:
+                      - img "RT9013-33GB thumbnail 4" [ref=f352e127]
+                  - paragraph [ref=f352e128]: "* Images are for reference only"
+                  - generic [ref=f352e129]:
+                    - button "" [ref=f352e130] [cursor=pointer]
+                    - button "" [ref=f352e132] [cursor=pointer]
+                    - button "" [ref=f352e134] [cursor=pointer]
+                - generic [ref=f352e136]:
+                  - generic [ref=f352e137]:
+                    - heading "RT9013-33GB" [level=1] [ref=f352e138]
+                    - button "" [ref=f352e139] [cursor=pointer]
+                    - generic [ref=f352e141]: Extended
+                  - generic [ref=f352e142]:
+                    - generic [ref=f352e143]:
+                      - term [ref=f352e144]: Manufacturer
+                      - definition [ref=f352e145]:
+                        - generic [ref=f352e146]:
+                          - heading [level=2] [ref=f352e147]:
+                            - link "Richtek Tech" [ref=f352e148] [cursor=pointer]:
+                              - /url: https://jlcpcb.com/parts/manufacturers/Richtek_Tech?brand=385285311498817538
+                          - button "" [ref=f352e149] [cursor=pointer]
+                    - generic [ref=f352e151]:
+                      - term [ref=f352e152]: "MFR.Part #"
+                      - definition [ref=f352e153]:
+                        - generic [ref=f352e154]:
+                          - generic [ref=f352e155]: RT9013-33GB
+                          - button "" [ref=f352e156] [cursor=pointer]
+                    - generic [ref=f352e158]:
+                      - term [ref=f352e159]: "JLCPCB Part #"
+                      - definition [ref=f352e160]:
+                        - generic [ref=f352e161]:
+                          - generic [ref=f352e162]: C47773
+                          - button "" [ref=f352e163] [cursor=pointer]
+                    - generic [ref=f352e165]:
+                      - term [ref=f352e166]: Package
+                      - definition [ref=f352e167]:
+                        - generic [ref=f352e168]:
+                          - generic [ref=f352e169]: SOT-23-5
+                          - button "" [ref=f352e170] [cursor=pointer]
+                    - generic [ref=f352e172]:
+                      - term [ref=f352e173]: Description
+                      - definition [ref=f352e174]:
+                        - generic [ref=f352e175]:
+                          - generic [ref=f352e176]: "-40℃~+125℃@(Tj) 1 25uA 3.3V 30uVrms 400mV@(500mA) 5.5V 500mA 50dB@(10kHz) Fixed Over Current Protection、Over Temperature Protection、Enable Positive SOT-23-5 Voltage Regulators - Linear, Low Drop Out (LDO) Regulators ROHS"
+                          - button "" [ref=f352e177] [cursor=pointer]
+                    - generic [ref=f352e179]:
+                      - term [ref=f352e180]: EasyEDA Libraries
+                      - definition [ref=f352e181]:
+                        - button "PCB Footprint or Symbol" [ref=f352e182] [cursor=pointer]
+                    - generic [ref=f352e183]:
+                      - term [ref=f352e184]: ECCN
+                      - definition [ref=f352e185]: EAR99
+                    - generic [ref=f352e186]:
+                      - term [ref=f352e187]: Datasheet
+                      - definition [ref=f352e188]:
+                        - generic [ref=f352e189]:
+                          - img [aria-hidden] [ref=f352e190] [cursor=pointer]
+                          - link "Download" [ref=f352e192] [cursor=pointer]:
+                            - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8586176998380724224-C47773.pdf?response-content-disposition=attachment%3B%20filename%3DC47773.pdf%3B%20filename%2A%3DUTF-8%27%27C47773.pdf&x-oss-date=20261023T012736Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vBec%2FG1ZNswpCscH6Jh0UkdNpfi6j91zz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qachrVQ%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWsquScAm%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIkKXze6KWD5sagAFAzH2RutFogO8ywmvTB%2FfCXfTZAMiB7qF5k66idXMTI8tpIEyIxIJXvdsYTkMYJ5wQnMMZDbv2OgZkU4eP%2BLxYXQ46mWwib3A0HRuDrp7DWLOIHTtNb9etntoxggHaD%2Bha4Qbkptb4WUFaB6%2BBfWWbgoU%2Bal3U%2BrJYDXnQmG3r%2FCAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXt2ur8LMuRGrX8cEqxUsdmV5%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=ca7eac4d10e0dd2f48ea6409302a1a81b38197c5b5ef120b109f11f8439dd17e
+                    - generic [ref=f352e193]:
+                      - term [ref=f352e194]: Source
+                      - definition [ref=f352e195]: JLCPCB
+                    - generic [ref=f352e196]:
+                      - term [ref=f352e197]: Assembly Type
+                      - definition [ref=f352e198]:
+                        - generic [ref=f352e199]: SMT Assembly
+                    - generic [ref=f352e201]:
+                      - term [ref=f352e202]: PCBA Type
+                      - definition [ref=f352e203]:
+                        - generic [ref=f352e204]: Economic and Standard
+                    - generic [ref=f352e206]:
+                      - term [ref=f352e207]:
+                        - text: MSL Level
+                        - generic [ref=f352e208] [cursor=pointer]: 
+                      - definition [ref=f352e209]: MSL 3
+                  - generic [ref=f352e210]:
+                    - generic [aria-hidden] [ref=f352e211]: 
+                    - paragraph [ref=f352e212]: "Note: The purchased components are stored in your JLCPCB parts library for future PCBA orders only, and cannot be shipped separately."
+              - text:             
+              - generic [ref=f352e213]:
+                - navigation "Detail sections" [ref=f352e214]:
+                  - tablist [ref=f352e217]:
+                    - tab "Specifications" [selected] [ref=f352e218] [cursor=pointer]
+                    - tab "PCB Assembly Tips" [ref=f352e220] [cursor=pointer]
+                    - tab "Documents" [ref=f352e222] [cursor=pointer]
+                    - tab "PCB Footprint/Symbol" [ref=f352e224] [cursor=pointer]
+                - generic [ref=f352e229]:
+                  - region [ref=f352e230]:
+                    - generic [ref=f352e231]:
+                      - generic [ref=f352e232]:
+                        - heading "RT9013-33GB Specifications" [level=2] [ref=f352e235]
+                        - generic [ref=f352e236]:
+                          - paragraph [ref=f352e237]: RT9013-33GB technical specifications, attributes, and parameters.
+                          - button "Report an Error?" [ref=f352e238] [cursor=pointer]
+                      - table [ref=f352e241]:
+                        - rowgroup [ref=f352e242]:
+                          - row [ref=f352e243]:
+                            - columnheader [ref=f352e244]
+                            - columnheader "Attributes" [ref=f352e245]
+                            - columnheader "Value" [ref=f352e246]
+                        - rowgroup [ref=f352e247]:
+                          - row [ref=f352e248]:
+                            - cell [ref=f352e249]:
+                              - checkbox "Select Category" [checked] [disabled] [ref=f352e251]
+                            - cell "Category" [ref=f352e252]
+                            - cell "Power Management (PMIC)/Voltage Regulators - Linear, Low Drop Out (LDO) Regulators" [ref=f352e253]
+                          - row [ref=f352e254]:
+                            - cell [ref=f352e255]:
+                              - checkbox "Select Manufacturer" [ref=f352e257] [cursor=pointer]
+                            - cell "Manufacturer" [ref=f352e258]
+                            - cell [ref=f352e259]:
+                              - link "Richtek Tech" [ref=f352e260] [cursor=pointer]:
+                                - /url: /parts/manufacturers/Richtek_Tech?brand=385285311498817538
+                          - row [ref=f352e261]:
+                            - cell [ref=f352e262]:
+                              - checkbox "Select Package" [ref=f352e264] [cursor=pointer]
+                            - cell "Package" [ref=f352e265]
+                            - cell "SOT-23-5" [ref=f352e266]
+                          - row [ref=f352e267]:
+                            - cell [ref=f352e268]:
+                              - checkbox "Select Power Supply Rejection Ratio (PSRR)" [ref=f352e270] [cursor=pointer]
+                            - cell "Power Supply Rejection Ratio (PSRR)" [ref=f352e271]
+                            - cell "50dB@(10kHz)" [ref=f352e272]
+                          - row [ref=f352e273]:
+                            - cell [ref=f352e274]:
+                              - checkbox "Select standby current" [ref=f352e276] [cursor=pointer]
+                            - cell "standby current" [ref=f352e277]
+                            - cell "25uA" [ref=f352e278]
+                          - row [ref=f352e279]:
+                            - cell [ref=f352e280]:
+                              - checkbox "Select Operating Temperature" [ref=f352e282] [cursor=pointer]
+                            - cell "Operating Temperature" [ref=f352e283]
+                            - cell "-40℃~+125℃@(Tj)" [ref=f352e284]
+                          - row [ref=f352e285]:
+                            - cell [ref=f352e286]:
+                              - checkbox "Select Noise" [ref=f352e288] [cursor=pointer]
+                            - cell "Noise" [ref=f352e289]
+                            - cell "30uVrms" [ref=f352e290]
+                          - row [ref=f352e291]:
+                            - cell [ref=f352e292]:
+                              - checkbox "Select Voltage - Supply" [ref=f352e294] [cursor=pointer]
+                            - cell "Voltage - Supply" [ref=f352e295]
+                            - cell "5.5V" [ref=f352e296]
+                          - row [ref=f352e297]:
+                            - cell [ref=f352e298]:
+                              - checkbox "Select Output Type" [ref=f352e300] [cursor=pointer]
+                            - cell "Output Type" [ref=f352e301]
+                            - cell "Fixed" [ref=f352e302]
+                          - row [ref=f352e303]:
+                            - cell [ref=f352e304]:
+                              - checkbox "Select Output Current" [ref=f352e306] [cursor=pointer]
+                            - cell "Output Current" [ref=f352e307]
+                            - cell "500mA" [ref=f352e308]
+                          - row [ref=f352e309]:
+                            - cell [ref=f352e310]:
+                              - checkbox "Select Output Configuration" [ref=f352e312] [cursor=pointer]
+                            - cell "Output Configuration" [ref=f352e313]
+                            - cell "Positive" [ref=f352e314]
+                          - row [ref=f352e315]:
+                            - cell [ref=f352e316]:
+                              - checkbox "Select Features" [ref=f352e318] [cursor=pointer]
+                            - cell "Features" [ref=f352e319]
+                            - cell "Over Current Protection、Short Circuit Protection、Thermal shutdown、Enable control" [ref=f352e320]
+                          - row [ref=f352e321]:
+                            - cell [ref=f352e322]:
+                              - checkbox "Select Output Voltage" [ref=f352e324] [cursor=pointer]
+                            - cell "Output Voltage" [ref=f352e325]
+                            - cell "3.3V" [ref=f352e326]
+                          - row [ref=f352e327]:
+                            - cell [ref=f352e328]:
+                              - checkbox "Select Voltage Dropout" [ref=f352e330] [cursor=pointer]
+                            - cell "Voltage Dropout" [ref=f352e331]
+                            - cell "400mV@(500mA)" [ref=f352e332]
+                          - row [ref=f352e333]:
+                            - cell [ref=f352e334]:
+                              - checkbox "Select Number of Outputs" [ref=f352e336] [cursor=pointer]
+                            - cell "Number of Outputs" [ref=f352e337]
+                            - cell "1" [ref=f352e338]
+                      - generic [ref=f352e339]:
+                        - generic [ref=f352e340]: "Results remaining: 64182"
+                        - button "View Similar" [ref=f352e621] [cursor=pointer]
+                  - region [ref=f352e342]:
+                    - generic [ref=f352e343]:
+                      - heading "PCB Assembly Tips" [level=2] [ref=f352e346]
+                      - paragraph [ref=f352e347]:
+                        - text: From components to fully assembled PCBs. JLCPCB supports PCB assembly for the RT9013-33GB. Sign up to receive and
+                        - link "start your assembly today" [ref=f352e348] [cursor=pointer]:
+                          - /url: https://cart.jlcpcb.com/quote?from=audrey1
+                        - text: →
+                      - list [ref=f352e349]:
+                        - listitem [ref=f352e350]:
+                          - generic [ref=f352e351]: "1"
+                          - paragraph [ref=f352e353]: Step 1 - Pre-order the parts you need from JLCPCB.
+                        - listitem [ref=f352e354]:
+                          - generic [ref=f352e355]: "2"
+                          - paragraph [ref=f352e357]: Step 2 - Place a PCBA order to have those parts assembled onto your boards.
+                        - listitem [ref=f352e358]:
+                          - generic [ref=f352e359]: "3"
+                          - paragraph [ref=f352e360]: Step 3 - JLCPCB manufactures and assembles your boards in as fast as 3 days.
+                      - generic [ref=f352e361]:
+                        - img "JLCPCB Assembly Tutorial" [ref=f352e363]
+                        - button "Play video" [ref=f352e364] [cursor=pointer]
+                      - link "Learn more about JLCPCB Assembly " [ref=f352e369] [cursor=pointer]:
+                        - /url: /pcb-assembly
+                        - generic [ref=f352e370]: Learn more about JLCPCB Assembly
+                        - generic [ref=f352e371]: 
+                  - region [ref=f352e372]:
+                    - generic [ref=f352e373]:
+                      - generic [ref=f352e374]:
+                        - heading "RT9013-33GB Documents" [level=2] [ref=f352e377]
+                        - paragraph [ref=f352e378]: RT9013-33GB datasheets or manufacturer documentation.
+                      - paragraph [ref=f352e379]:
+                        - text: "Datasheet:"
+                        - link "RT9013-33GB Datasheet (PDF)" [ref=f352e380] [cursor=pointer]:
+                          - /url: https://jlc-prod-smt.oss-eu-central-1.aliyuncs.com/smtDataManualFile/8586176998380724224-C47773.pdf?response-content-disposition=attachment%3B%20filename%3DC47773.pdf%3B%20filename%2A%3DUTF-8%27%27C47773.pdf&x-oss-date=20261023T012736Z&x-oss-expires=1800&x-oss-security-token=CAISgAN1q6Ft5B2yfSjIr5vBec%2FG1ZNswpCscH6Jh0UkdNpfi6j91zz2IHhMdHJsAOodtv0%2FmmhT6PkclqRLcbhpcmfjV%2BZHzLB8qachrVQ%2F557b16cNrbH4M4H6aXeirtuwDsz9SNTCALjPD3nPii50x5bjaDymRCbLGJaViJlhHLN1Ow6jdmhpCctxLAlvo9NgFxm3D%2Fu2NQPwiWf9FVdhvhEG6Vly8qOi2MaRmFy8yFTx0b0SvJ%2BjYMrmPctoN9JnSdC5mfdzau3a1TJ84gRD0a5wkaVA1zbDs5bfISEIuUzebreLqY03dV4mOvdqIcMe8qigz88fk%2FfIioH6xyxKOexoSCnFTOiiupCcQLPyao9jLu6iayqViY7QaIOTqQohZmkAMwVOasAsI3Ngh4zF97Qt0cVNkXO9gWfLI8DtuMleWsquScAm%2FJSgc5lCkRRYwGs1287ugXlSQzo890KPDAEovaKCnZ2ZSfh7Y4sNknI6i%2Bfc2Se2MIkIkKXze6KWD5sagAFAzH2RutFogO8ywmvTB%2FfCXfTZAMiB7qF5k66idXMTI8tpIEyIxIJXvdsYTkMYJ5wQnMMZDbv2OgZkU4eP%2BLxYXQ46mWwib3A0HRuDrp7DWLOIHTtNb9etntoxggHaD%2Bha4Qbkptb4WUFaB6%2BBfWWbgoU%2Bal3U%2BrJYDXnQmG3r%2FCAA&x-oss-signature-version=OSS4-HMAC-SHA256&x-oss-credential=STS.NXt2ur8LMuRGrX8cEqxUsdmV5%2F20261023%2Feu-central-1%2Foss%2Faliyun_v4_request&x-oss-signature=ca7eac4d10e0dd2f48ea6409302a1a81b38197c5b5ef120b109f11f8439dd17e
+                  - region [ref=f352e381]:
+                    - generic [ref=f352e382]:
+                      - generic [ref=f352e383]:
+                        - heading "RT9013-33GB Schematic Symbol & PCB Footprint" [level=2] [ref=f352e386]
+                        - paragraph [ref=f352e387]: The RT9013-33GB schematic symbol and PCB footprint are available in the EasyEDA PCB design tool.
+                      - figure [ref=f352e388]:
+                        - iframe [ref=f352e389]:
+                          - generic [ref=f355e2]:
+                            - generic [ref=f355e3]:
+                              - link [ref=f355e4] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                              - link "EasyEDA - An Easier and Powerful Electronic Circuit Design Tool" [ref=f355e8] [cursor=pointer]:
+                                - /url: https://easyeda.com
+                            - generic [ref=f355e9]:
+                              - img [ref=f355e11]:
+                                - generic [ref=f355e15]:
+                                  - generic [ref=f355e17]:
+                                    - generic [ref=f355e19]: VIN
+                                    - generic [ref=f355e20]: "1"
+                                  - generic [ref=f355e21]:
+                                    - generic [ref=f355e23]: GND
+                                    - generic [ref=f355e24]: "2"
+                                  - generic [ref=f355e25]:
+                                    - generic [ref=f355e27]: EN
+                                    - generic [ref=f355e28]: "3"
+                                  - generic [ref=f355e29]:
+                                    - generic [ref=f355e31]: NC
+                                    - generic [ref=f355e32]: "4"
+                                  - generic [ref=f355e33]:
+                                    - generic [ref=f355e35]: VOUT
+                                    - generic [ref=f355e36]: "5"
+                              - generic [ref=f355e37]:
+                                - generic [ref=f355e38] [cursor=pointer]: 
+                                - generic [ref=f355e40] [cursor=pointer]: 
+                                - generic [ref=f355e42] [cursor=pointer]: 
+                            - generic [ref=f355e44]:
+                              - img [ref=f355e46]:
+                                - generic:
+                                  - generic: "1"
+                                  - generic: "2"
+                                  - generic: "3"
+                                  - generic: "4"
+                                  - generic: "5"
+                              - generic [ref=f355e73]:
+                                - generic [ref=f355e74] [cursor=pointer]: 
+                                - generic [ref=f355e76] [cursor=pointer]: 
+                                - generic [ref=f355e78] [cursor=pointer]: 
+                            - link "Free Trial" [ref=f355e81] [cursor=pointer]:
+                              - /url: https://pro.easyeda.com/editor#tab=*!5023bbde64724e5dae0a0f49c3dedce2(device)2329533c5e5243019b7b6e9a7a415a3a|!f2785a7a800f4327acd4dfdd25d8d5e3(device)2329533c5e5243019b7b6e9a7a415a3a
+                            - link "Report Error" [ref=f355e82] [cursor=pointer]:
+                              - /url: https://easyeda.com/page/report-part-error?code=C47773
+                            - generic [ref=f355e83]:
+                              - text: Can't open? Please refer at
+                              - link "this tutorial" [ref=f355e84] [cursor=pointer]:
+                                - /url: https://oshwlab.com/article/How-to-open-preview-parts-in-easyeda-editor-from-lcsc-or-jlcpcb
+            - complementary [ref=f352e392]:
+              - generic [ref=f352e393]:
+                - generic [ref=f352e394]:
+                  - generic [ref=f352e395]:
+                    - paragraph [ref=f352e396]: "In Stock: 311,500"
+                    - generic [ref=f352e397]:
+                      - generic [ref=f352e398]: "Minimum: 1"
+                      - generic [ref=f352e400]: "Full Reel: 3000"
+                  - generic [ref=f352e401]:
+                    - textbox "Quantity" [ref=f352e402]: "1"
+                    - generic [ref=f352e403]:
+                      - generic [ref=f352e404]:
+                        - generic [ref=f352e405]: $0.14
+                        - button "Save $30.00" [ref=f352e406] [cursor=pointer]
+                      - button "" [ref=f352e407] [cursor=pointer]
+                  - button " Add to My Part Lib for Assembly" [ref=f352e409] [cursor=pointer]:
+                    - generic [ref=f352e410]: 
+                    - generic [ref=f352e411]: Add to My Part Lib for Assembly
+                  - paragraph [ref=f352e412]: "Available Order Qty: 311,243"
+                  - generic [ref=f352e413]:
+                    - generic [ref=f352e414]:
+                      - generic [ref=f352e415]: Qty
+                      - generic [ref=f352e416]: Unit Price
+                    - generic [ref=f352e417] [cursor=pointer]:
+                      - generic [ref=f352e418]: 1+
+                      - generic [ref=f352e419]: $0.1377
+                    - generic [ref=f352e420] [cursor=pointer]:
+                      - generic [ref=f352e421]: 50+
+                      - generic [ref=f352e422]: $0.1116
+                    - generic [ref=f352e423] [cursor=pointer]:
+                      - generic [ref=f352e424]: 150+
+                      - generic [ref=f352e425]: $0.0980
+                    - generic [ref=f352e426] [cursor=pointer]:
+                      - generic [ref=f352e427]: 500+
+                      - generic [ref=f352e428]: $0.0869
+                    - generic [ref=f352e429] [cursor=pointer]:
+                      - generic [ref=f352e430]: 3000+
+                      - generic [ref=f352e431]: $0.0714
+                    - generic [ref=f352e432] [cursor=pointer]:
+                      - generic [ref=f352e433]: 6000+
+                      - generic [ref=f352e434]: $0.0687
+                - generic [ref=f352e436]:
+                  - heading "Related Products" [level=3] [ref=f352e437]
+                  - list [ref=f352e438]:
+                    - listitem [ref=f352e439] [cursor=pointer]:
+                      - link [ref=f352e440]:
+                        - /url: /partdetail/JLCPCBAssembly-RT9013_33GB/C9900009203
+                        - img "recommended parts-RT9013-3.3GB" [ref=f352e444]
+                        - generic [ref=f352e445]:
+                          - paragraph [ref=f352e446]: RT9013-3.3GB
+                          - paragraph [ref=f352e447]: JLCPCB Assembly
+                          - paragraph [ref=f352e448]: $0.0007
+                    - listitem [ref=f352e449] [cursor=pointer]:
+                      - link [ref=f352e450]:
+                        - /url: /partdetail/JLCPCBAssembly-RT901633GB/C9900132819
+                        - img "recommended parts-RT9016-33GB" [ref=f352e454]
+                        - generic [ref=f352e455]:
+                          - paragraph [ref=f352e456]: RT9016-33GB
+                          - paragraph [ref=f352e457]: JLCPCB Assembly
+                          - paragraph [ref=f352e458]: $0.0398
+                    - listitem [ref=f352e459] [cursor=pointer]:
+                      - link [ref=f352e460]:
+                        - /url: /partdetail/JLCPCBAssembly-RT901333BG/C9900243692
+                        - img "recommended parts-RT9013-33BG" [ref=f352e464]
+                        - generic [ref=f352e465]:
+                          - paragraph [ref=f352e466]: RT9013-33BG
+                          - paragraph [ref=f352e467]: JLCPCB Assembly
+                          - paragraph [ref=f352e468]: $0.0398
+                    - listitem [ref=f352e469] [cursor=pointer]:
+                      - link [ref=f352e470]:
+                        - /url: /partdetail/MicrochipTech-MIC5256_30YM5/C3749179
+                        - img "recommended parts-MIC5256-3.0YM5" [ref=f352e474]
+                        - generic [ref=f352e475]:
+                          - paragraph [ref=f352e476]: MIC5256-3.0YM5
+                          - paragraph [ref=f352e477]: Microchip Tech
+                          - paragraph [ref=f352e478]: $0.3160
+                    - listitem [ref=f352e479] [cursor=pointer]:
+                      - link [ref=f352e480]:
+                        - /url: /partdetail/STMicroelectronics-LD3985M47R/C2970311
+                        - img "recommended parts-LD3985M47R" [ref=f352e484]
+                        - generic [ref=f352e485]:
+                          - paragraph [ref=f352e486]: LD3985M47R
+                          - paragraph [ref=f352e487]: STMicroelectronics
+                          - paragraph [ref=f352e488]: $1.0680
+                    - listitem [ref=f352e489] [cursor=pointer]:
+                      - link [ref=f352e490]:
+                        - /url: /partdetail/ABLIC-S_T111B40MCOGZTFG/C7308904
+                        - img "recommended parts-S-T111B40MC-OGZTFG" [ref=f352e494]
+                        - generic [ref=f352e495]:
+                          - paragraph [ref=f352e496]: S-T111B40MC-OGZTFG
+                          - paragraph [ref=f352e497]: ABLIC
+                          - paragraph [ref=f352e498]: $1.0565
+    - contentinfo [ref=f352e499]:
+      - generic [ref=f352e500]:
+        - generic [ref=f352e501]:
+          - generic [ref=f352e502]:
+            - button " Online Chat >" [ref=f352e503] [cursor=pointer]:
+              - generic [ref=f352e504]: 
+              - text: Online Chat >
+            - generic [ref=f352e505]: Chat with our live agent for fast reply.
+            - generic [ref=f352e506]: "Mon-Fri: 24 hours, Sat: 9am-6pm, GMT+8"
+          - generic [ref=f352e507]:
+            - link " Email Us >" [ref=f352e508] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help/contact
+              - generic [ref=f352e509]: 
+              - text: Email Us >
+            - generic [ref=f352e510]: Contact us at support@jlcpcb.com
+            - generic [ref=f352e511]: Typically reply within hours.
+          - generic [ref=f352e512]:
+            - link " Help Center >" [ref=f352e513] [cursor=pointer]:
+              - /url: https://jlcpcb.com/help
+              - generic [ref=f352e514]: 
+              - text: Help Center >
+            - generic [ref=f352e515]: Get instant answers.
+            - generic [ref=f352e516]: 24/7 Available.
+        - text:                
+        - generic [ref=f352e518]:
+          - generic [ref=f352e519]:
+            - generic [ref=f352e520]: Services & Tools
+            - generic [ref=f352e521]:
+              - link "Electronic Parts" [ref=f352e522] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts
+              - link "BOM Tool" [ref=f352e523] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/bom-tool
+              - link "Request a Quote" [ref=f352e524] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/request-quote
+              - link "Manufacturers" [ref=f352e525] [cursor=pointer]:
+                - /url: https://jlcpcb.com/parts/manufacturers
+              - link "PCB Assembly" [ref=f352e526] [cursor=pointer]:
+                - /url: https://jlcpcb.com/pcb-assembly
+          - generic [ref=f352e527]:
+            - generic [ref=f352e528]: Support
+            - generic [ref=f352e529]:
+              - link "Contact Us" [ref=f352e530] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/contact/Electronic Components
+              - link "How to Order" [ref=f352e531] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/article/how-to-build-your-own-parts-library-in-jlcpcb
+              - link "User Guides" [ref=f352e532] [cursor=pointer]:
+                - /url: https://jlcpcb.com/help/catalog/191-PCBA-Parts-Sourcing
+              - link "Sourcing Tips" [ref=f352e533] [cursor=pointer]:
+                - /url: https://jlcpcb.com/blog/category/components-sourcing
+              - link "Payment Methods" [ref=f352e534] [cursor=pointer]:
+                - /url: https://jlcpcb.com/payments
+          - generic [ref=f352e535]:
+            - generic [ref=f352e536]: Company
+            - generic [ref=f352e537]:
+              - link "About Us" [ref=f352e538] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us
+              - link "Quality Assurance" [ref=f352e539] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/quality-control
+              - link "How We Work" [ref=f352e540] [cursor=pointer]:
+                - /url: https://jlcpcb.com/about-us/how-it-works
+              - link "Certifications" [ref=f352e541] [cursor=pointer]:
+                - /url: https://jlcpcb.com/certifications
+              - link "Security" [ref=f352e542] [cursor=pointer]:
+                - /url: https://jlcpcb.com/privacy-security
+              - link "JLCAPI" [ref=f352e543] [cursor=pointer]:
+                - /url: https://api.jlcpcb.com/
+              - link "News" [ref=f352e544] [cursor=pointer]:
+                - /url: https://jlcpcb.com/news
+              - link "Cooperation" [ref=f352e545] [cursor=pointer]:
+                - /url: https://jlcpcb.com/cooperation
+              - link "Careers" [ref=f352e546] [cursor=pointer]:
+                - /url: https://jlcpcb.com/careers
+          - generic [ref=f352e547]:
+            - generic [ref=f352e548]: Electronics
+            - generic [ref=f352e549]:
+              - link "EasyEDA" [ref=f352e550] [cursor=pointer]:
+                - /url: https://easyeda.com
+              - link "JLCPCB" [ref=f352e551] [cursor=pointer]:
+                - /url: https://jlcpcb.com
+              - link "JLCDFM" [ref=f352e552] [cursor=pointer]:
+                - /url: https://jlcdfm.com
+              - link "LCSC" [ref=f352e553] [cursor=pointer]:
+                - /url: https://www.lcsc.com
+              - link "OSHWLAB" [ref=f352e554] [cursor=pointer]:
+                - /url: https://oshwlab.com/
+          - generic [ref=f352e555]:
+            - generic [ref=f352e556]: Mechanical
+            - generic [ref=f352e557]:
+              - link "JLC3DP" [ref=f352e558] [cursor=pointer]:
+                - /url: https://jlc3dp.com
+              - link "JLCCNC" [ref=f352e559] [cursor=pointer]:
+                - /url: https://jlccnc.com
+              - link "JLCMC" [ref=f352e560] [cursor=pointer]:
+                - /url: https://jlcmc.com
+          - generic [ref=f352e561]:
+            - generic [ref=f352e562]: 
+            - generic [ref=f352e563]:
+              - generic [ref=f352e564]:
+                - paragraph [ref=f352e565]: Download JLCONE Desktop—Get $524 Exclusive Coupons
+                - generic [ref=f352e566]:
+                  - generic [ref=f352e567]:
+                    - link " Windows" [ref=f352e568] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f352e569]:
+                        - generic [ref=f352e570]: 
+                        - generic [ref=f352e571]: Windows
+                    - link " MAC" [ref=f352e572] [cursor=pointer]:
+                      - /url: https://jlcone.com/download
+                      - generic [ref=f352e573]:
+                        - generic [ref=f352e574]: 
+                        - generic [ref=f352e575]: MAC
+                  - generic [ref=f352e576]:
+                    - link " Android" [ref=f352e577] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f352e578]:
+                        - generic [ref=f352e579]: 
+                        - generic [ref=f352e580]: Android
+                    - link " IOS" [ref=f352e581] [cursor=pointer]:
+                      - /url: https://jlcone.com/download#mobile-app
+                      - generic [ref=f352e582]:
+                        - generic [ref=f352e583]: 
+                        - generic [ref=f352e584]: IOS
+              - generic [ref=f352e585]:
+                - paragraph [ref=f352e586]: CONNECT WITH US
+                - generic [ref=f352e587]:
+                  - link "Facebook" [ref=f352e588] [cursor=pointer]:
+                    - /url: https://www.facebook.com/jlcpcb
+                    - generic [ref=f352e589]: 
+                  - link "Twitter" [ref=f352e590] [cursor=pointer]:
+                    - /url: https://twitter.com/jlcpcb
+                    - generic [ref=f352e591]: 
+                  - link "Instagram" [ref=f352e592] [cursor=pointer]:
+                    - /url: https://www.instagram.com/jlcpcb
+                    - generic [ref=f352e593]: 
+                  - link "YouTube" [ref=f352e594] [cursor=pointer]:
+                    - /url: https://www.youtube.com/JLCPCB
+                    - generic [ref=f352e595]: 
+                  - link "LinkedIn" [ref=f352e596] [cursor=pointer]:
+                    - /url: https://www.linkedin.com/company/jlcpcb
+                    - generic [ref=f352e597]: 
+                  - link "Reddit" [ref=f352e598] [cursor=pointer]:
+                    - /url: https://www.reddit.com/r/JLCPCBLab/
+                    - generic [ref=f352e599]: 
+        - generic [ref=f352e601]:
+          - generic [ref=f352e602]: © 2026 JLCPCB.COM All Rights Reserved.
+          - link "Privacy Policy" [ref=f352e603] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Privacy-Policy
+          - link "Terms & Conditions" [ref=f352e604] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/Terms-%26-Conditions
+          - link "Cookies Policy" [ref=f352e605] [cursor=pointer]:
+            - /url: https://jlcpcb.com/help/article/JLCPCB-Cookie-Notice
+          - link "Do Not Sell or Share My Personal Information" [ref=f352e606] [cursor=pointer]:
+            - /url: https://jlcpcb.com/privacy-policy/do-not-sell-or-share-my-personal-information
+    - generic:
+      - generic [ref=f352e607]:
+        - generic [ref=f352e609]:
+          - text: Welcome back, may I help you?
+          - button "Chat Now" [ref=f352e612] [cursor=pointer]
+        - textbox "Write a message" [ref=f352e614]
+      - iframe [ref=f352e618]:
+        - generic [ref=f356e5] [cursor=pointer]
+  - region "Notifications alt+T"
+  - alert [ref=f352e619]

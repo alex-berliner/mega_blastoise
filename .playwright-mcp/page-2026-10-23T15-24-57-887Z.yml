@@ -1,0 +1,100 @@
+- generic [ref=e2]:
+  - banner [ref=e3]:
+    - heading "Mega Blastoise Assembly" [level=1] [ref=e4]
+    - paragraph [ref=e5]:
+      - text: The reference design's case, board and bought parts, from the build files.
+      - link "An earlier layout" [ref=e6] [cursor=pointer]:
+        - /url: ../../assembly-cell-on-board/
+      - text: kept the cell on the board under the screen.
+    - generic [ref=e7]:
+      - generic [ref=e8]: 9.55 mm at the screen
+      - generic [ref=e9]: 77.1 × 132 mm
+      - generic [ref=e10]: REV 1
+  - generic [ref=e11]:
+    - generic "3D view of the handheld's parts" [ref=e12]
+    - group "Camera" [ref=e13]:
+      - button "Angle" [pressed] [ref=e14] [cursor=pointer]
+      - button "Side" [ref=e15] [cursor=pointer]
+      - button "End" [ref=e16] [cursor=pointer]
+      - button "Top" [ref=e17] [cursor=pointer]
+    - generic [ref=e18]: Drag to turn · scroll or pinch to zoom · tap a part
+    - generic [ref=e19]:
+      - text: built from
+      - link "3730e7e" [ref=e20] [cursor=pointer]:
+        - /url: https://github.com/alex-berliner/mega_blastoise/commit/3730e7e
+      - text: ", 2026-10-23"
+  - complementary [ref=e21]:
+    - generic [ref=e22]:
+      - generic [ref=e23]:
+        - generic [ref=e24]: Explode
+        - status [ref=e25]: top 76 mm up
+      - slider "Explode" [ref=e26]: "600"
+      - generic [ref=e27]:
+        - generic [ref=e28]: Assembled
+        - generic [ref=e29]: Apart
+      - generic [ref=e30]:
+        - button "Play" [ref=e31] [cursor=pointer]
+        - generic [ref=e32] [cursor=pointer]:
+          - checkbox "See through the shell" [ref=e33]
+          - text: See through the shell
+    - list "Parts, top to bottom" [ref=e34]:
+      - listitem [ref=e35] [cursor=pointer]:
+        - generic [ref=e37]: Top piece
+        - generic [ref=e38]:
+          - generic [ref=e39]: z 2.6 to 9.6
+          - checkbox "Show Top piece" [checked] [ref=e40]
+        - generic [ref=e41]: "Printed face down, no supports. The screen face, the curved steps down to the decks, and the sides, over most of the back's round down to the seam with the tub: its skirts slide 4.5 mm down over the tub's tongue, and pockets in its sides take the tongue's tabs. Near each end its side round sweeps down to the deck's over the last 10 mm, so the two meet flush; at the foot of each step and round the spine a continuous lip goes 0.5 mm down into a groove in the deck's face. Four screws hold it beside the glass; the panel sits in its pocket, the speaker under a grille in the right bezel."
+      - listitem [ref=e42] [cursor=pointer]:
+        - generic [ref=e44]: Decks
+        - generic [ref=e45]:
+          - generic [ref=e46]: z 2.6 to 7.7
+          - checkbox "Show Decks" [checked] [ref=e47]
+        - generic [ref=e48]: Printed face down, no supports; one part for both ends. Each seats into the top piece from behind, its plate running on 1.6 mm under the step with the top piece's lip in a groove in its face, so the two can't slide apart, and curves over the end and sides and down the back's round to the seam; at each side wall a lap on its skirt slides in behind the top piece's skirt, so the two walls hold each other flush; the tub's corner posts push it home onto its step, and its own screw holds it.
+      - listitem [ref=e49] [cursor=pointer]:
+        - generic [ref=e51]: Button caps
+        - generic [ref=e52]:
+          - generic [ref=e53]: z 4.0 to 9.2
+          - checkbox "Show Button caps" [checked] [ref=e54]
+        - generic [ref=e55]: DS Lite caps, bought. Their flanges sit under the decks, which hold them in.
+      - listitem [ref=e56] [cursor=pointer]:
+        - generic [ref=e58]: Display panel
+        - generic [ref=e59]:
+          - generic [ref=e60]: z 6.2 to 8.6
+          - checkbox "Show Display panel" [checked] [ref=e61]
+        - generic [ref=e62]: 2.4 in IPS (ER-TFT024IPS-3), taped into the top piece's pocket. Its ribbon folds round under it to J3.
+      - listitem [ref=e63] [cursor=pointer]:
+        - generic [ref=e65]: Battery
+        - generic [ref=e66]:
+          - generic [ref=e67]: z 0.9 to 4.9
+          - checkbox "Show Battery" [checked] [ref=e68]
+        - generic [ref=e69]: 403450 Li-ion, 50 × 34 × 4 mm, in a hole in the board, its bottom in a pocket in the tub's floor. Its leads run from its left end to J2 at the hole's corner.
+      - listitem [ref=e70] [cursor=pointer]:
+        - generic [ref=e72]: Speaker
+        - generic [ref=e73]:
+          - generic [ref=e74]: z 3.8 to 7.3
+          - checkbox "Show Speaker" [checked] [ref=e75]
+        - generic [ref=e76]: 15 × 10 mm, face up on the board in the right bezel, plugged into J4; it plays up through a grille in the face.
+      - listitem [ref=e77] [cursor=pointer]:
+        - generic [ref=e79]: Silicone domes
+        - generic [ref=e80]:
+          - generic [ref=e81]: z 3.8 to 5.5
+          - checkbox "Show Silicone domes" [checked] [ref=e82]
+        - generic [ref=e83]: DS Lite button membranes, 1.2 mm, over the board's contact pads.
+      - listitem [ref=e84] [cursor=pointer]:
+        - generic [ref=e86]: Circuit board
+        - generic [ref=e87]:
+          - generic [ref=e88]: z 2.2 to 3.8
+          - checkbox "Show Circuit board" [checked] [ref=e89]
+        - generic [ref=e90]: 2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown.
+      - listitem [ref=e91] [cursor=pointer]:
+        - generic [ref=e93]: Tub
+        - generic [ref=e94]:
+          - generic [ref=e95]: z 0.0 to 8.5
+          - checkbox "Show Tub" [checked] [ref=e96]
+        - generic [ref=e97]: Printed back down. The back and the lower part of its rounded edge, up to the seam (2.55 mm up); a tongue standing 4.65 mm over it (4.15 at the decks) inside the top pieces' skirts, with tabs into the top piece, a post in each corner that keys a deck, a slot at each side joint for the deck's lap, and grip ribs that hold the case together before the screws; and a tab rising from the seam that carries the USB-C opening's lower half.
+      - listitem [ref=e98] [cursor=pointer]:
+        - generic [ref=e100]: Screws
+        - generic [ref=e101]:
+          - generic [ref=e102]: z 0.0 to 7.0
+          - checkbox "Show Screws" [checked] [ref=e103]
+        - generic [ref=e104]: "Six M2 × 6 self-tapping, from the back, through the board: four into the top piece beside the glass, one into each deck."

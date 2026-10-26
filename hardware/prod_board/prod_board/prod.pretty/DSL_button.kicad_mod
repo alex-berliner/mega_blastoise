@@ -7,7 +7,7 @@
 		(at 0 -3 0)
 		(unlocked yes)
 		(layer "F.Fab")
-		(uuid "514dbd78-2174-49d1-b2e6-f08bd53f6812")
+		(uuid "53cdbbe4-7257-4ab0-b5f4-1787ffbf6350")
 		(effects
 			(font
 				(size 1 1)
@@ -20,7 +20,7 @@
 		(unlocked yes)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "bd9c1673-345f-4a15-9531-d6f1549efd8a")
+		(uuid "1cff041a-08ae-491a-b9f6-0ba5c8d4dfcd")
 		(effects
 			(font
 				(size 1 1)
@@ -33,7 +33,7 @@
 		(unlocked yes)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "e9c01222-79cc-4ea6-895e-9addce5ee3fc")
+		(uuid "90e23ed7-d1ad-4064-853e-1cd9d75eb0f8")
 		(effects
 			(font
 				(size 1 1)
@@ -46,7 +46,7 @@
 		(unlocked yes)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "197edc46-0871-4dd0-9077-f435d095c130")
+		(uuid "9bd631a0-b4bb-4edf-bcaa-d2b851ce0792")
 		(effects
 			(font
 				(size 1 1)
@@ -54,7 +54,7 @@
 			)
 		)
 	)
-	(attr smd exclude_from_pos_files exclude_from_bom)
+	(attr exclude_from_pos_files exclude_from_bom)
 	(duplicate_pad_numbers_are_jumpers no)
 	(fp_circle
 		(center 0 0)
