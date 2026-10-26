@@ -1,7 +1,13 @@
 #!/usr/bin/env python3
 """The 3D print package: Snapmaker Orca projects ready to slice, the STLs, and a README.
 
-    python3 case/print_package.py      # after case/export.py --stl and case/fitkit.py
+    python3 case/print_package.py          # after case/export.py --stl and case/fitkit.py: the release kit, written in seconds
+    python3 case/print_package.py --slice  # and sliced (or RELEASE=1): the checks, times and weights; cached per plate
+    python3 case/print_package.py 4_fit_coupons 6_tests   # these plates instead; --all: every plate; --no-cache: slice again
+
+The release kit (print/package_U1/, mega_blastoise_print_U1.zip) is the case plates only, 1_case and 5_unit. The printer tests
+(7_ to 9_) go to print/tests_U1/ and overhang_kit.zip, the other plates (0_ to 4_, 6_) to print/extras_U1/: a plate named on the
+command line (or --all) builds, and none of them is ever in the release zip.
 
 Each project is built from Alex's own fit_test_v5.3mf, so it keeps his printer,
 filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI). Two filaments since the one-piece top
@@ -12,7 +18,7 @@ coupons cut from it that include them, TOP_PARTS) get tree supports whose interf
 second filament and whose body is PLA, with a prime tower; the tub and every other part print as before, without
 supports. Only the objects, where they sit on the plate, and the supports change. The projects are written the way Orca
 writes them (one object file per part, mesh centred on its own height, placed by the build item) and the STLs ship beside
-them in case a project won't open. With SNAPMAKER_ORCA set (2.4.1-beta or later: 2.4.0's command line crashes on a U1)
+them in case a project won't open. With --slice (or RELEASE=1) and SNAPMAKER_ORCA set (2.4.1-beta or later: 2.4.0's command line crashes on a U1)
 slice_u1.py slices every plate and fails the build on what the slicer or its checks find; the projects stay unsliced.
 
 Supports are on only for the parts that need them, measured by overhangs.py: per object, not
@@ -163,6 +169,7 @@ LAYERS = {f"7_overhangs_{h}": f"0.{h[1:]}" for h in ("020", "016", "012", "008")
 # the printer tests: not the case's parts, so a kit of their own (overhang_kit.zip), not in the case kits
 TEST_PLATES = [p for p in PLATES if p.startswith(("7_", "8_", "9_"))]
 TESTS = {"P1S": os.path.join(HERE, "print", "tests_P1S"), "U1": os.path.join(HERE, "print", "tests_U1")}
+EXTRAS = {"P1S": os.path.join(HERE, "print", "extras_P1S"), "U1": os.path.join(HERE, "print", "extras_U1")}
 TESTS_ZIP = os.path.join(HERE, "print", "overhang_kit.zip")
 TESTS_README = os.path.join(HERE, "print_tests_README.md")
 # overhang_kit.zip's plates, in the order to print them (each answers less than the one before; Alex
@@ -383,8 +390,11 @@ def mark_presets(cfg, system_dir, preset, keys=(), base=None):
 
 
 def plate_dir(plate, case_dir, printer):
-    """Where a plate's project goes: the case kit's folder, or the printer's tests folder."""
-    return TESTS[printer] if plate in TEST_PLATES else case_dir
+    """Where a plate's project goes: the release kit's folder (1_case, 5_unit), the printer's tests folder, or the folder of the
+    other case plates (the fit coupons, the button tunings: named on the command line, never in the release zip)."""
+    if plate.removesuffix("_a").removesuffix("_b") in RELEASE_PLATES:
+        return case_dir
+    return TESTS[printer] if plate in TEST_PLATES else EXTRAS[printer]
 
 
 def fresh(dirs):
@@ -564,24 +574,36 @@ def build_plate(job):
         return build(plate, parts, z, supported)
 
 
+def requested(names):
+    """The plates to build: the names given; none given means the release kit's (1_case, 5_unit); --all, every plate."""
+    if "--all" in sys.argv:
+        return list(PLATES)
+    for n in names:
+        if n not in PLATES:
+            sys.exit(f"no plate {n}: the plates are {', '.join(PLATES)}")
+    return list(names) or [p for p in PLATES if p in RELEASE_PLATES]
+
+
 def main():
     if sys.argv[1:2] == ["--flatten"]:
         return flatten(sys.argv[2], sys.argv[3], sys.argv[4:])
     if sys.argv[1:] == ["--tests"]:
         return tests_zip()
+    import print_cache
+    only = requested(print_cache.names())
     for plate, parts in PLATES.items():
-        if sys.argv[1:] and plate not in sys.argv[1:]:
+        if plate not in only:
             continue
         for _, p in parts:
             if not os.path.exists(p):
                 sys.exit(f"missing {p}: run case/export.py --stl, the print_variants tub and case/fitkit.py first")
     print("supports, measured part by part:")
     supported = support_parts()
-    only = sys.argv[1:]                 # plate names to build (default: all)
-    jobs = [(plate, parts, supported) for plate, parts in PLATES.items() if not only or plate in only]
-    case = any(plate not in TEST_PLATES for plate, _, _ in jobs)      # the case kit or the tests, or both
+    jobs = [(plate, parts, supported) for plate, parts in PLATES.items() if plate in only]
+    release = any(plate in RELEASE_PLATES for plate, _, _ in jobs)      # the release kit, the other case plates, the tests: any of them
+    extras = any(plate not in RELEASE_PLATES and plate not in TEST_PLATES for plate, _, _ in jobs)
     tests = any(plate in TEST_PLATES for plate, _, _ in jobs)
-    fresh(([OUT] if case else []) + ([TESTS["U1"]] if tests else []))
+    fresh(([OUT] if release else []) + ([EXTRAS["U1"]] if extras else []) + ([TESTS["U1"]] if tests else []))
     from concurrent.futures import ProcessPoolExecutor
     with ProcessPoolExecutor() as ex:   # the plates build at once, listed in order
         built = list(ex.map(build_plate, jobs))
@@ -590,18 +612,18 @@ def main():
                                                            for n, p in parts))
         for n, p in parts:
             shutil.copy(p, os.path.join(plate_dir(plate, OUT, "U1"), "stl", os.path.basename(p)))
-    import slice_u1       # Snapmaker Orca's command line on every plate: the report and the checks (nothing if SNAPMAKER_ORCA isn't set)
+    import slice_u1       # Snapmaker Orca's command line on every plate when asked (--slice, RELEASE=1): the report and the checks
     sliced = slice_u1.run({plate: parts for plate, parts, _ in jobs}, supported)
     if tests:
         shutil.copy(TESTS_README, os.path.join(TESTS["U1"], "README.md"))
         tests_zip()
-    if not case:
+    if not release:
         return
     for extra in ("top.stl", "tub.stl"):
-        if os.path.exists(os.path.join(HERE, extra)) and not sys.argv[1:]:
+        if os.path.exists(os.path.join(HERE, extra)) and not print_cache.names():
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     shutil.copy(os.path.join(HERE, "print_package_README.md"), os.path.join(OUT, "README.md"))
-    if len([p for p in sliced if p not in TEST_PLATES]) == len([p for p in PLATES if p not in TEST_PLATES]):
+    if all(p in sliced for p in RELEASE_PLATES):
         text = open(os.path.join(OUT, "README.md")).read()      # this build's own numbers over the recorded ones
         a, b = text.index("<!-- u1 -->"), text.index("<!-- /u1 -->")
         open(os.path.join(OUT, "README.md"), "w").write(text[:a] + "<!-- u1 -->\n" + slice_u1.table(sliced, PLATES) + "\n" + text[b:])

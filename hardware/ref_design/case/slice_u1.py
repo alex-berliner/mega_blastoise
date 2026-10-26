@@ -4,9 +4,10 @@ changes, and the errors a slicer finds that the hand-written projects can't.
 
     SNAPMAKER_ORCA=/path/Snapmaker_Orca-2.4.1-beta.AppImage python3 case/slice_u1.py [plate ...]   # after print_package.py
 
-print_package.py calls run() after it writes the projects (so `tools/build.py --only print_u1` does it when SNAPMAKER_ORCA
-is set, which build.py defaults to ~/Applications/Snapmaker_Orca-2.4.1-beta.AppImage when that exists). Without the
-slicer the projects are still written and the build says so.
+print_package.py calls run() after it writes the projects, when asked to slice (`print_package.py --slice`, RELEASE=1, or
+`tools/build.py --slice`; SNAPMAKER_ORCA is defaulted there to ~/Applications/Snapmaker_Orca-2.4.1-beta.AppImage when that
+exists). Otherwise, and without the slicer, the projects are still written and the build says so. A plate whose inputs
+didn't change (print_cache.py) takes its sliced file from print/.slice_cache/ and only runs the checks again.
 
 Which Snapmaker Orca (2026-10-25): **2.4.1-beta or later.** 2.4.0 (and 2.3.6) crash on every U1 preset and on every project
 in the command line: `wxGetApp()` is null there and `GUI_App::filaments_cnt()` dereferences it (a bare STL on the U1 preset
@@ -37,10 +38,12 @@ import numpy as np
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import print_cache  # noqa: E402
 import print_package  # noqa: E402
 import support_check  # noqa: E402
 
-SLICERS = max(1, (os.cpu_count() or 4) // 4)      # Snapmaker Orcas slicing at once (each uses a few cores)
+# Snapmaker Orcas slicing at once (each uses a few cores); SLICE_JOBS when the P1S kit slices at the same time (tools/build.py)
+SLICERS = int(os.environ.get("SLICE_JOBS") or max(1, (os.cpu_count() or 4) // 4))
 MIN_VERSION = (2, 4, 1)
 BED_SLACK = 0.6                                   # mm past the bed_shape in the G-code (the extrusion's own width)
 INSTALL = ("Snapmaker Orca 2.4.1-beta or later: "
@@ -68,15 +71,21 @@ def config_block(gcode):
 def slice_plate(plate, parts, supported, project, work):
     """Slice one plate's project: a result dict, or None after printing what went wrong (a crash, the validation, a conflict)."""
     out = os.path.join(work, "out")
-    cmd = [os.environ["SNAPMAKER_ORCA"], "--datadir", os.path.join(work, "data"), "--allow-newer-file", "--slice", "0",
-           "--outputdir", out, "--export-3mf", "sliced.3mf", project]
-    r = subprocess.run(cmd, capture_output=True, text=True, timeout=1500)
-    try:
-        result = json.load(open(os.path.join(out, "result.json")))
-    except (OSError, ValueError):
-        result = {}
-    sliced = os.path.join(out, "sliced.3mf")
-    if r.returncode != 0 or result.get("return_code") != 0 or not os.path.exists(sliced):
+    k = print_cache.key("U1", plate, [p for _, p in parts], os.environ["SNAPMAKER_ORCA"])
+    sliced = print_cache.get(k, "sliced.3mf")
+    hit = bool(sliced)
+    if hit:
+        print(f"  {plate}: sliced file from the cache ({k})", flush=True)
+    else:
+        cmd = [os.environ["SNAPMAKER_ORCA"], "--datadir", os.path.join(work, "data"), "--allow-newer-file", "--slice", "0",
+               "--outputdir", out, "--export-3mf", "sliced.3mf", project]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1500)
+        try:
+            result = json.load(open(os.path.join(out, "result.json")))
+        except (OSError, ValueError):
+            result = {}
+        sliced = os.path.join(out, "sliced.3mf")
+    if not hit and (r.returncode != 0 or result.get("return_code") != 0 or not os.path.exists(sliced)):
         if r.returncode < 0:
             why = f"Snapmaker Orca crashed (signal {-r.returncode}): it needs to be {INSTALL}"
         else:
@@ -84,6 +93,8 @@ def slice_plate(plate, parts, supported, project, work):
             why = (result.get("error_string") or f"exit {r.returncode}").strip() + "".join(f"\n      {l.split(']')[-1].strip()}" for l in log)
         print(f"  {plate}: {why}")
         return None
+    if not hit:                                        # (kept once it has sliced; the checks below run on it every time)
+        print_cache.put(k, sliced)
     z = zipfile.ZipFile(sliced)
     gcode = z.read("Metadata/plate_1.gcode").decode()
     info = z.read("Metadata/slice_info.config").decode()
@@ -141,9 +152,12 @@ def hm(secs):
     return f"{int(secs // 3600)} h {int(secs % 3600 // 60):02d} min"
 
 
-def run(plates, supported, out=print_package.OUT):
-    """Slice the built projects of `plates` ({name: parts}); {name: result}, {} if there is no slicer. Exits if a plate
-    fails a check; a plate the slicer can't take stops the build as the P1S kit's does."""
+def run(plates, supported, out=print_package.OUT, force=False):
+    """Slice the built projects of `plates` ({name: parts}); {name: result}, {} if slicing isn't asked for (print_cache.wanted())
+    or there is no slicer. Exits if a plate fails a check; a plate the slicer can't take stops the build as the P1S kit's does."""
+    if not (force or print_cache.wanted()):
+        print("  U1 plates written, not sliced (--slice or RELEASE=1 slices them)")
+        return {}
     exe = slicer()
     if not exe:
         return {}
@@ -187,7 +201,7 @@ def main():
     print("supports, measured part by part:")
     supported = print_package.support_parts()
     plates = {n: p for n, p in print_package.PLATES.items() if not only or n in only}
-    rows = run(plates, supported)
+    rows = run(plates, supported, force=True)
     print(table(rows, plates))
 
 

@@ -10,6 +10,7 @@
     python3 tools/build.py --touch [--only ...]      # take the files as they are as built (a fresh
                                                      # checkout of a routed board: no 10 min reroute)
     python3 tools/build.py --keep-going     # a failing check (not a generator) doesn't stop the run
+    python3 tools/build.py --slice          # the release kits (1_case, 5_unit) sliced too (or RELEASE=1), U1 and P1S at once
 
 A stage is skipped when its key is the one its last good run left in .build/state.json: a hash
 of its command, its parameters (passes, RP2350B_REF, the router's jar, which OpenSCAD and
@@ -29,6 +30,9 @@ End-of-round stages (fitkit, check_manifold, the print kits, viewer) come after 
 only when their inputs changed or when named (--only, --from). On request only, never on their own:
 sim (about 40 min), sync_pcb, route_finish. A stage whose tool is missing (P1S kit without
 BAMBU_STUDIO) is skipped with a note; the U1 kit without SNAPMAKER_ORCA is still written, just not sliced (no times, no checks).
+The print kits are write-only unless --slice (or RELEASE=1): the release zips hold the case plates only, 1_case and 5_unit,
+written in seconds; with --slice each plate is sliced (U1 and P1S at the same time, SLICE_JOBS slicers each) and a plate whose
+STLs, profiles and slicer are unchanged comes from case/print/.slice_cache/ (--no-cache in the packagers slices again).
 
 Defaults: RP2350B_REF and FREEROUTING_JAR from ~/.cache/ref_design_tools when not set; OpenSCAD
 from tools/scad.py (the Manifold snapshot in ~/Applications when there is one); REF_JOBS renders
@@ -139,17 +143,17 @@ STAGES = [
           ["case/check_manifold.py", "case/print_package.py", *CASE_STL, *FITKIT_STL], kind="end", check=True,
           about="every printed part's mesh: each edge on two faces"),
     Stage("print_u1", ".", [PY, "case/print_package.py"],
-          ["case/print_package.py", "case/slice_u1.py", "case/support_check.py", "case/overhangs.py", "case/print/fit_test_v5.3mf", "case/print/u1_system/*.json",
+          ["case/print_package.py", "case/print_cache.py", "case/slice_u1.py", "case/support_check.py", "case/overhangs.py", "case/print/fit_test_v5.3mf", "case/print/u1_system/*.json",
            "case/print_package_README.md", "case/print_tests_README.md", *CASE_STL, *FITKIT_STL],
           ["case/print/package_U1/**", "case/print/mega_blastoise_print_U1.zip", "case/print/tests_U1/**",
            "case/print/overhang_kit.zip"], kind="end", env=("SNAPMAKER_ORCA",),
-          about="Snapmaker U1 print package (sliced with SNAPMAKER_ORCA, else only written)"),
+          about="Snapmaker U1 release kit: 1_case, 5_unit (written; sliced with --slice and SNAPMAKER_ORCA)"),
     Stage("print_p1s", ".", [PY, "case/print_package_p1s.py"],
-          ["case/print_package.py", "case/print_package_p1s.py", "case/support_check.py", "case/overhangs.py", "case/print/p1s/*.json", "case/print/p1s/system/*.json",
+          ["case/print_package.py", "case/print_cache.py", "case/print_package_p1s.py", "case/support_check.py", "case/overhangs.py", "case/print/p1s/*.json", "case/print/p1s/system/*.json",
            "case/print_package_README.md", "case/print_tests_README.md", *CASE_STL, *FITKIT_STL],
           ["case/print/package_P1S/**", "case/print/mega_blastoise_print_P1S.zip", "case/print/tests_P1S/**",
            "case/print/overhang_kit.zip"], kind="end",
-          env=("BAMBU_STUDIO",), needs="BAMBU_STUDIO", about="Bambu Lab P1S print package (sliced)"),
+          env=("BAMBU_STUDIO",), needs="BAMBU_STUDIO", about="Bambu Lab P1S release kit: 1_case, 5_unit_a/b (written; sliced with --slice)"),
     Stage("viewer", ".", [PY, "viewer/build.py"],
           ["viewer/build.py", "viewer/pieces.scad", "case/case.scad", "board/battler.kicad_pcb",
            "board/design.py", "tools/scad.py", *CASE_STL],
@@ -314,22 +318,24 @@ def restore(stage, state, env):
     return True
 
 
-def run(stage, env):
-    """Run one stage, its output to the terminal and to .build/logs/STAGE.log. Returns the exit code."""
+def run(stage, env, tag=""):
+    """Run one stage, its output to the terminal and to .build/logs/STAGE.log. Returns the exit code.
+    tag: a prefix on each line (stages running at once)."""
     os.makedirs(os.path.join(STATE_DIR, "logs"), exist_ok=True)
     print(f"\n=== {stage.name}: {' '.join(stage.cmd)}  (in {stage.cwd})", flush=True)
     with open(os.path.join(STATE_DIR, "logs", stage.name + ".log"), "w") as log:
         p = subprocess.Popen(stage.cmd, cwd=os.path.join(REF, stage.cwd), env=env, stdout=subprocess.PIPE,
                              stderr=subprocess.STDOUT, text=True, bufsize=1)
         for line in p.stdout:
-            sys.stdout.write("  " + line)
+            sys.stdout.write(tag + "  " + line)
             sys.stdout.flush()
             log.write(line)
         return p.wait()
 
 
 def parse(argv):
-    opts = {"force": False, "only": None, "from": None, "list": False, "dry": False, "touch": False, "keep": False}
+    opts = {"force": False, "only": None, "from": None, "list": False, "dry": False, "touch": False, "keep": False,
+            "slice": os.environ.get("RELEASE") == "1"}
     it = iter(argv)
     for a in it:
         name, _, val = a.partition("=")
@@ -350,6 +356,8 @@ def parse(argv):
             opts["touch"] = True
         elif a in ("--keep-going", "-k"):
             opts["keep"] = True
+        elif a == "--slice":
+            opts["slice"] = True
         else:
             sys.exit(__doc__)
     return opts
@@ -368,6 +376,27 @@ def selection(opts):
     return [(s, opts["force"] and s.kind == "main") for s in ORDER]
 
 
+SLICED_KITS = ("print_u1", "print_p1s")        # the two kits that slice at the same time (--slice)
+
+
+def run_both(stages, env):
+    """Run stages at once, each line tagged with its stage; {name: (exit code, seconds)}. With the slicers' SLICE_JOBS set so that
+    together they stay within the cores."""
+    import threading
+    env = dict(env, SLICE_JOBS=str(max(1, (os.cpu_count() or 4) // 8)))
+    out = {}
+
+    def one(st):
+        t0 = time.time()
+        out[st.name] = (run(st, env, tag=f"[{st.name.removeprefix('print_')}]"), time.time() - t0)
+    threads = [threading.Thread(target=one, args=(st,)) for st in stages]
+    for t in threads:
+        t.start()
+    for t in threads:
+        t.join()
+    return out
+
+
 def main():
     opts = parse(sys.argv[1:])
     env = dict(os.environ)
@@ -375,6 +404,9 @@ def main():
         if not env.get(var) and os.path.exists(path):
             env[var] = path
     os.environ.update({k: v for k, v in env.items() if k in DEFAULT_ENV})
+    if opts["slice"]:
+        for name in SLICED_KITS:
+            BY_NAME[name].cmd = BY_NAME[name].cmd + ["--slice"]
     state = load_state()
     print(f"OpenSCAD: {scad.describe()}, {scad.jobs()} renders at once")
     if opts["list"]:
@@ -385,7 +417,10 @@ def main():
             print(f"  {s.name:14s} {s.kind:6s} {up:12s} {s.about}")
         return 0
     rows, failed, t_run = [], [], time.time()
-    for stage, forced in selection(opts):
+    sel, handled = selection(opts), set()
+    for stage, forced in sel:
+        if stage.name in handled:
+            continue
         if stage.needs and not env.get(stage.needs):
             rows.append((stage.name, f"skipped: set {stage.needs}", 0.0))
             continue
@@ -406,6 +441,28 @@ def main():
             rows.append((stage.name, "would run" + (" (forced)" if forced and fresh else ""), 0.0))
             continue
         t0 = time.time()
+        if opts["slice"] and stage.name in SLICED_KITS and stage.name not in handled:
+            mates = [BY_NAME[n] for n in SLICED_KITS if n != stage.name and BY_NAME[n] in [x for x, _ in sel]
+                     and not (BY_NAME[n].needs and not env.get(BY_NAME[n].needs))]
+            mates = [m for m in mates if not (state.get(m.name, {}).get("ok") and state[m.name]["key"] == key(m, state)
+                                              and outputs_present(m)) or any(x is m and f for x, f in sel)]
+            if mates:
+                keys = {m.name: key(m, state) for m in [stage, *mates]}
+                done = run_both([stage, *mates], env)
+                handled.update(m.name for m in mates)
+                for m in [stage, *mates]:
+                    rc, secs = done[m.name]
+                    if rc == 0:
+                        record(m, state, keys[m.name], secs)
+                        rows.append((m.name, "ran (sliced, in parallel)", secs))
+                    else:
+                        state[m.name] = dict(state.get(m.name, {}), ok=False)
+                        save_state(state)
+                        rows.append((m.name, f"FAILED (exit {rc})", secs))
+                        failed.append(m.name)
+                if failed:
+                    break
+                continue
         if stage.fresh:
             if not restore(stage, state, env):
                 rows.append((stage.name, "FAILED: could not restore its input", time.time() - t0))

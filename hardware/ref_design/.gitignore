@@ -46,4 +46,7 @@ case/print/mega_blastoise_print_P1S.zip
 case/print/tests_U1/
 case/print/tests_P1S/
 case/print/overhang_kit.zip
+case/print/extras_U1/
+case/print/extras_P1S/
+case/print/.slice_cache/
 .build/

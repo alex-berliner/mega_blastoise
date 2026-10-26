@@ -104,6 +104,14 @@ tools/wait_done.sh --file /tmp/build.done --timeout 1800
 If `pgrep -f` is unavoidable, bracket the first letter so the pattern doesn't match itself:
 `pgrep -f "[p]rint_package.py"`.
 
+Print kits: `python3 tools/build.py` only writes them (the release zips hold the case plates, `1_case` and `5_unit`;
+the P1S splits `5_unit` into a and b), in seconds. `python3 tools/build.py --slice` (or `RELEASE=1`) slices them too, U1
+and P1S at the same time (`SLICE_JOBS` slicers each, default cores/8), and keeps each sliced plate in `case/print/.slice_cache/`
+(not in git; key: its STLs, the profiles, the packagers' sources and the slicer), so a second run with nothing changed
+takes seconds. By hand: `python3 case/print_package.py [--slice] [--no-cache] [plate ...]` and `case/print_package_p1s.py`
+likewise; no plate named is the release kit, named plates (or `--all`) build instead, the printer tests go to
+`overhang_kit.zip` and the other plates (fit coupons, button tunings) to `case/print/extras_U1/` and `extras_P1S/`.
+
 The stages, by hand:
 
 ```sh

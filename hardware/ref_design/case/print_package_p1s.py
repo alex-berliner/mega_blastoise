@@ -1,9 +1,12 @@
 #!/usr/bin/env python3
 """The 3D print package for a Bambu Lab P1S: the same plates as print_package.py, sliced.
 
-    BAMBU_STUDIO=/path/to/BambuStudio python3 case/print_package_p1s.py [plate ...]
+    BAMBU_STUDIO=/path/to/BambuStudio python3 case/print_package_p1s.py [--slice] [--all] [--no-cache] [plate ...]
 
-after case/export.py --stl and case/fitkit.py. BAMBU_STUDIO is Bambu Studio's executable (an
+after case/export.py --stl and case/fitkit.py. Without --slice (or RELEASE=1) the plates are laid out and written as projects,
+unsliced, in seconds; with it each is sliced, and a plate whose inputs didn't change takes its sliced file from print/.slice_cache/
+(print_cache.py). No plate named: the release kit, 1_case and 5_unit (split in 5_unit_a and _b when it doesn't fit the bed);
+plates named, or --all, as print_package.py. BAMBU_STUDIO is Bambu Studio's executable (an
 AppImage's AppRun, extracted with --appimage-extract, works headless). Each plate is laid out
 (print_package's packing) and sliced by Bambu Studio's command line into a project with its G-code in it, ready to send.
 
@@ -22,8 +25,9 @@ Bambu Studio's CLI lists no changed settings in its projects, so each project th
 process preset (P1S_PRESETS, the one at its layer height; Bambu's X1C presets are the P1S's) and
 lists what it changes from it (print_package.mark_presets), or Bambu Studio would load the preset's.
 
-Writes print/package_P1S/ and print/mega_blastoise_print_P1S.zip (build output, not in git); the
-printer tests (print_package.TEST_PLATES) go to print/tests_P1S/ and print/overhang_kit.zip instead.
+Writes print/package_P1S/ and print/mega_blastoise_print_P1S.zip (build output, not in git; the release plates only); the
+printer tests (print_package.TEST_PLATES) go to print/tests_P1S/ and print/overhang_kit.zip instead, the other plates to
+print/extras_P1S/.
 """
 import json
 import os
@@ -36,17 +40,19 @@ from concurrent.futures import ThreadPoolExecutor
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, HERE)
+import print_cache  # noqa: E402
 import print_package  # noqa: E402
 import support_check  # noqa: E402
 
-SLICERS = max(1, (os.cpu_count() or 4) // 4)      # Bambu Studios slicing at once
+# Bambu Studios slicing at once; SLICE_JOBS when the U1 kit slices at the same time (tools/build.py)
+SLICERS = int(os.environ.get("SLICE_JOBS") or max(1, (os.cpu_count() or 4) // 4))
 
 PROFILES = os.path.join(HERE, "print", "p1s")
 OUT = os.path.join(HERE, "print", "package_P1S")
 ZIP = os.path.join(HERE, "print", "mega_blastoise_print_P1S.zip")
 README = os.path.join(HERE, "print_package_README.md")    # its <!-- printer --> part replaced
 PRINTER = """Each `.3mf` is a Bambu Studio project for a Bambu Lab P1S (0.4 mm nozzle, 0.20 mm
-Standard), arranged and already sliced: open it and send it, or re-slice it after
+Standard), arranged and already sliced (a kit built without --slice has no G-code and no numbers): open it and send it, or re-slice it after
 changing anything. Filaments as above: **Bambu PLA Basic in AMS slot 1** (every part) and **Bambu Support For PLA in AMS slot 2**
 (only on the plates with the top or a coupon cut from it, where it is the layers of the supports that touch the part, with a prime
 tower at the front right of the bed); the other plates are PLA only. (`mega_blastoise_print_U1.zip` has the same plates for the
@@ -188,14 +194,10 @@ def slice_plate(name, parts, supported, tmp):
         return None
     work = os.path.join(tmp, name)
     os.makedirs(os.path.join(work, "out"))
-    stls = []
-    for obj, m in placed:                          # one file per object: two of a part are two files
-        dst = os.path.join(work, obj + ".stl")
-        m.export(dst)
-        stls.append(dst)
-    # the plate as a project (no slicing yet), its parts' support settings, then the slice
-    project = os.path.join(work, name + "_unsliced.3mf")
-    process = os.path.join(PROFILES, "process.json")
+    slicing = print_cache.wanted()
+    k = print_cache.key("P1S", name, [p for _, p in parts], os.environ["BAMBU_STUDIO"])
+    hit_3mf, hit_json = print_cache.get(k, name + ".3mf"), print_cache.get(k, "result.json")
+    hit = bool(slicing and hit_3mf and hit_json)
     plate_name = name.removesuffix("_a").removesuffix("_b")
     own = dict(print_package.PLATE_SETTINGS.get(plate_name, {}))
     two = print_package.has_top(parts)             # a top: the support filament is loaded, with a prime tower
@@ -203,34 +205,50 @@ def slice_plate(name, parts, supported, tmp):
         own.update(TOWER_KEYS)
     if print_package.case_plate(plate_name):       # the case kit's print quality; the printer tests keep the preset's
         own.update(print_package.CASE_SETTINGS, elefant_foot_compensation=P1S_ELEPHANT_FOOT, **(P1S_FLUSH if two else {}))
-    if own:                                        # the plate's own settings (a layer height, the tower) over the profile's
-        cfg = json.load(open(process))
-        process = os.path.join(work, "process.json")
-        json.dump(dict(cfg, **own), open(process, "w"), indent=4)
-    subprocess.run([os.environ["BAMBU_STUDIO"],
-                    "--load-settings", f"{PROFILES}/machine.json;{process}",
-                    "--load-filaments", f"{PROFILES}/filament.json" + (f";{SUPPORT_PROFILE}" if two else ""), "--arrange", "0",
-                    "--export-3mf", os.path.basename(project), "--outputdir", work, *stls],
-                   capture_output=True, text=True, timeout=600)
-    if not os.path.exists(project):
-        print(f"  {name}: Bambu Studio wrote no project")
-        return None
     with_supports = [obj for obj, path in parts if path in supported]
     top_objs = [obj for obj, path in parts if path in print_package.TOP_PARTS]
-    own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else print_package.TOP_SUPPORT if obj in top_objs else {},
-                          **print_package.OBJECT_SETTINGS.get(obj, {}), **P1S_OBJECT_SETTINGS.get(obj, {}))
-                for obj, _ in parts}
-    own_objs = {obj: own for obj, own in own_objs.items() if own}
-    if own_objs:
-        own_settings(project, own_objs)
-    if print_package.case_plate(plate_name):
-        fine_layers(project, plate_name, two)
-    applied(project, own)
     project_cfg = {"flush_multiplier": [P1S_FLUSH_MULTIPLIER]} if two and print_package.case_plate(plate_name) else {}
-    mark_presets(project, plate_name, set(own), project_cfg)
-    cmd = [os.environ["BAMBU_STUDIO"], "--slice", "0", "--export-3mf", name + ".3mf",
-           "--outputdir", os.path.join(work, "out"), project]
-    subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
+    stls = []
+    if hit:
+        shutil.copy(hit_3mf, os.path.join(work, "out", name + ".3mf"))
+        shutil.copy(hit_json, os.path.join(work, "out", "result.json"))
+    else:
+        for obj, m in placed:                          # one file per object: two of a part are two files
+            dst = os.path.join(work, obj + ".stl")
+            m.export(dst)
+            stls.append(dst)
+        # the plate as a project (no slicing yet), its parts' support settings, then the slice
+        project = os.path.join(work, name + "_unsliced.3mf")
+        process = os.path.join(PROFILES, "process.json")
+        if own:                                        # the plate's own settings (a layer height, the tower) over the profile's
+            cfg = json.load(open(process))
+            process = os.path.join(work, "process.json")
+            json.dump(dict(cfg, **own), open(process, "w"), indent=4)
+        subprocess.run([os.environ["BAMBU_STUDIO"],
+                        "--load-settings", f"{PROFILES}/machine.json;{process}",
+                        "--load-filaments", f"{PROFILES}/filament.json" + (f";{SUPPORT_PROFILE}" if two else ""), "--arrange", "0",
+                        "--export-3mf", os.path.basename(project), "--outputdir", work, *stls],
+                       capture_output=True, text=True, timeout=600)
+        if not os.path.exists(project):
+            print(f"  {name}: Bambu Studio wrote no project")
+            return None
+        own_objs = {obj: dict(print_package.OBJECT_SUPPORT if obj in with_supports else print_package.TOP_SUPPORT if obj in top_objs else {},
+                              **print_package.OBJECT_SETTINGS.get(obj, {}), **P1S_OBJECT_SETTINGS.get(obj, {}))
+                    for obj, _ in parts}
+        own_objs = {obj: own for obj, own in own_objs.items() if own}
+        if own_objs:
+            own_settings(project, own_objs)
+        if print_package.case_plate(plate_name):
+            fine_layers(project, plate_name, two)
+        applied(project, own)
+        mark_presets(project, plate_name, set(own), project_cfg)
+        if not slicing:                                # write only: the project, with its settings, unsliced
+            out = os.path.join(work, "out", name + ".3mf")
+            shutil.copy(project, out)
+            return out, None, None, {}
+        cmd = [os.environ["BAMBU_STUDIO"], "--slice", "0", "--export-3mf", name + ".3mf",
+               "--outputdir", os.path.join(work, "out"), project]
+        subprocess.run(cmd, capture_output=True, text=True, timeout=1800)
     try:
         result = json.load(open(os.path.join(work, "out", "result.json")))
     except (OSError, ValueError):
@@ -238,6 +256,10 @@ def slice_plate(name, parts, supported, tmp):
     if result.get("return_code") != 0 or not result.get("sliced_plates"):
         print(f"  {name}: {result.get('error_string', '?').strip()}")
         return None
+    if hit:
+        print(f"  {name}: sliced file from the cache ({k})", flush=True)
+    else:
+        print_cache.put(k, os.path.join(work, "out", name + ".3mf"), os.path.join(work, "out", "result.json"))
     plate = result["sliced_plates"][0]
     out = os.path.join(work, "out", name + ".3mf")
     mark_presets(out, plate_name, set(own), project_cfg)      # the slice writes the list empty again
@@ -268,14 +290,15 @@ def halves(parts):
 def main():
     if not os.environ.get("BAMBU_STUDIO"):
         sys.exit("set BAMBU_STUDIO to Bambu Studio's executable")
-    only = sys.argv[1:]
+    only = print_package.requested(print_cache.names())
     print("supports, measured part by part:")
     supported = print_package.support_parts()
-    queue = [(n, p) for n, p in print_package.PLATES.items() if not only or n in only]
-    case = any(n not in print_package.TEST_PLATES for n, _ in queue)  # the case kit or the tests, or both
+    queue = [(n, p) for n, p in print_package.PLATES.items() if n in only]
+    release = any(n in print_package.RELEASE_PLATES for n, _ in queue)
+    extras = any(n not in print_package.RELEASE_PLATES and n not in print_package.TEST_PLATES for n, _ in queue)
     tests = any(n in print_package.TEST_PLATES for n, _ in queue)
     tests_dir = print_package.TESTS["P1S"]
-    print_package.fresh(([OUT] if case else []) + ([tests_dir] if tests else []))
+    print_package.fresh(([OUT] if release else []) + ([print_package.EXTRAS["P1S"]] if extras else []) + ([tests_dir] if tests else []))
     rows = []
     with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(SLICERS) as pool:
         def plate(name, parts):
@@ -297,6 +320,9 @@ def main():
                 shutil.copy(p, os.path.join(where, "stl", os.path.basename(p)))
             if where == OUT:
                 rows.append((name, parts, sup, grams, secs))
+            if grams is None:
+                print(f"{name + '.3mf':24s} written, not sliced  " + ", ".join(o for o, _ in parts))
+                continue
             print(f"{name + '.3mf':24s} PLA {grams['pla']:5.1f} g, support filament {grams['support']:4.1f} g, purge "
                   f"{grams['purge'][0]:.1f} + {grams['purge'][1] if len(grams['purge']) > 1 else 0:.1f} g, {grams['changes']} changes, "
                   f"{int(secs // 3600)} h {int(secs % 3600 // 60):02d} min  " + ", ".join(o for o, _ in parts)
@@ -304,10 +330,10 @@ def main():
     if tests:
         shutil.copy(print_package.TESTS_README, os.path.join(tests_dir, "README.md"))
         print_package.tests_zip()
-    if not case:
+    if not release:
         return
     for extra in ("top.stl", "tub.stl"):
-        if os.path.exists(os.path.join(HERE, extra)) and not only:
+        if os.path.exists(os.path.join(HERE, extra)) and not print_cache.names():
             shutil.copy(os.path.join(HERE, extra), os.path.join(OUT, "stl", extra))
     def supports(parts, sup):
         top = [o for o, p in parts if p in print_package.TOP_PARTS]
@@ -317,8 +343,9 @@ def main():
 
     def purge(g):
         return f"{g['purge'][0]:.1f} g PLA + {g['purge'][1]:.1f} g support" if g["support"] else "none"
-    table = "\n".join(f"| `{n}.3mf` | {supports(parts, sup)} | {g['pla']:.1f} g | {g['support']:.1f} g | {purge(g)} | {g['changes']} | "
-                      f"{int(t // 3600)} h {int(t % 3600 // 60):02d} min | {', '.join(o for o, _ in parts)} |"
+    table = "\n".join((f"| `{n}.3mf` | {supports(parts, sup)} | {g['pla']:.1f} g | {g['support']:.1f} g | {purge(g)} | {g['changes']} | "
+                       f"{int(t // 3600)} h {int(t % 3600 // 60):02d} min | {', '.join(o for o, _ in parts)} |") if g else
+                      f"| `{n}.3mf` | not sliced | | | | | | {', '.join(o for o, _ in parts)} |"
                       for n, parts, sup, g, t in rows)
     text = open(README).read()
     a, b = text.index("<!-- printer -->"), text.index("<!-- /printer -->") + len("<!-- /printer -->")
