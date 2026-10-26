@@ -36,14 +36,14 @@
   {
    "what": "ID",
    "limit": "5.7 A continuous",
-   "design": "35 mA at 100% duty (70 mA for both), ER-TFT024IPS-3",
+   "design": "56 mA at 100% duty (113 mA for both)",
    "ok": true,
    "cite": "p1"
   },
   {
    "what": "Power",
    "limit": "1.4 W (TA 25 C, 1 in2 copper); RthJA 100-125 C/W steady",
-   "design": "about 32 mW per FET on a full cell (4.2 V), 50 mW on USB (VSYS 4.7 V), 85 mW in a 5.7 V transient (35 mA, LEDs at 3.2 V, 0.077 V on the sense resistor); the 3.5in panel's 56 mA a FET was simulated (sim/backlight_results.txt)",
+   "design": "61 mW per FET on a full cell, 89 mW on USB (VSYS 4.7 V), 145 mW in a 5.7 V transient: about +11 C on USB",
    "ok": true,
    "cite": "p1 Thermal Characteristics; sim/backlight_results.txt"
   },

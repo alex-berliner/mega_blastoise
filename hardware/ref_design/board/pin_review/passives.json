@@ -1,5 +1,5 @@
 {
- "snapshot": "design.py (working tree, uncommitted edits in progress) md5 fe58330c6a55bc346c106f070e714857; it changed during this check (C47 added on PWR_EN, R21/R22 now 27 ohm C25100); 2026-10-07: backlight sink parts R52-R61, C48-C51 added (JLC live data), AP3156 parts C31-C33, C36, R31 removed; 2026-10-21: R61 3.9k -> 2.4k C25882 (Konnect JLC snapshot: Preferred) for the ER-TFT024IPS-3",
+ "snapshot": "design.py (working tree, uncommitted edits in progress) md5 fe58330c6a55bc346c106f070e714857; it changed during this check (C47 added on PWR_EN, R21/R22 now 27 ohm C25100); 2026-10-07: backlight sink parts R52-R61, C48-C51 added (JLC live data), AP3156 parts C31-C33, C36, R31 removed",
  "passives": [
   {
    "ref": "R1",
@@ -1344,8 +1344,8 @@
    "db_library_type": "Basic",
    "db_description": "-55\u2103~+155\u2103 100mW 2.2\u03a9 75V Thick Film Resistor \u00b11% \u00b1400ppm/\u2103 0603 Chip Resistor - Surface Mount ROHS",
    "rating_v": 75.0,
-   "net_max_v": 0.08,
-   "net_max_basis": "sense: 2.2 ohm x 35 mA",
+   "net_max_v": 0.13,
+   "net_max_basis": "sense: 2.2 ohm x 56 mA",
    "ok": true,
    "issue": ""
   },
@@ -1361,8 +1361,8 @@
    "db_library_type": "Basic",
    "db_description": "-55\u2103~+155\u2103 100mW 2.2\u03a9 75V Thick Film Resistor \u00b11% \u00b1400ppm/\u2103 0603 Chip Resistor - Surface Mount ROHS",
    "rating_v": 75.0,
-   "net_max_v": 0.08,
-   "net_max_basis": "sense: 2.2 ohm x 35 mA",
+   "net_max_v": 0.13,
+   "net_max_basis": "sense: 2.2 ohm x 56 mA",
    "ok": true,
    "issue": ""
   },
@@ -1487,18 +1487,18 @@
   },
   {
    "ref": "R61",
-   "value": "2.4k",
-   "lcsc": "C25882",
-   "mpn": "0402WGF2401TCE",
+   "value": "3.9k",
+   "lcsc": "C51721",
+   "mpn": "0402WGF3901TCE",
    "footprint": "Resistor_SMD:R_0402_1005Metric",
    "nets": "BL_REF / GND",
-   "db_mfr_part": "0402WGF2401TCE",
+   "db_mfr_part": "0402WGF3901TCE",
    "db_package": "0402",
    "db_library_type": "Preferred",
-   "db_description": "-55\u2103~+155\u2103 2.4k\u03a9 50V 62.5mW Thick Film Resistor \u00b11% \u00b1100ppm/\u2103 0402 Chip Resistor - Surface Mount ROHS",
+   "db_description": "-55\u2103~+155\u2103 3.9k\u03a9 50V 62.5mW Thick Film Resistor \u00b11% \u00b1100ppm/\u2103 0402 Chip Resistor - Surface Mount ROHS",
    "rating_v": 50.0,
-   "net_max_v": 0.08,
-   "net_max_basis": "BL_REF: 3.3 V x 2.4/102.4",
+   "net_max_v": 0.13,
+   "net_max_basis": "BL_REF: 3.3 V x 3.9/103.9",
    "ok": true,
    "issue": ""
   },
