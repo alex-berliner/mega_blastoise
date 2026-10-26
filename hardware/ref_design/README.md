@@ -90,6 +90,20 @@ Freerouting gets 20 passes (it gains nothing after about 15), no 20 s start-up d
 no optimizer pass (`--optimize` puts it back); about 4.5 min for a clean board where three
 80-pass attempts took over 10.
 
+Waiting on long jobs (routing, slicing): wait on the job's PID or on a done-marker file, not
+on its name. `pgrep -f "print_package.py 1_case"` inside `bash -c "..."` matches the waiting
+shell's own command line, so the loop only ends at its cap (8.5 min lost on 2026-10-26).
+
+```sh
+python3 case/print_package.py --slice > /tmp/pk.log 2>&1 & echo $! > /tmp/pk.pid
+tools/wait_done.sh --pid "$(cat /tmp/pk.pid)" --timeout 1800     # 0 done, 124 timed out
+(python3 tools/build.py; touch /tmp/build.done) &                 # or end the job with a marker
+tools/wait_done.sh --file /tmp/build.done --timeout 1800
+```
+
+If `pgrep -f` is unavoidable, bracket the first letter so the pattern doesn't match itself:
+`pgrep -f "[p]rint_package.py"`.
+
 The stages, by hand:
 
 ```sh
