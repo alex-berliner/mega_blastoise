@@ -71,11 +71,15 @@ def config_block(gcode):
 def slice_plate(plate, parts, supported, project, work):
     """Slice one plate's project: a result dict, or None after printing what went wrong (a crash, the validation, a conflict)."""
     out = os.path.join(work, "out")
-    k = print_cache.key("U1", plate, [p for _, p in parts], os.environ["SNAPMAKER_ORCA"])
-    sliced = print_cache.get(k, "sliced.3mf")
+    ckey = print_cache.key("U1", plate, [p for _, p in parts], os.environ["SNAPMAKER_ORCA"])
+    sliced = print_cache.get(ckey, "sliced.3mf")
+    done = print_cache.get(ckey, "result.json")           # the checks' result, kept when they passed
     hit = bool(sliced)
+    if hit and done:
+        print(f"  {plate}: sliced and checked, from the cache ({ckey})", flush=True)
+        return dict(json.load(open(done)), sliced=sliced)
     if hit:
-        print(f"  {plate}: sliced file from the cache ({k})", flush=True)
+        print(f"  {plate}: sliced file from the cache ({ckey})", flush=True)
     else:
         cmd = [os.environ["SNAPMAKER_ORCA"], "--datadir", os.path.join(work, "data"), "--allow-newer-file", "--slice", "0",
                "--outputdir", out, "--export-3mf", "sliced.3mf", project]
@@ -93,8 +97,6 @@ def slice_plate(plate, parts, supported, project, work):
             why = (result.get("error_string") or f"exit {r.returncode}").strip() + "".join(f"\n      {l.split(']')[-1].strip()}" for l in log)
         print(f"  {plate}: {why}")
         return None
-    if not hit:                                        # (kept once it has sliced; the checks below run on it every time)
-        print_cache.put(k, sliced)
     z = zipfile.ZipFile(sliced)
     gcode = z.read("Metadata/plate_1.gcode").decode()
     info = z.read("Metadata/slice_info.config").decode()
@@ -145,6 +147,12 @@ def slice_plate(plate, parts, supported, project, work):
     res["sliced"] = sliced
     if bad:
         print(f"  {plate}: " + "; ".join(bad) + "\n" + "\n".join(report))
+    else:                                              # sliced and checked: kept, so the same inputs cost nothing
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            json.dump({kk: v for kk, v in res.items() if kk != "sliced"}, open(os.path.join(t, "result.json"), "w"),
+                      default=float)
+            print_cache.put(ckey, sliced, os.path.join(t, "result.json"))
     return res
 
 

@@ -376,7 +376,7 @@ def selection(opts):
     return [(s, opts["force"] and s.kind == "main") for s in ORDER]
 
 
-SLICED_KITS = ("print_u1", "print_p1s")        # the two kits that slice at the same time (--slice)
+SLICED_KITS = ("print_u1", "print_p1s")        # the two kits run at the same time (they slice at once with --slice)
 
 
 def run_both(stages, env):
@@ -441,7 +441,7 @@ def main():
             rows.append((stage.name, "would run" + (" (forced)" if forced and fresh else ""), 0.0))
             continue
         t0 = time.time()
-        if opts["slice"] and stage.name in SLICED_KITS and stage.name not in handled:
+        if stage.name in SLICED_KITS and stage.name not in handled:
             mates = [BY_NAME[n] for n in SLICED_KITS if n != stage.name and BY_NAME[n] in [x for x, _ in sel]
                      and not (BY_NAME[n].needs and not env.get(BY_NAME[n].needs))]
             mates = [m for m in mates if not (state.get(m.name, {}).get("ok") and state[m.name]["key"] == key(m, state)
@@ -454,7 +454,7 @@ def main():
                     rc, secs = done[m.name]
                     if rc == 0:
                         record(m, state, keys[m.name], secs)
-                        rows.append((m.name, "ran (sliced, in parallel)", secs))
+                        rows.append((m.name, "ran (sliced, in parallel)" if opts["slice"] else "ran (in parallel)", secs))
                     else:
                         state[m.name] = dict(state.get(m.name, {}), ok=False)
                         save_state(state)

@@ -198,6 +198,11 @@ def slice_plate(name, parts, supported, tmp):
     k = print_cache.key("P1S", name, [p for _, p in parts], os.environ["BAMBU_STUDIO"])
     hit_3mf, hit_json = print_cache.get(k, name + ".3mf"), print_cache.get(k, "result.json")
     hit = bool(slicing and hit_3mf and hit_json)
+    checked = print_cache.get(k, "checked.json") if hit else None     # what the checks below came to, kept when they passed
+    if checked:
+        print(f"  {name}: sliced and checked, from the cache ({k})", flush=True)
+        c = json.load(open(checked))
+        return hit_3mf, c["grams"], c["secs"], c["sup"]
     plate_name = name.removesuffix("_a").removesuffix("_b")
     own = dict(print_package.PLATE_SETTINGS.get(plate_name, {}))
     two = print_package.has_top(parts)             # a top: the support filament is loaded, with a prime tower
@@ -258,8 +263,6 @@ def slice_plate(name, parts, supported, tmp):
         return None
     if hit:
         print(f"  {name}: sliced file from the cache ({k})", flush=True)
-    else:
-        print_cache.put(k, os.path.join(work, "out", name + ".3mf"), os.path.join(work, "out", "result.json"))
     plate = result["sliced_plates"][0]
     out = os.path.join(work, "out", name + ".3mf")
     mark_presets(out, plate_name, set(own), project_cfg)      # the slice writes the list empty again
@@ -273,7 +276,12 @@ def slice_plate(name, parts, supported, tmp):
     report, bad, mm, filament = support_check.check(out, {obj for obj, path in parts if path not in supported and path not in print_package.TOP_PARTS}, set(top_objs))
     if bad or filament:
         sys.exit(f"{name}: " + ("; ".join(([f"support under {', '.join(bad)}, which need none"] if bad else []) + filament)) + ":\n" + "\n".join(report))
-    return out, grams, plate["total_predication"], {o: mm.get(o, 0) for o in [*with_supports, *top_objs]}
+    sup = {o: mm.get(o, 0) for o in [*with_supports, *top_objs]}
+    with tempfile.TemporaryDirectory() as t:           # sliced and checked: kept, the project as it ships
+        json.dump({"grams": grams, "secs": plate["total_predication"], "sup": sup}, open(os.path.join(t, "checked.json"), "w"),
+                  default=float)
+        print_cache.put(k, out, os.path.join(work, "out", "result.json"), os.path.join(t, "checked.json"))
+    return out, grams, plate["total_predication"], sup
 
 
 def halves(parts):
