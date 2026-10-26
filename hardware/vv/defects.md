@@ -371,7 +371,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
 - Gate: ORDER
-- Status: FIXED (reopened 2026-10-25 by the second review, O-R2: the gate still passed on uncommitted, typed evidence; was CLOSED on VER-129 at 78b777a, 47 faults). The holes are DEF-52; it closes with DEF-52 when VER-129 passes with their seeded faults.
+- Status: CLOSED (reopened 2026-10-25 by the second review, O-R2, with its holes logged as DEF-52; VER-129 PASS 2026-10-26 at fc862fa: 63 seeded faults caught, among them every O-R2 fault)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -411,7 +411,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, new).
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
 - Gate: ORDER
-- Status: FIXED (design_numbers.py rewritten by the second review: the check re-runs before it closes again; the panel and R61 changed in 53e21c8; VER-137 PASS 2026-10-25: 78.0 mA worst case against 80 mA; the bench reading at EVT is VER-62 in G-EVT-03)
+- Status: CLOSED (VER-137 re-run 2026-10-26 at fc862fa after the second review rewrote design_numbers.py: PASS, 78.0 mA; the panel and R61 changed in 53e21c8; first PASS 2026-10-25: 78.0 mA worst case against 80 mA; the bench reading at EVT is VER-62 in G-EVT-03)
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
@@ -451,7 +451,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073).
 - Updated: REQ-PWR-13
 - Gate: ORDER
-- Status: FIXED (design_numbers.py rewritten by the second review: the check re-runs before it closes again; no deviation at 684a609; VER-99 PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
+- Status: CLOSED (VER-99 re-run 2026-10-26 at fc862fa after the second review rewrote design_numbers.py: PASS; no deviation at 684a609; first PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -541,10 +541,10 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: VER-176 and VER-131 passed on the words 'centroid' or '--excellon-separate-th' anywhere in fab.py, comments included, and read no fab output. Uncommitted edits to the register and its evidence opened the gate (VER-138 FAIL to PASS in a scratch clone). An inspection or demonstration passed on any repository file. An approval counted from any commit without a Claude trailer, though every commit has the same author and merges never carry one. R4 at the order gate counted case and docs defects. Occurrence 3 ('proven on similar hardware') sat on 71 rows of parts never built, keeping five severity 9-10 rows at M. At DVT and PVT an EVT inspection still counted. prod_board's gate read no DFMEA row. A commit to the order branch after the baseline raised nothing on vv-plan, and the schematics, the project file and case/export.py were not design paths. A change record's re-run list was hand-picked.
 - Root cause: rules written for the faults the first review named, each checked one way only.
 - Why missed: seed_faults.py seeded the faults known on 2026-10-24; none of these.
-- Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a prod_board row, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole); VER-131 and VER-176 now run fab.py's own export into a temp dir and read what it writes.
+- Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a live row citing a RETIRED id, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole). The drill and CPL checks (design_numbers.py drill and cpl) now run fab.py's own export into a temp dir and read what it writes; they fail on the board's real output, which DEF-32 and DEF-33 hold, not this defect.
 - Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
 - Gate: ORDER
-- Status: FIXED (rules and checks rewritten); closes when VER-129 passes with these faults at the commit that holds them
+- Status: CLOSED (VER-129 PASS 2026-10-26 at fc862fa: 63 of 63 seeded faults caught, 16 of them this defect's; the claims script's fault waits for VER-161, DEF-54)
 
 ### DEF-53: The pushed cell's end sits 0.25 mm from the routed FR4 edge
 - Found: two-model review (O-R7), 2026-10-25, from case.scad lines 73 and 1278 and assembly.md step 5

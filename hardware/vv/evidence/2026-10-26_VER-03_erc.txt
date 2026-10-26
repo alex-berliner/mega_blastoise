@@ -1,13 +1,13 @@
 # VER-03 erc
-DATE: 2026-10-25
-COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
+DATE: 2026-10-26
+COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ kicad-cli sch erc --severity-all --exit-code-violations -o {tmp}/erc.rpt hardware/ref_design/board/battler.kicad_sch
 Found 0 violations
-Saved ERC Report to /tmp/tmpxfwefw8m/erc.rpt
+Saved ERC Report to /tmp/tmpn5u_8py9/erc.rpt
 --- report
-ERC report (2026-10-25T16:44:13, Encoding UTF8)
+ERC report (2026-10-26T13:59:48, Encoding UTF8)
 Report includes: Errors, Warnings, Exclusions
 
 ***** Sheet /

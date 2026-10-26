@@ -1,6 +1,6 @@
 # VER-129 seed_faults
-DATE: 2026-10-25
-COMMIT: 78b777acee09f078273c910e2b177161f3ac112a
+DATE: 2026-10-26
+COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -40,6 +40,12 @@ ok  structure new BOM under an old BOARD_REV
 ok  structure design baseline differs from HEAD
 ok  structure design baseline leaves out the routed board
 ok  gate      an advisory-only check made binding
+ok  structure O-R3: an inspection PASS on a design file it does not cover
+ok  structure O-R3: an inspection's evidence with no WHO or ARTEFACT
+ok  structure O-R5: a defect with no Gate
+ok  gate      O-R5: a CASE defect moved to the order gate blocks it
+ok  structure O-R8: occurrence 3 with no 'Similar:'
+ok  structure F-R14: a live check cites a RETIRED row
 ok      clean clone exits 0
 ok  structure row result disagrees with its evidence (git)
 ok  report    evidence past its valid_days (git)
@@ -53,7 +59,17 @@ ok  gate      a deferral used past its scope (git)
 ok  gate      an EVT unit's result at the DVT gate (git)
 ok  structure a covers glob met only by an untracked file (git)
 ok  structure a statement edited after its approval (git)
-47 seeded faults, 47 caught
+ok  structure O-R4: an approval line in an unsigned plain commit (git)
+ok  structure O-R4: an approval line written in a merge commit (git)
+ok  gate      O-R2: uncommitted register and evidence edits (VER-138 FAIL to PASS) (git)
+ok  gate      O-R2: a PASS whose evidence was never committed (git)
+ok  gate      O-R2: a PASS whose evidence was edited after its commit (git)
+ok  gate      O-R11: an EVT first article at the PVT gate (git)
+ok  gate      O-R13: a design commit on the order branch after the baseline (git)
+ok  structure O-R21: a change record that omits a bench test of the changed part (git)
+ok  dn        O-R1: a comment in fab.py does not pass the CPL or drill check (git)
+ok  dn        O-R14: a back-side test point next to the cell's hole fails th1 (git)
+63 seeded faults, 63 caught
 RESULT: PASS
 
 exit 0

@@ -1,0 +1,17 @@
+# VER-181 cellgap
+DATE: 2026-10-26
+COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py cellgap
+board hole 54.0 x 37.0 mm; the tub's pocket 0.25 mm inside it each side (case.scad cell_pocket_fit); tolerances: routing 0.2, print 0.1, the board's float on its screws 0.1 mm (0.40 mm in all)
+  worst-case cell 52 x 36, right end (pushed, at TH1): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+  worst-case cell 52 x 36, left end (its leads, J2): 1.75 mm nominal, 1.35 mm after tolerances (REQ-BAT-08: 1.5): too close
+  worst-case cell 52 x 36, each long side (at worst against the pocket's wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+  nominal cell 50 x 34, right end (pushed, at TH1): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+  nominal cell 50 x 34, left end (its leads, J2): 3.75 mm nominal, 3.35 mm after tolerances (REQ-BAT-08: 1.5): ok
+  nominal cell 50 x 34, each long side (at worst against the pocket's wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

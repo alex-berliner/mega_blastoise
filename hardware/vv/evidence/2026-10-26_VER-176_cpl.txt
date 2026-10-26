@@ -1,0 +1,29 @@
+# VER-176 cpl
+DATE: 2026-10-26
+COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py cpl
+fab.py's bom_cpl() wrote 44 BOM lines and 118 CPL rows (read from battler_cpl_jlc.csv)
+CPL row more than 0.10 mm off its pads' centre: J1 1.50 mm, J2 0.95 mm, J3 0.23 mm, J4 0.95 mm
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+14:00:01: Debug: Adding duplicate image handler for 'PNG file'
+14:00:01: Debug: Adding duplicate image handler for 'JPEG file'
+14:00:01: Debug: Adding duplicate image handler for 'TIFF file'
+14:00:01: Debug: Adding duplicate image handler for 'GIF file'
+14:00:01: Debug: Adding duplicate image handler for 'PNM file'
+14:00:01: Debug: Adding duplicate image handler for 'PCX file'
+14:00:01: Debug: Adding duplicate image handler for 'IFF file'
+14:00:01: Debug: Adding duplicate image handler for 'Windows icon file'
+14:00:01: Debug: Adding duplicate image handler for 'Windows cursor file'
+14:00:01: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+14:00:01: Debug: Adding duplicate image handler for 'TGA file'
+14:00:01: Debug: Adding duplicate image handler for 'XPM file'
+
+exit 1
+RESULT: FAIL
