@@ -10,6 +10,27 @@ wall: the screws moved; the USB-C moved down its wall and, with the speaker, bac
 position. `case.scad` doesn't know any of this yet; nothing in the case was changed.
 The board's side is `board/placement.py` (`CUTOUTS`, `SIDE_SCREWS`, `USB_Y`).
 
+## Re-placed for the 3.5 in panel (2026-10-26): this section wins over every number below
+
+Board 72.4 x 151.64 (case 77.4 x 156.64 x 9.6). Case frame (x right, y up towards seat 2), heights over the board's top copper.
+
+| | Case (x, y) now | Was (2.4 in) |
+|---|---|---|
+| Cell hole (54 x 37, r 1) | x -27.0 .. 27.0, y 6 .. 43 (under the glass's seat-2 half) | -28.7 .. 25.3, -3.8 .. 33.2 |
+| Speaker hole (stadium, 11 x 16) | centre 29.7, -24.5; the speaker sunk in it on a 0.6 floor pocket, 0.9 over the board | lying on the board's top at 28.7, -11.4 |
+| J3 (the FPC's ZIF) | 0, -17.59, mouth towards seat 1 | 5.5, -8.2 |
+| J1 | y 1.5 | 2.0 |
+| J2 / J4 | -31.7, 2.56 (mouth +y) / 31.8, -8.2 (mouth -y, towards the speaker) | -30.7, -7.24 / 31.9, -27.0 |
+| J5, SW18/19 | -32.1, -5.0 / x -31.0, y -30.2 and -33.85 | -32.6, 15.2 / -32.35, -20.7 and -24.35 |
+| Side screws H1 to H4 | (+-32.5, +-40), the glass's corners | (32.5, 29), (-32.5, 29), (25.9, -21.95), (-33, -15.2) |
+| U6, U8 | beside each other in seat 1's spine (-3.2, -55), (3.2, -56) | 0, -36.4 and 1.2, -44.2 |
+| Core U4 | -24, -14 (its panel pins face J3's pads) | -22.2, -19.5 |
+
+The FPC (the old design's numbers, unverified): the tail zone (x +-13.25, y -27.1 to -13.7) keeps nothing but J3 and flat pads under it; the **body** (x -22 to 27, y -43 to -27.1)
+allows parts up to **1.05** tall (it lies on the glass's back; U4, X1, L2, U2 and every 0402/0603 are 1.0 or lower), but nothing 5.1 mm in from the glass's edge (the neck).
+Taller parts are under the glass (2.2 limit) or beside it under the full-width band (3.5), the ends' ceiling beyond its slopes (`case/check_fit.py` computes it
+from `case.scad`'s `ISLAND` echo line). The routing: `route.py` no longer pre-routes the USB pair by hand (`ROUTE_USB_PAIR=1` brings it back), Freerouting does.
+
 ## Routing levers (2026-10-24, branch `ref-design-levers`, an experiment Alex has not picked yet)
 
 To make the board easier to route without changing its size: the UART connector J6, the four

@@ -30,13 +30,13 @@ POS = json.load(open(os.path.join(HERE, "positions.json")))
 CASE_W, CASE_L = POS["case"]["w"], POS["case"]["l"]
 SRC = open(os.path.join(HERE, "case.scad")).read()
 RUN = 5.85                            # the slope's run (case.scad uni_run, 5.85 with the 3.5 in panel's 9.6 mm face)
-EARS = [[float(v) for v in e.split(",")] for e in re.search(r"uni_ears = \[\[(.*?)\]\];", SRC).group(1).split("], [")]   # [side, y0, y1]
+SLOPE_Y = 46.97                       # where the core grooves start (tongue_y - tongue_y_fit): the band's side walls end there
 END_Y = CASE_L / 2 - 3.35             # where the ends' round starts (63.0 on the 133 mm case)
 
 
 def in_ear(y, side):
     """Is the side wall at y under an ear's flat top or its slope (the lifted round)?"""
-    return any(e[0] == side and e[1] - RUN - 0.5 <= y <= e[2] + RUN + 0.5 for e in EARS)
+    return abs(y) < SLOPE_Y
 
 
 def sections(m, positions, axis=1):
@@ -104,7 +104,7 @@ def mesh_min(m):
     gx0, gx1 = [float(v) for v in re.search(r"grille_x = \[([-\d.]+), ([-\d.]+)\]", SRC).group(1, 2)]
     spk = POS["speaker"]["c"]
     pins = [(p[0] - 100, 100 - p[1]) for p in POS["pinholes"]]
-    isl = op[(op[:, 2] > 7.78) & ((np.abs(op[:, 0]) > 28.1) | (np.abs(op[:, 1]) > 42.4)) & (np.abs(op[:, 0]) < 35.5) & ~usb
+    isl = op[(op[:, 2] > 7.78) & (np.abs(op[:, 1]) > 42.4) & (np.abs(op[:, 1]) < 48.5) & (np.abs(op[:, 0]) < 35.5) & ~usb
              & ~((op[:, 0] > gx0 - 1) & (op[:, 0] < gx1 + 1) & (np.abs(op[:, 1] - (100 - spk[1])) < 8.5)) 
              & ~np.any([np.hypot(op[:, 0] - px, op[:, 1] - py) < 2.5 for px, py in pins], axis=0)]
     ds = cKDTree(inner).query(isl)[0]

@@ -355,8 +355,7 @@ tub_boss_d = [6.0, boss_d, 6.0, boss_d, 6.0, 6.0];
 // when an 8 would have run past the ends' pilots
 screw_cb = [4.4, 1.0];  screw_clear = 2.4;  screw_pilot = 1.6;  screw_l = 6;
 deck_engage = deck_face - z_top_cu - 0.6;               // the end screws' pilots stop 0.6 under the ends' face (the screw's tip 0.1 short)
-side_engage = deck_engage - 0.1;                        // the side screws' too, 0.1 shorter: they stand under the island's side slope and the deck
-                                                        // beside it (2026-10-26), where the face is the deck's or a little above it
+side_engage = min(6.0, case_h - z_top_cu - 0.8);        // the side screws' pilots stop 0.8 under the band's face
 
 // edge parts, all on the right (+X) long edge. J1 slid 2 mm up its wall (towards seat 2) when the side
 // screws came back inward (2026-10-22, CELLCUT_FOR_CASE.md): its opening, tab, notch and slot follow usb_y
@@ -501,7 +500,7 @@ for (p = pin_pos) for (i = [0:5]) let(q = pins[i], b = max(tub_boss_d[i], boss_d
 for (p = pin_pos) assert(rect_dist(p, frame_rect) >= pin_guide_d / 2 + 0.5, "a pinhole's guide runs into the panel's frame");
 // the screws: each tip short of its pilot's end
 assert(tune || screw_cb[1] + screw_l <= z_top_cu + side_engage + 1e-6 && screw_cb[1] + screw_l <= z_top_cu + deck_engage + 1e-6, "the screws are longer than their pilots");
-assert(z_top_cu + side_engage <= deck_face - 0.6 + 1e-6 && z_top_cu + deck_engage <= deck_face - 0.6 + 1e-6, "a pilot runs too near a face");
+assert(z_top_cu + side_engage <= case_h - 0.8 + 1e-6 && z_top_cu + deck_engage <= deck_face - 0.6 + 1e-6, "a pilot runs too near a face");
 assert(panel_w + panel_fit <= bay_w && panel_l + panel_fit <= bay_l, "panel doesn't fit its bay");
 assert(glass_gap >= 1.0, "no room under the panel");
 assert(face_t >= 0.6 && face_t <= top_t, "face_t out of range");
@@ -539,7 +538,7 @@ if (!tune) {
   assert(deck_face - (z_deck_tongue + seam_gap) >= 0.8, "the ends' plate over the tongue is too thin");
   assert(z_deck_tongue > z_arm_tongue && deck_face - face_r < z_deck_tongue, "the tongue's heights are the wrong way round");
   // the step in the tongue (tongue_y) lies under the slope, where the cavity's ceiling is higher than the taller tongue
-  assert(uni_lim_d(uni_foot - (tongue_y - tongue_y_fit)) >= z_deck_tongue + seam_gap + 0.3, "the taller tongue runs into the slope's ceiling");
+  assert(uni_lim(tongue_y - tongue_y_fit) >= z_deck_tongue + seam_gap + 0.3, "the taller tongue runs into the slope's ceiling");
   // the keys: one in each side wall's band, on the side walls' height of tongue, clear of the USB-C notch, the grip ribs
   // and the side screws' bosses; the plate over its pocket 0.8. The left keys are the right ones turned round
   assert(deck_face - (z_key + seam_gap) >= 0.8, "the plate over a key's pocket is too thin");
@@ -732,7 +731,7 @@ module pad2d(c) let(dp = c == dpad1 || c == dpad2) union() {
 module cross(w, l) union() { square([l, w], center = true); square([w, l], center = true); }
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
 // The top's plan at the screen's height (the layout view): the band across the case, to its slope's foot
-module top_region2d() { rrect(2 * uni_edge_x, 2 * uni_edge, uni_corner_r); for (e = uni_ears) scale([e[0], 1, 1]) translate([uni_ear_xa, e[1]]) square([case_w, e[2] - e[1]]); }
+module top_region2d() square([4 * case_w, 2 * uni_foot], center = true);
 module outline2d() rrect(case_w, case_l, corner_r);
 module inner2d(grow = 0) offset(delta = -wall + grow) outline2d();
 // how far in from an edge's wall line a round is at depth dd under the face it rolls into: an arc of
@@ -858,7 +857,7 @@ module tongue() {
 // side: they locate the top along the case and hold its skirt out on the tongue. [side, y]; clear of the USB-C notch and
 // the grip ribs
 keys = [[1, 21], [1, -18], [-1, -21], [-1, 18]];   // the left ones the right ones turned round (2026-10-24)
-key_w = 5.0;  key_h = 0.3;  key_lead = 0.25;
+key_w = 5.0;  key_h = 1.1;  key_lead = 0.5;
 z_key = z_arm_tongue + key_h;
 module key_span(k, w, lead = 0, z0 = z_seam - 1, z1 = case_h) translate([k[0] > 0 ? 0 : -case_w, k[1], 0]) rotate([90, 0, 90])
   linear_extrude(case_w) polygon([[-w / 2, z0], [w / 2, z0], [w / 2, z1 - lead], [w / 2 - lead, z1], [-w / 2 + lead, z1], [-w / 2, z1 - lead]]);
@@ -1162,78 +1161,62 @@ module end_cuts(sy) {
 // "make unibody main". One part instead of the island and the two decks (SHELL.md, "Rejected"): no wedge, lips, laps,
 // hooks or build bars; it goes on the tub over the tongue and the keys. Printed face down with Bambu Support For PLA as the
 // support interface, so its outside need not keep to `overhang`: the side rounds are true arcs.
-// The raised screen block is an island since 2026-10-26 (Alex, after a render of the band's long side meeting the side wall
-// through the side round: "can you make this slope inwards the way the slope towards the deck is"): at the screen's height
-// over the glass and 0.4 beyond it, with the DS Lite's slope on all four sides, and the area beside it at the ends' height.
-// (Until then it was a band from wall to wall, because J1, J2, J4, J5 and the speaker are tall near the sides; with the 3.5 in
-// panel the glass takes 27.25 of the 38.7 from the middle to the wall, the slope's run is 5.69, and what is left is the ends'
-// round, so the tall parts that can't go under the slope have EARS: the island runs out to the wall over J1 and J4 on the right
-// and over J2 on the left, `uni_ears`, as the old band did, with the slope across each ear's two ends.)
-// The slope is the DS Lite's lower screen frame in section ("make an exact copy of this curve structure and adapt it to our
-// purpose"), measured from nintendo_ds_bottom_base.stl: a sharp top edge, and from it ONE concave arc of radius 8.0 (rms 0.002
-// mm over its facets) that starts at 36 degrees off the flat and is tangent to the deck 4.70 out, 1.528 down (a 0.07 bead on
-// the edge is left out: it is under half a layer, and face down it would lie below the bed). Scaled uniformly to our step
-// (uni_k = step_d / 1.528): R 9.7, 5.7 out. The DS's plan corners (the frame is an island there, 31 from the side wall) are
-// the slope's offset with a radius that grows with the height, 0 at the foot to 1.45 at the top edge (x uni_k here): the
-// island is a loft through rounded rectangles, rings every 1.5 degrees of the arc. An ear is the old band's construction
-// (the ends' section, its side round lifted by the profile's height, swept along the case through the slope) cut off at the
-// ear's inner end, so the side round shows the same curve in the side view
+// The raised screen block is a band across the whole width (2026-10-25, Alex, after an x-ray showing that J1, J2,
+// J4, J5 and the speaker force a block out to the sides: "have the island extend fully to the left and right but try
+// to minimize its extension on the top and bottom"): at the screen's height from the left side wall to the right, so
+// the sides at the screen's height are the case's side profile (the round of face_r) and beyond the band the ends'.
+// Its two ends are the only edges, and each is the DS Lite's lower screen frame in section ("make an exact copy of
+// this curve structure and adapt it to our purpose"), measured from nintendo_ds_bottom_base.stl: a sharp top edge, and
+// from it ONE concave arc of radius 8.0 (rms 0.002 mm over its facets, on the right side, the left and the top)
+// that starts at 36 degrees off the flat and is tangent to the deck 4.70 out, 1.528 down (a 0.07 bead on the edge
+// is left out: it is under half a layer, and face down it would lie below the bed). Scaled uniformly to our step
+// (uni_k = step_d / 1.528 = 1.21): R 9.69, 5.69 out. The DS's plan corners (the frame is an island there, 31 from
+// the side wall) are the slope's offset with a radius that grows with the height, 0 at the foot to 1.45 at the top
+// edge; ours has no plan corners, the band runs out to the side walls, where the DS's own frame has nothing to copy
+// (its base is cut flat at the deck's level, the slope's foot at the cut): the section is carried out over the side
+// round unchanged (each slice of the step is the ends' side section lifted by the profile's height), so the same
+// curve shows in the side view and the step runs straight out and is cut by the case's side at both heights
 uni_ds_r = 8.0;  uni_ds_angle = 36;                      // the DS Lite's slope: its arc's radius, and its angle at the edge
 uni_ds_h = uni_ds_r * (1 - cos(uni_ds_angle));           // 1.528 (measured 1.523)
-uni_k = step_d / uni_ds_h;                               // the scale to ours
-uni_r = uni_ds_r * uni_k;                                // the arc's radius here
-uni_run = uni_r * sin(uni_ds_angle);                     // the slope's run, edge to foot
+uni_k = step_d / uni_ds_h;                               // the scale to ours (1.21)
+uni_r = uni_ds_r * uni_k;                                // the arc's radius here (9.69)
+uni_run = uni_r * sin(uni_ds_angle);                     // the slope's run, edge to foot (5.69)
 uni_skin = 0.7;           // the inside keeps this far under the slope (and under the ends' face over a pocket: below)
-uni_pocket_skin = 0.7;    // the ends' face over a pocket in their underside (J5's, U6's)
-// What sets the island: the panel's pocket (half its width 27.65, half its length 41.9): the top edge is 0.4 outside it, which
-// keeps the pocket's upper corner (0.8 under the face) 0.88 from the slope
-uni_edge_x = (panel_w + panel_fit) / 2 + 0.4;            // the top edge, from the middle, across the case (28.05)
-uni_edge = (panel_l + panel_fit) / 2 + 0.4;              // and along it (42.3)
-uni_foot_x = uni_edge_x + uni_run;  uni_foot = uni_edge + uni_run;     // 33.74, 47.99
-uni_corner_r = 1.45 * uni_k;                             // the plan corner's radius at the top edge (the DS Lite's 1.45)
+uni_pocket_skin = 0.75;   // the ends' face over a pocket in their underside (uni_limit's slab: 0.05 under uni_skin)
+// What sets the ends: the panel's pocket (half its length 30.13): the top edge is 0.4 outside it, as the last pass
+// had it, which keeps the pocket's upper corner (0.8 under the face) 0.88 from the slope. J4, the FPC's fold and the
+// rest of the board's tall parts no longer reach it: the slope is gentle, so the inside's ceiling is still z_ceil
+// until 2.0 past the edge, the foot is uni_run further out
+uni_edge = (panel_l + panel_fit) / 2 + 0.4;              // the top edge, from the middle (30.53)
+uni_foot = uni_edge + uni_run;                           // 36.22
 uni_s_n = 24;             // the slope's slices, every 1.5 degrees of the arc
 uni_arc_n = 36;           // the side rounds' levels (true quarter arcs, every 2.5 degrees)
 uni_x_r = case_w / 2 - face_r;                           // where the side rounds start (35.9)
-// The ears: [side, y0, y1], the flat top's extent along the wall, from the island's inner end `uni_ear_xa` (inside it) out
-// to the wall; the slope runs uni_run beyond each end. Right: J4's plug and J1 (the USB-C opening's wall); left: J2 and its plug
-uni_ear_xa = uni_edge_x - 8;
-uni_ears = [[1, -12.5, 8.0], [-1, 2.5, 7.5]];
 // the case's outside up to a face at H: the skirt down the back's round, the wall, a true quarter arc of face_r
 module uni_shell(H) rr_loft(concat(skirt_levels, [for (k = [0:uni_arc_n]) let(a = 90 * k / uni_arc_n) [H - face_r + face_r * sin(a), face_r * (1 - cos(a))]]));
 // the slope's height over the ends' face at t out from the top edge (the DS's arc, scaled), and its slices'
 // angles: from the edge (uni_ds_angle) to the foot (0)
 function uni_h(t) = t <= 0 ? step_d : t >= uni_run ? 0 : uni_r * (1 - cos(asin(sin(uni_ds_angle) - t / uni_r)));
-function uni_t_of(k) = uni_r * (sin(uni_ds_angle) - sin(uni_ds_angle * (1 - k / uni_s_n)));     // slice k's offset from the edge (0 at k 0)
-function uni_rho(t) = max(0.2, uni_corner_r * (1 - t / uni_run));      // the plan corner's radius at offset t
-// a rounded rectangle's ring of points (counter-clockwise, as rr_pts), half sizes hx, hy, corner radius r, at height z
-function uni_ring(hx, hy, r, z, n = 10) = [for (q = [0:3]) let(cx = (q == 0 || q == 3) ? hx - r : -(hx - r), cy = q < 2 ? hy - r : -(hy - r))
-  for (i = [0:n]) let(a = 90 * q + 90 * i / n) [cx + r * cos(a), cy + r * sin(a), z]];
-// the island: rings from the foot (a wall down into the ends' plate first) up the slope to the top edge, whose ring is the flat top
-module uni_island() loft(concat([uni_ring(uni_foot_x, uni_foot, uni_rho(uni_run), deck_face - 1)],
-  [for (k = [uni_s_n:-1:0]) let(t = uni_t_of(k)) uni_ring(uni_edge_x + t, uni_edge + t, uni_rho(t), deck_face + uni_h(t))]));
-// an ear's section (right side; the left is it turned over in x): from `xa` across the flat top and out over the round to the wall,
-// lifted by h; and the inside's (the round's offset, uni_in_r, instead)
-function uni_hsection(h, xa) = let(cz = deck_face - face_r + h, zb = deck_face - face_r - 1, n = 18)
-  concat([[xa, zb], [xa, cz + face_r]],
+// the ends' section (the side rounds and the flat between) lifted by h, out past the outline for the case's shell
+// to cut: each slice of the step
+function uni_section(h) = let(cz = deck_face - face_r + h, zb = deck_face - face_r - 1, n = 18)
+  concat([[-(uni_x_r + face_r + 0.5), zb]],
+         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + face_r * sin(a)), cz + face_r * cos(a)]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + face_r * sin(a), cz + face_r * cos(a)]],
          [[uni_x_r + face_r + 0.5, zb]]);
-// a slope going +y from y1, its slices swept through the section lifted by the profile
-module uni_eslope(y1, inner = false) loft_nc([for (k = [-1:uni_s_n]) let(ph = uni_ds_angle * (1 - max(k, 0) / uni_s_n),
-                                                                          t = k < 0 ? -0.02 : uni_r * (sin(uni_ds_angle) - sin(ph)),
-                                                                          h = k < 0 ? step_d : uni_h(t))
-  [for (p = inner ? uni_hisection(h, uni_ear_xa) : uni_hsection(h, uni_ear_xa)) [p[0], y1 + t, p[1]]]]);
-module uni_ear(y0, y1, inner = false) {
-  if (!inner) translate([uni_ear_xa, y0, z_bot - 1]) cube([case_w, y1 - y0, case_h - z_bot + 2]);
-  uni_eslope(y1 + (inner ? 0.003 : 0), inner);
-  translate([0, y0, 0]) mirror([0, 1, 0]) uni_eslope(inner ? 0.003 : 0, inner);
-}
+// (inner: the section of the inside's limit, uni_isection, instead of the outside's)
+module uni_slope(inner = false) loft_nc([for (k = [-1:uni_s_n]) let(ph = uni_ds_angle * (1 - max(k, 0) / uni_s_n),
+                                                                     t = k < 0 ? -0.02 : uni_r * (sin(uni_ds_angle) - sin(ph)),
+                                                                     h = k < 0 ? step_d : uni_h(t))
+  [for (p = inner ? uni_isection(h) : uni_section(h)) [p[0], uni_edge + t, p[1]]]]);
 module uni_outer() {
   uni_shell(deck_face);
   intersection() {
     uni_shell(case_h);
     union() {
-      uni_island();
-      for (e = uni_ears) scale([e[0], 1, 1]) uni_ear(e[1], e[2]);
+      translate([-case_w, -uni_edge, z_bot - 1]) cube([2 * case_w, 2 * uni_edge, case_h - z_bot + 2]);
+      uni_slope();
+      mirror([0, 1, 0]) uni_slope();
     }
   }
 }
@@ -1244,28 +1227,23 @@ uni_lim_phi = acos((deck_face + uni_r - case_h + uni_skin) / (uni_r + uni_skin))
 uni_limit_levels = concat([[z_seam - 2, 0]],
   [for (k = [0:uni_s_n]) let(p = uni_lim_phi * k / uni_s_n) [deck_face + uni_r - (uni_r + uni_skin) * cos(p), (uni_r + uni_skin) * sin(p)]],
   [[case_h - uni_skin, (uni_r + uni_skin) * sin(uni_lim_phi)]]);
-function uni_rho_in(e) = max(0.2, uni_corner_r * min(e, uni_run) / uni_run);      // the plan radius of the limit's ring e in from the foot
-module uni_island_limit() loft([for (l = uni_limit_levels) uni_ring(uni_foot_x - l[1], uni_foot - l[1], uni_rho_in(l[1]), l[0])]);
-module uni_ear_limit(y0, y1) loft([for (l = uni_limit_levels) let(g = uni_run - l[1])
-  [[uni_ear_xa, y0 - g, l[0]], [case_w, y0 - g, l[0]], [case_w, y1 + g, l[0]], [uni_ear_xa, y1 + g, l[0]]]]);
-// the inside's ceiling at p = [x, y]: the distance t out from the island's top edge (the island's rectangle and the ears', as the
-// plan's distance: conservative at the corners, where the radius cuts them) and the limit's arc; z_ceil under the flat top, the
-// ends' underside beyond the foot
-function uni_tdist(p) = min(rect_dist(p, [[-uni_edge_x, -uni_edge], [uni_edge_x, uni_edge]]),
-  min([for (e = uni_ears) rect_dist(p, e[0] > 0 ? [[uni_ear_xa, e[1]], [case_w, e[2]]] : [[-case_w, e[1]], [-uni_ear_xa, e[2]]])]));
-function uni_lim_d(d) = let(rs = uni_r + uni_skin, s = d / rs) s >= sin(uni_lim_phi) ? case_h - uni_skin : deck_face + uni_r - rs * sqrt(1 - s * s);
-function uni_ceil(p) = let(t = uni_tdist(p)) t >= uni_run ? z_deck_under : min(z_ceil, uni_lim_d(uni_run - t));
-// the least ceiling over a rectangle's corners, edge midpoints and centre
-function uni_ceil_box(r) = min([for (u = [0, 0.5, 1], v = [0, 0.5, 1]) uni_ceil([r[0][0] + u * (r[1][0] - r[0][0]), r[0][1] + v * (r[1][1] - r[0][1])])]);
-// the distance from a point [x or y from the middle, z] in the section to the island's outside (the face, the slope's arc), its top
-// edge at `edge` from the middle
-function uni_dist(p, edge = uni_edge) = let(y = abs(p[0]))
-  min(min([for (k = [0:200]) let(t = uni_run * k / 200) norm([edge + t - y, deck_face + uni_h(t) - p[1]])]), y < edge ? case_h - p[1] : 99);
+function uni_rect(inset, z) = let(y = uni_foot - inset, x = case_w) [[-x, -y, z], [x, -y, z], [x, y, z], [-x, y, z]];
+// the inside's ceiling at y from the middle, under the band (the limit's; z_ceil is the other)
+function uni_lim(y) = let(d = uni_foot - abs(y), rs = uni_r + uni_skin, s = d / rs)
+  d <= 0 ? deck_face - uni_skin : s >= sin(uni_lim_phi) ? case_h - uni_skin : deck_face + uni_r - rs * sqrt(1 - s * s);
+// the distance from a point [y from the middle, z] in the section to the band's outside (the face, the slope's arc)
+function uni_dist(p) = let(y = abs(p[0]))
+  min(min([for (k = [0:200]) let(t = uni_run * k / 200) norm([uni_edge + t - y, deck_face + uni_h(t) - p[1]])]), y < uni_edge ? case_h - p[1] : 99);
+// under the band the inside stays uni_skin under the slope and the face; elsewhere under the ends' face uni_pocket_skin
+module uni_limit() {
+  translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_pocket_skin - z_seam + 2]);
+  loft_nc([for (l = uni_limit_levels) uni_rect(l[1], l[0])]);
+}
 // The inside under the side rounds (2026-10-25): the ends' round (face_r) keeps uni_skin of plastic square to the
 // surface, so the inside's upper outer corner (the hollow's wall at the inner outline, 2.0 in, and its ceiling) was
-// 0.56 to 0.59 under it where the slope's ceiling meets the round. The inside is cut by the round's offset: the same arcs'
-// centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is the ends' round all along the case,
-// the island's inside (which the walls don't reach), and each ear's, swept through the slope lifted. It reaches down
+// 0.56 to 0.59 under it where the slope's ceiling meets the round (y 33 to 35, 0.58). The inside is cut by the round's
+// offset: the same arcs' centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is a
+// slab of those sections: the band's, the slope's two sides, and the ends' beyond the foot. It reaches down
 // past the seam so it cuts nothing but the inside's top
 uni_in_r = face_r - uni_skin - 0.01;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs)
 function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
@@ -1273,15 +1251,11 @@ function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n =
          [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + uni_in_r * sin(a)), cz + uni_in_r * cos(a)]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + uni_in_r * sin(a), cz + uni_in_r * cos(a)]],
          [[x, zb]]);
-function uni_hisection(h, xa) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
-  concat([[xa, zb], [xa, cz + uni_in_r]], [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + uni_in_r * sin(a), cz + uni_in_r * cos(a)]], [[x, zb]]);
 module uni_in_limit() {
-  rotate([90, 0, 0]) linear_extrude(case_l + 2, center = true) polygon(uni_isection(0));
-  translate([-(uni_foot_x + 1), -(uni_foot + 1), z_seam - 2]) cube([2 * (uni_foot_x + 1), 2 * (uni_foot + 1), case_h]);
-  for (e = uni_ears) scale([e[0], 1, 1]) {
-    translate([0, e[2], 0]) rotate([90, 0, 0]) linear_extrude(e[2] - e[1]) polygon(uni_hisection(step_d, uni_ear_xa));
-    uni_ear(e[1], e[2], inner = true);
-  }
+  rotate([90, 0, 0]) linear_extrude(2 * uni_edge, center = true) polygon(uni_isection(step_d));
+  translate([0, 0.003, 0]) uni_slope(inner = true);      // (0.003 off uni_limit's loft, which ends at the same foot)
+  mirror([0, 1, 0]) translate([0, 0.003, 0]) uni_slope(inner = true);
+  for (m = [0, 1]) mirror([0, m, 0]) translate([0, case_l, 0]) rotate([90, 0, 0]) linear_extrude(case_l - uni_foot + 0.01) polygon(uni_isection(0));
 }
 // The skirts' groove round the ends (2026-10-25): its upper outer corner stood 0.47 under the round (the skirt is
 // skirt_t thick horizontally, and the round is 43 degrees there). The tub's tongue there has the chamfer core_lead (0.45)
@@ -1311,27 +1285,34 @@ if (!tune) for (l = uni_groove_levels(z_deck_tongue)) {
 // the distance from a point [x from the middle, z] in the section where the surface's face is at H, to the side round
 // (and to the flat face above the round's start)
 function uni_rskin(x, z, H) = x <= uni_x_r ? H - z : z >= H - face_r ? face_r - norm([x - uni_x_r, z - (H - face_r)]) : case_w / 2 - x;
-// the pockets in the ends' underside (up to uni_pocket_skin under their face, 0.5 round the part): U6 (1.75 tall: 0.15 under
-// the ends' underside without it) in seat 1's spine between the clusters, and J5 (2.9 tall) in the left strip
-u6_pos = [-3.2, -55.0];
+// the pocket in the ends' underside over U6 (1.75 tall: 0.15 under the ends' underside without it), up to
+// uni_pocket_skin under their face, 0.5 round it (seat 1's end: U6 is at y -39.4 .. -33.4, in the spine between the clusters)
+u6_pos = [-3.2, -55.0];                                  // U6 beside U8 in seat 1's spine (placement.py)
 u6_box = [u6_pos + [-2.45, -3.0], u6_pos + [2.45, 3.0]];
-j5_box = [[-34.6, -7.5], [-29.7, -2.5]];                // J5's model box (placement.py), mouth to the left wall
-uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]],
-               [[j5_box[0][0] - 0.5, j5_box[0][1] - 0.5], [j5_box[1][0] + 0.5, j5_box[1][1] + 0.5]]];
+uni_pockets = [[[u6_box[0][0] - 0.5, u6_box[0][1] - 0.5], [u6_box[1][0] + 0.5, u6_box[1][1] + 0.5]]];
 module uni_cavity() intersection() {
   union() {
-    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the ends' face, everywhere
+    translate([0, 0, z_seam - 1]) linear_extrude(z_deck_under - z_seam + 1) inner2d();     // under the ends' face
     intersection() {
-      translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) inner2d();         // under the island and the ears, up to their ceiling
-      union() { uni_island_limit(); for (e = uni_ears) scale([e[0], 1, 1]) uni_ear_limit(e[1], e[2]); }
-    }
-    intersection() {                                                                         // the pockets, to the ends' face less the skin
-      union() for (p = uni_pockets) translate([p[0][0], p[0][1], z_seam - 1]) cube([p[1][0] - p[0][0], p[1][1] - p[0][1], deck_face - z_seam + 1]);
-      translate([-case_w, -case_l, z_seam - 2]) cube([2 * case_w, 2 * case_l, deck_face - uni_pocket_skin - z_seam + 2]);
+      union() {
+        translate([0, 0, z_seam - 1]) linear_extrude(z_ceil - z_seam + 1) intersection() {   // under the band (0.05 in: off its foot)
+          inner2d(); square([2 * case_w, 2 * (uni_foot - 0.05)], center = true);
+        }
+        for (p = uni_pockets) translate([p[0][0], p[0][1], z_seam - 1]) cube([p[1][0] - p[0][0], p[1][1] - p[0][1], deck_face - z_seam + 1]);
+      }
+      uni_limit();
     }
   }
   uni_in_limit();
 }
+
+// the band is the whole width: no side edges, no ears (the island of 2026-10-26 with the slope on all four sides was reverted the same day)
+j5_box = [[-34.6, -7.5], [-29.7, -2.5]];                // J5's model box (placement.py), mouth to the left wall
+uni_edge_x = case_w;  uni_ears = [];  uni_ear_xa = 0;  uni_corner_r = 0;
+// the inside's ceiling at p = [x, y]: z_ceil under the band, the limit's arc under the slope, the ends' underside beyond the foot
+function uni_ceil(p) = abs(p[1]) >= uni_foot ? z_deck_under : min(z_ceil, uni_lim(p[1]));
+// the least ceiling over a rectangle's corners, edge midpoints and centre
+function uni_ceil_box(r) = min([for (u = [0, 0.5, 1], v = [0, 0.5, 1]) uni_ceil([r[0][0] + u * (r[1][0] - r[0][0]), r[0][1] + v * (r[1][1] - r[0][1])])]);
 module top() difference() {
   union() {
     difference() {
@@ -1349,28 +1330,26 @@ module top() difference() {
 }
 // its checks: the pocket's upper corner and the side screws' pilots 0.7 from the outside, the board's tall parts (their
 // 3D models' boxes, check_fit.py) 0.3 under the inside's limit (positions.json's own margin under a ceiling), the
-// grille in the island's face or the ear's, the side screws under it, U6 and J5 in their pockets, the buttons' wells clear of the foot
+// grille in the band's flat face, the side screws under it, U6 in its pocket, the buttons' wells clear of the foot
 if (!tune) {   // (the fit kit's tuning slices move the ends' face, and with it the slope: they skip these)
   assert(abs(uni_h(0) - step_d) < 1e-6 && abs(uni_h(uni_run)) < 1e-6, "the slope's profile");
-  assert(uni_dist([(panel_l + panel_fit) / 2, case_h - face_t]) >= uni_skin, "the skin over the panel's pocket's end is too thin");
-  assert(uni_dist([(panel_w + panel_fit) / 2, case_h - face_t], uni_edge_x) >= uni_skin, "the skin over the panel's pocket's side is too thin");
-  assert(uni_ceil_box(j4_body) - (z_top_cu + j4_h) >= 0.3 && uni_ceil_box(j4_plug) - (z_top_cu + j4_h - 0.2) >= 0.3, "J4 or its plug isn't under the ear");
+  assert(uni_dist([(panel_l + panel_fit) / 2, case_h - face_t]) >= uni_skin, "the skin over the panel's pocket's edge is too thin");
+  assert(uni_ceil_box(j4_body) - (z_top_cu + j4_h) >= 0.3 && uni_ceil_box(j4_plug) - (z_top_cu + j4_h - 0.2) >= 0.3, "J4 or its plug isn't under the band");
   assert(uni_ceil_box([[j2_pos[0] - 3.85, j2_pos[1] - 2.6], [j2_pos[0] + 3.85, j2_pos[1] + 2.6]]) - (z_top_cu + j2_h) >= 0.3
-         && uni_ceil_box(j2_plug) - (z_top_cu + j2_h - 0.2) >= 0.3, "J2 or its plug isn't under the ear");
-  assert(uni_ceil_box([[usb_front - 8.0, usb_y - 4.5], [usb_front, usb_y + 5.0]]) - (z_top_cu + usb_h) >= 0.3, "J1 isn't under the ear");
-  assert(min([for (u = [0, 0.5, 1], v = [0, 0.5, 1]) max(uni_ceil([j5_box[0][0] + u * (j5_box[1][0] - j5_box[0][0]), j5_box[0][1] + v * (j5_box[1][1] - j5_box[0][1])]), deck_face - uni_pocket_skin)]) - (z_top_cu + debug_h) >= 0.3 - 1e-3, "J5 isn't under the slope or its pocket");
-  assert(min([for (u = [-1, 1]) uni_ceil([u * fpc_neck[1] / 2 + fpc_neck[0], fpc_y(-1.5) - 0.3])]) - (z_glass + 0.5) >= 0.3, "the FPC's fold isn't under the island");   // the fold's outer reach, 1.5 past the glass
-  assert(spk_top_over >= 0 && uni_ceil([grille_x[0], spk_pos[1]]) - (z_top_cu + spk_top_over) >= 0.5, "the speaker's top is too near the ceiling under its grille");
+         && uni_ceil_box(j2_plug) - (z_top_cu + j2_h - 0.2) >= 0.3, "J2 or its plug isn't under the band");
+  assert(uni_ceil_box([[usb_front - 8.0, usb_y - 4.5], [usb_front, usb_y + 5.0]]) - (z_top_cu + usb_h) >= 0.3, "J1 isn't under the band");
+  assert(uni_ceil_box(j5_box) - (z_top_cu + debug_h) >= 0.3, "J5 isn't under the band");
+  assert(min(z_ceil, uni_lim(fpc_y(-1.5) - 0.3)) - (z_glass + 0.5) >= 0.3, "the FPC's fold isn't under the band");   // the fold's outer reach, 1.5 past the glass
+  assert(spk_top_over >= 0 && z_ceil - (z_top_cu + spk_top_over) >= 0.5, "the speaker's top is too near the ceiling under its grille");
+  assert(grille_x[1] <= uni_x_r - 0.1 && max([for (y = [spk_pos[1] - spk[1] / 2, spk_pos[1] + spk[1] / 2]) abs(y)]) <= uni_edge - 1, "the speaker's grille isn't in the band's flat face");
   for (s = side_pins) {
-    // the pilot's top stays uni_skin under the face over it (the island's slope or the ends' face) at its far side
-    assert(deck_face + uni_h(uni_tdist(s) + screw_pilot / 2) - (z_top_cu + side_engage) >= uni_skin, "a side screw's pilot is too near the outside");
+    assert(abs(s[0]) + screw_pilot / 2 + 1.0 <= uni_x_r && uni_dist([abs(s[1]) + screw_pilot / 2, case_h - 0.8]) >= uni_skin, "a side screw's pilot is too near the band's outside");
   }
-  assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3, "no room for U6 in its pocket");
-  assert(deck_face - uni_pocket_skin - (z_top_cu + debug_h) >= 0.3 - 1e-6, "no room for J5 in its pocket");
+  assert(deck_face - uni_pocket_skin - (z_top_cu + 1.75) >= 0.3 && uni_pocket_skin >= uni_skin, "no room for U6 in its pocket");
   // the inside's upper outer corner (the hollow's wall at the inner outline, up to its ceiling or the round's offset,
-  // whichever is lower) keeps uni_skin square to the side round, along the ends' round and each ear's slope
+  // whichever is lower) keeps uni_skin square to the side round, along the slope and under the band
   for (k = [0:uni_s_n]) let(t = uni_run * k / uni_s_n, h = uni_h(t), H = deck_face + h, xw = case_w / 2 - wall,
-      zc = min(min(z_ceil, uni_lim_d(uni_run - t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
+      zc = min(min(z_ceil, uni_lim(uni_edge + t)), H - face_r + sqrt(max(0, uni_in_r * uni_in_r - pow(xw - uni_x_r, 2)))))
     assert(uni_rskin(xw, zc, H) >= uni_skin - 1e-3, "the inside's corner is too near the side round");
 }
 

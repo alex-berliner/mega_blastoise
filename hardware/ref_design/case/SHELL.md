@@ -8,6 +8,36 @@ The top replaced the island and the two decks of 2026-10-23 on 2026-10-25 (Alex:
 go uni body for the top and print with pla support material"). Those, and everything built round them, are under
 "Rejected" below and in full in [SHELL_ISLAND.md](SHELL_ISLAND.md) (this file as it stood the day before).
 
+## 2026-10-26: the 3.5 in panel (this section wins over the numbers below, which are the 2.4 in case's)
+
+Alex: "do everything you need to get a 3mf ready with the ER-TFT035IPS-6", optimising cost, minimal bezel and minimal height. (An island with the
+DS Lite's slope on all four sides and ears over the tall side parts was built the same day and **reverted** on Alex's word: "Revert the side slope
+change", "the asymmetry doesn't look good". The screen block is the full-width band of the 2.4 in case again.)
+
+| | 2026-10-25 (2.4 in) | now (3.5 in) |
+|---|---|---|
+| Outside | 77.4 x 132.7 | **77.4 x 156.64** |
+| Thickness | 9.55 at the screen, 7.7 at the ends | **9.6** (the panel's 2.45), 7.7 |
+| Board | 72.4 x 127.7, a 54 x 37 hole | **72.4 x 151.64**, a 54 x 37 hole under the glass and an 11 x 16 hole for the speaker |
+| Panel | 42.72 x 59.46 | 54.50 x 83.00 (active area 48.96 x 73.44, the old design's numbers, unverified) |
+
+The case is as wide as before because the buttons' clusters set 75.4 and the strips beside the 54.5 mm glass hold J1, J2 and J4 (a PicoBlade is 7.65 across
+and 5.2 deep, its plug 4 mm more). The length is the glass, the DS Lite slope's run (5.85 at the 1.9 step) and the clusters (`piece_to_glass` 5.2).
+The band runs wall to wall at the screen's height, so J1, J2, J4 and J5 stand under it as before; the **speaker** lies sunk in its own hole in the board
+(its seat 0.9 in the tub's floor, like the cell), half under the glass, its grille in the band's flat face; the **panel frame** has notches where J2 and
+J4 stand beside it; the four side screws stand at the glass's corners (x +-32.5, y +-40). `check_fit.py` takes the band's ceiling and lets parts up
+to 1.05 mm lie under the FPC's body; `check_wall.py` follows the band (slope 0.708, sides and ends 0.669 / 0.670, 3D 0.665).
+
+**Symmetry** (checked on the printed mesh: `images/outside_top.png`, the outer face's height compared with its mirror image): across the case, the
+band, its two slopes, the side rounds and the decks are identical left and right, and the two ends are identical end for end (the buttons are
+seat 1's turned 180 degrees, D-pad left and A/B/X/Y right for each player, as a DS Lite's; mirrored left to right they would put the D-pad on the
+right for seat 2). What is not symmetric: the screen window, which is the glass's active area, 2.28 mm towards seat 2 on the glass (bezel 43.9 and 39.3
+along the case, 14.2 each side across it); the speaker's grille and the two pinholes, the USB-C opening (right wall), all by design.
+
+**Bezels** (case edge to active area, window edge to active area, window edge to case edge; the window is the active area and 1.0 more all round):
+across the case 14.22 / 1.0 / 13.22 each side; along it 43.88 / 1.0 / 42.88 at seat 1's end and 39.32 / 1.0 / 38.32 at seat 2's. Before and after:
+`images/before_outside_*.png` (the 2.4 in case) and `images/outside_*.png`.
+
 ![outside, from the front](images/outside_front.png)
 ![outside, from the back](images/outside_back.png)
 
