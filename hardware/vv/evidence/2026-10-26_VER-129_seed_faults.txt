@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-26
-COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+COMMIT: 1bc504be71c233f895251d5ba36a2db7b00f618e
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -46,6 +46,10 @@ ok  structure O-R5: a defect with no Gate
 ok  gate      O-R5: a CASE defect moved to the order gate blocks it
 ok  structure O-R8: occurrence 3 with no 'Similar:'
 ok  structure F-R14: a live check cites a RETIRED row
+ok  structure round 2 (O): an ORDER check that no step of PLAN.md section (d) names
+ok  structure round 2 (F): a requirement whose only check moved to a later phase
+ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
+ok  structure round 2 (F): detection rating 2 on a single 'detects' check
 ok      clean clone exits 0
 ok  structure row result disagrees with its evidence (git)
 ok  report    evidence past its valid_days (git)
@@ -69,7 +73,11 @@ ok  gate      O-R13: a design commit on the order branch after the baseline (git
 ok  structure O-R21: a change record that omits a bench test of the changed part (git)
 ok  dn        O-R1: a comment in fab.py does not pass the CPL or drill check (git)
 ok  dn        O-R14: a back-side test point next to the cell's hole fails th1 (git)
-63 seeded faults, 63 caught
+ok  structure round 2 (O): an approval signed by another key in the allowed-signers file (git)
+ok  structure round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it (git)
+ok  dn        round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing (git)
+ok  gate      R8: a case.scad commit on the order branch holds the case gate (git)
+71 seeded faults, 71 caught
 RESULT: PASS
 
 exit 0
