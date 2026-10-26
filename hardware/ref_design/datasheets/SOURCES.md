@@ -1,7 +1,7 @@
 # Datasheet sources
 
-The PDFs are not committed (see `../.gitignore`). Download them here to work on
-the design; the file names below are what the notes and tools refer to.
+The PDFs are committed. The `.txt` copies are not: make them with `pdftotext -layout x.pdf x.txt`.
+The file names below are what the notes and tools refer to; the source column is where each PDF came from.
 
 | File | Part | Source |
 |---|---|---|

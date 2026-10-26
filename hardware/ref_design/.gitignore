@@ -1,5 +1,4 @@
-# vendor datasheets are not ours to redistribute: datasheets/SOURCES.md says where each comes from
-datasheets/*.pdf
+# datasheet PDFs are committed (Alex, 2026-10-26); the .txt copies are pdftotext output, so they come back from the PDFs
 datasheets/*.txt
 datasheets/*.png
 !datasheets/RPI-RP2350B-MINIMAL_LICENSE.txt
