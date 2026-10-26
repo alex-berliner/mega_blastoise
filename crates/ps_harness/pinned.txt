@@ -221,3 +221,4 @@
 # lane entries (0, 42, 137, 999) name no slip and stay as they were;
 # G3-M1's four (114, 190, 9, 253) still catch theirs.
 1 wide 1000020  # G1-1 `immune to status` debug (G3-7: 85 and 194 no longer caught it)
+3 wide 15883478  # G3-7d transformInto names a copied Hidden Power slot `Hidden Power TYPE` (Disable's -start prints the slot name)
