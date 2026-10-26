@@ -22,8 +22,21 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
 import scad  # noqa: E402
 
-SLOPE_MIN, DECK_MIN, MESH_MIN = 0.699, 0.66, 0.62   # the slope and band (y within 35.2 of the middle); the ends' sides and ends; the 3D check (its points are 0.1 apart)
-SLOPE_Y = 35.2                        # where the core grooves start (tongue_y - tongue_y_fit)
+import json
+import re
+
+SLOPE_MIN, DECK_MIN, MESH_MIN = 0.699, 0.66, 0.62   # under an ear's lifted round; the sides and the ends' round; the 3D check (its points are 0.1 apart)
+POS = json.load(open(os.path.join(HERE, "positions.json")))
+CASE_W, CASE_L = POS["case"]["w"], POS["case"]["l"]
+SRC = open(os.path.join(HERE, "case.scad")).read()
+RUN = 5.85                            # the slope's run (case.scad uni_run, 5.85 with the 3.5 in panel's 9.6 mm face)
+EARS = [[float(v) for v in e.split(",")] for e in re.search(r"uni_ears = \[\[(.*?)\]\];", SRC).group(1).split("], [")]   # [side, y0, y1]
+END_Y = CASE_L / 2 - 3.35             # where the ends' round starts (63.0 on the 133 mm case)
+
+
+def in_ear(y, side):
+    """Is the side wall at y under an ear's flat top or its slope (the lifted round)?"""
+    return any(e[0] == side and e[1] - RUN - 0.5 <= y <= e[2] + RUN + 0.5 for e in EARS)
 
 
 def sections(m, positions, axis=1):
@@ -77,16 +90,25 @@ def mesh_min(m):
         if r.returncode or "ERROR" in r.stderr:
             sys.exit(r.stderr[-1500:])
         outer = trimesh.load(stl)
-    region = lambda p: (p[:, 2] > 4.5) & ((np.abs(p[:, 0]) > 34) | (np.abs(p[:, 1]) > 60))
+    region = lambda p: (p[:, 2] > 4.5) & ((np.abs(p[:, 0]) > 34) | (np.abs(p[:, 1]) > CASE_L / 2 - 6.3))
     op = trimesh.sample.sample_surface(outer, 4000000, seed=1)[0]
     op = op[region(op)]
     tp = trimesh.sample.sample_surface(m, 4000000, seed=2)[0]
     tp = tp[region(tp)]
     inner = tp[cKDTree(op).query(tp)[0] >= 0.2]          # not on the outside
     usb = (op[:, 0] > 36) & (op[:, 1] > -6) & (op[:, 1] < 10)
-    o = op[(op[:, 2] > 4.95) & ((np.abs(op[:, 0]) > 35.95) | (np.abs(op[:, 1]) > 63.6)) & ~usb]
+    o = op[(op[:, 2] > 4.95) & ((np.abs(op[:, 0]) > CASE_W / 2 - 2.75) | (np.abs(op[:, 1]) > CASE_L / 2 - 2.75)) & ~usb]
     d = cKDTree(inner).query(o)[0]
-    return float(d.min()), tuple(o[d.argmin()].round(2))
+    # the island's slopes (all four sides and the ears'): the outside above the ends' face, beyond the panel's pocket, clear of the
+    # speaker's grille, the pinholes and the USB-C opening
+    gx0, gx1 = [float(v) for v in re.search(r"grille_x = \[([-\d.]+), ([-\d.]+)\]", SRC).group(1, 2)]
+    spk = POS["speaker"]["c"]
+    pins = [(p[0] - 100, 100 - p[1]) for p in POS["pinholes"]]
+    isl = op[(op[:, 2] > 7.78) & ((np.abs(op[:, 0]) > 28.1) | (np.abs(op[:, 1]) > 42.4)) & (np.abs(op[:, 0]) < 35.5) & ~usb
+             & ~((op[:, 0] > gx0 - 1) & (op[:, 0] < gx1 + 1) & (np.abs(op[:, 1] - (100 - spk[1])) < 8.5)) 
+             & ~np.any([np.hypot(op[:, 0] - px, op[:, 1] - py) < 2.5 for px, py in pins], axis=0)]
+    ds = cKDTree(inner).query(isl)[0]
+    return float(d.min()), tuple(o[d.argmin()].round(2)), float(ds.min()), tuple(isl[ds.argmin()].round(2))
 
 
 def main():
@@ -102,26 +124,28 @@ def main():
     ym = np.floor(m.bounds[1][1] - 0.3)
     for y, p in sections(m, np.arange(-ym, ym + 1e-9, 1.0)):
         for side in (1, -1):
-            if side == 1 and -4 <= y <= 8:
+            if side == 1 and POS["usb"]["y"] and abs(y - (100 - POS["usb"]["y"])) <= 6:
                 continue
             ws = list(round_walls(p, side))
             if ws:
                 d, x, z = min(ws)
-                k = "slope" if abs(y) < SLOPE_Y else "sides"
+                k = "slope" if in_ear(y, side) else "sides"
                 if d < low[k][0]:
                     low[k] = (d, (y, side, round(x, 2), round(z, 2)))
     # the ends: sections across the case at x -20 to 20 (the plan corners are further out), the end rounds from y 63
     for x, p in sections(m, np.arange(-20, 20.1, 5.0), axis=0):
         for side in (1, -1):
-            ws = list(round_walls(p, side, start=63.0))
+            ws = list(round_walls(p, side, start=END_Y))
             if ws:
                 d, y, z = min(ws)
                 if d < low["ends"][0]:
                     low["ends"] = (d, (x, side, round(y, 2), round(z, 2)))
-    low["3d"] = mesh_min(m)
-    for k, floor in (("slope", SLOPE_MIN), ("sides", DECK_MIN), ("ends", DECK_MIN), ("3d", MESH_MIN)):
+    r = mesh_min(m)
+    low["3d"] = r[:2]
+    low["island"] = r[2:]
+    for k, floor in (("slope", SLOPE_MIN), ("sides", DECK_MIN), ("ends", DECK_MIN), ("3d", MESH_MIN), ("island", MESH_MIN)):
         print(f"{k:6s} min {low[k][0]:.3f} at (y or x, side, x or y, z) {low[k][1]}  (needs {floor})")
-    if low["slope"][0] < SLOPE_MIN or min(low["sides"][0], low["ends"][0]) < DECK_MIN or low["3d"][0] < MESH_MIN:
+    if low["slope"][0] < SLOPE_MIN or min(low["sides"][0], low["ends"][0]) < DECK_MIN or low["3d"][0] < MESH_MIN or low["island"][0] < MESH_MIN:
         sys.exit("FAIL: the wall under a side round is thinner than it was")
 
 

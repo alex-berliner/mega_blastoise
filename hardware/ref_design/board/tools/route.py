@@ -1576,7 +1576,8 @@ def main():
     contacts = contact_stubs(board)
     dome_stubs(board)
     fpc_ground_bar(board)
-    usb_pair(board)
+    if os.environ.get("ROUTE_USB_PAIR") == "1":    # the hand-drawn pair fits the 2.4 in layout (J1 beside the hole); the 3.5 in one leaves it to Freerouting
+        usb_pair(board)
     usb_shell_ground(board)
     fanout(board)
     known = freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)

@@ -858,7 +858,7 @@ module tongue() {
 // side: they locate the top along the case and hold its skirt out on the tongue. [side, y]; clear of the USB-C notch and
 // the grip ribs
 keys = [[1, 21], [1, -18], [-1, -21], [-1, 18]];   // the left ones the right ones turned round (2026-10-24)
-key_w = 5.0;  key_h = 1.1;  key_lead = 0.5;
+key_w = 5.0;  key_h = 0.3;  key_lead = 0.25;
 z_key = z_arm_tongue + key_h;
 module key_span(k, w, lead = 0, z0 = z_seam - 1, z1 = case_h) translate([k[0] > 0 ? 0 : -case_w, k[1], 0]) rotate([90, 0, 90])
   linear_extrude(case_w) polygon([[-w / 2, z0], [w / 2, z0], [w / 2, z1 - lead], [w / 2 - lead, z1], [-w / 2 + lead, z1], [-w / 2, z1 - lead]]);
