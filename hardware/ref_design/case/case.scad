@@ -117,9 +117,10 @@ cap_hole_d = 8.0;  pocket_d = 9.2;                      // deck: hole (the facep
 cap_chamfer = 0.6;                                      // 45 degree chamfer round each hole at the face (faceplate)
 lip_t = 1.6;                                            // the face down to the A/B/X/Y flanges' tops (faceplate 1.60;
                                                         // Pi Tin 1.65; was 1.16)
-dpad_gap = 0.65;          // D-pad opening past the cross each side: 0.5 (the faceplate's 18.80 x 6.90 opening) was
+dpad_gap = 0.60;          // D-pad opening past the cross each side: 0.5 (the faceplate's 18.80 x 6.90 opening) was
                           // too tight for Alex's AliExpress D-pad in the first print, 0.8 too loose in the next
-                          // (Alex, 2026-10-21), so halfway (tune: tune_openings, 0.55 / 0.65 / 0.75).
+                          // (Alex, 2026-10-21), so halfway: 0.65. 2026-10-26 (Alex: "tighten the wells on the dpad a very
+                          // small amount"): 0.60, 0.05 tighter each side (tune: tune_openings, 0.55 / 0.65 / 0.75).
                           // GUESS (Alex, 2026-10-21: best guess until 6_tests)
 dpad_chamfer = 0.8;       // 45 degree chamfer round the D-pad's opening (faceplate)
 dpad_pocket_gap = 0.5;    // its flange's pocket past the flange (0.35 bound with the cross; the faceplate's is 0.25)
