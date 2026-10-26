@@ -110,6 +110,7 @@ What else the re-run finds, new or changed at be437f8:
 | The 18-bit redraw | the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 92 ms at 40 MHz, 184 ms at 20 MHz | DF-180 (H), REQ-DSP-11, DEC-13 |
 | The panel's mechanics are estimates | its outline, active area, thickness and FPC shape are the old 3.5 in design's (its datasheet could not be downloaded on 2026-10-26); they set J3's place | DF-61, DF-123, VER-136, VER-152 |
 | A hand edit in the board file | one GND via moved 0.08 mm by hand; the next build_pcb run undoes it | (h); VER-143 must rebuild and re-run DRC |
+| The order branch moved | 2ddb7fe (2026-10-26 16:48), after be437f8, engraves button labels 0.3 mm deep on the top's inside: case.scad only, no board file | R8 now holds the case gate, not the board order; VER-113 and VER-07 re-check it before the case release |
 | Swelling room | 0.80 mm under the panel's back (0.30 under a deck at 684a609): passes | VER-182 PASS, DEF-51 CLOSED |
 | Screws | M2 x 6 gives 3.2 mm of thread in the side pilots (want 4.0; M2 x 7 passes, its tip 0.8 mm short) and 3.2 mm of the end pilots' 3.30 (ok) | VER-147 FAIL, DEF-31, DEC-18 |
 | Unchanged | cutoff 3.521 V at the worst corner (VER-138 FAIL); VBUS fault reach 6.9 V (VER-177 FAIL); bom.md's domes and Start/Select caps (VER-167 FAIL); TH1 0.80 mm from the hole's edge, no back pad within 1 mm (nearest TP3, 5.5 mm: VER-164 PASS); nearest MLCC C53, 11.40 mm from H5 (VER-142 PASS); every hole 0.30 mm or more (VER-114 PASS); VBUS 10 uF (VER-99 PASS) | as named |
@@ -402,7 +403,44 @@ here; where a fix is partial or the objection did not hold, the row says why.
 
 ## (i) The gate today
 
-GATE_TODAY
+At 0c1571a (2026-10-26), whose evidence was made at 807d0e0 (the scripted checks) and 1bc504b (VER-129):
+requirements 133 (130 PROPOSED, 3 RETIRED); DFMEA rows 181 (148 live: 54 H, 68 M, 26 L; 33
+RETIRED); checks 183 (14 PASS, 11 FAIL, 51 NOT_RUN, 99 NOT_BUILT, 5 CUT, 3 RETIRED); defects
+57 (24 OPEN, 20 FIXED, 6 CLOSED, 7 RETIRED); seeded faults 71 of 71 caught (VER-129: 45 on a
+copy of the register, 26 in a scratch clone with signed commits, three of them design_numbers.py
+runs).
+
+```
+$ python3 hardware/vv/tools/check_trace.py
+STRUCTURE: OK (5 warnings)
+  approvals by Alex: 0 counted (signed), 0 pending; commit signing not set up, so none can
+  count yet; README.md pins no signing key
+  order branch: ref-design-35in has design commits after be437f8: 2ddb7fe ref_design case:
+  button labels engraved 0.3 deep on the top's inside
+  design baseline: matches HEAD
+  warnings: the order branch's case commit; the pass bands of VER-67, VER-88, VER-134 and
+  VER-139 are 1.4-2.2 x their DMM's accuracy (want 4 x)
+exit 0
+
+$ python3 hardware/vv/tools/check_trace.py --gate order
+  PASS  G-ORD-24 (VER-129), R5, R6 (no release yet), R7, R8 (board files)
+  INFO  G-ORD-05, G-ORD-08, G-ORD-12, G-ORD-20, G-ORD-26 (advisory, four of them moved);
+        RETIRED G-ORD-13; N/A G-ORD-25 (prod_board)
+  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06, G-ORD-07, G-ORD-09 to G-ORD-11, G-ORD-14 to G-ORD-19,
+        G-ORD-21, G-ORD-23 (the FAILs among them: VER-18 edges, VER-131 drill, VER-176 CPL,
+        VER-181 the cell's gap, VER-137 backlight, VER-138 cutoff, VER-177 VBUS)
+  FAIL  G-ORD-22: 45 ORDER checks not passing (it was 67)
+  FAIL  R1 127 PROPOSED; R2 42 requirements with an ORDER check not passing;
+        R3 53 H rows neither accepted nor DONE; R4 18 OPEN defects with Gate ORDER
+RESULT: FAIL (22 of 27 not met); 1 N/A, 5 advisory, 1 retired
+```
+
+The case gate fails 11 of 14 (R8 among them: 2ddb7fe's engraved labels are a case.scad change
+after be437f8, to re-check with VER-113 and VER-07 before the case release), EVT 19 of 22, DVT
+10 of 13, PVT 10 of 13, and prod_board's order gate 5 of 7 (24 criteria N/A). The checks that
+pass: the netlist, the pin gate, ERC, DRC with parity, both 4-ring contact footprints, inrush,
+holes, the MLCC keep-out, TH1's geometry, swelling room (new), two inspections (VER-104,
+VER-124) and the seeded faults (VER-129).
 
 ## (j) Past bugs and what catches them
 
