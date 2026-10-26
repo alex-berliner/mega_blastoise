@@ -15,22 +15,31 @@ part change in design.py makes the evidence stale through the row's part: covers
   cutoff     VER-138  where the 3.50 V cutoff fires after the gain calibration pinmap.md describes
   screws     VER-147  M2 screw engagement in the case's pilots
   mlcc       VER-142  MLCCs against the case's screw bosses (pcbnew)
-  th1        VER-164  TH1 against the cell's hole; bare copper facing the cell
-  cpl        VER-176  CPL position (footprint origin) against the pads' centre (pcbnew)
-  drill      VER-131  plated and unplated holes in separate drill files
+  th1        VER-164  TH1 against the cell's hole; bare copper facing the cell (pcbnew)
+  cellgap    VER-181  the pushed cell's end to the routed FR4 edge, after tolerances
+  cpl        VER-176  the CPL fab.py writes against each footprint's pads' centre (pcbnew)
+  drill      VER-131  the drill files fab.py writes: plated and unplated apart, every hole placed
   vbus       VER-177  the lowest VBUS that over-stresses a part (a faulty source)
   bom        VER-167  every contact class has its bought parts in docs/bom.md
   holes      VER-114  every drilled hole 0.30 mm or larger (pcbnew)
-  swell      VER-20   free height above a worst-case cell, under the deck and the panel (part of VER-20)
+  swell      VER-182  free height above a worst-case cell, under the deck and the panel
 
-Python 3 standard library, plus pcbnew for mlcc and cpl.
+cpl and drill import board/tools/fab.py, point its OUT at a temp dir and run its own export
+(kicad-cli, a second or two), so they read the files that would be uploaded, never fab.py's
+text: a comment in fab.py cannot change their result (O-R1, seeded in VER-129). Nothing is
+written under hardware/ref_design.
+
+Python 3 standard library, plus pcbnew (KiCad's module) and kicad-cli for the board checks.
 """
+import csv
+import importlib.util
 import json
 import math
 import os
 import re
 import subprocess
 import sys
+import tempfile
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 ROOT = subprocess.run(["git", "-C", HERE, "rev-parse", "--show-toplevel"], capture_output=True,
@@ -46,7 +55,17 @@ OPAMP_VOS = 0.0045       # V: MCP6002 input offset, maximum (pin_review/u6.json)
 R_TOL = 0.01             # every resistor in design.py's RES table is 1%
 PANEL_MAX_MA = 80.0      # ER-TFT024IPS-3 backlight, 4 LEDs in parallel, 80 mA maximum (pin_review/panel.json)
 LED_MAX_MA = 20.0        # one LED: the drawing's 4 x 20 mA (pin_review/panel.json)
-MIN_DUTY = 0.29          # the firmware's lowest backlight duty (docs/pinmap.md, Backlight)
+# RP2350 GPIO input leakage, maximum over the chip's temperature range: the datasheet's IO
+# electrical characteristics table, quoted from memory (+-1 uA, as the RP2040's): VER-34 cites it
+I_LEAK = 1e-6
+# Fab and print tolerances for the cell's gap (VER-181): JLC's standard outline tolerance (+-0.2 mm,
+# to confirm on the dated capability page, VER-17); an FDM wall's position (+-0.1 mm, an estimate
+# until VER-174's XY chain); the board's float on its screws (M2 in 2.2 mm holes: +-0.1 mm)
+ROUTE_TOL, PRINT_TOL, SCREW_FLOAT = 0.2, 0.1, 0.1
+JLC_MIN_PLATED_SLOT = 0.50   # mm, JLC's minimum plated slot width (to confirm on the dated page, VER-17)
+# A CPL row more than 0.10 mm off its pads passes only if JLC's correction for that ref is recorded
+# here, with the dry run's screenshot named (VER-28). None today.
+JLC_FIXED = {}
 EN1_INTERNAL = 285e3     # BQ24073 EN1 internal pull-down (pin_review/u2.json pin 6)
 D3_VF = 0.3              # BAT54WS at a few hundred uA
 ABS = {"U2 IN": 28.0, "U2 EN1": 7.0, "U3 EN": 6.0}    # absolute maxima (u2.json, u3.json)
@@ -97,6 +116,25 @@ def cutouts():
     return tuple(float(x) for x in m.groups())
 
 
+def min_duty():
+    """The firmware's lowest backlight duty, from docs/pinmap.md's Backlight section (O-R21)."""
+    text = open(os.path.join(REF, "docs", "pinmap.md")).read()
+    sect = re.search(r"^## Backlight.*?(?=^## )", text, re.M | re.S)
+    m = re.search(r"lowest level at about (\d+)%", sect.group(0) if sect else "")
+    if not m:
+        sys.exit("design_numbers: pinmap.md's Backlight section names no 'lowest level at about N%'")
+    return int(m.group(1)) / 100
+
+
+def fab_module():
+    """board/tools/fab.py as a module whose OUT is a fresh temp dir."""
+    spec = importlib.util.spec_from_file_location("fab_for_vv", os.path.join(BOARD, "tools", "fab.py"))
+    fab = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(fab)
+    fab.OUT = tempfile.mkdtemp(prefix="vv_fab_")
+    return fab
+
+
 def result(ok):
     print("RESULT: " + ("PASS" if ok else "FAIL"))
     return 0 if ok else 1
@@ -131,10 +169,11 @@ def backlight():
     print(f"worst case at 100% duty (3V3 +{VREG_TOL:.0%}, R61 +1%, R60 -1%, offset +{OPAMP_VOS * 1e3:.1f} mV, "
           f"sense -1%): {sink_hi * 1e3:.1f} mA a sink, {total:.1f} mA in all (panel maximum {PANEL_MAX_MA:g} mA)")
     print(f"two LEDs share each sink: {sink_hi * 1e3:.1f} mA against {2 * LED_MAX_MA:g} mA for the pair "
-          "(one LED's share is not controlled: VER-62 measures it)")
-    ref_min = v * r61 / (r60 + r61) * MIN_DUTY
+          "(one LED's share is not controlled: VER-43 measures each LED on the breakout; VER-62 sees only a pair)")
+    duty = min_duty()
+    ref_min = v * r61 / (r60 + r61) * duty
     dev = OPAMP_VOS / ref_min
-    print(f"at the minimum duty {MIN_DUTY:.0%}: BL_REF {ref_min * 1e3:.1f} mV, offset +-{dev:.1%} a sink "
+    print(f"at the minimum duty {duty:.0%} (pinmap.md): BL_REF {ref_min * 1e3:.1f} mV, offset +-{dev:.1%} a sink "
           f"(limit +-25%, REQ-DSP-12)")
     return result(total <= PANEL_MAX_MA and dev <= 0.25)
 
@@ -164,6 +203,17 @@ def cutoff():
         print(f"{label}: 3V3 {vreg:.3f} V, dropout {vd * 1e3:.0f} mV, CV {4.2 * cv:.3f} V: lowest reading in dropout "
               f"{knee:.3f} V: {'fires' if fires else 'never reaches 3.50: the cutoff never fires'}")
         ok &= fires
+    # O-R15: GPIO47's pad leakage through the divider's Thevenin source; it changes with temperature,
+    # so a one-point gain calibration does not remove it
+    r17, r18 = ohms(parts["R17"]["value"]), ohms(parts["R18"]["value"])
+    rth = r17 * r18 / (r17 + r18)
+    gain = (r17 + r18) / r18                             # VBAT per volt at the pin
+    band = I_LEAK * rth * gain                           # the pin's error, scaled back to VBAT
+    fit = 0.05 / 2 / (rth * gain)
+    print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (RP2350 input leakage, maximum over temperature; from memory, VER-34) "
+          f"through {rth / 1e3:.0f} kohm moves VBAT's reading +-{band:.3f} V; REQ-BAT-12's 50 mV window allows "
+          f"+-{fit * 1e9:.0f} nA of leakage that changes with temperature, before any other error")
+    ok &= 2 * band <= 0.05
     return result(ok)
 
 
@@ -221,58 +271,171 @@ def mlcc():
     return result(not bad)
 
 
-def th1():
+def th1(b=None):
+    """O-R14: TH1 and every flipped footprint's pads from the routed board, not placement.py's text.
+    b: a pcbnew board already loaded (seed_faults.py moves a pad in memory, writing no KiCad file)."""
+    pcbnew, b = board() if b is None else (__import__("pcbnew"), b)
+    mm = pcbnew.ToMM
     x0, y0, x1, y1 = cutouts()
     e = scad()
-    tx, ty, rot = placement_put("TH1")
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+    tx, ty = mm(fps["TH1"].GetPosition().x), mm(fps["TH1"].GetPosition().y)
     gap = (x1 - x0 - e["cell"][0]) / 2, (y1 - y0 - e["cell"][1]) / 2
     to_edge = tx - x1
     print(f"cell hole x {x0}-{x1}, y {y0}-{y1}; worst-case cell {e['cell'][0]} x {e['cell'][1]}; "
-          f"TH1 at ({tx}, {ty}), {to_edge:.2f} mm right of the hole's right edge (the case pushes the cell there)")
+          f"TH1 at ({tx:.2f}, {ty:.2f}) on the board, {to_edge:.2f} mm right of the hole's right edge (the case pushes "
+          "the cell there)")
     in_span = y0 + gap[1] + 2 <= ty <= y1 - gap[1] - 2
-    print(f"TH1 within the cell's span along the edge: {in_span}; air between cell and board edge 0 to "
-          f"{x1 - x0 - 48:.1f} mm (a nominal-minus-2 cell) unless pushed")
-    src = open(os.path.join(BOARD, "placement.py")).read()
-    back = [(r, float(x), float(y)) for r, x, y in re.findall(r'put\("(\w+)",\s*([\d.]+),\s*([\d.]+)[^)]*"B"\)', src)]
-    facing = [r for r, x, y in back if x0 - 1 <= x <= x1 + 1 and y0 - 1 <= y <= y1 + 1]
+    print(f"TH1 within the cell's span along the edge: {in_span}")
+    flipped = sorted(r for r, f in fps.items() if f.IsFlipped())
+    near = []
+    for r in flipped:
+        for p in fps[r].Pads():
+            px, py = mm(p.GetPosition().x), mm(p.GetPosition().y)
+            dx, dy = max(x0 - px, 0, px - x1), max(y0 - py, 0, py - y1)
+            near.append((math.hypot(dx, dy), r))
+    near.sort()
+    facing = sorted({r for d, r in near if d <= 1.0})
+    print(f"back-side footprints ({len(flipped)}): {' '.join(flipped)}; the nearest pad {near[0][0]:.2f} mm from the "
+          f"hole ({near[0][1]})" if near else "no back-side footprints")
     print(f"back-side pads within 1 mm of the hole: {', '.join(facing) or 'none'}")
     return result(0 <= to_edge <= 1.0 and in_span and not facing)
 
 
+def cellgap():
+    """O-R7: the gap from a worst-case cell to the routed FR4 edge, the cell pushed against the
+    tub pocket's right wall (assembly.md step 5), after the fab and print tolerances (REQ-BAT-08)."""
+    e = scad()
+    (hx0, hy0), (hx1, hy1) = e["cell_hole"]
+    fit = e["cell_pocket_fit"]
+    tol = ROUTE_TOL + PRINT_TOL + SCREW_FLOAT
+    print(f"board hole {hx1 - hx0:.1f} x {hy1 - hy0:.1f} mm; the tub's pocket {fit:g} mm inside it each side "
+          f"(case.scad cell_pocket_fit); tolerances: routing {ROUTE_TOL:g}, print {PRINT_TOL:g}, the board's float "
+          f"on its screws {SCREW_FLOAT:g} mm ({tol:.2f} mm in all)")
+    ok = True
+    for label, (cl, cw, _) in (("worst-case", e["cell"]), ("nominal", e["cell_nom"])):
+        sides = {"right end (pushed, at TH1)": fit,
+                 "left end (its leads, J2)": (hx1 - hx0) - fit - cl,
+                 "each long side (at worst against the pocket's wall)": fit}
+        for side, nom in sides.items():
+            need = 1.5 if "left" in side else 0.5
+            worst = nom - tol
+            good = worst >= need - 1e-9
+            ok &= good
+            print(f"  {label} cell {cl:g} x {cw:g}, {side}: {nom:.2f} mm nominal, {worst:.2f} mm after tolerances "
+                  f"(REQ-BAT-08: {need:g}): {'ok' if good else 'too close'}")
+    return result(ok)
+
+
 def cpl():
+    """O-R1: the CPL fab.py writes, row by row, against each footprint's pads' centre."""
     pcbnew, b = board()
     mm = pcbnew.ToMM
-    off = []
-    for f in sorted(b.GetFootprints(), key=lambda f: f.GetReference()):
-        if not (f.HasField("LCSC") and f.GetFieldText("LCSC")):
+    fab = fab_module()
+    n_lines, n_parts, _ = fab.bom_cpl()
+    path = os.path.join(fab.OUT, "battler_cpl_jlc.csv")
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+    off, rows = [], list(csv.DictReader(open(path)))
+    for r in rows:
+        f = fps.get(r["Designator"])
+        if f is None:
+            off.append((r["Designator"], float("inf")))
             continue
         xs = [mm(p.GetPosition().x) for p in f.Pads()]
         ys = [mm(p.GetPosition().y) for p in f.Pads()]
-        d = math.hypot((min(xs) + max(xs)) / 2 - mm(f.GetPosition().x), (min(ys) + max(ys)) / 2 - mm(f.GetPosition().y))
-        if d > 0.10:
-            off.append((f.GetReference(), d))
-    fab = open(os.path.join(BOARD, "tools", "fab.py")).read()
-    corrected = "centroid" in fab.lower() or "CPL_OFFSET" in fab
-    print("fab.py writes each footprint's origin as Mid X / Mid Y" + (" with a correction table" if corrected else ""))
-    print("origin more than 0.10 mm off its pads' centre: " + (", ".join(f"{r} {d:.2f} mm" for r, d in off) or "none"))
-    return result(not off or corrected)
+        cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
+        mx, my = float(r["Mid X"].rstrip("m")), -float(r["Mid Y"].rstrip("m"))
+        d = math.hypot(mx - cx, my - cy)
+        if d > 0.10 and r["Designator"] not in JLC_FIXED:
+            off.append((r["Designator"], d))
+    print(f"fab.py's bom_cpl() wrote {n_lines} BOM lines and {n_parts} CPL rows (read from {os.path.basename(path)})")
+    print("CPL row more than 0.10 mm off its pads' centre: " + (", ".join(f"{r} {d:.2f} mm" for r, d in off) or "none"))
+    return result(not off and len(rows) == n_parts)
+
+
+def excellon(path):
+    """(file function, [(dia, plated, x, y, slot)]) from a KiCad Excellon file (absolute, mm)."""
+    func, tools, holes, aper, cur, x, y = "?", {}, [], None, None, None, None
+    for ln in open(path):
+        ln = ln.strip()
+        m = re.match(r"; #@! TF\.FileFunction,(\w+)", ln)
+        if m:
+            func = m.group(1)
+        m = re.match(r"; #@! TA\.AperFunction,(\w+)", ln)
+        if m:
+            aper = m.group(1)
+        m = re.fullmatch(r"T(\d+)C([\d.]+)", ln)
+        if m:
+            tools[m.group(1)] = (float(m.group(2)), aper == "Plated" if aper else None)
+            continue
+        m = re.fullmatch(r"T(\d+)", ln)
+        if m:
+            cur = m.group(1)
+            continue
+        m = re.fullmatch(r"(?:X(-?[\d.]+))?(?:Y(-?[\d.]+))?(G85(?:X(-?[\d.]+))?(?:Y(-?[\d.]+))?)?", ln)
+        if m and cur and (m.group(1) or m.group(2)):
+            x = float(m.group(1)) if m.group(1) else x
+            y = float(m.group(2)) if m.group(2) else y
+            dia, plated = tools[cur]
+            if m.group(3):
+                x2 = float(m.group(4)) if m.group(4) else x
+                y2 = float(m.group(5)) if m.group(5) else y
+                holes.append((dia, plated, (x + x2) / 2, -(y + y2) / 2, True))
+            else:
+                holes.append((dia, plated, x, -y, False))
+    return func, holes
 
 
 def drill():
-    fab = open(os.path.join(BOARD, "tools", "fab.py")).read()
-    sep = "--excellon-separate-th" in fab
-    print(f"fab.py asks kicad-cli for separate plated and unplated drill files: {sep}")
-    try:
-        pcbnew, b = board()
-        npth = {}
-        for f in b.GetFootprints():
-            for p in f.Pads():
-                if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH:
-                    npth.setdefault(round(pcbnew.ToMM(p.GetDrillSize().x), 2), set()).add(f.GetReference())
-        print("unplated holes on the board: " + "; ".join(f"{d} mm: {' '.join(sorted(r))}" for d, r in sorted(npth.items())))
-    except ImportError:
-        print("pcbnew not available: hole list skipped")
-    return result(sep)
+    """O-R1: the drill files fab.py's own export writes, parsed: plated and unplated apart, and
+    every hole on the board in the right one."""
+    pcbnew, b = board()
+    mm = pcbnew.ToMM
+    fab = fab_module()
+    fab.gerbers()
+    g = os.path.join(fab.OUT, "gerbers")
+    files = sorted(f for f in os.listdir(g) if f.endswith(".drl"))
+    found = []
+    ok = True
+    for f in files:
+        func, holes = excellon(os.path.join(g, f))
+        print(f"{f}: FileFunction {func}, {len(holes)} holes, "
+              f"{sum(1 for h in holes if h[4])} slots")
+        if func not in ("Plated", "NonPlated"):
+            print(f"  {f} is {func}: plated and unplated holes share one file")
+            ok = False
+        found += [(func, *h) for h in holes]
+    want = []
+    for t in b.GetTracks():
+        if t.GetClass() == "PCB_VIA":
+            want.append(("via", True, round(mm(t.GetDrillValue()), 3), mm(t.GetPosition().x), mm(t.GetPosition().y), False))
+    for fp in b.GetFootprints():
+        for p in fp.Pads():
+            d = p.GetDrillSize()
+            if d.x > 0:
+                plated = p.GetAttribute() != pcbnew.PAD_ATTRIB_NPTH
+                want.append((fp.GetReference(), plated, round(mm(min(d.x, d.y)), 3), mm(p.GetPosition().x),
+                             mm(p.GetPosition().y), d.x != d.y))
+    npth = sorted({(w[2], w[0]) for w in want if not w[1]})
+    print("unplated holes on the board: " + "; ".join(
+        f"{d} mm: {' '.join(sorted(r for dd, r in npth if dd == d))}" for d in sorted({d for d, _ in npth})))
+    wrong, missing = [], []
+    for ref, plated, dia, x, y, slot in want:
+        hit = [h for h in found if abs(h[3] - x) < 0.02 and abs(h[4] - y) < 0.02 and abs(h[1] - dia) < 0.011]
+        if not hit:
+            missing.append(f"{ref} {dia} at ({x:.2f}, {y:.2f})")
+        elif hit[0][0] != ("Plated" if plated else "NonPlated"):
+            wrong.append(f"{ref} {dia} {'plated' if plated else 'unplated'} in a {hit[0][0]} file")
+    slots = sorted({(round(h[1], 2), h[0]) for h in found if h[5] and h[2]})
+    print(f"plated slots: {', '.join(f'{d} mm ({fn})' for d, fn in slots) or 'none'} "
+          f"(JLC's minimum {JLC_MIN_PLATED_SLOT} mm)")
+    narrow = [d for d, _ in slots if d < JLC_MIN_PLATED_SLOT - 1e-9]
+    extra = len(found) - (len(want) - len(missing))
+    print(f"board holes {len(want)}, in the drill files {len(found)}; missing {len(missing)}, in the wrong file "
+          f"{len(wrong)}, unaccounted {extra}")
+    for x in (missing + wrong)[:10]:
+        print("  " + x)
+    return result(ok and not missing and not wrong and not narrow and extra == 0)
 
 
 def vbus():
@@ -344,8 +507,8 @@ def swell():
     return result(free >= 0.1 * e["cell_nom"][2] - 1e-9)
 
 
-CHECKS = {"holes": holes, "swell": swell, "inrush": inrush, "backlight": backlight, "cutoff": cutoff, "screws": screws, "mlcc": mlcc, "th1": th1,
-          "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom}
+CHECKS = {"holes": holes, "swell": swell, "inrush": inrush, "backlight": backlight, "cutoff": cutoff, "screws": screws,
+          "mlcc": mlcc, "th1": th1, "cellgap": cellgap, "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom}
 
 
 def main():

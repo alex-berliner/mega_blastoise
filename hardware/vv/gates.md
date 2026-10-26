@@ -5,10 +5,11 @@ the board it applies to. `python3 hardware/vv/tools/check_trace.py --gate
 <order|case|evt|dvt|pvt> [--board ref_design|prod_board]` evaluates a gate and exits 1 unless
 every criterion that applies to the board is met. What "met" means for each need:
 
-- VER-nn: last_result PASS, on evidence that is fresh (see README), with no uncommitted change
-  under what it covers. At DVT and PVT a test (T) of phase EVT or later must also cover a
-  release record of that phase (REL-...-DVT, REL-...-PVT): EVT units do not speak for the
-  revised spin. A CUT or RETIRED check never meets a criterion: waive the criterion or name the
+- VER-nn: last_result PASS, on evidence that is fresh (see README) and committed, with no
+  uncommitted change under what it covers. At DVT and PVT a check of phase EVT or later that is
+  a test (T) or covers a release, whatever its method, must also cover a release record of that
+  phase (REL-...-DVT, REL-...-PVT): EVT units do not speak for the revised spin, and an EVT
+  first article does not inspect the first PVT unit (O-R11, F-R1). A CUT or RETIRED check never meets a criterion: waive the criterion or name the
   check that replaced it.
 - REQ-...: APPROVED in releases/APPROVALS.md, and every listed check at or before this gate
   passed as above (a split requirement through its allocation for the board).
@@ -27,15 +28,19 @@ every criterion that applies to the board is met. What "met" means for each need
 A criterion whose board column does not match the board is N/A. A criterion left with
 nothing that applies to the board fails, so prod_board needs its own checks.
 
-On top of its table every gate applies seven rules (check_trace.py's docstring has them in
+On top of its table every gate applies these rules (check_trace.py's docstring has them in
 full): R1 no requirement in scope PROPOSED, or DEFERRED past its scope; R2 every requirement
 in scope verified up to this phase; R3 every H-priority DFMEA row in scope ACCEPTED for this
-phase or DONE with all its 'detects' checks passing; R4 no OPEN defect (order, case, EVT) or
-every defect CLOSED (DVT, PVT); R5 no uncommitted change under passed evidence; R6 every
-design commit since the newest release record named in a change record (ref_design; the
-design is design.py, placement.py, lib/, battler.kicad_pcb, last_route.ses, build_pcb.py,
-route.py, silk.py, fab.py and case.scad); R7 the design files at HEAD are README's design
-baseline (ref_design). The default mode already fails when the baseline drifts (DEF-47).
+phase or DONE with all its 'detects' checks passing (prod_board's scope includes the 'both'
+rows); R4 no OPEN defect whose Gate is this phase or earlier (order, case, EVT), or every such
+defect CLOSED (DVT, PVT): a case defect does not hold the order back (O-R5); R5 nothing
+uncommitted under passed evidence or anywhere in hardware/vv, and every evidence file
+committed (O-R2); R6 every design commit since the newest release record named in a change
+record (ref_design; the design is design.py, placement.py, lib/, battler.kicad_pcb,
+battler.kicad_pro, the schematics, the board/tools tree, case.scad and case/export.py); R7
+the design files at HEAD are README's design baseline (ref_design); R8 (order gate) the order
+branch README names has no design commit after the baseline commit (O-R13). The default mode
+already fails when the baseline drifts (DEF-47) and warns when the order branch moves.
 
 A criterion that the evidence cannot meet may be waived by Alex alone: the waiver row below
 proposes the reason; it counts only when he signs it in releases/APPROVALS.md (WAIVED, with
@@ -56,7 +61,7 @@ the board takes from the case (VER-19). Criteria 1-13 are validation_plan.md sec
 | G-ORD-04 | vp 4: the real ER-TFT024IPS-3 lights through a confirmed bottom-contact breakout using design.py's J3 map, driven from an RP2350B dev board; the folded FPC proves the 51-j map and reaches J3 (DF-61); the tail thickness is within the FH12 spec | VER-43 VER-136 VER-44 | ref_design |
 | G-ORD-05 | vp 5 (moved to G-EVT-12, F-49): a pill on ENIG reads under 1 kohm and comb leakage is above 100 Mohm, on a bare board from the same order; a coupon ordered now is advisory | ADVISORY VER-45 VER-46 | ref_design |
 | G-ORD-06 | vp 6 (agreed cut, O-10 and F-32): the latch replica is replaced by latch.py (VER-33, in G-ORD-18) before the order and VER-73, VER-77, VER-78 on unit 1; met only by Alex's waiver W-01 | VER-47 | ref_design |
-| G-ORD-07 | vp 7, what the copper fixes: part heights from drawings under the case's limits; the pill-to-comb XY chain and its measurement; the positions the board takes from the case (J1, J2 at the cell hole's corner, J3, H1-H6, the combs, the pinholes); the connector mouths; the MLCC keep-out from the bosses; TH1 against the cell's hole; every copper-setting ESTIMATE measured (DF-61 is met through G-ORD-04's VER-43 and VER-136: its third check, VER-48, is a CASE check) | VER-06 VER-112 VER-174 VER-51 VER-19 VER-165 VER-142 VER-164 VER-152 | ref_design |
+| G-ORD-07 | vp 7, what the copper fixes: part heights from drawings under the case's limits; the pill-to-comb XY chain and its measurement; the positions the board takes from the case (J1, J2 at the cell hole's corner, J3, H1-H6, the combs, the pinholes); the connector mouths; the MLCC keep-out from the bosses; TH1 against the cell's hole; the cell's gap to the routed edge at its pushed end (VER-181); every copper-setting ESTIMATE measured (DF-61 is met through G-ORD-04's VER-43 and VER-136: its third check, VER-48, is a CASE check) | VER-06 VER-112 VER-174 VER-51 VER-19 VER-165 VER-142 VER-164 VER-181 VER-152 | ref_design |
 | G-ORD-08 | vp 8: the MLCCs' DC bias is done and the hot-plug simulation at U2's IN and the enables is committed and passes (the unplug simulation left with Q2 and D7 in 2d1124d) | VER-30 VER-12 | ref_design |
 | G-ORD-09 | vp 9: JLC limits from the dated capability page, no edge or rail surprises, the netlist sent with the net ties merged; every hole 0.30 mm or more; the drill files split and parsed; the fab files' content checked | VER-17 VER-18 VER-26 VER-114 VER-131 VER-132 | ref_design |
 | G-ORD-10 | vp 10: dry-run screenshots of every polarised part signed off (U1, U2, U3, U4, U8, U9, J3 included), the rotation table done, every CPL position on its pads | VER-28 VER-29 VER-176 | ref_design |
@@ -66,7 +71,7 @@ the board takes from the case (VER-19). Criteria 1-13 are validation_plan.md sec
 | G-ORD-14 | the design round trip is fresh: netlist, ERC, DRC with parity, the contact footprints in the library and as placed, the dome footprint against the dome | VER-01 VER-03 VER-04 VER-08 VER-162 VER-178 | ref_design |
 | G-ORD-15 | the DFMEA is reviewed by Alex and two other models; every severity 9-10 row names its layers of protection; every assembled part and contact is rated; every adjacent pad pair is classed | VER-98 VER-148 DFMEA:COVERAGE | ref_design |
 | G-ORD-16 | the cell is known: spec sheet in hand, usable capacity measured on a sample, incoming inspection ready (polarity and the plug's latch) | VER-37 VER-153 VER-49 | ref_design |
-| G-ORD-17 | every bring-up probe point has copper: each measurement in bringup.md and each per-unit screen names a TP, a jumper pad or a part pad (the docs sweep, the claims script and the BOM coverage moved to G-CASE-06, before assembly) | VER-115 VER-158 | ref_design |
+| G-ORD-17 | every bring-up probe point has copper: each measurement in bringup.md and each per-unit screen names a TP, a jumper pad or a part pad (the docs sweep and the BOM coverage moved to G-CASE-06, before assembly) | VER-115 VER-158 | ref_design |
 | G-ORD-18 | the power-path analyses are written and pass: latch table, charge window, ratings and 3V3 budget, inrush, back-power paths, backlight tolerance, cutoff accuracy, cell mating peak, heat per mode, VBUS fault reach | VER-33 VER-32 VER-31 VER-99 VER-159 VER-137 VER-138 VER-140 VER-144 VER-177 | ref_design |
 | G-ORD-19 | the order candidate is named in a release record (branch, commit, tag, design baseline): this register describes 684a609 (DEF-30) | VER-42 DEF-30 | ref_design |
 | G-ORD-20 | bench readiness: gear on hand or bought for every EVT check (`check_trace.py --shopping --gate evt` lists what is still needed, longest lead first); the speaker's rating known | VER-116 VER-128 | ref_design |
@@ -75,6 +80,7 @@ the board takes from the case (VER-19). Criteria 1-13 are validation_plan.md sec
 | G-ORD-23 | firmware for the ordered chip: generated pins, a self-test that builds and links for rp235xb at 2048K, the game image inside the flash budget | VER-149 VER-150 VER-151 | ref_design |
 | G-ORD-24 | the trace gate and the checkers are shown to fail on seeded faults | VER-129 VER-22 | ref_design |
 | G-ORD-25 | prod_board: its own round trip and contacts (as library footprints, as placed, where prod_case says) | VER-10 VER-163 VER-119 VER-120 VER-121 VER-122 | prod_board |
+| G-ORD-26 | the register and the docs quote the design's values: every '<ref> <value>', GPIO, pin, test point and dimension quoted in hardware/vv, ref_design/docs and pin_review matches design.py, case.scad and pin_review (check_claims.py, run by the default mode; F-R6) | VER-161 | ref_design |
 
 ## Case gate: before the printed case is released and the EVT units are assembled
 
@@ -84,12 +90,12 @@ here too (G-CASE-06), so they do not hold the order back.
 
 | ID | Criterion | Needs | Board |
 |---|---|---|---|
-| G-CASE-01 | the Z stack closes with swelling, the buttons work under the shell, no unintended openings, the screws engage, the Start/Select strip clears the domes | VER-20 VER-07 VER-113 VER-147 VER-180 | ref_design |
+| G-CASE-01 | the Z stack closes with swelling, the buttons work under the shell, no unintended openings, the screws engage, the Start/Select strip clears the domes | VER-20 VER-182 VER-07 VER-113 VER-147 VER-180 | ref_design |
 | G-CASE-02 | the printed case with real parts, its feel against a genuine DS Lite, incoming silicone, caps and domes | VER-48 VER-50 VER-126 | ref_design |
 | G-CASE-03 | the case is released: case.scad commit, STL hashes, material, slicer profile, tape part number | VER-173 | ref_design |
 | G-CASE-04 | case-level requirements: size, keyed assembly, no openings, room to swell, the domes | REQ-PRD-06 REQ-MEC-04 REQ-MEC-08 REQ-BAT-07 REQ-BTN-08 | ref_design |
 | G-CASE-05 | every check up to CASE passes, fresh | PHASE:CASE | both |
-| G-CASE-06 | before any unit is assembled: the docs match the design (the stale-doc sweep and the claims script), every contact class's parts are bought; R4 holds the assembly-order and BOM defects (DEF-21, DEF-41, DEF-42) | VER-39 VER-161 VER-167 | ref_design |
+| G-CASE-06 | before any unit is assembled: the docs match the design (the stale-doc sweep and the claims script), every contact class's parts are bought; R4 holds the defects whose Gate is CASE (DEF-21, DEF-31, DEF-37, DEF-41, DEF-42, DEF-51) | VER-39 VER-161 VER-167 | ref_design |
 
 ## EVT exit: on the 5 assembled boards, before the DVT changes are frozen
 
@@ -116,7 +122,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 | G-EVT-04 | power-path margins measured: unplug at a held 3.50 V, hot plug, U3's EN at a live plug-in, 3V3 regulation and budget, 1V1 | VER-70 VER-71 VER-72 VER-83 VER-84 | ref_design |
 | G-EVT-05 | cell safety on built units, the bench charging rules kept first: per-unit CV, TS and cell-current screens; temperature pause; cell temperature in a full charge; TH1 tracking; PCM trip; cell mating; the charge timer; off current warm; cutoff accuracy and calibration; PWR_HOLD release; hang test | VER-172 VER-134 VER-135 VER-169 VER-82 VER-69 VER-85 VER-87 VER-88 VER-141 VER-145 VER-146 VER-139 VER-155 VER-156 VER-77 VER-105 | ref_design |
 | G-EVT-06 | touch temperature within the IEC 62368-1 TS1 limit, with the heat rule in the image | VER-86 | ref_design |
-| G-EVT-07 | latch and USB margins: both Starts through 1 kohm, leakage immunity, sources and cables (with the 4.40-4.75 V characterisation), input current, back-power with a probe attached | VER-78 VER-79 VER-80 VER-81 VER-127 | ref_design |
+| G-EVT-07 | latch and USB margins: both Starts (SW21, SW23) through 1 kohm, leakage immunity on both, sources and cables (with the 4.40-4.75 V characterisation), input current, back-power with a probe attached | VER-78 VER-79 VER-80 VER-81 VER-127 | ref_design |
 | G-EVT-08 | the self-test image runs on every unit; chip ID and stepping logged; the button chain's clock is clean | VER-76 VER-75 VER-179 | ref_design |
 | G-EVT-09 | mechanics with real parts: FPC and ZIF, recovery through the pinholes, assembly and opening demo in the safe order, flatness, microscope inspection, panel bond | VER-106 VER-107 VER-91 VER-90 VER-89 VER-154 | ref_design |
 | G-EVT-10 | play time, charge time and cost | VER-101 VER-102 VER-117 | ref_design |
@@ -124,6 +130,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 | G-EVT-12 | vp 5 on a bare board from the order: pill resistance and comb leakage, day one, before any assembled unit is powered (F-49) | VER-45 VER-46 | ref_design |
 | G-EVT-13 | the DVT-deciding screens on unit 4: abuse with a reversed cell, ESD screen at the combs, near-field, drop, button life, fault injection (every credited detection trips) | VER-97 VER-95 VER-96 VER-93 VER-94 VER-168 | ref_design |
 | G-EVT-14 | unit records: serials, findings with disposition and re-test, golden readings, connector mating counts | VER-110 VER-171 VER-157 | ref_design |
+| G-EVT-15 | prod_board on its own bare boards: every contact reads a pill under 1 kohm and leaks over 100 Mohm | VER-183 | prod_board |
 
 ## DVT exit: on the revised spin
 
@@ -140,7 +147,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 | ID | Criterion | Needs | Board |
 |---|---|---|---|
 | G-PVT-01 | release record complete: tag, commit, design baseline, fab zip, BOM and CPL sha256, BOARD_REV (bumped for any BOM change), locked BOM with LCSC numbers, no-substitution list (L2 and the RP2354B included), case section, gate output, waivers | VER-42 | ref_design |
-| G-PVT-02 | first article inspection on the first PVT unit | VER-109 | ref_design |
+| G-PVT-02 | first article inspection on the first PVT unit (VER-109's result must cover a REL-...-PVT record: an EVT first article does not count) | VER-109 | ref_design |
 | G-PVT-03 | a production record with serial for every unit, its calibration and mating counts, and incoming inspection of every cell | VER-110 VER-155 VER-157 VER-49 | ref_design |
 | G-PVT-04 | first-pass yield 90% or more, every failure logged; golden readings re-derived for PVT | VER-111 VER-171 | ref_design |
 | G-PVT-05 | every check up to PVT passes on fresh evidence; every test of phase EVT or later re-run on the PVT units (its result covers a REL-...-PVT record) | PHASE:PVT | both |
@@ -150,7 +157,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 
 Each row proposes a waiver and its reason. It counts only when Alex signs it in
 [releases/APPROVALS.md](releases/APPROVALS.md) with decision WAIVED and the last phase it
-holds for; check_trace refuses a signature in a commit that carries a Claude trailer.
+holds for; check_trace counts a signature only from a commit signed with Alex's key (README, Approvals), and refuses one in a commit that carries a Claude trailer or in a merge.
 
 | ID | Criterion | Proposed reason |
 |---|---|---|

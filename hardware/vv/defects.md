@@ -8,8 +8,9 @@ check named, and the DVT and PVT gates refuse any defect that is not CLOSED.
 
 Fields: Found (where, phase, which check or person), Symptom, Root cause, Why missed (why
 the checks before it did not catch it), Check added or changed (VER ids), Updated (REQ and
-DF rows), Status (OPEN, FIXED or CLOSED, then a note), and optionally Board (ref_design when
-absent). A CLOSED defect's check must pass on fresh evidence, or check_trace fails.
+DF rows), Gate (the first gate it must be fixed by: R4 counts it there and at every later
+gate, not before: O-R5), Status (OPEN, FIXED or CLOSED, then a note), and optionally Board
+(ref_design when absent). A CLOSED defect's check must pass on fresh evidence, or check_trace fails.
 
 Per-unit findings on built boards (a bridge, a tombstone, a reversed cell) are not design
 defects: they go in hardware/vv/evidence/findings.csv (VER-110). A finding seen on 2 units
@@ -28,6 +29,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: netlist, ERC and DRC check connectivity, not what flows where; no back-power path table existed (validation_plan #79).
 - Check added or changed: VER-159 (check_backpower.py over design.nets(), at the order gate, seeded with this very fault: U1 pin 5 back on VBUS must fail it); VER-127 (the off test with the Debug Probe attached, unit 1).
 - Updated: REQ-PWR-07, DF-98
+- Gate: ORDER
 - Status: FIXED (REF on 3V3); VER-159 not built
 
 ### DEF-02: R15 cut to 10k removed the Start contact's pill margin
@@ -37,6 +39,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the latch's margins exist only in prose; no state table or script recomputes them on a change.
 - Check added or changed: none yet; VER-33 (latch state table) and VER-78 (10 kohm in series on the real board, the margin REQ-BTN-01 allows; 1 kohm proved nothing: F-10).
 - Updated: REQ-PWR-08, REQ-PWR-11, DF-27
+- Gate: ORDER
 - Status: FIXED (R15 back to 100k, R38 bleeder added); VER-33 and VER-78 not built
 
 ### DEF-03: The unplug hand-over took tens of ms, not microseconds
@@ -46,6 +49,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no transient simulation of the power path at the time.
 - Check added or changed: the ODE simulation behind design_review.md (not committed: VER-11); VER-70 on the real board.
 - Updated: REQ-PWR-05, REQ-PWR-06, DF-24
+- Gate: ORDER
 - Status: RETIRED in 2d1124d: Q2, D7 and R38's old role left with the TP4056's load sharing; the BQ24073 joins OUT to BAT with no hand-over gap. VER-11 retired with it; VER-70 measures the unplug
 
 ### DEF-04: 3V3 fell under the flash's 2.97 V on most unplugs
@@ -55,6 +59,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: as DEF-03.
 - Check added or changed: VER-11 (not committed), VER-70 (not run).
 - Updated: REQ-PWR-05, DF-15, DF-34
+- Gate: ORDER
 - Status: RETIRED in 2d1124d: as DEF-03; 3V3 through the unplug is now REQ-PWR-05 (3.135 V, VER-70)
 
 ### DEF-05: Hot plug rang VSYS over the ME6211's 6.5 V
@@ -64,6 +69,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no hot-plug simulation before the debate.
 - Check added or changed: the hot-plug ODE (not committed: VER-12); VER-71 on the real board.
 - Updated: REQ-PWR-02, DF-39
+- Gate: ORDER
 - Status: RETIRED in 2d1124d: VSYS is the BQ24073's regulated OUT (4.3-4.5 V), no longer VBUS through D5; the ME6211 left in 1fd0956. The plug-in ring now meets U2's IN (28 V absolute) and the enables: VER-12, VER-71
 
 ### DEF-06: VSYS rang over the FM8002A's 6.0 V, and bring-up still checks 6.5 V
@@ -73,6 +79,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no list of every part on each rail with its lowest absolute maximum; procedures are prose.
 - Check added or changed: VER-71's pass limit is now VSYS <= 5.7 V and VBUS <= 7.7 V (REQ-PWR-02 from REQ-PWR-14's transient rule, F-8); VER-31 (ratings per rail) and VER-36's lowest-maximum-per-rail table (not built); VER-161 checks bringup.md's limits against that table.
 - Updated: REQ-PWR-02, REQ-PWR-14, DF-41
+- Gate: ORDER
 - Status: RETIRED in 2d1124d: VSYS no longer follows VBUS (as DEF-05), so U7 sees at most 4.5 V; bringup.md 5.6's text is DEF-21's
 
 ### DEF-07: J6 TX and RX swapped against the Debug Probe
@@ -82,6 +89,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: ERC, netlist and DRC trust design.py's pin numbers.
 - Check added or changed: VER-02 (check_pins.py fails when a reviewed pin's net changes).
 - Updated: REQ-MCU-04, DF-63
+- Gate: ORDER
 - Status: CLOSED (VER-02 PASS 2026-10-25 at 4a86173). J6 itself left in 86bf694.
 
 ### DEF-08: USB series resistors were 22 ohm; the RP2350 requires 27
@@ -91,6 +99,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: values were never checked against a datasheet requirement before the pin review.
 - Check added or changed: VER-02 (passives.json checks each resistor's value and LCSC number). The stale comments are DEF-21's.
 - Updated: REQ-MCU-02
+- Gate: ORDER
 - Status: CLOSED (VER-02 PASS 2026-10-25 at 4a86173)
 
 ### DEF-09: The ME6211's CE could rise above its VIN at a live plug-in
@@ -100,6 +109,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no transient check of pin-to-pin limits.
 - Check added or changed: VER-72 (scope PWR_EN - VSYS at plug-in; not run).
 - Updated: REQ-PWR-03, DF-30
+- Gate: ORDER
 - Status: RETIRED in 1fd0956: the RT9013's EN is 6 V absolute whatever VIN is; the enable's limit at a faulty source is DEF-50
 
 ### DEF-10: PWR_HOLD had no external pull-down (RP2350-E9)
@@ -109,6 +119,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no errata table; the pin review found E9 only for the ADC pins.
 - Check added or changed: VER-02 checks R42's value; VER-77 (release on real silicon; not built); VER-16 (errata table; not built).
 - Updated: REQ-PWR-09, REQ-MCU-07, DF-25
+- Gate: ORDER
 - Status: FIXED (R42 4.7k); VER-77 and VER-16 not built
 
 ### DEF-11: Charge current too high for the 403450
@@ -118,6 +129,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no requirement tied the charge current to the cell; the cell's spec sheet was never obtained.
 - Check added or changed: VER-37 (cell spec sheet; not run); VER-160 (cell.json and an assert that recomputes the limit when the cell or R5 changes; not built: it would have failed at 950afcf and 226bbb6); VER-66 (charge current per unit; not run).
 - Updated: REQ-BAT-02, DF-07
+- Gate: ORDER
 - Status: FIXED (R5 3.3k: 333-364 mA on the TP4056, 242-295 mA on the BQ24073 since 2d1124d); the cell's own limit is still unknown
 
 ### DEF-12: AP3156 backlight charge pump out of stock
@@ -127,6 +139,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: stock was last checked on a July 2026 snapshot.
 - Check added or changed: VER-41 (order-day stock and pre-orders; not run); VER-14 (LCSC identity and stock class; not built).
 - Updated: REQ-FAB-10, DF-69
+- Gate: ORDER
 - Status: FIXED (two discrete current sinks, all Basic or Preferred, simulated first: VER-05)
 
 ### DEF-13: ProTek SRV05-4 out of stock
@@ -136,6 +149,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: as DEF-12.
 - Check added or changed: VER-41; VER-14.
 - Updated: REQ-FAB-10, DF-69
+- Gate: ORDER
 - Status: FIXED (Semtech SRV05-4.TCT, C13612)
 
 ### DEF-14: U1's JLC footprint may be turned 180 degrees from KiCad's
@@ -145,6 +159,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: there is no rotation table and no dry run has been done.
 - Check added or changed: VER-29 (rotation table from the kicad-jlcpcb-tools plugin's corrections, applied to fab.py's CPL; not built); VER-28 (dry run with screenshots; not run).
 - Updated: REQ-FAB-07.R, DF-67, DF-68 (U1 is Semtech's C13612 again since 1fd0956; assembly.md says JLC's footprint is KiCad's turned 180 degrees)
+- Gate: ORDER
 - Status: OPEN (FIXED when VER-29's table corrects the CPL; CLOSED on VER-28's screenshot of U1)
 
 ### DEF-15: First PLA print: hooks snapped, lid tight, pins bound
@@ -154,6 +169,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: check_fit checks heights, not snap strain or print tolerance.
 - Check added or changed: none that runs; VER-48 (current shell with real parts) and VER-92 (open/close cycles) not run.
 - Updated: REQ-MEC-05, DF-89
+- Gate: CASE
 - Status: FIXED (pins removed, hooks tapered, 0.3 mm at the steps, lid 2.0 mm, PETG recommended)
 
 ### DEF-16: D-pad opening too tight for Alex's AliExpress D-pad
@@ -163,6 +179,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no measured cap dimensions per lot.
 - Check added or changed: the fit kit's tune_openings coupon; VER-126 (incoming caps per lot; not run).
 - Updated: REQ-MEC-03
+- Gate: CASE
 - Status: FIXED (gap 0.5 to 0.8 mm)
 
 ### DEF-17: Deck insert would not go on over the silicone
@@ -172,6 +189,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no clash check between silicone, caps and shell.
 - Check added or changed: VER-07 (check_buttons.py, added 269dc87, shown to fail on a cap that does not fit its slot).
 - Updated: REQ-MEC-03
+- Gate: CASE
 - Status: FIXED (it was CLOSED on VER-07's PASS at 269dc87, which rests on a commit message; it closes again when VER-07 passes with saved evidence)
 
 ### DEF-18: Start/Select pad's square wells hit round flange pockets
@@ -181,6 +199,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: as DEF-17.
 - Check added or changed: VER-07 (caps_silicone and silicone_shell checks).
 - Updated: REQ-MEC-03
+- Gate: CASE
 - Status: FIXED (as DEF-17: closes again when VER-07 passes with saved evidence)
 
 ### DEF-19: Holes through the lid
@@ -190,6 +209,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no check for unintended openings.
 - Check added or changed: none on this branch; VER-113 (openings check; not built). Another branch has check_manifold.py. The same class (the stack moved and a fastener was not recomputed) is DEF-31.
 - Updated: REQ-MEC-08, DF-90
+- Gate: CASE
 - Status: FIXED (pilots stop 0.8 mm under the face; notch only in the frame)
 
 ### DEF-20: J6's mouth faced J5's back
@@ -199,15 +219,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no connector-access keep-out.
 - Check added or changed: VER-165 (connector mouth keep-outs in check_fit; not built).
 - Updated: REQ-MCU-04, REQ-MEC-11
+- Gate: ORDER
 - Status: RETIRED in 86bf694: J6 left; connector access for J1, J2, J4 and J5 is VER-165 (REQ-MEC-11)
 
 ### DEF-21: Docs disagree with the design
 - Found: while seeding this register (2026-10-24, VER-39); some of these are fixed on other branches (67e3d13), not here
-- Symptom: re-checked at 684a609 (2026-10-25). Still true or new: (a) bringup.md step 0 expects one body-diode drop from Q2 and TP1 above about 1 kohm; Q2 is gone and R38 is 10k (VER-53 and VER-52 hold the new limits). (b) bringup.md lists TP7 as LS_GATE; it is CHG_TEMP, the BQ24073's TS node. (c) bringup.md steps 1, 2.3, 5.1-5.6 describe the TP4056: D5 feeding VSYS, CHG_DONE_N, 333-364 mA by R5, the TEMP pin at 0.63 x VBUS, D7 for 1.5-3.3 ms at the unplug, VBUS under 8 V for the TP4056; step 4a puts TH1 left of J3. (d) bringup.md 6.2-6.3 still call seat 1's Y the power button (both Starts since 2d1124d). (e) assembly.md section 3 says to look over the TP4056's pad and that 'JP1 and JP2 come bridged' (five jumpers); section 1's polarised list names the TP4056, AO3401A and D5, D6. (f) bom.md: TP4056 at $0.17 among the priciest parts, M2 x 8 screws (case.scad: M2 x 6), 'the Start/Select strip isn't used' and no domes or Start/Select caps (DEF-42), 'Case: tub and lid' and 47 cm3, 118 placements and 49 part numbers from before the shift registers. (g) hardware/ref_design/README.md's first paragraph says the cell lies under the board (it sits in the board's hole since 2026-10-21). (h) pin_review/panel.json and u6.json still name the ME6211 and the 3.5in panel's 124 mV full scale. (i) docs/pinmap.md calibrates the VBAT gain at the end of a charge (DEF-40, DF-117). (j) assembly.md opens the case with the cell still plugged into J2 (DF-169). Items (a)-(r) of 2026-10-24 that concerned the TP4056, ME6211, D7, J6 or the 3.5in panel left with those parts.
+- Symptom: re-checked at 684a609 (2026-10-25). Still true or new: (a) bringup.md step 0 expects one body-diode drop from Q2 and TP1 above about 1 kohm; Q2 is gone and R38 is 10k (VER-53 and VER-52 hold the new limits). (b) bringup.md lists TP7 as LS_GATE; it is CHG_TEMP, the BQ24073's TS node. (c) bringup.md steps 1, 2.3, 5.1-5.6 describe the TP4056: D5 feeding VSYS, CHG_DONE_N, 333-364 mA by R5, the TEMP pin at 0.63 x VBUS, D7 for 1.5-3.3 ms at the unplug, VBUS under 8 V for the TP4056; step 4a puts TH1 left of J3. (d) bringup.md 6.2-6.3 still call seat 1's Y the power button (both Starts since 2d1124d). (e) assembly.md section 3 says to look over the TP4056's pad and that 'JP1 and JP2 come bridged' (five jumpers); section 1's polarised list names the TP4056, AO3401A and D5, D6. (f) bom.md: TP4056 at $0.17 among the priciest parts, M2 x 8 screws (case.scad: M2 x 6), 'the Start/Select strip isn't used' and no domes or Start/Select caps (DEF-42), 'Case: tub and lid' and 47 cm3, 118 placements and 49 part numbers from before the shift registers. (g) hardware/ref_design/README.md's first paragraph says the cell lies under the board (it sits in the board's hole since 2026-10-21). (h) pin_review/panel.json and u6.json still name the ME6211 and the 3.5in panel's 124 mV full scale. (i) docs/pinmap.md calibrates the VBAT gain at the end of a charge (DEF-40, DF-117). (j) assembly.md opens the case with the cell still plugged into J2 (DF-169). Items (a)-(r) of 2026-10-24 that concerned the TP4056, ME6211, D7, J6 or the 3.5in panel left with those parts. Added 2026-10-25 by the second review: (k) bom.md:16 quotes the old 70.5 x 151.34 mm board (72.4 x 127.7 mm at 684a609; F-R5); (l) bom.md:55 still buys an adhesive foam pad for the cell (no foam since the cell moved into the hole; F-R16); (m) pin_review/u4.json's E9 note (line 17) says PWR_HOLD is GPIO2, CHG_OFF GPIO19, AMP_EN GPIO11 and BL_PWM GPIO44 (GPIO44, GPIO43, GPIO34 and GPIO28 at 684a609; F-R2).
 - Root cause: docs repeat numbers from design.py and case.scad by hand; nothing compares them.
 - Why missed: no doc check; reviews read the docs as truth.
-- Check added or changed: VER-39 (stale-doc sweep, FAIL 2026-10-24); VER-161 (check_claims.py: the numbers and lists compared with design.py, case.scad and pin_review; not built) is the real fix.
+- Check added or changed: VER-39 (stale-doc sweep, FAIL 2026-10-25: 26 statements); VER-161 (check_claims.py: the numbers, GPIOs and lists compared with design.py, case.scad and pin_review; moved to ORDER by the second review; not built) is the real fix.
 - Updated: REQ-TST-01, DF-102, DF-169
+- Gate: CASE
 - Status: OPEN
 
 ### DEF-22: The validation plan's statuses went stale
@@ -217,6 +239,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: nothing reads the statuses back.
 - Check added or changed: vp_map.csv holds the statuses with evidence as a one-time mapping; validation_plan.md is archived and check_trace no longer compares the two (O-11), so editing the old plan can no longer break the register. No check proves a status right; the live statuses are the VER rows.
 - Updated: none
+- Gate: ORDER
 - Status: FIXED (plan archived; statuses in vp_map.csv and verification.csv)
 
 ### DEF-23: JST PH J2 too tall for the lowered lid
@@ -226,6 +249,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: check_fit allowed J2 into a lid pocket by rule.
 - Check added or changed: VER-06 (check_fit, J2 pocket rule); now stale.
 - Updated: REQ-MEC-01
+- Gate: ORDER
 - Status: FIXED (Molex PicoBlade, 3.4 mm); VER-06 stale
 
 ### DEF-24: Audio numbers in the docs were wrong
@@ -235,6 +259,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no audio simulation committed.
 - Check added or changed: VER-100 (audio chain simulation; not in the repo); VER-64 on the real board.
 - Updated: REQ-AUD-01, REQ-AUD-03, REQ-AUD-05
+- Gate: CASE
 - Status: FIXED (docs corrected; C37/C38 to 4.7 nF and 8-bit PWM in ad291a8)
 
 ### DEF-25: Lid window too tight for the panel's float and tolerance
@@ -244,15 +269,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no XY or Z stack-up analysis.
 - Check added or changed: check_fit learned the lid's panel frame (d049b35): VER-06 (stale); VER-20 (stack; not built).
 - Updated: REQ-MEC-02, REQ-PRD-06
+- Gate: CASE
 - Status: FIXED (frame 0.8 mm, window 1.0 mm)
 
 ### DEF-26: The datasheet gate passes with open questions in it
 - Found: while seeding this register (2026-10-24)
-- Symptom: check_pins.py passes while the pin reviews hold findings it never reads: panel.json's VCI and VDDI (ok false: 3V3 up to 3.366 V against 3.3 V), u4.json pin 58 (GPIO47 above IOVDD when off, 'WAIVED' by the design session in the review file, not by Alex), the missing second 4.7 uF on +1V1 (pin 10), and ratings text that still names parts that left (u6.json: ME6211). The BQ24073's TS tolerances, VBAT(REG), pre-charge and termination limits are not in u2.json at all, though VER-32, VER-134 and VER-138 need them.
+- Symptom: check_pins.py passes while the pin reviews hold findings it never reads: panel.json's VCI and VDDI (ok false: 3V3 up to 3.366 V against 3.3 V), u4.json pin 58 (GPIO47 above IOVDD when off, 'WAIVED' by the design session in the review file, not by Alex), the missing second 4.7 uF on +1V1 (pin 10), and ratings text that still names parts that left (u6.json: ME6211). The BQ24073's TS tolerances, VBAT(REG), pre-charge and termination limits are not in u2.json at all, though VER-32, VER-134 and VER-138 need them. The second review (O-R20, 2026-10-25) adds: a waiver passes whoever wrote it (u4.json pin 58 by the design session); a review's mpn and lcsc are never compared with design.py, so an IC swapped on the same nets passes (every identity matches today, by script); entries with ok null (j1's stubs) are never read; reviews of removed parts (d5, q2, r47, j6, and the C41/R48 entries in passives.json) still sit in pin_review and are to move out (outside hardware/vv).
 - Root cause: check_pins.py fails only on a pin with ok false; it never reads the ratings, and "OPEN QUESTION" text in an ok true entry is invisible to it.
 - Why missed: the gate was written to catch net changes, not unresolved findings.
-- Check added or changed: VER-36 (read both rating schemas, what/limit and param/ds; fail on ok false or null without a waiver, on open-question text, on a passive rated under 1.25 x its net; not built). Its acceptance test: it must fail today on 9 entries, panel.json's VCI and VDDI (ok false) among them.
+- Check added or changed: VER-36 (read both rating schemas; fail on ok false or null without a waiver, on a waiver that cites no A-NNN line, on an IC's or connector's lcsc or mpn that differs from design.py, on a review of a ref absent from design.py, on open-question text, on a passive rated under 1.25 x its net; not built). Its acceptance test is the failure list it generates from the current files, never a typed list.
 - Updated: REQ-FAB-02, REQ-PWR-14, REQ-MCU-09, DF-94, DF-95, DF-96
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-27: check_fit guesses part heights silently
@@ -262,6 +289,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: nobody seeded a fault to see whether check_fit can fail on a tall part.
 - Check added or changed: VER-112 (heights from drawings; unknown package fails; not built); VER-22 (seeded faults; not built).
 - Updated: REQ-MEC-01, DF-91
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-28: Design analyses are not in the repo
@@ -271,6 +299,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no rule that a quoted number needs its script in the repo.
 - Check added or changed: VER-12, VER-13, VER-100 carry the missing ones as NOT_BUILT; VER-99, VER-114, VER-131, VER-137, VER-138, VER-142, VER-147, VER-164, VER-167, VER-176, VER-177 and VER-20 (in part) now run design_numbers.py through run_checks.py; the README's evidence rule: an analysis or test PASS needs a saved output under evidence/ whose header names its commit, tools and result.
 - Updated: REQ-PWR-02, REQ-PWR-05, REQ-AUD-03
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-29: RP2354B and L2 out of stock at JLC and LCSC
@@ -280,6 +309,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: as DEF-12.
 - Check added or changed: VER-41 (order-day stock, pre-orders, no substitution; not run).
 - Updated: REQ-FAB-10, DF-69, DF-93
+- Gate: ORDER
 - Status: OPEN (pre-orders pending per Alex's notes)
 
 ### DEF-30: Which design is the order candidate is not recorded
@@ -289,6 +319,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no configuration control before this register.
 - Check added or changed: VER-42 (release record: tag, commit, fab zip hash; not run); check_trace.py's rule R7 fails any gate when HEAD's design files differ from README's design baseline ("gate evaluated against a design it does not describe", F-1); evidence goes stale when HEAD moves past changes it covers, or its commit is not an ancestor of HEAD.
 - Updated: REQ-FAB-08, DF-76
+- Gate: ORDER
 - Status: OPEN (the release record names 684a609 or a later commit with a change record; R7 and the default mode fail on anything after it)
 
 ### DEF-31: The case screws engage 1.4 mm of the lid's pilots
@@ -298,6 +329,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no assert ties the screw length to the stack; bom.md's "M2 x 8" is prose.
 - Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles.
 - Updated: REQ-MEC-09, DF-119
+- Gate: CASE
 - Status: OPEN (M2 x 7 in the island's four pilots engages 4.2 mm; the decks' pilots cap at 3.3 mm: PLAN.md decision D18)
 
 ### DEF-32: The drill file mixes plated and unplated holes
@@ -307,6 +339,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: VER-27 (the one look at the gerbers and drills) was gated nowhere (O-1).
 - Check added or changed: VER-131 (design_numbers.py drill: FAIL until fab.py passes --excellon-separate-th; then parse both files); VER-114 (every hole >= 0.30 mm: PASS).
 - Updated: REQ-FAB-04, DF-127
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-33: The CPL uses footprint origins, and J1's and J2's are off their pads
@@ -316,6 +349,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no centroid check; the dry run has not been done.
 - Check added or changed: VER-176 (origin against the pads' centre: FAIL); VER-29 (the rotation table; not built); VER-28 screenshots J1-J4.
 - Updated: REQ-FAB-07.R, DF-128
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-34: No firmware can run on the ordered board
@@ -325,6 +359,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the generated pin definitions (vp_map #56) were scheduled for EVT, so the first build for the real chip would be the day the boards arrive.
 - Check added or changed: VER-149 (generated pin file and a host test), VER-150 (an rp235xb build at 2048K), VER-151 (flash budget); all at the order gate (G-ORD-23); not built.
 - Updated: REQ-MCU-10, REQ-MCU-11, DF-121, DF-122
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-35: The trace gate could pass on evidence that did not show what it claimed
@@ -335,7 +370,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the seeded-fault run that tested check_trace was never committed (DEF-28's rule).
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
-- Status: CLOSED (check_trace.py rewritten; VER-129 PASS 2026-10-25 at 78b777a: 47 seeded faults caught, 12 of them with git history)
+- Gate: ORDER
+- Status: FIXED (reopened 2026-10-25 by the second review, O-R2: the gate still passed on uncommitted, typed evidence; was CLOSED on VER-129 at 78b777a, 47 faults). The holes are DEF-52; it closes with DEF-52 when VER-129 passes with their seeded faults.
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -344,6 +380,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no seeded fault for check_pcb.
 - Check added or changed: VER-04 (fail on any type not in COSMETIC), VER-22 (a seeded hole_to_hole fault); not built.
 - Updated: vp_map #19
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-37: TH1 sits at the cell's edge, and four bare pads face the pouch
@@ -353,6 +390,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: check_fit never reads positions.json's cell and skips test points on its back-side pass.
 - Check added or changed: VER-164 (design_numbers.py th1: the geometry, PASS); VER-87 (two thermocouples: the lag; not built).
 - Updated: REQ-THM-02, REQ-BAT-08, DF-04
+- Gate: CASE
 - Status: OPEN (PLAN.md decision D25 before the case release: a silicone thermal pad across the gap, or accept the lag for EVT)
 
 ### DEF-38: C9 sits 0.9 mm from a screw boss's edge
@@ -362,6 +400,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: DF-38's detection (VER-52) runs before the board is screwed in.
 - Check added or changed: VER-142 (MLCC keep-out; not built); VER-92 (C9 at 40x and TP2 after 20 screw cycles).
 - Updated: DF-38
+- Gate: ORDER
 - Status: RETIRED in 2d1124d: C9 left with the TP4056's load sharing; the class (an MLCC by a clamping boss) is VER-142 (PASS: the nearest is C14, 4.40 mm from H4) and REQ-MEC-12
 
 ### DEF-39: Backlight at 100% exceeds the panel's 120 mA at worst-case tolerance
@@ -371,15 +410,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no tolerance sweep; the sim hard-codes its values (DEF-45).
 - Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, new).
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
-- Status: CLOSED (the panel and R61 changed in 53e21c8; VER-137 PASS 2026-10-25: 78.0 mA worst case against 80 mA; the bench reading at EVT is VER-62 in G-EVT-03)
+- Gate: ORDER
+- Status: FIXED (design_numbers.py rewritten by the second review: the check re-runs before it closes again; the panel and R61 changed in 53e21c8; VER-137 PASS 2026-10-25: 78.0 mA worst case against 80 mA; the bench reading at EVT is VER-62 in G-EVT-03)
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
-- Symptom: the ADC's reference is 3V3 and pinmap.md sets the gain at the end of a charge taking the cell as 4.20 V (the BQ24073's CV is +-1%): in regulation the cutoff fires at a true 3.465-3.535 V; in dropout the reading rises as the cell falls, and with 3V3 +2%, the RT9013's 120 mV maximum dropout at 150 mA and a -1% CV its lowest reading is 3.521 V, so the cutoff never fires. With no cell the BQ24073's battery detection toggles CHG, so a gain from a false end-of-charge edge can also be stored.
+- Symptom: the ADC's reference is 3V3 and pinmap.md sets the gain at the end of a charge taking the cell as 4.20 V (the BQ24073's CV is +-1%): in regulation the cutoff fires at a true 3.465-3.535 V; in dropout the reading rises as the cell falls, and with 3V3 +2%, the RT9013's 120 mV maximum dropout at 150 mA and a -1% CV its lowest reading is 3.521 V, so the cutoff never fires. With no cell the BQ24073's battery detection toggles CHG, so a gain from a false end-of-charge edge can also be stored. GPIO47 also reads through R17/R18's 235 kohm, so every 100 nA of pad leakage is 47 mV of VBAT: the RP2350's input leakage over temperature alone can exceed REQ-BAT-12's window (O-R15; design_numbers.py cutoff now counts it).
 - Root cause: a ratio measurement treated as absolute; a calibration point chosen for convenience.
 - Why missed: VER-67's limit applies above 3.6 V and its sweep runs with USB in, which keeps 3V3 regulated.
 - Check added or changed: VER-138 (design_numbers.py cutoff: FAIL at 3.521 V), VER-139 (bench sweep without USB), VER-155 (bench calibration at 3.50 V), VER-156 (no gain from a no-cell edge); the last three not built.
 - Updated: REQ-BAT-12, REQ-TST-06, DF-116, DF-117
+- Gate: ORDER
 - Status: OPEN (decide before the order: a hardware reference needs copper)
 
 ### DEF-41: Assembly works next to a live cell
@@ -389,6 +430,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no DFMEA row for hand work near the cell.
 - Check added or changed: VER-91 (records the step order: speaker on the bare board, iron cold, FPC latched, cell last; not run).
 - Updated: DF-102, DF-112
+- Gate: CASE
 - Status: FIXED (assembly.md's order; closes when VER-91 records it on a unit); DF-169's change to the opening steps is still to make
 
 ### DEF-42: The Start/Select pills and caps are not in the BOM
@@ -398,6 +440,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: nothing checks that every contact class has a bought pill and cap.
 - Check added or changed: VER-167 (design_numbers.py bom: FAIL); VER-126 (incoming silicone, caps and domes).
 - Updated: DF-167, DF-168
+- Gate: CASE
 - Status: OPEN
 
 ### DEF-43: Plug-in inrush is over USB 2.0's 50 uC
@@ -407,7 +450,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: VER-99 was carried as NOT_BUILT behind the hot-plug ODE, though a calculator settles it.
 - Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073).
 - Updated: REQ-PWR-13
-- Status: CLOSED (no deviation at 684a609; VER-99 PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
+- Gate: ORDER
+- Status: FIXED (design_numbers.py rewritten by the second review: the check re-runs before it closes again; no deviation at 684a609; VER-99 PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -417,6 +461,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: requirements are prose, and none was approved yet.
 - Check added or changed: none (requirements wording); VER-161 will check the numbers they quote.
 - Updated: REQ-PWR-14, REQ-PWR-02, REQ-PWR-01, REQ-PWR-16, REQ-PRD-07, REQ-THM-01, REQ-FAB-03, REQ-AUD-01
+- Gate: ORDER
 - Status: FIXED (reworded; all still PROPOSED)
 
 ### DEF-45: The backlight sim cannot follow design.py, and its evidence missed loop-made parts
@@ -426,6 +471,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: nobody changed a value to see whether the evidence went stale.
 - Check added or changed: VER-05 (now covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed).
 - Updated: REQ-DSP-05, DF-44
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-46: Bring-up's cell emulation cannot hold 3.50 V with USB in
@@ -435,6 +481,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the procedure was never run.
 - Check added or changed: VER-70 and VER-67 revised (CHG_OFF held high, or 10 ohm 5 W across the supply; VBAT recorded at the trigger instant).
 - Updated: REQ-PWR-05, DF-34
+- Gate: EVT
 - Status: FIXED (procedures revised; bringup.md to follow); closes when VER-70 passes
 
 ### DEF-47: The register drifted off the design it was meant to describe
@@ -445,16 +492,18 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: nothing runs check_trace.py on a design commit (it is not in scripts/check.sh); the default mode printed 'baseline differs' as a report line and exited 0; a rebase that changes the design under the register raised nothing until someone ran the tool.
 - Check added or changed: check_trace.py's structure check now fails when README.md's design baseline differs from HEAD or does not name every design path (design.py, placement.py, lib/, battler.kicad_pcb, last_route.ses, build_pcb.py, route.py, silk.py, fab.py, case.scad); VER-129 seeds both faults and passes. Still to do outside hardware/vv: a hardware step in scripts/check.sh that runs check_trace.py (PLAN.md step 0.3).
 - Updated: README (baseline at 684a609), every file of the register
+- Gate: ORDER
 - Status: FIXED (re-seeded at 684a609; closes when scripts/check.sh runs check_trace.py on every commit and VER-129 passes)
 
 ### DEF-48: The charge window's hot edge is 47 C and nothing on the board can move it
 - Found: re-seeding for 684a609 (2026-10-25), from pin_review/u2.json pin 1
-- Symptom: TH1 (B3950 10k) against the BQ24073's fixed TS thresholds (0.30 V hot, 2.1 V cold at 75 uA) gives 3.5-47.2 C nominal. The hot edge is 2.2 C over a typical 45 C cell limit before any tolerance, and with no resistor footprints on CHG_TEMP it can be moved only by changing copper.
+- Symptom: TH1 (B3950 10k) against the BQ24073's fixed TS thresholds (0.30 V hot, 2.1 V cold at 75 uA) gives 3.5-47.2 C nominal. The hot edge is 2.2 C over a typical 45 C cell limit before any tolerance. No resistor network fixes it: a parallel resistor that brings the hot edge to 45 C drags the cold edge to -11.6 C, a series one makes the hot edge hotter (O-R6), so the first run's two DNP footprints could not do what they promised.
 - Root cause: the TP4056's window divider (R39, R40) left with it, and the BQ24073's window was taken as given.
 - Why missed: REQ-BAT-03 was written for the TP4056; nothing computes the window from design.py (VER-32 not built).
 - Check added or changed: VER-32 (the window from SLUS810N's TS limits; not built); VER-135 (per unit, now with a finger-warm step: TH1 is an NTC).
 - Updated: REQ-BAT-03, DF-147, DF-146
-- Status: OPEN (PLAN.md decision D5 before the order: two DNP footprints on CHG_TEMP, or accept 47 C against the cell's spec sheet)
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision D5 before the order: a BOM-only TH1 with a higher B, about 4250-4350, if JLC stocks one, or accept 47.2 C against the cell's datasheet)
 
 ### DEF-49: The shift registers cut the pill margin from 10 kohm to about 3.7 kohm
 - Found: re-seeding for 684a609 (2026-10-25)
@@ -463,6 +512,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the margin lives in prose; no script computes it from design.py.
 - Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision D24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
 - Updated: REQ-BTN-01, DF-164
+- Gate: ORDER
 - Status: OPEN
 
 ### DEF-50: A faulty USB source reaches the regulator's enable ahead of the charger's OVP
@@ -472,6 +522,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: no table of which pins VBUS reaches and at what level.
 - Check added or changed: VER-177 (design_numbers.py vbus: FAIL at 6.9 V).
 - Updated: REQ-PWR-17, DF-101
+- Gate: ORDER
 - Status: OPEN (PLAN.md decision D17)
 
 ### DEF-51: A worst-case cell has 0.30 mm to swell under the deck
@@ -481,4 +532,46 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Why missed: the Z stack has no script (VER-20 was not built).
 - Check added or changed: VER-20 (its swell part written: FAIL at 0.30 mm).
 - Updated: REQ-BAT-07, DF-84
+- Gate: CASE
 - Status: OPEN (PLAN.md decision D18 before the case release)
+
+### DEF-52: The trace gate and the fab checks still passed on words, typed results and unsigned approvals
+- Board: both
+- Found: two-model review of the re-seeded register (O-R1 to O-R5, O-R8, O-R11, O-R12, O-R13, O-R21, F-R1, F-R3, F-R6, F-R13), 2026-10-25
+- Symptom: VER-176 and VER-131 passed on the words 'centroid' or '--excellon-separate-th' anywhere in fab.py, comments included, and read no fab output. Uncommitted edits to the register and its evidence opened the gate (VER-138 FAIL to PASS in a scratch clone). An inspection or demonstration passed on any repository file. An approval counted from any commit without a Claude trailer, though every commit has the same author and merges never carry one. R4 at the order gate counted case and docs defects. Occurrence 3 ('proven on similar hardware') sat on 71 rows of parts never built, keeping five severity 9-10 rows at M. At DVT and PVT an EVT inspection still counted. prod_board's gate read no DFMEA row. A commit to the order branch after the baseline raised nothing on vv-plan, and the schematics, the project file and case/export.py were not design paths. A change record's re-run list was hand-picked.
+- Root cause: rules written for the faults the first review named, each checked one way only.
+- Why missed: seed_faults.py seeded the faults known on 2026-10-24; none of these.
+- Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a prod_board row, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole); VER-131 and VER-176 now run fab.py's own export into a temp dir and read what it writes.
+- Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
+- Gate: ORDER
+- Status: FIXED (rules and checks rewritten); closes when VER-129 passes with these faults at the commit that holds them
+
+### DEF-53: The pushed cell's end sits 0.25 mm from the routed FR4 edge
+- Found: two-model review (O-R7), 2026-10-25, from case.scad lines 73 and 1278 and assembly.md step 5
+- Symptom: the tub's pocket is 0.25 mm inside the board hole's outline on each side, and assembly.md pushes the cell against its right wall, so every cell's end is 0.25 mm from the FR4 edge at TH1. JLC's routing tolerance (about +-0.2 mm) can take that near zero. REQ-BAT-08 asks 0.5 mm all round.
+- Root cause: the pocket was sized for the cell's fit, not against REQ-BAT-08; VER-164 asked only that TH1 be within 1.0 mm.
+- Why missed: no check computed the gap at the pushed end.
+- Check added or changed: VER-181 (design_numbers.py cellgap: FAIL).
+- Updated: REQ-BAT-08, DF-85 (now H)
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision D27 before the order: D25's silicone pad in the gap, a wider hole's right end, or a restated REQ-BAT-08)
+
+### DEF-54: Rows still written for 76955d2 after the re-seed
+- Found: two-model review (O-R9, O-R10, F-R2, F-R4, F-R5, F-R7, F-R9, F-R10, F-R11, F-R14, F-R16), 2026-10-25
+- Symptom: VER-77 scoped GPIO2 for PWR_HOLD (GPIO44; GPIO2 is P2_START); VER-130 listed J4 as unassembled (a JLC-placed PicoBlade since 7da6a90) and typed 49 lines and 117 placements (44 and 118); VER-166 and REQ-FAB-11 used the old 70.5 x 151.34 mm board; VER-89 inspected an ESOP; VER-91 soldered the speaker; VER-36 and VER-159 named TP4056 and ME6211 entries; VER-148 named a RETIRED row; DF-45 kept 'GPIO44' for BL_PWM; the latch checks covered only seat 1's Start; units.csv counted J6 matings.
+- Root cause: the re-seed rewrote rows by part; rows that quote a GPIO, a count or a dimension were read by eye.
+- Why missed: the claims script (VER-161) was not built and sat at the case gate; no rule refused a live row that cites a RETIRED one.
+- Check added or changed: VER-161 (check_claims.py, moved to ORDER; not built); check_trace's structure rule against a live row citing a RETIRED id outside 'Was:' (seeded in VER-129).
+- Updated: VER-28, VER-29, VER-33, VER-36, VER-52, VER-68, VER-77, VER-78, VER-79, VER-89, VER-90, VER-91, VER-130, VER-148, VER-159, VER-166; REQ-ASM-01, REQ-FAB-11, REQ-PWR-08, REQ-PWR-11; DF-45, DF-144
+- Gate: ORDER
+- Status: FIXED (rows rewritten against design.py at 684a609); VER-161 not built
+
+### DEF-55: JLC's order-number marker is not on the board
+- Found: two-model review (O-R19), 2026-10-25: `grep -c JLCJLC` on battler.kicad_pcb and silk.py gives 0 and 0
+- Symptom: REQ-FAB-05 asks for 'JLCJLCJLCJLC' on the back silk so JLC prints its number there; it is not in the design, so JLC places it anywhere (DF-125: on a comb or the BOARD_REV text).
+- Root cause: REQ-FAB-05 was written as if the marker existed.
+- Why missed: no check read the silk for it.
+- Check added or changed: VER-132 (k) (the marker on B.Silkscreen, or JLC's paid removal option in the release record; not built).
+- Updated: REQ-FAB-05, DF-125
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision D28)

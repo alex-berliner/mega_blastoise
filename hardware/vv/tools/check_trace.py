@@ -18,12 +18,18 @@ pattern matches a file committed to git and, with a regex, a line in it; a check
 'both' covers both boards; every check is reached by some gate, requirement or
 high-priority risk no later than its own phase; a status of APPROVED, REJECTED, DEFERRED,
 ACCEPTED or a signed waiver has a matching line in releases/APPROVALS.md that Alex
-committed (DEFERRED, ACCEPTED and WAIVED name the last phase they hold for); an approved
-requirement's statement has not changed since; two release records of one board with
-different BOMs have different BOARD_REVs; no defect is CLOSED without a check; a RETIRED
-row names the commit that removed its subject, and no live row leans on a retired check;
-README.md's design baseline names every design path and equals HEAD (DEF-47: a register
-that drifted off its design fails here, not only at a gate). Everything else is a report.
+committed in a commit signed with his key (O-R4: never a merge, never a Claude commit;
+DEFERRED, ACCEPTED and WAIVED name the last phase they hold for); an approved requirement's
+statement has not changed since; two release records of one board with different BOMs have
+different BOARD_REVs; a change record's 'What to re-run' lists every bench test tied to a
+part its commits changed (O-R21); no defect is CLOSED without a check, and every defect
+names its Gate (O-R5); a RETIRED row names the commit that removed its subject, no live row
+leans on a retired check, and no live row's text cites a retired id outside 'Was: ...'
+(O-R9); an occurrence of 3 says what it is 'Similar:' to (O-R8); an inspection's evidence
+names WHO and ARTEFACT (O-R3); README.md's design baseline names every design path and
+equals HEAD (DEF-47: a register that drifted off its design fails here, not only at a
+gate). Everything else is a report, with warnings for evidence not committed and for design
+commits on the order branch after the baseline.
 
 --gate PHASE exits 1 unless every criterion of that gate in gates.md is met for the board
 (default ref_design), plus these rules at every gate:
@@ -34,18 +40,24 @@ that drifted off its design fails here, not only at a gate). Everything else is 
   R3  every H-priority DFMEA row in scope is ACCEPTED for this phase or a later one, or
       DONE with every one of its 'detects' checks PASSED, fresh, and of a phase at or
       before the gate (a row with a later-phase 'detects' check needs an acceptance);
-  R4  no defect of the board is OPEN (order, case, EVT); every one is CLOSED (DVT, PVT);
-  R5  no PASSED check covers a file with uncommitted changes;
+  R4  no defect of the board whose Gate is this phase or earlier is OPEN (order, case, EVT);
+      every such one is CLOSED (DVT, PVT);
+  R5  no PASSED check covers a file with uncommitted changes, and nothing under hardware/vv
+      is uncommitted; a check whose evidence file is not committed does not pass (O-R2);
   R6  every commit since the newest release record that touches the design (DESIGN_PATHS:
-      design.py, placement.py, lib/, case.scad, the routed board and the scripts that
-      route, silk and export it) is named in a change record (ref_design);
-  R7  the design files at HEAD are the ones README.md's design baseline names (ref_design).
-At DVT and PVT a test (method T) of phase EVT or later passes only on a result that covers a
-release record of that phase (REL-...-DVT, REL-...-PVT): an EVT unit's bench result does not
-speak for the revised spin.
+      design.py, placement.py, lib/, the routed board and its project file, the schematics,
+      the board/tools tree, case.scad and case/export.py) is named in a change record
+      (ref_design);
+  R7  the design files at HEAD are the ones README.md's design baseline names (ref_design);
+  R8  (order gate) the order branch README.md names has no design commit after the
+      baseline commit (O-R13).
+At DVT and PVT a check of phase EVT or later that is a test (method T) or covers a release,
+whatever its method, passes only on a result that covers a release record of that phase
+(REL-...-DVT, REL-...-PVT): an EVT unit's result does not speak for the revised spin (O-R11).
 
 Scope: for ref_design, requirements and DFMEA rows marked ref_design or both; for
-prod_board, only those marked prod_board (REQ-PBD-* and the .P allocations Alex writes).
+prod_board, requirements marked prod_board (REQ-PBD-* and the .P allocations Alex writes)
+and DFMEA rows marked prod_board or both (O-R12).
 A product requirement split per board (REQ-X and REQ-X.R / REQ-X.P) is verified through
 the child for the board.
 
@@ -95,12 +107,13 @@ DESIGN_PY = "hardware/ref_design/board/design.py"
 # library, the routed copper and the scripts that build, route, silk and export it, and the case.
 # A commit touching any of these after a release needs a change record (R6), and README.md's
 # design baseline names each one's git object (R7 and the structure check).
+# The second review (F-R13, O-R13) added the schematics, the project file (its DRC rules) and the whole
+# board/tools tree (one hash: the route, silk and fab scripts and the routed session), and case/export.py,
+# which writes the positions placement.py reads.
 BOARD_FILES = ("board/design.py", "board/placement.py", "board/lib", "board/battler.kicad_pcb",
-               "board/tools/last_route.ses", "board/tools/build_pcb.py", "board/tools/route.py",
-               "board/tools/silk.py", "board/tools/fab.py")
-CASE_FILES = ("case/case.scad",)
-DESIGN_PATHS = tuple("hardware/ref_design/" + p for p in BOARD_FILES + CASE_FILES)
-BASELINE_FOR = {"ORDER": BOARD_FILES, "CASE": CASE_FILES}
+               "board/battler.kicad_pro", "board/tools")
+BOARD_GLOBS = ("board/*.kicad_sch",)
+CASE_FILES = ("case/case.scad", "case/export.py")
 EVIDENCE_DIR = "hardware/vv/evidence/"
 CLAUDE_TRAILER = re.compile(r"^(Co-Authored-By: Claude|Claude-Session:)", re.M | re.I)
 
@@ -160,6 +173,29 @@ def git(*args):
 # committed or staged files only: a 'covers' glob must not be met by an untracked file (F's objection)
 TRACKED = set(git("ls-files", "--cached")[1].split("\n")) - {""}
 HEAD = git("rev-parse", "HEAD")[1].strip()
+# what HEAD itself holds, and what differs from it (staged or not): evidence counts only when committed (O-R2)
+IN_HEAD = set(git("ls-tree", "-r", "--name-only", "HEAD")[1].split("\n")) - {""}
+CHANGED_VS_HEAD = set(git("diff", "--name-only", "HEAD")[1].split("\n")) - {""}
+BOARD_FILES = BOARD_FILES + tuple(sorted(t[len("hardware/ref_design/"):] for t in TRACKED for g in BOARD_GLOBS
+                                         if re.fullmatch(r"hardware/ref_design/" + g.replace(".", r"\.")
+                                                         .replace("*", r"[^/]*"), t)))
+DESIGN_PATHS = tuple("hardware/ref_design/" + p for p in BOARD_FILES + CASE_FILES)
+BASELINE_FOR = {"ORDER": BOARD_FILES, "CASE": CASE_FILES}
+SIGNERS = git("config", "--get", "gpg.ssh.allowedSignersFile")[1].strip()
+
+
+def committed_unchanged(relpath):
+    """The file is in HEAD's tree and has no staged or unstaged change."""
+    return relpath in IN_HEAD and relpath not in CHANGED_VS_HEAD
+
+
+def is_merge(sha):
+    return len(git("rev-list", "--parents", "-n", "1", sha)[1].split()) > 2
+
+
+def signature(sha):
+    """git's %G? for a commit: G is a good signature from a key in the allowed-signers file."""
+    return git("log", "-1", "--format=%G?", sha)[1].strip() or "N"
 _resolved, _diff, _lines, _anc, _msg, _blame, _design = {}, {}, {}, {}, {}, {}, {}
 
 
@@ -517,12 +553,28 @@ def parse_approvals():
         if dec in ("REJECTED", "DEFERRED", "ACCEPTED", "WAIVED") and (not reason or reason == "-"):
             err(w, f"{aid}: {dec} needs a reason")
         sha = bl.get(n, "0" * 40)
-        committed = not set(sha) <= {"0"}
-        if committed and CLAUDE_TRAILER.search(commit_message(sha)):
+        committed, pending = not set(sha) <= {"0"}, ""
+        if not committed:
+            pending = "not committed"
+        elif CLAUDE_TRAILER.search(commit_message(sha)):
             err(w, f"{aid}: written in commit {sha[:7]}, which carries a Claude trailer: only Alex signs approvals")
-            committed = False
+            committed, pending = False, "a Claude commit"
+        elif is_merge(sha):
+            # O-R4: a merge (or its conflict resolution) is nobody's signed decision
+            err(w, f"{aid}: comes from a merge commit ({sha[:7]}): an approval line counts only from Alex's own "
+                   "signed commit; commit the line again on its own")
+            committed, pending = False, "a merge commit"
+        elif not SIGNERS or not os.path.isfile(os.path.expanduser(SIGNERS)):
+            # O-R4 revised: every commit has Alex's e-mail, so authorship proves nothing; only his key does
+            warn(w, f"{aid}: pending, unverified: commit signing is not set up here (README, 'Approvals'), so "
+                    f"{sha[:7]} cannot be shown to be Alex's")
+            committed, pending = False, "unverified: signing not set up"
+        elif signature(sha) != "G":
+            warn(w, f"{aid}: {sha[:7]} is not signed with a key in the allowed-signers file "
+                    f"(%G? = {signature(sha)}): it does not count")
+            committed, pending = False, "not signed with Alex's key"
         rows.append({"id": aid, "item": item, "decision": dec, "scope": scope, "reason": reason, "who": who,
-                     "date": date, "sha": sha, "committed": committed, "_where": w})
+                     "date": date, "sha": sha, "committed": committed, "pending": pending, "_where": w})
     eff = {}
     for r in rows:
         if r["committed"]:
@@ -531,17 +583,37 @@ def parse_approvals():
 
 
 def parse_baseline():
-    """README.md's design baseline: lines '- `path` <40-hex git blob>'."""
+    """README.md's design baseline: lines '- `path` <40-hex git blob>', and the order branch line
+    '- Order branch: `<branch>` from `<commit>`' (O-R13)."""
     path = os.path.join(VV, "README.md")
-    out = {}
+    out, branch = {}, None
     if not os.path.exists(path):
-        return out
+        return out, branch
     text = open(path, encoding="utf-8").read()
     m = re.search(r"^## Design baseline\s*$(.*?)(?=^## |\Z)", text, re.M | re.S)
     if m:
         for p, h in re.findall(r"^- `(hardware/\S+)` ([0-9a-f]{40})\s*$", m.group(1), re.M):
             out[p] = h
-    return out
+        b = re.search(r"^- Order branch: `([^`]+)` from `([0-9a-f]{7,40})`", m.group(1), re.M)
+        if b:
+            branch = (b.group(1), b.group(2))
+    return out, branch
+
+
+def branch_drift(db):
+    """O-R13: design commits on the order branch after the baseline commit, or why it cannot be read.
+    A local branch wins over origin's (a scratch clone has only origin's)."""
+    if not db["order_branch"]:
+        return ["README.md names no order branch ('- Order branch: `<branch>` from `<commit>`')"]
+    name, base = db["order_branch"]
+    ref = next((r for r in (f"refs/heads/{name}", f"refs/remotes/origin/{name}") if resolve(r)), None)
+    if not ref:
+        return [f"the order branch {name} is not in this repository"]
+    if not resolve(base):
+        return [f"the baseline commit {base} is not in this repository"]
+    shas = git("log", "--format=%h %s", f"{resolve(base)}..{ref}", "--", *DESIGN_PATHS)[1].splitlines()
+    return [f"{name} has design commits after {base}: " + "; ".join(s[:60] for s in shas[:4])
+            + (f" (+{len(shas) - 4})" if len(shas) > 4 else "")] if shas else []
 
 
 # ---- load and validate ------------------------------------------------------------
@@ -551,7 +623,7 @@ DF_COLS = ["id", "board", "item", "function", "failure_mode", "effect", "severit
 VER_COLS = ["id", "title", "method", "board", "procedure", "pass_limit", "covers", "last_result", "evidence",
             "commit", "date", "phase", "valid_days", "instrument", "accuracy", "needs"]
 VP_COLS = ["num", "title", "maps_to", "cut_reason", "status_file", "status_now", "evidence"]
-DEF_FIELDS = ["Found", "Symptom", "Root cause", "Why missed", "Check added or changed", "Updated", "Status"]
+DEF_FIELDS = ["Found", "Symptom", "Root cause", "Why missed", "Check added or changed", "Updated", "Gate", "Status"]
 UNITS = {"mv": ("V", 1e-3), "v": ("V", 1.0), "ua": ("A", 1e-6), "ma": ("A", 1e-3), "a": ("A", 1.0),
          "c": ("C", 1.0), "ohm": ("ohm", 1.0), "kohm": ("ohm", 1e3), "mm": ("mm", 1.0)}
 
@@ -740,6 +812,10 @@ def load():
             if not built and not excluded:
                 err(w, f"{d['id']}: occurrence {d['O']} needs a passing T check on built hardware in 'detects', "
                        f"or occurrence 1 with 'Excluded: <why the cause cannot happen>' in prevention")
+        if d["O"] == 3 and "Similar:" not in d["prevention"]:
+            # O-R8: 3 is 'proven on similar hardware'; a part never built rates 4 or more by the scale
+            err(w, f"{d['id']}: occurrence 3 needs 'Similar: <the board and part it is proven on>' in prevention, "
+                   "or a rating of 4-8 by the README's scale")
 
     plan_n = set()
     vps = {}
@@ -787,6 +863,9 @@ def load():
         if st not in DEF_STATUS:
             err(d["_where"], f"{d['id']}: Status must start with one of {DEF_STATUS}")
         d["vers"] = VER_ID.findall(d["f"].get("Check added or changed", ""))
+        d["gate"] = d["f"].get("Gate", "").split()[0] if d["f"].get("Gate") else ""
+        if d["gate"] not in PHASES:
+            err(d["_where"], f"{d['id']}: Gate {d['gate']!r}: the first gate it must be fixed by, one of {PHASES} (O-R5)")
         if st == "RETIRED":
             retired_ok(d["_where"], d["id"], d["f"].get("Status", ""))
         if st == "CLOSED" and not d["vers"]:
@@ -796,7 +875,8 @@ def load():
     recs = parse_records()
     approvals, eff = parse_approvals()
     db = dict(reqs=reqs, dfs=dfs, vers=vers, vps=vps, defs=defs, crit=crit, waivers=waivers, recs=recs,
-              approvals=approvals, eff=eff, baseline=parse_baseline())
+              approvals=approvals, eff=eff)
+    db["baseline"], db["order_branch"] = parse_baseline()
 
     base = db["baseline"]
     if not base:
@@ -809,6 +889,8 @@ def load():
         if drift:
             err("README.md", "design baseline differs from HEAD at " + " ".join(drift) + ": the register describes "
                              "another design (DEF-47); re-check the rows those files touch, then update the baseline")
+    for m in branch_drift(db):
+        warn("README.md", m + ": the order gate fails until those rows are re-checked (R8)")
     for c in crit.values():
         for t in c["needs"]:
             if t in vers and vers[t]["last_result"] == "RETIRED":
@@ -816,6 +898,11 @@ def load():
     db["advisory_only"] = advisory_only(db)
     for v in vers.values():
         check_evidence(v, recs)
+        ev = v["evidence"].split()[0] if v["last_result"] in ("PASS", "FAIL") and v["evidence"].split() else ""
+        if ev.startswith("hardware/") and vv_rel() and not committed_unchanged(ev):
+            warn(v["_where"], f"{v['id']}: its evidence {ev} is not committed, or changed since: it counts at no gate "
+                              "until committed (O-R2)")
+    check_retired_citations(db)
     for d in defs.values():
         if d["status"] == "CLOSED":
             for vid in d["vers"]:
@@ -825,6 +912,7 @@ def load():
     cross_check_approvals(db)
     check_reach(db)
     check_releases(db)
+    check_change_reruns(db)
 
     # every ID referenced anywhere must be defined somewhere
     defined = (set(reqs) | set(dfs) | set(vers) | set(defs) | set(crit) | set(recs) | {w["id"] for w in waivers})
@@ -884,9 +972,11 @@ def tur_check(v):
 
 
 def check_evidence(v, recs):
-    """O-4, F-3, O-6: a PASS or FAIL rests on a saved output whose header matches the row. Every
-    analysis (A) and every test (T) needs the header; an inspection or demonstration (I, D) with
-    no release may point at the inspected file itself."""
+    """O-4, F-3, O-6, O-R3: a PASS or FAIL rests on a saved output under evidence/ whose header matches
+    the row: COMMIT and RESULT always; TOOLS for an analysis (A) or a test (T); WHO (the reviewer) and
+    ARTEFACT (what was inspected: a screenshot folder with sha256s, a spec sheet's sha256, a dated page)
+    for an inspection or demonstration (I, D). Only an I or D check with no release may point at a
+    design file instead, and only one its own 'covers' names (VER-104, VER-124: the rule is in the file)."""
     if v["last_result"] not in ("PASS", "FAIL"):
         return
     w, ev = v["_where"], v["evidence"]
@@ -897,17 +987,24 @@ def check_evidence(v, recs):
     if not first.startswith("hardware/") or not os.path.isfile(os.path.join(ROOT, first)):
         err(w, f"{v['id']}: evidence must start with a file in the repository")
         return
-    if not ({"A", "T"} & set(v["method"].split("/"))) and not v["release"]:
-        return
+    meth = set(v["method"].split("/"))
     if not first.startswith(EVIDENCE_DIR):
-        err(w, f"{v['id']}: an analysis, a test or a bench result needs its saved output under {EVIDENCE_DIR}")
+        pointer = not ({"A", "T"} & meth) and not v["release"] and any(
+            k == "glob" and s[0].match(first) for k, s, _ in v["cov"])
+        if not pointer:
+            err(w, f"{v['id']}: needs its saved output under {EVIDENCE_DIR} with a header (an analysis, a test, a "
+                   "bench result, or an inspection of anything but a file its own 'covers' names)")
         return
     text = open(os.path.join(ROOT, first), encoding="utf-8", errors="replace").read()
     m = re.search(r"^COMMIT: ([0-9a-f]{7,40})\b", text, re.M)
     if not m or not (m.group(1).startswith(v["commit"]) or v["commit"].startswith(m.group(1))):
         err(w, f"{v['id']}: {first} has no 'COMMIT: {v['commit']}' line")
-    if not re.search(r"^TOOLS: \S", text, re.M):
+    if {"A", "T"} & meth and not re.search(r"^TOOLS: \S", text, re.M):
         err(w, f"{v['id']}: {first} has no 'TOOLS:' line (tool versions)")
+    if not ({"A", "T"} & meth):
+        for k, what in (("WHO", "who inspected it"), ("ARTEFACT", "what was inspected, with its sha256 or date")):
+            if not re.search(r"^" + k + r": \S", text, re.M):
+                err(w, f"{v['id']}: {first} has no '{k}:' line ({what})")
     res = re.findall(r"^RESULT: (PASS|FAIL)\b", text, re.M)
     if not res or res[-1] != v["last_result"]:
         err(w, f"{v['id']}: the row says {v['last_result']} but {first} ends "
@@ -949,8 +1046,10 @@ def cross_check_approvals(db):
         if st == "RETIRED" and eff != "RETIRED":
             err(r["_where"], f"{r['id']}: RETIRED, but Alex decided it ({db['eff'][r['id']]['id']}): he rejects it instead")
         elif st != "PROPOSED" and st != eff:
+            pend = [f"{a['id']} pending: {a['pending']}" for a in db["approvals"] if a["item"] == r["id"] and not a["committed"]]
             err(r["_where"], f"{r['id']}: Status {st} but releases/APPROVALS.md "
-                             f"{'says ' + eff if eff != 'PROPOSED' else 'has no committed line for it'}")
+                             f"{'says ' + eff if eff != 'PROPOSED' else 'has no committed line for it'}"
+                             + (f" ({'; '.join(pend)})" if pend else ""))
         elif st == "PROPOSED" and eff != "PROPOSED":
             warn(r["_where"], f"{r['id']}: APPROVALS.md says {eff}: update its Status")
         if eff == "APPROVED":
@@ -966,11 +1065,13 @@ def cross_check_approvals(db):
     for d in db["dfs"].values():
         acc = eff_df_accept(db, d["id"])
         if d["status"] == "ACCEPTED" and not acc:
-            err(d["_where"], f"{d['id']}: ACCEPTED but releases/APPROVALS.md has no committed line for it")
+            pend = [f"{a['id']} pending: {a['pending']}" for a in db["approvals"] if a["item"] == d["id"] and not a["committed"]]
+            err(d["_where"], f"{d['id']}: ACCEPTED but releases/APPROVALS.md has no committed line for it"
+                + (f" ({'; '.join(pend)})" if pend else ""))
         elif d["status"] != "ACCEPTED" and acc:
             warn(d["_where"], f"{d['id']}: APPROVALS.md accepts it for {acc['scope']}: set status ACCEPTED")
     for a in db["approvals"]:
-        if not a["committed"]:
+        if not a["committed"] and a["pending"] == "not committed":
             warn(a["_where"], f"{a['id']} ({a['item']} {a['decision']}) is not committed by Alex yet: it does not count")
 
 
@@ -1012,6 +1113,88 @@ def check_reach(db):
         if v["last_result"] not in ("CUT", "RETIRED") and vid not in reached:
             err(v["_where"], f"{vid}: phase {v['phase']}, but no gate criterion at or before {v['phase']}, "
                              "requirement or H-priority risk reaches it: that gate can pass without it")
+
+
+WAS = re.compile(r"\bWas:[^.;|]*")
+REF_RX = re.compile(r"\b([A-Z]{1,3})(\d{1,3})(?:\s*-\s*([A-Z]{1,3})?(\d{1,3}))?\b")
+
+
+def refs_named(text):
+    """Every design ref a text names, ranges like C10-C22 expanded."""
+    out = set()
+    for m in REF_RX.finditer(text):
+        a, n1, b, n2 = m.groups()
+        if n2 and b in (None, a) and int(n1) <= int(n2):
+            out |= {f"{a}{i}" for i in range(int(n1), int(n2) + 1)}
+        else:
+            out.add(a + n1)
+            if n2 and b:
+                out.add(b + n2)
+    return out
+
+
+def check_retired_citations(db):
+    """O-R9, F-R14: a live row may not lean on a RETIRED requirement, DFMEA row or check in its text,
+    except inside a 'Was: ...' clause (history). Defects are history and are not read."""
+    retired = ({k for k, r in db["reqs"].items() if r["f"].get("Status") == "RETIRED"}
+               | {k for k, d in db["dfs"].items() if not d["live"]}
+               | {k for k, v in db["vers"].items() if v["last_result"] == "RETIRED"})
+    texts = []
+    for r in db["reqs"].values():
+        if r["f"].get("Status") != "RETIRED":
+            texts += [(r["_where"], r["id"], v) for k, v in r["f"].items() if k != "Retired"]
+    for d in db["dfs"].values():
+        if d["live"]:
+            texts += [(d["_where"], d["id"], d[k]) for k in DF_COLS if k != "id"]
+    for v in db["vers"].values():
+        if v["last_result"] not in ("RETIRED", "CUT"):
+            texts += [(v["_where"], v["id"], v[k]) for k in ("title", "procedure", "pass_limit", "covers")]
+    for where, rid, t in texts:
+        bad = sorted({i for i in ANY_ID.findall(WAS.sub("", t)) if i in retired and i != rid})
+        if bad:
+            err(where, f"{rid}: cites {', '.join(bad)}, which {'is' if len(bad) == 1 else 'are'} RETIRED: name the live "
+                       "row, or keep the history inside 'Was: ...'")
+
+
+def changed_parts(sha):
+    """Refs whose value, LCSC number, footprint or pins a commit changed in design.py."""
+    old, new = design_parts(sha + "^"), design_parts(sha)
+    if old is None or new is None:
+        return set()
+    return {r for r in set(old) | set(new) if part_key(old.get(r)) != part_key(new.get(r))}
+
+
+def check_change_reruns(db):
+    """O-R21: a change record's 'What to re-run' is not hand-picked. Every bench test (method T, a
+    release cover) that a DFMEA row or a requirement ties to a part the recorded commits changed
+    must be listed, or the old units' results would stay fresh for a board that is no longer theirs."""
+    vers = db["vers"]
+    bench = [v for v in vers.values() if "T" in v["method"].split("/") and v["release"]
+             and v["last_result"] not in ("CUT", "RETIRED")]
+    for ch in db["recs"].values():
+        if ch["kind"] != "CHG":
+            continue
+        moved = {}
+        for x in ch["commits"]:
+            sha = resolve(x)
+            if sha:
+                for r in changed_parts(sha):
+                    moved.setdefault(r, x)
+        if not moved:
+            continue
+        missing = []
+        for v in bench:
+            if v["id"] in ch["reruns"]:
+                continue
+            why = [(d["id"], r) for d in db["dfs"].values() if d["live"] and v["id"] in d["det"]
+                   for r in refs_named(" ".join(d[k] for k in ("item", "failure_mode", "cause"))) if r in moved]
+            why += [(q["id"], r) for q in db["reqs"].values() if v["id"] in q["vers"]
+                    for r in refs_named(q["f"].get("Statement", "") + " " + q["f"].get("Source", "")) if r in moved]
+            if why:
+                missing.append(f"{v['id']} ({why[0][0]} names {why[0][1]}, changed in {moved[why[0][1]]})")
+        if missing:
+            err(ch["_where"], f"{ch['id']}: 'What to re-run' omits " + "; ".join(missing[:6])
+                + (f" (+{len(missing) - 6})" if len(missing) > 6 else ""))
 
 
 def check_releases(db):
@@ -1089,7 +1272,7 @@ def req_scope(db, board):
 
 def df_scope(db, board):
     if board == "prod_board":
-        return [d for d in db["dfs"].values() if d["board"] == "prod_board" and d["live"]]
+        return [d for d in db["dfs"].values() if d["board"] in ("prod_board", "both") and d["live"]]
     return [d for d in db["dfs"].values() if d["board"] in ("ref_design", "both") and d["live"]]
 
 
@@ -1153,8 +1336,12 @@ def report(db, verbose):
     cut = [p for p in vps.values() if p["cut"]]
     print(f"  validation-plan methods {len(vps)}: {len(vps) - len(cut)} mapped, {len(cut)} cut (archived plan)")
     print(f"  defects {len(defs)} " + str(dict(Counter(d['status'] for d in defs.values()))))
-    print(f"  approvals by Alex: {sum(1 for a in db['approvals'] if a['committed'])} committed, "
-          f"{sum(1 for a in db['approvals'] if not a['committed'])} pending")
+    print(f"  approvals by Alex: {sum(1 for a in db['approvals'] if a['committed'])} counted (signed), "
+          f"{sum(1 for a in db['approvals'] if not a['committed'])} pending"
+          + ("" if SIGNERS else "; commit signing not set up, so none can count yet"))
+    bdr = branch_drift(db)
+    print("  order branch: " + ("; ".join(bdr) if bdr else f"{db['order_branch'][0]} has no design commit after "
+                                                            f"{db['order_branch'][1]}"))
     bd = baseline_diff(db, None)
     print("  design baseline: " + (("differs from HEAD: " + " ".join(bd)) if bd else "matches HEAD")
           if db["baseline"] else "  design baseline: none in README.md")
@@ -1249,8 +1436,13 @@ def gate(db, phase, board, verbose):
         s = staleness(v, db, dirty)
         if s:
             return False, f"{vid} stale ({s})"
-        # O's objection: at DVT and PVT a bench result on the earlier spin's units does not count
-        if phase in ("DVT", "PVT") and "T" in v["method"].split("/") and phase_le("EVT", v["phase"]) \
+        ev = v["evidence"].split()[0] if v["evidence"].split() else ""
+        if vv_rel() and not committed_unchanged(ev):
+            return False, f"{vid} evidence {ev} not committed, or changed since (O-R2)"
+        # O's objection, O-R11, F-R1: at DVT and PVT a result on the earlier spin's units does not count,
+        # whatever the method (an EVT first article does not inspect the first PVT unit)
+        if phase in ("DVT", "PVT") and phase_le("EVT", v["phase"]) \
+                and ("T" in v["method"].split("/") or v["release"]) \
                 and not any(r.endswith("-" + phase) for r in v["release"]):
             return False, f"{vid} covers no {phase} release (its result is from {' '.join(v['release']) or 'no release'})"
         return True, ""
@@ -1365,17 +1557,26 @@ def gate(db, phase, board, verbose):
                     ([f"{len(bad)} H rows neither ACCEPTED for {phase} nor DONE with every 'detects' check passing: "
                       + " ".join(bad[:12]) + (" ..." if len(bad) > 12 else "")] + (["acceptance ended: " + "; ".join(ended)]
                                                                               if ended else [])) if bad else []))
-    mydefs = [d for d in defs if for_board(defs[d]["board"], board)]
+    # O-R5: a defect blocks the gate it names and every later one, not an earlier one
+    mydefs = [d for d in defs if for_board(defs[d]["board"], board) and defs[d]["gate"] in PHASES
+              and phase_le(defs[d]["gate"], phase)]
     if phase in ("ORDER", "CASE", "EVT"):
         bad = [d for d in mydefs if defs[d]["status"] == "OPEN"]
-        results.append(("R4 no open defects", "FAIL" if bad else "PASS", [f"OPEN: {' '.join(bad)}"] if bad else []))
+        results.append(("R4 no open defects due by this gate", "FAIL" if bad else "PASS",
+                        [f"OPEN (Gate {phase} or earlier): {' '.join(bad)}"] if bad else []))
     else:
         bad = [d for d in mydefs if defs[d]["status"] not in ("CLOSED", "RETIRED")]
-        results.append(("R4 every defect closed", "FAIL" if bad else "PASS", [f"not CLOSED: {' '.join(bad)}"] if bad else []))
+        results.append(("R4 every defect due by this gate closed", "FAIL" if bad else "PASS",
+                        [f"not CLOSED: {' '.join(bad)}"] if bad else []))
     dirty_hits = sorted({f for v in vers.values() if v["last_result"] == "PASS"
                          for k, s, _ in v["cov"] if k == "glob" for f in dirty if s[0].match(f)})
-    results.append(("R5 no uncommitted change under passed evidence", "FAIL" if dirty_hits else "PASS",
-                    [" ".join(dirty_hits[:6])] if dirty_hits else []))
+    rel = vv_rel()
+    # O-R2: the register itself and its evidence must be committed, or a typed PASS opens the gate
+    vv_dirty = git("status", "--porcelain", "--", rel)[1].splitlines() if rel else []
+    rs5 = ([" ".join(dirty_hits[:6])] if dirty_hits else []) + (
+        [f"uncommitted register changes: " + " ".join(x[3:] for x in vv_dirty[:6])
+         + (f" (+{len(vv_dirty) - 6})" if len(vv_dirty) > 6 else "")] if vv_dirty else [])
+    results.append(("R5 nothing uncommitted under passed evidence or in the register", "FAIL" if rs5 else "PASS", rs5))
     if board == "ref_design":
         rels = [r for r in db["recs"].values() if r["kind"] == "REL" and r["board"] == "ref_design"
                 and r["commit"] and resolve(r["commit"]) and is_ancestor(resolve(r["commit"]))]
@@ -1393,6 +1594,9 @@ def gate(db, phase, board, verbose):
         bd = baseline_diff(db, which) if db["baseline"] else ["README.md has no design baseline"]
         results.append(("R7 the register describes this design", "FAIL" if bd else "PASS",
                         ["gate evaluated against a design it does not describe: " + " ".join(bd)] if bd else []))
+        if phase == "ORDER":
+            bdr = branch_drift(db)
+            results.append(("R8 the order branch has not moved past the baseline", "FAIL" if bdr else "PASS", bdr))
 
     print(f"gate {phase} for {board} at {HEAD[:7]}")
     for cid, state, reasons in results:

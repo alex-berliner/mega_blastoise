@@ -11,10 +11,17 @@ uncommitted, evidence made stale by a later commit): for those the repository is
 into a scratch directory (git clone --shared, nothing written to this repository), the
 working register is committed there as a base, and each fault resets to that base, commits
 its change as "Alex" (or with a Claude trailer where that is the fault) and runs the clone's
-own check_trace.py.
+own check_trace.py. The clone signs its commits with a throwaway SSH key named in a
+throwaway allowed-signers file, so an approval line counts there the way Alex's will
+(O-R4); a fault that wants an unsigned commit makes one on purpose.
+
+A third kind runs design_numbers.py in the clone (pcbnew and kicad-cli): a fault there must
+leave the check at RESULT: FAIL (a comment in fab.py must not pass the CPL or drill check:
+O-R1; a back-side test point moved next to the cell's hole must fail th1: O-R14).
 
 A structural fault must exit 1 and print its message; a report fault must exit 0 with its
-text in the report; a gate fault must exit 1 with its text in the gate's output. The clean
+text in the report; a gate fault must exit 1 with its text in the gate's output; a design
+number fault must print RESULT: FAIL. The clean
 copy and the clean clone must exit 0. This is VER-129: the trace gate's own seeded-fault test
 (DEF-35, DEF-47).
 
@@ -118,7 +125,7 @@ FAULTS = [
     ("an analysis PASS with no saved output", "structure", "needs its saved output under",
      lambda d: csv_edit(d, "verification.csv", "VER-01", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/vv/README.md")),
-    ("a test (T) PASS with no saved output", "structure", "VER-43: an analysis, a test or a bench result needs its saved output",
+    ("a test (T) PASS with no saved output", "structure", "VER-43: needs its saved output under",
      lambda d: csv_edit(d, "verification.csv", "VER-43", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/ref_design/docs/assembly.md")),
     ("CLOSED defect with no check", "structure", "CLOSED with no VER",
@@ -181,7 +188,31 @@ FAULTS = [
      lambda d: text_edit(d, "README.md", "- `hardware/ref_design/board/battler.kicad_pcb`", "- `hardware/ref_design/board/battler_old.kicad_pcb`")),
     ("an advisory-only check made binding", "gate", "VER-40 NOT_RUN",
      lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 |", "| VER-40 |")),
+    # the second review (2026-10-25)
+    ("O-R3: an inspection PASS on a design file it does not cover", "structure", "VER-28: needs its saved output under",
+     lambda d: csv_edit(d, "verification.csv", "VER-28", last_result="PASS", commit=HEAD7, date=TODAY,
+                        evidence="hardware/ref_design/README.md")),
+    ("O-R3: an inspection's evidence with no WHO or ARTEFACT", "structure", "has no 'WHO:' line",
+     lambda d: borrow_evidence(d, "VER-28", "VER-99")),
+    ("O-R5: a defect with no Gate", "structure", "DEF-07: Gate ''",
+     lambda d: block_field(d, "defects.md", "DEF-07", "Gate", "")),
+    ("O-R5: a CASE defect moved to the order gate blocks it", "gate", "OPEN (Gate ORDER or earlier): DEF-14 DEF-21 ",
+     lambda d: block_field(d, "defects.md", "DEF-21", "Gate", "ORDER")),
+    ("O-R8: occurrence 3 with no 'Similar:'", "structure", "DF-92: occurrence 3 needs 'Similar:",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-92", prevention=lambda x: x.replace("Similar:", "Like:"))),
+    ("F-R14: a live check cites a RETIRED row", "structure", "VER-148: cites DF-106, which is RETIRED",
+     lambda d: csv_edit(d, "verification.csv", "VER-148", pass_limit=lambda x: x + " (as DF-106)")),
 ]
+
+
+def borrow_evidence(d, vid, donor):
+    """Give an inspection a real evidence file whose COMMIT and RESULT fit, but which is an
+    analysis's output: no WHO and no ARTEFACT line (O-R3)."""
+    row = next(r for r in csv.DictReader(open(os.path.join(d, "verification.csv"), encoding="utf-8")) if r["id"] == donor)
+    if row["last_result"] != "PASS":
+        raise SystemExit(f"seed_faults: {donor} must PASS to lend its evidence")
+    csv_edit(d, "verification.csv", vid, last_result="PASS", commit=row["commit"], date=row["date"],
+             evidence=row["evidence"])
 
 
 # ---- faults that need git history: run in a scratch clone ----------------------------
@@ -192,10 +223,21 @@ def git(repo, *args, env=None):
     return r.stdout.strip()
 
 
-def commit(repo, msg):
+def commit(repo, msg, sign=True):
     git(repo, "add", "-A")
-    git(repo, "commit", "-q", "--no-verify", "-m", msg)
+    git(repo, "commit", "-q", "--no-verify", "-S" if sign else "--no-gpg-sign", "-m", msg)
     return git(repo, "rev-parse", "HEAD")
+
+
+def setup_signing(repo, tmp):
+    """A throwaway SSH key and allowed-signers file, so the clone's 'Alex' signs as Alex will."""
+    key = os.path.join(tmp, "seed_key")
+    subprocess.run(["ssh-keygen", "-q", "-t", "ed25519", "-N", "", "-C", "seed", "-f", key], check=True)
+    allowed = os.path.join(tmp, "allowed_signers")
+    open(allowed, "w").write(f'alex@example.invalid namespaces="git" {open(key + ".pub").read().strip()}\n')
+    for k, v in (("gpg.format", "ssh"), ("user.signingkey", key), ("gpg.ssh.allowedSignersFile", allowed),
+                 ("commit.gpgsign", "true")):
+        git(repo, "config", k, v)
 
 
 def rebaseline(repo):
@@ -323,6 +365,118 @@ def g_expired(repo, base):
     return None
 
 
+def g_unsigned_approval(repo, base):
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-06 | APPROVED | - | - | Alex | 2026-10-25 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
+    commit(repo, "approve REQ-PRD-06", sign=False)
+    return None
+
+
+def g_merge_approval(repo, base):
+    git(repo, "checkout", "-q", "-b", "seeded-side")
+    with open(os.path.join(repo, "hardware/vv/PLAN.md"), "a") as f:
+        f.write("\nside\n")
+    commit(repo, "side")
+    git(repo, "checkout", "-q", "-")
+    git(repo, "merge", "-q", "--no-ff", "--no-commit", "seeded-side")
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-06 | APPROVED | - | - | Alex | 2026-10-25 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
+    commit(repo, "Merge branch 'seeded-side'")
+    git(repo, "branch", "-q", "-D", "seeded-side")
+    return None
+
+
+def g_uncommitted_register(repo, base):
+    """O-R2's attack: VER-138 FAIL to PASS, and its evidence's RESULT with it, left uncommitted."""
+    d = os.path.join(repo, "hardware/vv")
+    row = next(r for r in csv.DictReader(open(os.path.join(d, "verification.csv"), encoding="utf-8")) if r["id"] == "VER-138")
+    p = os.path.join(repo, row["evidence"].split()[0])
+    s = open(p).read()
+    open(p, "w").write(re.sub(r"^RESULT: FAIL", "RESULT: PASS", s, flags=re.M))
+    csv_edit(d, "verification.csv", "VER-138", last_result="PASS")
+    return "order"
+
+
+def g_uncommitted_evidence(repo, base):
+    """A PASS whose row is committed but whose evidence file never was."""
+    fake_pass(repo, "VER-99", base)
+    git(repo, "add", "hardware/vv/verification.csv")
+    git(repo, "commit", "-q", "--no-verify", "-m", "VER-99 passes (evidence left out)")
+    return "order"
+
+
+def g_edited_evidence(repo, base):
+    """A PASS whose evidence was edited after its commit."""
+    fake_pass(repo, "VER-99", base)
+    commit(repo, "VER-99 passes")
+    with open(os.path.join(repo, f"hardware/vv/evidence/{TODAY}_VER-99_seeded.txt"), "a") as f:
+        f.write("# touched up afterwards\n")
+    return "order"
+
+
+def g_evt_fai_at_pvt(repo, base):
+    sha = hashlib.sha256(b"seeded fab zip").hexdigest()
+    open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
+        REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base) + f"- Fab zip sha256: {sha}\n")
+    fake_pass(repo, "VER-109", base, extra=f"RELEASE: REL-REFA-R1-EVT\nUNITS: 1\nFAB: {sha}\nWHO: Alex\n"
+                                           "ARTEFACT: the FAI sheet of unit 1\n")
+    commit(repo, "VER-109 on EVT unit 1")
+    return "pvt"
+
+
+def g_order_branch_moves(repo, base):
+    """O-R13: a design commit on the order branch after the baseline commit, before any merge."""
+    b = re.search(r"^- Order branch: `[^`]+` from `([0-9a-f]+)`", open(os.path.join(repo, "hardware/vv/README.md")).read(),
+                  re.M).group(1)
+    wt = os.path.join(os.path.dirname(repo), "order_wt")
+    git(repo, "worktree", "add", "-q", "-b", "seeded-order", wt, b)
+    with open(os.path.join(wt, "hardware/ref_design/board/tools/silk.py"), "a") as f:
+        f.write("# a silk change on the order branch\n")
+    commit(wt, "silk change on the order branch")
+    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-island-45`",
+              "- Order branch: `seeded-order`")
+    commit(repo, "README names the seeded order branch")
+    return "order"
+
+
+def g_chg_omits(repo, base):
+    """O-R21: a change record whose 'What to re-run' leaves out a bench test tied to the part."""
+    open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
+        REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base))
+    commit(repo, "release record")
+    p = os.path.join(repo, "hardware/ref_design/board/design.py")
+    s = open(p).read()
+    s = s.replace('C("C1", S, "10u 25V", "VBUS_C1")', 'C("C1", S, "22u 25V", "VBUS_C1")', 1)
+    open(p, "w").write(s)
+    sha = commit(repo, "C1 to 22u")
+    rebaseline(repo)
+    open(os.path.join(repo, "hardware/vv/releases/CHG-01-c1.md"), "w").write(
+        f"# CHG-01: C1 to 22u\n\n- Date: {TODAY}\n- Author: Alex\n- Commit(s): {sha[:7]}\n- Reason: seeded\n\n"
+        "## What to re-run\n\n| Check | Why | New result | Commit | Date |\n|---|---|---|---|---|\n"
+        "| VER-99 | inrush | | | |\n")
+    commit(repo, "baseline and CHG-01")
+    return None
+
+
+def g_fab_comment(repo, base):
+    """O-R1's attack: a docstring-style comment in fab.py must not pass the CPL or drill check."""
+    with open(os.path.join(repo, "hardware/ref_design/board/tools/fab.py"), "a") as f:
+        f.write("# JLC places at its own centroid; --excellon-separate-th is not used yet\n")
+    return ("dn", [["cpl"], ["drill"]])
+
+
+def g_tp_near_hole(repo, base):
+    """O-R14: a back-side test point (made in a loop, not a literal put()) moved next to the hole,
+    in memory: no KiCad file is written."""
+    code = ("import sys; sys.path.insert(0, 'hardware/vv/tools'); import design_numbers as dn\n"
+            "pcbnew, b = dn.board(); x0, y0, x1, y1 = dn.cutouts()\n"
+            "fp = [f for f in b.GetFootprints() if f.GetReference() == 'TP11'][0]\n"
+            "assert fp.IsFlipped()\n"
+            "fp.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(x1 + 0.6), pcbnew.FromMM((y0 + y1) / 2)))\n"
+            "sys.exit(dn.th1(b))\n")
+    return ("py", code)
+
+
 GIT_FAULTS = [
     ("row result disagrees with its evidence", "structure", "the row says FAIL", g_result_disagrees),
     ("evidence past its valid_days", "report", "expired", g_expired),
@@ -336,6 +490,23 @@ GIT_FAULTS = [
     ("an EVT unit's result at the DVT gate", "gate", "VER-93 covers no DVT release", g_dvt_release),
     ("a covers glob met only by an untracked file", "structure", "untracked_note.txt' matches no tracked file", g_untracked),
     ("a statement edited after its approval", "structure", "its statement changed after Alex approved it", g_statement_edited),
+    # the second review (2026-10-25)
+    ("O-R4: an approval line in an unsigned plain commit", "structure", "A-001 pending: not signed with Alex's key",
+     g_unsigned_approval),
+    ("O-R4: an approval line written in a merge commit", "structure", "comes from a merge commit", g_merge_approval),
+    ("O-R2: uncommitted register and evidence edits (VER-138 FAIL to PASS)", "gate", "uncommitted register changes",
+     g_uncommitted_register),
+    ("O-R2: a PASS whose evidence was never committed", "gate", "VER-99 evidence hardware/vv/evidence/",
+     g_uncommitted_evidence),
+    ("O-R2: a PASS whose evidence was edited after its commit", "gate", "not committed, or changed since",
+     g_edited_evidence),
+    ("O-R11: an EVT first article at the PVT gate", "gate", "VER-109 covers no PVT release", g_evt_fai_at_pvt),
+    ("O-R13: a design commit on the order branch after the baseline", "gate",
+     "seeded-order has design commits after", g_order_branch_moves),
+    ("O-R21: a change record that omits a bench test of the changed part", "structure",
+     "CHG-01: 'What to re-run' omits VER-52", g_chg_omits),
+    ("O-R1: a comment in fab.py does not pass the CPL or drill check", "dn", "RESULT: FAIL", g_fab_comment),
+    ("O-R14: a back-side test point next to the cell's hole fails th1", "dn", "RESULT: FAIL", g_tp_near_hole),
 ]
 
 
@@ -352,6 +523,8 @@ def fresh_copy(tmp, name):
 
 
 def judge(mode, rc, out, want):
+    if mode == "dn":
+        return rc != 0 and want in out
     if mode == "structure":
         return rc == 1 and want in out
     if mode == "report":
@@ -389,6 +562,7 @@ def main():
         subprocess.run(["git", "clone", "-q", "--shared", ROOT, repo], check=True)
         git(repo, "config", "user.name", "Alex")
         git(repo, "config", "user.email", "alex@example.invalid")
+        setup_signing(repo, tmp)
         shutil.rmtree(os.path.join(repo, "hardware/vv"))
         shutil.copytree(VV, os.path.join(repo, "hardware/vv"), ignore=shutil.ignore_patterns("__pycache__"))
         base = commit(repo, "the working register, as a base for seeded faults")
@@ -404,8 +578,18 @@ def main():
             git(repo, "reset", "-q", "--hard", base)
             git(repo, "clean", "-q", "-fdx", "--", "hardware")
             gate = mutate(repo, base)
-            rc, out = run(None, *(["--gate", gate] if gate else []), trace=trace)
-            ok = judge(mode, rc, out, want)
+            if isinstance(gate, tuple):
+                ok, out, rc = True, "", 0
+                runs = ([[sys.executable, os.path.join(repo, "hardware/vv/tools/design_numbers.py")] + a for a in gate[1]]
+                        if gate[0] == "dn" else [[sys.executable, "-c", gate[1]]])
+                for cmd in runs:
+                    r = subprocess.run(cmd, capture_output=True, text=True, cwd=repo)
+                    out += r.stdout + r.stderr
+                    rc = r.returncode
+                    ok &= judge(mode, r.returncode, r.stdout + r.stderr, want)
+            else:
+                rc, out = run(None, *(["--gate", gate] if gate else []), trace=trace)
+                ok = judge(mode, rc, out, want)
             print(f"{'ok' if ok else 'MISSED'}  {mode:9} {name} (git)")
             if not ok:
                 missed.append(name)

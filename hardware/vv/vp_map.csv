@@ -1,5 +1,5 @@
 num,title,maps_to,cut_reason,status_file,status_now,evidence
-1,Datasheet pinout re-verification of every IC and connector,VER-02,,partly,yes,check_pins.py over pin_review/*.json covers all 29 assembled parts and 244 pins with page quotes; PASS 2026-10-24 (VER-02); PDFs are kept out of git by policy (#73)
+1,Datasheet pinout re-verification of every IC and connector,VER-02,,partly,yes,"check_pins.py over pin_review/*.json covers 37 parts and 322 pins with page quotes (VER-02, PASS 2026-10-25 at 4a86173); PDFs are kept out of git by policy (#73)"
 2,"LCSC part-number cross-check (C-number -> MPN, package, pin count)",VER-14 VER-130,,partly,partly,
 3,Footprint vs manufacturer land pattern,VER-125,,partly,partly,
 4,Pad-number coverage: every pin in design.py exists on the footprint,VER-04,,yes,yes,

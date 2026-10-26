@@ -18,7 +18,7 @@ BOARD_REVs (a BOM-only change bumps BOARD_REV in design.py, printed on the silks
 - Branch:
 - Commit (full hash):
 - Tag: `rel/<board>-r<rev>-<phase>` (annotated, on the commit above)
-- Design baseline: the git object hashes of every design path at the commit above (design.py, placement.py, board/lib, battler.kicad_pcb, board/tools/last_route.ses, build_pcb.py, route.py, silk.py, fab.py, case.scad); README.md's baseline must equal them
+- Design baseline: the git object hashes of every design path at the commit above (design.py, placement.py, board/lib, battler.kicad_pcb, battler.kicad_pro, the schematics, the board/tools tree, case.scad, case/export.py); README.md's baseline must equal them, and the order branch README names has no design commit after it (R8)
 - Date ordered:
 - JLC order number:
 - JLC capability page date: (the dated limits VER-17 checked)
@@ -35,6 +35,7 @@ BOARD_REVs (a BOM-only change bumps BOARD_REV in design.py, printed on the silks
 | battler_bom_jlc.csv | | same run |
 | battler_cpl_jlc.csv | | same run, centroids corrected (VER-29) |
 | IPC-D-356 netlist | | same run, net ties merged (VER-26), or "none sent" |
+| case/positions.json | | case/export.py at the commit above (gitignored, so not in the baseline: F-R13); placement.py read it |
 | JLC's returned placement file | | downloaded after JLC's engineering review: JLC edits rotations on their side, so this, not our CPL, is what was placed |
 
 Tools: KiCad (kicad-cli version), Freerouting version, OpenSCAD version, Python version.

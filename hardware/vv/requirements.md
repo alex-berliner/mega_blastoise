@@ -118,12 +118,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-04: Charge time
 - Level: product
 - Board: both
-- Statement: From the low-cell cutoff the cell shall reach charge-done within 3.0 h at 25 C from a source offering 1.5 A or more, device on the charging screen.
+- Statement: From the low-cell cutoff the cell shall reach charge-done within 4.0 h at 25 C from a 5 V USB source offering 0.5 A or more, device on the charging screen; the time is Alex's to set and no tighter than its allocations.
 - Rationale: a flat unit is ready again within an evening.
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
 - Verified by: allocated: REQ-PRD-04.R
 - Phase: EVT
+- Notes: the first draft said 3.0 h from 1.5 A, the allocation REQ-PRD-04.R says 4.0 h from 0.5 A (the BQ24073's USB500 input limit is 475 mA): Alex sets the time (PLAN.md decision D4, F-R12).
 - Status: PROPOSED
 
 ### REQ-PRD-04.R: Charge time (ref_design)
@@ -143,7 +144,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Statement: Switched off with a full cell and no USB, the board shall drain the cell by no more than 30 uA, so that the board alone takes 2 years or more to empty it.
 - Rationale: 700 mAh / 30 uA is about 2.7 years; the cell's own self-discharge dominates.
-- Source: design_review.md, Off state (18-22 uA computed); validation_plan #33.
+- Source: design_review.md's Off state (18-22 uA) still counts D5's reverse leakage, and D5 left in 2d1124d: VER-103 re-derives the budget for the BQ24073 board (O-R23); validation_plan #33.
 - Method: T, A
 - Verified by: VER-65, VER-103
 - Phase: EVT
@@ -198,7 +199,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: ref_design
 - Statement: The all-in cost per unit at 10 units shall be $45 or less (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament).
-- Rationale: bom.md puts it at about $40-42 at 10 (2026-09-24 prices).
+- Rationale: the number comes from VER-117's re-run of cost.py with a new board quote at 72.4 x 127.7 mm; bom.md's figure predates the board's present size.
 - Source: docs/bom.md; Alex's use.
 - Method: I
 - Verified by: VER-117
@@ -266,14 +267,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BAT-03: Charge temperature window
 - Level: subsystem
 - Board: both
-- Statement: Charging shall pause when the cell is above 45 C or below 0 C, each +-3 C, or inside the cell maker's charge range if that is narrower, and resume when back in range.
+- Statement: At 99.9% of units, charging shall pause when the cell is above 45 C or below 0 C, or outside the cell maker's charge range if that is narrower: the hot edge at or under 45 C and the cold edge at or over 0 C (one-sided limits), and resume when back in range.
 - Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot).
 - Source: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds, 0.30 V hot and 2.1 V cold at 75 uA (pin_review/u2.json pin 1); validation_plan #30.
 - Method: A, T
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
-- Notes: with TH1 (B3950 10k) the window is 3.5-47.2 C nominal: the hot edge is 2.2 C over 45 C before any tolerance, and moving it needs two resistors on TS that have no footprints (DF-147, PLAN.md decision D5).
+- Notes: with TH1 (B3950 10k) the window is 3.5-47.2 C nominal, so the hot edge fails before any tolerance. No series or parallel resistor fixes both edges (a parallel one that brings the hot edge to 45 C drags the cold edge to -11.6 C). PLAN.md decision D5: a BOM-only TH1 with a higher B (B 4250: 4.9-45.5 C; B 4350: about 5.3-45.0 C nominal) if JLC stocks one, or accept 47.2 C against the cell's datasheet (DF-147).
 
 ### REQ-BAT-04: Cell temperature during charge
 - Level: subsystem
@@ -326,7 +327,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: pouch cells grow 8-10% in thickness over life; 0.4 mm for a 4.0 mm cell.
 - Source: validation_plan #26; case.scad (cell_top 1.6 over the board, the deck's underside 1.9, the panel's back 2.4).
 - Method: A, I
-- Verified by: VER-20, VER-48
+- Verified by: VER-182, VER-20, VER-48
 - Phase: CASE
 - Status: PROPOSED
 - Notes: today 0.30 mm under the deck and 0.80 mm under the panel (VER-20's swell script): DF-84, PLAN.md decision D18.
@@ -338,9 +339,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a pierced pouch shorts internally and can burn.
 - Source: validation_plan #27; placement.py CUTOUTS (the hole 54.0 x 37.0 mm); case.scad cell.
 - Method: A, I
-- Verified by: VER-06, VER-48, VER-109, VER-164
+- Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: Not met by the design today: the tub's pocket sits 0.25 mm inside the hole's outline (case.scad cell_pocket_fit) and assembly.md step 5 pushes the cell against its right wall, so the cell's end is 0.25 mm from the routed edge at TH1 before JLC's routing tolerance (VER-181 FAIL). PLAN.md decision D27 before the order.
+
 
 ### REQ-BAT-09: Charge path single faults
 - Level: subsystem
@@ -379,7 +382,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration (REQ-TST-06), at the highest 3V3 load the firmware draws, including units whose 3V3 plus the RT9013's dropout exceeds 3.50 x CV/4.2.
-- Rationale: the ADC reads VBAT/2 against 3V3 itself: in regulation a gain set at charge-done is only as good as the charger's +-1% CV (a cutoff anywhere from 3.465 to 3.535 V), and in dropout the reading rises as the cell falls, so on a unit with 3V3 +2% and 120 mV of dropout it never reaches 3.50 V (3.521 V, VER-138: DF-116).
+- Rationale: the ADC reads VBAT/2 against 3V3 itself: in regulation a gain set at charge-done is only as good as the charger's +-1% CV (a cutoff anywhere from 3.465 to 3.535 V), and in dropout the reading rises as the cell falls, so on a unit with 3V3 +2% and 120 mV of dropout it never reaches 3.50 V (3.521 V, VER-138: DF-116). GPIO47 also reads through R17/R18's 235 kohm: every 100 nA of pad leakage moves the pin 23.5 mV, 47 mV of VBAT, the whole +0.05 V window, and it changes with temperature, which a one-point calibration does not remove (O-R15).
 - Source: design.py R17/R18; pinmap.md Battery voltage; pin_review/u3.json; Claude's analysis (O-23, O-49).
 - Method: A, T
 - Verified by: VER-138, VER-139, VER-67
@@ -424,7 +427,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: One cell per lot shall deliver 600 mAh or more from charge-done to the chosen cutoff at about 140 mA, with its capacity to 3.50 V and to 3.60 V recorded.
-- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.R) and the cutoff choice (DF-34) depend on it.
+- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.R) and the cutoff choice (DF-116) depend on it.
 - Source: Claude's proposal (O-58): Alex sets the lot limit.
 - Method: T
 - Verified by: VER-153
@@ -459,14 +462,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-02: Hot-plug peaks
 - Level: subsystem
 - Board: ref_design
-- Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at 6.5 V or less (under U2's 6.6 V OVP, so it does not retry), EN1 at 7.0 V or less, PWR_EN at 5.5 V or less and VSYS at 4.6 V or less.
-- Rationale: REQ-PWR-14's transient rule against U2's EN1 (7 V absolute) and U3's EN (6 V absolute); VSYS is U2's regulated OUT.
+- Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at or under U2's OVP minimum less 0.2 V (6.2 V if SLUS810N's minimum is 6.4 V), so U2 does not retry, EN1 at 6.7 V or less, PWR_EN at 5.5 V or less and VSYS at 4.6 V or less.
+- Rationale: REQ-PWR-14's transient rule: EN1 0.3 V under its 7 V absolute maximum (6.7 V), U3's EN (6 V absolute) with margin; the OVP limit from its minimum, not its 6.6 V nominal (O-R18); VSYS is U2's regulated OUT.
 - Source: pin_review/u2.json (IN 28 V absolute, OVP 6.6 V, EN1 7 V), pin_review/u3.json (EN 6 V).
 - Method: A, T
 - Verified by: VER-12, VER-71
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: bringup.md 5.6 still describes the TP4056 design's simulation (DEF-21).
+- Notes: bringup.md 5.6 still describes the TP4056 design's simulation (DEF-21). u2.json quotes only OVP's 6.6 V nominal: VER-34 takes SLUS810N's minimum into it (pin_review is outside hardware/vv) before VER-12 is built.
 
 ### REQ-PWR-03: LDO enable never above its input
 - Level: subsystem
@@ -561,9 +564,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-11: No turn-on from leakage
 - Level: subsystem
 - Board: ref_design
-- Statement: With 1 Mohm across either Start dome (VSYS to PWR_BTN_RAW or P2_START_RAW) and the cell at 4.2 V, the device shall stay off (3V3 below 0.5 V) for 10 min; the design shall turn on only below about 56 kohm.
+- Statement: With 1 Mohm across either Start dome (VSYS to PWR_BTN_RAW or P2_START_RAW) and the cell at 4.2 V, the device shall stay off (3V3 below 0.5 V) for 10 min; the design's sure-on, sure-off and ghost-press bands of dome resistance are those VER-33 prints from U3's VIH and VIL, Q1's and Q7's threshold, R13, R62, R15 and the diodes' Vf (O-R17), and 1 Mohm shall sit above its sure-off band.
 - Rationale: both Start domes carry VSYS on their rings all the time; sweat or flux can bridge them.
-- Source: validation_plan #185 (written for P1_Y, now SW21); design.py R13 comment.
+- Source: validation_plan #185 (written for P1_Y, now SW21 and SW23); design.py R13, R62 and R15; pin_review/u3.json and q1.json; VER-33's output.
 - Method: T, A
 - Verified by: VER-79, VER-33
 - Phase: EVT
@@ -1208,7 +1211,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-THM-03: No pause at room temperature
 - Level: subsystem
 - Board: ref_design
-- Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (TS stays at 0.55 V or above, TH1 under 35 C).
+- Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (TS stays at 0.49 V or above, TH1 under 35 C: B3950 at 75 uA).
 - Rationale: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
 - Source: bringup.md step 5.4.
 - Method: T
@@ -1308,6 +1311,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-42, VER-28
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: The marker is in neither battler.kicad_pcb nor silk.py at 684a609 (O-R19), so JLC would place its number anywhere (DF-125). PLAN.md decision D28: JLC's paid 'remove order number' option (and this statement restated), or the marker added in silk.py (a design change and a new baseline). VER-132 (k) checks it.
+
 
 ### REQ-FAB-06: Part identity
 - Level: board
@@ -1378,7 +1383,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-11: Flatness
 - Level: board
 - Board: both
-- Statement: Each board's bow and twist shall be 0.75% or less (1.1 mm over 151 mm).
+- Statement: Each board's bow and twist shall be 0.75% or less of its length (0.96 mm over the ref_design board's 127.7 mm; the Edge.Cuts outline).
 - Rationale: the case clamps the board flat; a bowed board cracks MLCCs.
 - Source: IPC-6012 Class 2 (bow and twist for SMT boards); validation_plan #78.
 - Method: T
@@ -1402,13 +1407,25 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-ASM-01: Hand assembly
 - Level: board
 - Board: both
-- Statement: Alex shall assemble 1 unit from assembly.md in 30 min or less with an iron, a screwdriver and a knife, on an ESD mat with a strap, damaging 0 parts.
+- Statement: Alex shall assemble 1 unit from its board's assembly instructions in 30 min or less, on an ESD mat with a strap, damaging 0 parts.
 - Rationale: 30 units by hand.
 - Source: validation_plan #86, #161.
+- Method: D
+- Verified by: allocated: REQ-ASM-01.R
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-ASM-01.R: Hand assembly (ref_design)
+- Level: board
+- Board: ref_design
+- Statement: Alex shall assemble 1 ref_design unit from assembly.md in 30 min or less with a screwdriver and a knife and no iron (nothing is soldered at assembly), on an ESD mat with a strap, damaging 0 parts, in the order J3 latched, the cell into the tub's pocket, J2 then J4 plugged, and on opening with J2 unplugged before the tub lifts away.
+- Rationale: 30 units by hand; the speaker plugs into J4 since 7da6a90, and the opening order keeps the cell's leads off the hole's edge (DF-169, DF-170).
+- Source: docs/assembly.md; validation_plan #86, #161.
 - Method: D
 - Verified by: VER-91
 - Phase: EVT
 - Status: PROPOSED
+
 
 ### REQ-ASM-02: Panel seated
 - Level: board

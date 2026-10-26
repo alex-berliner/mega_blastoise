@@ -2,6 +2,8 @@
 DATE: 2026-10-25
 COMMIT: 4a861739b4c68192376bc49de617f3b96fdc0e3b
 TOOLS: read by hand against design.py and case.scad at 684a609; grep -n for the line numbers
+WHO: Claude (inspection), extended 2026-10-25 with the second review's findings (F-R2, F-R5, F-R16)
+ARTEFACT: hardware/ref_design/docs/*.md, README.md, PLAN.md and board/pin_review/*.json at 4a86173 (git diff 4a86173 0c00f7d -- hardware/ref_design is empty)
 Each line: file:line, what it says, what the design says.
 hardware/ref_design/docs/bringup.md:12,46  TP7 is 'LS_GATE'  ->  TP7 is CHG_TEMP, the BQ24073's TS node (design.py TP7)
 hardware/ref_design/docs/bringup.md:27  TP3 to TP2 'one diode drop (Q2's body diode)'  ->  Q2 left in 2d1124d; U2's battery FET's body diode (VER-53)
@@ -26,5 +28,8 @@ hardware/ref_design/docs/bom.md:56  'Case: tub and lid', 47 cm3  ->  tub, top (t
 hardware/ref_design/README.md:7  'The cell lies under the board'  ->  in the board's hole since 2026-10-21
 hardware/ref_design/board/pin_review/panel.json:32,658,673 and u6.json:19,25,39  ME6211 and 124 mV  ->  the RT9013 (+-2%) and 77 mV full scale
 hardware/ref_design/docs/pinmap.md:162  'Calibrate the gain once' at the end of a charge  ->  REQ-TST-06's bench calibration at 3.50 V (DF-117)
-23 stale statements in 6 files (limit 0)
+hardware/ref_design/docs/bom.md:16  'Bare boards: 2 layers, 70.5 x 151.34 mm'  ->  72.4 x 127.7 mm (case.scad board_w, board_l; F-R5)
+hardware/ref_design/docs/bom.md:55  'adhesive foam pad for the cell'  ->  no foam since the cell sits in the board's hole (F-R16)
+hardware/ref_design/board/pin_review/u4.json:17  E9 note: 'PWR_HOLD (GPIO2, R42)', 'CHG_OFF (GPIO19, R44)', 'AMP_EN (GPIO11, R37 100k)', 'BL_PWM (GPIO44, R60 + R61 103.9k)'  ->  GPIO44, GPIO43, GPIO34 and GPIO28 (design.py GPIO; F-R2)
+26 stale statements in 8 files (limit 0)
 RESULT: FAIL

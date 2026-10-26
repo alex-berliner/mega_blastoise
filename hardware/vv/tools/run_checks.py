@@ -14,7 +14,9 @@ covered files have uncommitted changes: evidence describes a commit, so commit f
 Only quick, read-only checks belong here. The long pipelines (route.py, check_buttons.py,
 board/sim/, the fit kit, case/export.py --stl) keep a hand-run evidence file with the same
 header. Add a check here once its script exists (check_bom_cpl, check_fab_content, ...). A
-check that FAILs is recorded as FAIL with its evidence: a finding the order gate shows.
+check that FAILs is recorded as FAIL with its evidence: a finding the order gate shows. A
+script that tests only part of its row's pass limit does not belong here: split the row first
+(VER-20 and VER-182, O-R21), so an exit 0 is a whole PASS.
 
 Python 3 standard library only.
 """
@@ -48,7 +50,8 @@ CHECKS = {
     "VER-10": ("check_contact_fp", ["python3", "hardware/membrane/tools/check_contact_fp.py",
                                     "hardware/prod_board/prod_board/prod.pretty/DSL_button_4ring.kicad_mod"], False),
     # the pre-order numbers (design_numbers.py); pcbnew ones record KiCad's version
-    "VER-20": ("swell", ["python3", DN, "swell"], False),
+    "VER-182": ("swell", ["python3", DN, "swell"], False),
+    "VER-181": ("cellgap", ["python3", DN, "cellgap"], False),
     "VER-99": ("inrush", ["python3", DN, "inrush"], False),
     "VER-114": ("holes", ["python3", DN, "holes"], True),
     "VER-131": ("drill", ["python3", DN, "drill"], True),
@@ -56,7 +59,7 @@ CHECKS = {
     "VER-138": ("cutoff", ["python3", DN, "cutoff"], False),
     "VER-142": ("mlcc", ["python3", DN, "mlcc"], True),
     "VER-147": ("screws", ["python3", DN, "screws"], False),
-    "VER-164": ("th1", ["python3", DN, "th1"], False),
+    "VER-164": ("th1", ["python3", DN, "th1"], True),
     "VER-167": ("bom", ["python3", DN, "bom"], False),
     "VER-176": ("cpl", ["python3", DN, "cpl"], True),
     "VER-177": ("vbus", ["python3", DN, "vbus"], False),
