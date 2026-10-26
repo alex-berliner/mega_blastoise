@@ -5,9 +5,9 @@ the design; the file names below are what the notes and tools refer to.
 
 | File | Part | Source |
 |---|---|---|
-| `er-tft024ips-3.pdf` | EastRising ER-TFT024IPS-3 2.4in IPS panel (fitted): drawing, FPC pinout, backlight, interface settings | https://www.buydisplay.com/download/manual/ER-TFT024IPS-3_Datasheet.pdf |
+| `er-tft024ips-3.pdf` | EastRising ER-TFT024IPS-3 2.4in IPS panel (fitted 2026-10-21 to 2026-10-26): drawing, FPC pinout, backlight, interface settings | https://www.buydisplay.com/download/manual/ER-TFT024IPS-3_Datasheet.pdf |
 | `st7789v.pdf` | Sitronix ST7789V controller: commands, serial timing | https://www.newhavendisplay.com/appnotes/datasheets/LCDs/ST7789V.pdf |
-| `er-tft035ips-6.pdf` | EastRising ER-TFT035IPS-6 3.5in IPS panel (the earlier panel, until 2026-10-21) | https://www.buydisplay.com/download/manual/ER-TFT035IPS-6_Datasheet.pdf |
+| `er-tft035ips-6.pdf` | EastRising ER-TFT035IPS-6 3.5in IPS panel (fitted again since 2026-10-26: its drawing was not re-read, the maker's site was behind Cloudflare and the Wayback copy was down; the old design's numbers stand) | https://www.buydisplay.com/download/manual/ER-TFT035IPS-6_Datasheet.pdf |
 | `rp2350.pdf` | RP2350 datasheet (the RP2354B is the RP2350B with 2 MB of flash inside) | https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf |
 | (zip) | RP2350B minimal KiCad design, RP-010329-CA | https://pip.raspberrypi.com/documents/RP-010329-CA |
 | `tp4056.pdf` | TP4056 Li-ion charger | https://www.lcsc.com/datasheet/lcsc_datasheet_2410121619_TOPPOWER-Nanjing-Extension-Microelectronics-TP4056-42-ESOP8_C16581.pdf |

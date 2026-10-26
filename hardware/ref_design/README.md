@@ -20,10 +20,8 @@ which this folder never touches.
 ## What it is
 
 - RP2354B (2 MB flash inside), USB-C (charging + firmware + debug console)
-- 2.4in 240x320 IPS panel (EastRising ER-TFT024IPS-3, ST7789V, SPI; the 3.5in ER-TFT035IPS-6
-  until 2026-10-21) with a published
-  datasheet, its FPC in a 50-pin ZIF connector (no soldering); a
-  constant-current backlight sink per LED group
+- 3.5in 320x480 IPS panel (EastRising ER-TFT035IPS-6, ILI9488, SPI; the 2.4in ER-TFT024IPS-3 from 2026-10-21 to 2026-10-26), its FPC in a 50-pin ZIF connector (no soldering; its datasheet was not re-read when the panel came back); a
+  constant-current backlight sink per LED cathode pin
 - 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
   Start and Select at each end
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 x 10 mm speaker that plugs in,

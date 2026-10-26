@@ -15,9 +15,9 @@ The 2-layer build applies the cost changes Alex approved on 2026-09-24 and has b
 
 | Area | Choice | Why |
 |---|---|---|
-| Panel | EastRising ER-TFT024IPS-3, ST7789V, 240x320 IPS, 42.72 x 59.46 x 2.3 mm (2026-10-21; the 3.5 in ER-TFT035IPS-6, ILI9488, 54.50 x 83.00, until then) | the case is a DS Lite's length (132.7 mm, was 156.2) with the width the buttons set; same maker, same 50-pin FPC into J3: the pin map changed (K3/K4 on pins 4-5, IM3-0 on 6-9 strapped 1110, D/CX and SCL swapped on 36/37) and R61 went to 2.4k for 70 mA |
+| Panel | EastRising ER-TFT035IPS-6, ILI9488, 320x480 IPS, 54.50 x 83.00 x 2.3 mm (2.45 in the case, the drawing's 2.35 +-0.1); back since 2026-10-26 (the 2.4 in ER-TFT024IPS-3 from 2026-10-21 to then) | cost, minimal bezel and height at the size Alex wants; same maker, same 50-pin FPC into J3 and the 3.5 in pin map of the first design (K3/K4 and IM3 not connected, IM0-2 high, SCL on 36, D/CX on 37), R61 3.9k for 56 mA a sink. Its active area, outline and FPC are the old design's numbers, not re-read from the datasheet |
 | Panel FPC | 50 contacts, 0.5 mm pitch, in a Hirose FH12-50S bottom-contact ZIF (J3), assembled by JLC | no hand soldering per unit; a cracked panel swaps in a minute |
-| Backlight | 4 LEDs in parallel on four cathode pins, anode on VSYS; a linear current sink per pair of cathode pins (MCP6002 + AO3400A + 2.2 ohm), 35 mA each, set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
+| Backlight | 6 LEDs in parallel on two cathode pins, anode on VSYS; a linear current sink per pin (MCP6002 + AO3400A + 2.2 ohm), set by one GPIO's filtered PWM | constant current down to the 3.5 V cutoff, DC in the LEDs, all Basic/Preferred parts; replaced the AP3156 charge pump, out of stock on 2026-10-07 (stability simulated: board/sim/backlight.py) |
 | MCU core | RP2354B (2 MB flash inside) + ABM8-272-T3 + AOTA 3.3 uH, in the left bezel since 2026-10-21 (the cell's hole took the middle) | Raspberry Pi RP2350B minimal design (MIT, 2 layers like this board), copied as drawn; no flash chip to route; its side decouplers placed by hand beside it |
 | Charger | BQ24073 power path (2026-10-21, row 16): OVP 6.6 V, OUT 4.4 V into VSYS, 475 mA input limit, 270 mA charge, 5 h timer, TS on a B3950 NTC (TH1) at the cell hole's right edge (3.5-47 C) | replaced the TP4056 and its load sharing (hot-plug rings into VSYS, no timer, termination lost under load); about +$0.80 a unit at 10 |
 | Cell | 403450, about 700 mAh, in a 54.0 x 37.0 mm hole in the board (2026-10-21, row 19): across the board between seat 2's deck and J3's range, 0.5 mm round a worst-case 52 x 36 cell plus 1 mm at its left end for its leads to J2 (PicoBlade, 3.4 mm) at the hole's seat-1 corner; its top at most 1.6 mm over the board, its bottom in a 0.6 mm pocket in the tub's floor (case/CELLCUT_FOR_CASE.md; the case took it 2026-10-22) | 9.55 mm at the screen and 7.7 at the ends (the floor pocketed under the cell), against 13.35 and 11.5 (Alex, 2026-10-21) |
@@ -275,7 +275,7 @@ Buttons (from Alex's pad measurements, 2026-10-20; check_buttons fails on these 
 Alex's notes on the print from the kit before f3d5863 (2026-10-21), the ones for the case; the
 shell's redesign (a shorter case for a 2.4 in panel, the top curving over the tub, decks built
 upside down) is done (case/SHELL.md) and takes the answers of the `6_tests` plate:
-- [ ] 5 Openings: confirm the 0.65 D-pad opening and the 8.0 A/B/X/Y holes with real caps
+- [ ] 5 Openings: confirm the 0.60 D-pad opening (0.65 until 2026-10-26) and the 8.0 A/B/X/Y holes with real caps
       (`tune_openings`, on `6_tests`). Best guess committed 2026-10-21: `cap_hole_d` 8.0 and
       `dpad_gap` 0.65 kept, marked GUESS in case.scad and in case/SHELL.md ("Best guesses until
       `6_tests`"); `6_tests` confirms or moves them
@@ -348,7 +348,7 @@ Housekeeping:
   Start/Select pad (outline, dome spacing, wells); the D-pad collar's base width; whether each dome's
   top has a recess for the cap's stem; the gap under the nub; the caps' flange thickness; and the
   DS Lite shell's clover (10.45 across one opening, wall 1.8 thick?)
-- An ER-TFT024IPS-3 against its drawing: outline, where its folded FPC's tip lands (the case keeps 22.5 to 25 mm in from the seat-1 edge clear), that it reaches J3 with a little slack, and which end contact 1 lands on
+- An ER-TFT035IPS-6 against its drawing (the old design's numbers, not re-read on 2026-10-26): outline, active area, its FPC's folded shape (the case keeps 24.9 to 27.3 mm in from the seat-1 edge clear, and lets parts up to 1.05 mm lie under the FPC's body), where its folded FPC's tip lands, that it reaches J3 with a little slack, and which end contact 1 lands on
 - A printed top piece, decks and tub: a deck dropping onto its wedges, the seam's fit, the grip
   ribs' hold (`grip_reach`) and the corner posts' push
 - The 403450 cell: length with its protection board, plug polarity

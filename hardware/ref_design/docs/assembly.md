@@ -28,7 +28,7 @@ assembled.
 ## 2. Order and make the rest
 
 The list, with the listings found so far: [bom.md](bom.md), "You". In short: the
-ER-TFT024IPS-3 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, INGHAi's GSPK151035PN speaker (its
+ER-TFT035IPS-6 panel (buydisplay.com), a 403450 cell with a Molex PicoBlade (MX1.25) plug, INGHAi's GSPK151035PN speaker (its
 leads end in a 1.25 mm plug), two sets each of DS
 Lite silicone and caps, tape and foam, and the printed case (`case/tub.stl` and `case/top.stl`, the one-piece top).
 

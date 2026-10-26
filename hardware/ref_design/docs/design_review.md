@@ -9,11 +9,11 @@ This is the 2-layer build, `main` since 2026-09-24: the first, 4-layer design (t
 
 ## The device
 
-Two players face each other across a 2.4in 240x320 IPS screen; each has a
+Two players face each other across a 3.5in 320x480 IPS screen; each has a
 D-pad and four face buttons under DS Lite silicone at their end. One Li-ion
 cell, one speaker, one USB-C for charging and firmware. No radios.
 
-(2026-10-21: the case is being replaced by the 133 mm shell for the 2.4 in panel, [case/SHELL.md](../case/SHELL.md); this review describes the 156 mm case and the board as it is laid out today, until the board is re-placed.) Case 75.4 x 156.2 mm, 13.4 mm thick at the screen and 11.5 at the ends (14.6 until 2026-10-19, when the panel's top went into a pocket in the lid under a 0.8 mm skin, with a 0.5 mm pad over J2): the cell lies on the tub's floor under the board and the board rests on ribs 4.5 mm over the floor (since 2026-10-09; branch ref-design-cell-on-board has the cell on the board under the screen, 13.9 mm and 7.86 at the ends). Each end steps down 1.9 mm to a button deck (a spine between the clusters stays full height over the end snap hooks; 2.34 until 2026-10-21, when the deck's lip became Alex's DS Lite faceplate's 1.6 mm), so genuine DS Lite caps stand 1.41 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
+(2026-10-26: the 3.5 in panel is back in a 77.4 x 156.6 x 9.6 mm case, [case/SHELL.md](../case/SHELL.md); the dimensions in this review's older paragraphs are the earlier cases'.) Case 75.4 x 156.2 mm, 13.4 mm thick at the screen and 11.5 at the ends (14.6 until 2026-10-19, when the panel's top went into a pocket in the lid under a 0.8 mm skin, with a 0.5 mm pad over J2): the cell lies on the tub's floor under the board and the board rests on ribs 4.5 mm over the floor (since 2026-10-09; branch ref-design-cell-on-board has the cell on the board under the screen, 13.9 mm and 7.86 at the ends). Each end steps down 1.9 mm to a button deck (a spine between the clusters stays full height over the end snap hooks; 2.34 until 2026-10-21, when the deck's lip became Alex's DS Lite faceplate's 1.6 mm), so genuine DS Lite caps stand 1.41 mm proud, as on a DS Lite; `case/DSLITE.md` has the cap numbers and their sources. Board 70.4 x 151.2 mm (70.5 x 151.34 over the outline's
 line width, the size JLC quotes), 2 layers, 1.6 mm, ENIG,
 every hole 0.3 mm or larger.
 
@@ -142,11 +142,10 @@ every hole 0.3 mm or larger.
 
 ### Display (sheet Display)
 
-- EastRising ER-TFT024IPS-3: 2.4in IPS, 240x320, ST7789V, 4-line serial, 3.3 V,
-  42.72 x 59.46 x 2.30 mm (2026-10-21; it replaced the 3.5in ER-TFT035IPS-6 with the
-  133 mm shell). Sold by the maker: about $12.01 a unit with shipping at 10 units, $7.13
-  at 50 ([bom.md](bom.md)). It has a published datasheet and outline drawing
-  ([datasheet](https://www.buydisplay.com/download/manual/ER-TFT024IPS-3_Datasheet.pdf)).
+- EastRising ER-TFT035IPS-6: 3.5in IPS, 320x480, ILI9488, 4-wire SPI, 3.3 V,
+  54.50 x 83.00 x 2.30 mm (back since 2026-10-26; it was replaced by the 2.4in ER-TFT024IPS-3 from 2026-10-21 to then).
+  Sold by the maker: $14.20 a unit at 10, $9.86 at 50 ([bom.md](bom.md)). Its datasheet
+  ([datasheet](https://www.buydisplay.com/download/manual/ER-TFT035IPS-6_Datasheet.pdf)) was not re-read on 2026-10-26.
 - Its 50-contact FPC (0.5 mm pitch, 0.3 mm thick with its stiffener) leaves the
   panel's seat-1 edge, folds under the panel and plugs into J3, a Hirose FH12-50S
   bottom-contact ZIF connector that JLC places: no hand soldering. J3 sits where the
@@ -182,7 +181,7 @@ every hole 0.3 mm or larger.
   while lit (USB plugged in) briefly overshoots to 133 mA a pin for about 2 us. The
   op-amp's offset (4.5 mV max) sets the accuracy: +-6% at full, +-20% a sink at 29%
   duty, so firmware keeps the dimmest level at about 29%. The loop was simulated at the
-  3.5in panel's 56 mA a sink; the 2.4in panel runs it at 35 mA with R61 the only change.
+  3.5in panel's 56 mA a sink (R61 3.9k again; the 2.4in panel ran it at 35 mA with R61 2.4k).
 
 ### Audio (sheet Audio)
 
@@ -282,7 +281,7 @@ the case for these checks.
 | What | Why | Where it goes |
 |---|---|---|
 | DS Lite silicone piece outline and height, pill spacing; cap keying | the caps are measured from open models (`case/DSLITE.md`), the silicone is still estimated; `dome_h` sets the deck height, so a wrong one leaves the caps high or low; the D-pad pill spacing (14.0 mm here, 13.5 in another project) | `piece_d`, `dome_h`, `dpad_pitch`; the cap numbers in `case/DSLITE.md` |
-| A real ER-TFT024IPS-3 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
+| A real ER-TFT035IPS-6 and an FH12-50S | outline and thickness, active area offset; how far the FPC goes into J3 (Hirose's recommended FPC stops 3.5-4 mm in, so expect 2.5-3 mm of slack, not the 1 mm modelled); that its contact 1 meets J3's pin 50 | `panel_*`, `aa_*`, `fpc_*`, `conn_rear`; J3's pin map |
 | The chosen cell (403450) | length with its protection board, and connector polarity (PicoBlade has no standard polarity) | `cell`, J2 |
 | The chosen speaker (GSPK151035PN) | its tab's length (spk_tab is estimated), that its plug mates a genuine 53261-0271, that its foam ring seals on the pad, and how loud it is out of the side | `spk_*`, J4 |
 | A printed tub and lid | the snap fit | `snap_*` |
