@@ -8,16 +8,19 @@ Freerouting 1.9 has this board as far as it gets by pass 15 or so and then trade
 in 3 more minutes).
 --reuse imports tools/last_route.ses instead of routing again (valid while the
 placed board and the pre-routes are unchanged).
---attempts=N routes N copies at once (default 4, or ROUTE_ATTEMPTS; 1 routes the board in
-place as before), each with its own --seed. One that ends with something open makes room for
-the next seed, up to --tries=M in all (default 2N); the first with a clean DRC is kept. See
-attempts().
+--attempts=N routes N copies at once (default: half the cores, at most 8, or ROUTE_ATTEMPTS; 1 routes the board in
+place), each with its own --seed. The first that ends clean, or with 2 or fewer open and no DRC errors, is kept (--finish
+closes the rest) and the other attempts are killed, as is any still running at twice the first finisher's time. See
+attempts(). --exhaustive is the old policy: 4 at once, the next seed when one ends with something open, up to --tries=M
+in all (default 2N), the first clean DRC wins.
+Before any attempt a pre-flight puts the pre-routes on the placed board and runs the DRC (--preflight does only that):
+an error there is the placement's, not the router's, and the run aborts with the list. --no-preflight skips it.
 --seed=S: the order Freerouting reads the board in (default 0, KiCad's own; see dsn_shuffled).
 With attempts, attempt k gets S + k - 1, so --seed= picks another set.
 --optimize runs Freerouting's optimizer after it routes (off: 40 s a run for no difference in
 the routed board, 2026-10-21).
 FREEROUTING_ARGS adds arguments to Freerouting's command line.
---finish takes the saved, routed board and only closes what is still open (stubs,
+--finish takes the saved, routed board (or --board=FILE's) and only closes what is still open (stubs,
 the maze router with a wide search, plane repairs): the step after a full run that
 left a connection or two.
 
@@ -1494,6 +1497,26 @@ def restore_contact_stubs(board):
         print("contact stubs put back:", back)
 
 
+def drop_via_conflicts(board):
+    """A via (the core's copied ones are locked) that fails clearance against a pad of another net is taken away: the pours
+    carry its net, and repair() puts a via back where a pad or island still needs one. On this board the core's GND via beside
+    U3's NC pad 4 (2026-10-26) was the one DRC error all 8 seeds ended with. Returns how many."""
+    by_uuid = {t.m_Uuid.AsString(): t for t in board.GetTracks() if isinstance(t, pcbnew.PCB_VIA)}
+    gone = 0
+    for v in drc_report(board).get("violations", []):
+        if v["type"] != "clearance":
+            continue
+        vias = [i for i in v["items"] if i["description"].startswith("Via ") and i["uuid"] in by_uuid]
+        pads = [i for i in v["items"] if "pad" in i["description"].lower()]
+        if len(v["items"]) == 2 and len(vias) == 1 and len(pads) == 1:
+            via = by_uuid.pop(vias[0]["uuid"])
+            print(f"  via {via.GetNetname()} at ({via.GetPosition().x / 1e6:.2f}, {via.GetPosition().y / 1e6:.2f}) too close to "
+                  f"{pads[0]['description']}: removed")
+            remove(board, via)
+            gone += 1
+    return gone
+
+
 def finish():
     """--finish: the routed, saved board again: stubs, open connections and repairs only,
     without routing it all again (the pours stay; the maze router looks past them)."""
@@ -1502,6 +1525,7 @@ def finish():
     restore_contact_stubs(board)
     finish_open(board)
     print("loose router copper removed:", prune_dangling(board))
+    print("vias too close to another net's pad removed:", drop_via_conflicts(board))
     repair(board)
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
@@ -1526,18 +1550,69 @@ def drc_counts(path):
     return len(errors), len(d.get("unconnected_items", []))
 
 
-def attempts(passes, n, argv, tries=None, seed=0):
-    """Route copies of the board, n at a time, and keep the first that comes out clean. Freerouting
-    1.9 has no seed and routes one file the same way every time, so each attempt gives it the board
-    in another order (--seed=, see dsn_shuffled): attempt k gets seed + k - 1, and attempt 1 KiCad's
-    own order (seed 0) as before. Each is this script on its own copy of the board (--board=), with
-    its own Xvfb, logs and session. When one ends with something open the next seed takes its
-    place, up to `tries` in all (default 2n); the first whose DRC is clean wins and the rest are
-    stopped. If none is, the one with the fewest problems is kept and --finish closes what it can."""
-    import shutil
+def default_attempts():
+    """Attempts at once: a Freerouting run holds 1.5 cores and 1 GB (measured 2026-10-26: 134 cpu-s in 89 s on this board), so
+    half the cores' worth of attempts leaves the rest for the parent's DRC runs and whatever else the machine does. 8 at most."""
+    return max(1, min(8, (os.cpu_count() or 4) // 2))
+
+
+def kill_group(procs, grace=5.0):
+    """Stop each attempt's own session (route.py, its Freerouting and Xvfb) by process group id: SIGTERM, then SIGKILL."""
     import signal
     import time
-    tries = tries or 2 * n
+    for p in procs:
+        try:
+            os.killpg(p.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    end = time.time() + grace
+    for p in procs:
+        try:
+            p.wait(max(0.1, end - time.time()))
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            p.wait()
+
+
+# an attempt that ends with at most this many connections open and this many DRC errors gets --finish tried on a copy of it
+FINISHABLE_OPEN = 2
+FINISHABLE_ERRORS = 3
+
+
+def finish_trial(src, work):
+    """--finish on a copy of an attempt's board (the project beside it, for the rules); (errors, unconnected) after it, or None.
+    The attempt itself is left as it was."""
+    import shutil
+    d = os.path.join(work, "finish_" + os.path.basename(os.path.dirname(src)))
+    os.makedirs(d, exist_ok=True)
+    for f in ("battler.kicad_pcb", "battler.kicad_pro"):
+        shutil.copy(os.path.join(os.path.dirname(src), f), d)
+    r = subprocess.run([sys.executable, os.path.abspath(__file__), "--finish", f"--board={os.path.join(d, 'battler.kicad_pcb')}"],
+                       cwd=d, capture_output=True, text=True)
+    return drc_counts(os.path.join(d, "battler.kicad_pcb")) if r.returncode == 0 else None
+
+
+def attempts(passes, n, argv, tries=None, seed=0, exhaustive=False):
+    """Route copies of the board, n at once, and keep the best. Freerouting 1.9 has no seed and routes one file
+    the same way every time, so each attempt gives it the board in another order (--seed=, see dsn_shuffled):
+    attempt k gets seed + k - 1, and attempt 1 KiCad's own order (seed 0) as before. Each is this script on its
+    own copy of the board (--board=), with its own Xvfb, logs and session.
+
+    Early stop (default): all n start together. The first attempt that ends clean (0 errors, 0 open) is kept and the others are
+    killed. One that ends with at most FINISHABLE_OPEN open and FINISHABLE_ERRORS errors gets --finish on a copy of it while
+    the others keep running (finish_trial): if that comes out clean it is kept and the others are killed. An attempt still
+    running at twice the first finisher's time is killed too (seeds ran from 4 to 21 min on one board, 2026-10-26). If none
+    comes out clean, the one with the fewest problems is kept and --finish closes what it can.
+
+    --exhaustive: the old policy. n at a time (default 4), the next seed starts when one ends with something open, up to
+    `tries` in all (default 2n); only a clean DRC stops it, else the fewest problems wins. When the kept one isn't clean,
+    --finish closes what it can."""
+    import shutil
+    import time
+    tries = tries or (2 * n if exhaustive else n)
     work = tempfile.mkdtemp(prefix="route_")
     procs, start, launched = {}, time.time(), 0
 
@@ -1555,12 +1630,16 @@ def attempts(passes, n, argv, tries=None, seed=0):
                                     cwd=d, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
     for _ in range(min(n, tries)):
         launch()
-    print(f"routing {n} attempts at once, up to {tries} in all ({work}; --attempts=, ROUTE_ATTEMPTS and "
-          f"--tries= set how many)", flush=True)
-    results, winner = {}, None
+    print(f"routing {n} attempts at once, up to {tries} in all, {'exhaustive' if exhaustive else 'stopping early'} "
+          f"({work}; --attempts=, ROUTE_ATTEMPTS, --tries=, --exhaustive)", flush=True)
+    results, winner, first = {}, None, None       # first: the elapsed seconds of the first attempt that ended with a board
     try:
         while procs and winner is None:
             time.sleep(1)
+            if first and not exhaustive and time.time() - start > 2 * first:
+                print(f"  {len(procs)} attempts still running at twice the first finisher's {first / 60:.1f} min: stopped "
+                      f"({', '.join(map(str, sorted(procs)))})", flush=True)
+                break
             for k, p in sorted(procs.items()):
                 if p.poll() is None:
                     continue
@@ -1572,21 +1651,29 @@ def attempts(passes, n, argv, tries=None, seed=0):
                     print(f"  attempt {k} (seed {seed + k - 1}): route.py failed after {mins:.1f} min "
                           f"(exit {p.returncode}), see {d}/route.log", flush=True)
                 else:
+                    first = first or time.time() - start
                     print(f"  attempt {k} (seed {seed + k - 1}): {results[k][0]} DRC errors, {results[k][1]} "
                           f"unconnected after {mins:.1f} min", flush=True)
                 if results[k] == (0, 0):
                     winner = k
                     break
-                if launched < tries:
+                if (not exhaustive and results[k] and results[k][1] <= FINISHABLE_OPEN
+                        and results[k][0] <= FINISHABLE_ERRORS):
+                    t = time.time()
+                    after = finish_trial(os.path.join(d, "battler.kicad_pcb"), work)
+                    print(f"  attempt {k}: --finish on a copy: {after[0]} DRC errors, {after[1]} unconnected ({time.time() - t:.0f} s)"
+                          if after else f"  attempt {k}: --finish on a copy failed", flush=True)
+                    if after == (0, 0):
+                        shutil.copy(os.path.join(work, f"finish_attempt{k}", "battler.kicad_pcb"), os.path.join(d, "battler.kicad_pcb"))
+                        results[k] = after
+                        winner = k
+                        break
+                if exhaustive and launched < tries:
                     launch()
     finally:
-        for p in procs.values():           # each attempt's own session: route.py, Freerouting, Xvfb
-            try:
-                os.killpg(p.pid, signal.SIGTERM)
-            except ProcessLookupError:
-                pass
-        for p in procs.values():
-            p.wait()
+        if procs:
+            print(f"stopping {len(procs)} attempts by process group: " + ", ".join(f"{k}={p.pid}" for k, p in sorted(procs.items())), flush=True)
+        kill_group(procs.values())
     done = {k: v for k, v in results.items() if v is not None}
     if winner is None:
         if not done:
@@ -1602,13 +1689,87 @@ def attempts(passes, n, argv, tries=None, seed=0):
     print("saved", PCB)
     shutil.rmtree(work, ignore_errors=True)
     if done[winner] != (0, 0):
-        print("no attempt came out clean: closing what is left open (as route.py --finish)", flush=True)
+        print("not clean yet: closing what is left open (as route.py --finish)", flush=True)
         finish()
+        left = drc_counts(PCB)
+        print(f"after --finish: {left[0]} DRC errors, {left[1]} unconnected" if left else "after --finish: no DRC report", flush=True)
+
+
+def prepare(board):
+    """The pre-routes Freerouting is given as fixed wiring (everything before it in the run); returns the contacts."""
+    hide_bom_fields(board)
+    planes(board)
+    core_3v3_stubs(board)
+    contacts = contact_stubs(board)
+    dome_stubs(board)
+    fpc_ground_bar(board)
+    if os.environ.get("ROUTE_USB_PAIR") == "1":    # the hand-drawn pair fits the 2.4 in layout (J1 beside the hole); the 3.5 in one leaves it to Freerouting
+        usb_pair(board)
+    usb_shell_ground(board)
+    fanout(board)
+    return contacts
+
+
+def drc_errors(path):
+    """(errors, dangling): the DRC errors of a board file (check_pcb.py's rules: its cosmetic silkscreen kinds don't count) as
+    [(text, uuids of its items)], and the uuids of the tracks and vias DRC calls dangling; None if kicad-cli gave no report."""
+    import json
+    from check_pcb import COSMETIC
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "drc.json")
+        subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all", "-o", out, path],
+                       capture_output=True, cwd=tmp)
+        try:
+            d = json.load(open(out))
+        except (OSError, ValueError):
+            return None
+    errors = [(f"{v['type']}: " + "; ".join(i["description"] for i in v.get("items", [])[:2])
+               + (f" at ({v['items'][0]['pos']['x']:.2f}, {v['items'][0]['pos']['y']:.2f})" if v.get("items") else ""),
+               {i["uuid"] for i in v.get("items", [])})
+              for v in d.get("violations", []) if v["severity"] == "error" and v["type"] not in COSMETIC]
+    dangling = {i["uuid"] for v in d.get("violations", []) if v["type"] in ("track_dangling", "via_dangling") for i in v["items"]}
+    return errors, dangling
+
+
+def preflight():
+    """--preflight: the placed board with the pre-routes on it, through the DRC (about 5 s). An error among pads, zones, the
+    outline and the core's locked copper is the placement's, and no seed fixes it (2026-10-26: 8 seeds ran 23 min on 9 placement
+    errors): exits 1 with the list. An error that involves copper the run changes is only listed: unlocked tracks and vias
+    (Freerouting redoes them) and dangling ones (the last prune_dangling takes them away: the core's copied via by U3's NC pad,
+    2026-10-26, on a board that routes clean). The board on disk is not touched."""
+    board = pcbnew.LoadBoard(PCB)
+    prepare(board)
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = os.path.join(tmp, "pre.kicad_pcb")
+        open(os.path.join(tmp, "pre.kicad_pro"), "w").write(open(os.path.join(BOARD_DIR, "battler.kicad_pro")).read())
+        pcbnew.SaveBoard(scratch, board)
+        report = drc_errors(scratch)
+    if report is None:
+        sys.exit("pre-flight: kicad-cli gave no DRC report")
+    errors, dangling = report
+    changes = {t.m_Uuid.AsString() for t in board.GetTracks() if not t.IsLocked()} | dangling
+    placement = [t for t, ids in errors if not ids & changes]
+    later = [t for t, ids in errors if ids & changes]
+    if later:
+        print(f"pre-flight: {len(later)} DRC errors involve copper the run changes (not stopping):")
+        for e in later[:5]:
+            print("  " + e)
+    if placement:
+        print(f"pre-flight: {len(placement)} DRC errors that the router did not make (placement, pours, core): fix those first, "
+              f"or --no-preflight:")
+        for e in placement[:20]:
+            print("  " + e)
+        sys.exit(1)
+    print("pre-flight: no DRC errors from the placement", flush=True)
 
 
 def main():
     global PCB, SCRATCH, LOGS, SEED, OPTIMIZE
     if "--finish" in sys.argv:
+        for a in sys.argv[1:]:
+            if a.startswith("--board="):         # a copy of the board (finish_trial)
+                PCB = a[len("--board="):]
+                SCRATCH = LOGS = os.path.dirname(PCB)
         return finish()
     if not JAR:
         sys.exit("set FREEROUTING_JAR")
@@ -1623,21 +1784,20 @@ def main():
         PCB = opts["board"]
         SCRATCH = LOGS = os.path.dirname(PCB)
     else:
-        n = int(opts.get("attempts", os.environ.get("ROUTE_ATTEMPTS", "4")))
+        if "--preflight" in sys.argv:
+            return preflight()
+        exhaustive = "--exhaustive" in sys.argv
+        n = int(opts.get("attempts", os.environ.get("ROUTE_ATTEMPTS", "") or (4 if exhaustive else default_attempts())))
+        if "--reuse" not in sys.argv and "--no-preflight" not in sys.argv:
+            r = subprocess.run([sys.executable, os.path.abspath(__file__), "--preflight"])
+            if r.returncode:
+                sys.exit("aborted before routing: the DRC errors above are not the router's")
         if n > 1 and "--reuse" not in sys.argv:
-            return attempts(passes, n, [a for a in sys.argv[1:] if a.startswith("--") and "=" not in a],
-                            int(opts["tries"]) if "tries" in opts else None, SEED)
+            flags = [a for a in sys.argv[1:] if a.startswith("--") and "=" not in a
+                     and a not in ("--exhaustive", "--no-preflight")]
+            return attempts(passes, n, flags, int(opts["tries"]) if "tries" in opts else None, SEED, exhaustive)
     board = pcbnew.LoadBoard(PCB)
-    hide_bom_fields(board)
-    planes(board)
-    core_3v3_stubs(board)
-    contacts = contact_stubs(board)
-    dome_stubs(board)
-    fpc_ground_bar(board)
-    if os.environ.get("ROUTE_USB_PAIR") == "1":    # the hand-drawn pair fits the 2.4 in layout (J1 beside the hole); the 3.5 in one leaves it to Freerouting
-        usb_pair(board)
-    usb_shell_ground(board)
-    fanout(board)
+    contacts = prepare(board)
     known = freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
     finish_open(board, known=known)
     print("loose router copper removed:", prune_dangling(board))
@@ -1645,6 +1805,7 @@ def main():
     print("unused stub vias removed:", drop_unused_stub_vias(board, STUB_VIAS))
     print("stitching vias:", stitch(board))
     print("stitching vias in the strips beside the cell's hole:", strip_stitch(board))
+    print("vias too close to another net's pad removed:", drop_via_conflicts(board))
     repair(board)
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
