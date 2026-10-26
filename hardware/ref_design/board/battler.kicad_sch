@@ -217,9 +217,9 @@
 		)
 		(uuid "ac129c6b-7c52-5c30-a350-c18109fcee26")
 	)
-	(text "RP2354B, 2.4in 240x320 IPS (ST7789V, SPI), 20 membrane contacts under DS Lite silicone,"
+	(text "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 20 membrane contacts under DS Lite silicone,"
 		(exclude_from_sim no)
-		(at 65.5218 27.94 0)
+		(at 65.0081 27.94 0)
 		(effects
 			(font
 				(size 1.27 1.27)
