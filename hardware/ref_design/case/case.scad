@@ -1313,6 +1313,35 @@ uni_edge_x = case_w;  uni_ears = [];  uni_ear_xa = 0;  uni_corner_r = 0;
 function uni_ceil(p) = abs(p[1]) >= uni_foot ? z_deck_under : min(z_ceil, uni_lim(p[1]));
 // the least ceiling over a rectangle's corners, edge midpoints and centre
 function uni_ceil_box(r) = min([for (u = [0, 0.5, 1], v = [0, 0.5, 1]) uni_ceil([r[0][0] + u * (r[1][0] - r[0][0]), r[0][1] + v * (r[1][1] - r[0][1])])]);
+
+// ---- the button labels, engraved on the top's INSIDE (Alex, 2026-10-26: "not visible to user, only guide for placing buttons in the shell during assembly") ----
+// Lying face down, inside up, the cap pockets are in view before the caps and the silicone go in: each face button's letter (A, B, X, Y) and each
+// Start/Select word is engraved label_depth into the ends' underside beside its opening, on the flat between the walls (found on the mesh: every label's
+// box keeps 0.6 or more from any wall, rib, boss, pocket or lip). The outside is untouched. Read from inside with the top face down, each seat's labels
+// are upright for the player at that end; seat 2's are seat 1's turned 180 degrees about the case's centre. A letter sits at the corner notch of the
+// clover clockwise from its button as the player sees it: A bottom right, B bottom left, Y top left, X top right
+label_font = "Liberation Sans Narrow:style=Bold";
+label_depth = 0.3;  label_bold = 0.05;                   // the engraving's depth; each glyph grown this much each side (strokes about 0.45)
+label_cap = 2.5;  label_word = 2.0;                      // cap height of a letter, of a word
+// [text, x, y (seat 1's, case frame), size, box w, box h]
+labels1 = [["A", 29.5, -70.0, label_cap, 2.2, 2.6], ["B", 11.9, -70.0, label_cap, 2.2, 2.6], ["Y", 11.9, -52.4, label_cap, 2.2, 2.6],
+           ["X", 29.5, -52.4, label_cap, 2.2, 2.6], ["SELECT", -12.8, -74.5, label_word, 9.45, 2.15], ["START", 12.05, -74.5, label_word, 7.8, 2.15]];
+// seat 1's read from inside are turned 180 degrees in the print frame: mirrored in x in the case frame; seat 2's, mirrored in y
+module label_cuts() for (l = labels1) for (seat = [1, 2])
+  translate([seat == 1 ? l[1] : -l[1], seat == 1 ? l[2] : -l[2], z_deck_under - 0.01]) mirror(seat == 1 ? [1, 0, 0] : [0, 1, 0])
+    linear_extrude(label_depth + 0.01) offset(r = label_bold, $fn = 12) text(l[0], size = l[3], font = label_font, halign = "center", valign = "center", spacing = len(l[0]) > 1 ? 1.05 : 1);
+function box_dist(a, b) = norm([max(0, a[0][0] - b[1][0], b[0][0] - a[1][0]), max(0, a[0][1] - b[1][1], b[0][1] - a[1][1])]);
+if (!tune) {
+  assert(deck_face - (z_deck_under + label_depth) >= uni_pocket_skin, "the labels' floor is too near the ends' face");
+  for (l = labels1) let(r = [[l[1] - l[4] / 2, l[2] - l[5] / 2], [l[1] + l[4] / 2, l[2] + l[5] / 2]]) {
+    for (k = abxy_keys()) if (k[0][1] < 0 && k[0][0] > 0) assert(rect_dist(k[0], r) >= abxy_ring + 0.9, str("label ", l[0], " is too near an A/B/X/Y pocket's clover"));
+    for (t = [0:90:270]) assert(rect_dist(dpad1 + dpad_wall[1] * [cos(t), sin(t)], r) >= dpad_wall[0] + 0.6, str("label ", l[0], " is too near the D-pad's wall"));
+    assert(box_dist(r, [ss_centres[0] - [ss_pitch / 2 + ss_cell / 2 + ss_frame_w, ss_cell / 2 + ss_frame_w], ss_centres[0] + [ss_pitch / 2 + ss_cell / 2 + ss_frame_w, ss_cell / 2 + ss_frame_w]]) >= 0.6,
+           str("label ", l[0], " is too near Start/Select's frame"));
+    assert(rect_dist(pins[5], r) >= boss_d / 2 + 0.6, str("label ", l[0], " is too near the end boss"));
+    assert(abs(r[1][0]) <= in_x - 1.0 && abs(r[0][0]) <= in_x - 1.0 && abs(r[0][1]) >= uni_foot + 0.6 && abs(r[1][1]) <= in_y - 0.6, str("label ", l[0], " is too near the walls or the slope's foot"));
+  }
+}
 module top() difference() {
   union() {
     difference() {
@@ -1327,6 +1356,7 @@ module top() difference() {
   }
   top_cuts();
   for (sy = [-1, 1]) end_cuts(sy);
+  label_cuts();
 }
 // its checks: the pocket's upper corner and the side screws' pilots 0.7 from the outside, the board's tall parts (their
 // 3D models' boxes, check_fit.py) 0.3 under the inside's limit (positions.json's own margin under a ceiling), the
