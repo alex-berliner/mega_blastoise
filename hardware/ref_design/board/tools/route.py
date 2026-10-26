@@ -41,6 +41,7 @@ left a connection or two.
      beside the cell's hole: strip_stitch), zones filled
 kicad-cli's DRC decides whether it is done (tools/check_pcb.py).
 """
+import glob
 import math
 import os
 import re
@@ -842,6 +843,12 @@ def finish_open(board, rounds=24, known=None):
                 done += 1
                 progress = True
                 continue
+            # one that crosses the board (seat 1's shift register to seat 2's, 110 mm, down a strip beside the cell's hole)
+            # needs the strips inside the search box (2026-10-26: SR_CHAIN, reach 36 closed it)
+            if maze_connect(board, net, a[:2], a[2], b[:2], b[2], reach=40.0):
+                done += 1
+                progress = True
+                continue
             if ripped >= MAX_RIPPED:
                 continue
             for radius in (1.2, 2.0):
@@ -1047,13 +1054,21 @@ def freerouting_19(args):
                 if wd > 300 and ht > 200:
                     # its OK button sits in the bottom-right corner (a click at the bottom
                     # centre misses it, and Freerouting then waits for ever)
-                    subprocess.run(["xdotool", "mousemove", str(x + wd - 44), str(y + ht - 27), "click", "1"],
-                                   env=env, capture_output=True)
+                    # (and with a long list of warnings the dialog is wide and its OK button is at the bottom centre: 2026-10-26,
+                    # "Multiple vias skipped" for the contacts' stub vias; the corner click missed it for ever, 30 minutes an attempt)
+                    for bx in (x + wd - 44, x + wd // 2):
+                        subprocess.run(["xdotool", "mousemove", str(bx), str(y + ht - 27), "click", "1"], env=env, capture_output=True)
+                        time.sleep(0.3)
+                        if w not in subprocess.run(["xdotool", "search", "--name", "DSN file reader"], env=env,
+                                                   capture_output=True, text=True).stdout.split():
+                            break
                     dismissed += 1
                     print("  Freerouting warning dialog dismissed", flush=True)
                     if dismissed > STUCK_DIALOGS:
                         java.kill()
                         out = java.stdout.read()
+                        for logfile in glob.glob(os.path.join(os.path.dirname(args[1]), "logs", "*.log")):    # (its WARN lines are in its own log)
+                            out += open(logfile).read()
                         nets = sorted(set(re.findall(r"normalization of net '([^']*)' failed", out)))
                         raise FreeroutingStuck(f"Freerouting stuck on its warning dialog ({dismissed} dismissals); nets it could not normalize: {nets or '?'}")
         return java.stdout.read()
