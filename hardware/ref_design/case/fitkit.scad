@@ -217,7 +217,7 @@ module test_overhangs() {        // the round first, its ticked face at the ladd
 module screws_box(s, r) translate([s[0] - r, s[1] - r, -1]) cube([2 * r, 2 * r, case_h + 2]);
 module coupon_screws_tub() for (i = [0, 1]) let(s = pins[[3, 4][i]]) translate([16 * i, 0, 0] - [s[0], s[1], 0])
   intersection() { tub_flat(); screws_box(s, 6); translate([-case_w, -case_l, -1]) cube([2 * case_w, 2 * case_l, z_board + 1]); }
-module coupon_screws_top() translate(-[pins[2][0], -pins[2][1], 0]) flip() intersection() { top(); screws_box(pins[2], 5); }
+module coupon_screws_top() translate(-[pins[4][0], -pins[4][1], 0]) flip() intersection() { top(); screws_box(pins[4], 4.5); }
 // Clearance round a screw column (the old deck insert's ring round the lid's 5.0 boss was too tight
 // at 0.15 a side): a boss_d column printed upright as the top piece's bosses are, and a strip of
 // rings (test_ring_w walls, a deck's height over the board), holes test_fits a side over boss_d,

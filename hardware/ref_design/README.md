@@ -25,15 +25,15 @@ which this folder never touches.
 - 20 membrane contacts (bare gold combs) under DS Lite silicone: a D-pad, four face buttons,
   Start and Select at each end
 - PWM audio through an RC filter into an FM8002A amplifier and a 15 x 10 mm speaker that plugs in,
-  lies on the board's top beside the screen and plays up through a grille in the face
+  lies in a hole in the board beside the screen and plays up through a grille in the face
 - One 403450 Li-ion cell (about 700 mAh) in a hole in the board, its bottom in a pocket in the tub's floor, BQ24073 power-path charger,
   RT9013 3V3 LDO, soft power on seat 1's Start button with MCU hold
-- Case 77.4 x 132.7 mm (a DS Lite's length), 9.55 mm at the screen and 7.7 mm at the button ends
+- Case 77.4 x 156.64 mm, 9.6 mm at the screen and 7.7 mm at the button ends
   (genuine DS Lite caps stand 1.41 mm proud there): a tub and one top piece, the whole face and sides, whose screen
-  block ends in the DS Lite's own slope; the top curves over the sides to one seam and is built upside down, printed
+  band runs from wall to wall and ends in the DS Lite's own slope; the top curves over the sides to one seam and is built upside down, printed
   face down on Bambu Support For PLA (a second filament) as its supports' interface, the tub without supports, held by six M2
-  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 72.4 x 127.7 mm, is placed to
-  its constraints ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md))
+  screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 72.4 x 151.64 mm, is placed to
+  its constraints ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md)); the speaker lies sunk in a hole in the board like the cell
 
 ## Folder
 

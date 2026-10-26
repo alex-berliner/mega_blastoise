@@ -1,8 +1,9 @@
 # Mega Blastoise: 3D print package
 
 Everything to print for the reference design's case and fit kit, generated from `case/case.scad` on the current design
-(2026-10-25: the 77.4 x 132.7 x 9.55 mm shell for the board with the cell in it, built upside down: a **tub** and **one top piece**
-that replaced the island and the two decks; see `case/SHELL.md`).
+(2026-10-26: the 77.4 x 156.64 x 9.6 mm shell for the ER-TFT035IPS-6 and the board with the cell in it, built upside down: a **tub** and **one top piece**
+whose screen block is a full-width band with the DS Lite's slope at its two ends; see `case/SHELL.md`). **The case kits hold only the case:** `1_case` (the tub and
+the top) and `5_unit` (the whole unit with its dummies); the test and coupon plates are not in them. Numbers below that say 132.7 or 9.55 are the 2.4 in case's.
 
 **This is the 60 degree variant** (2026-10-23): the tub's bottom edge and the skirts' round are shaped for a printer that prints a
 downward face 60 degrees from vertical (30 from the bed) clean, not 45. (The top's own outside no longer follows that limit: it
@@ -39,11 +40,11 @@ projects, but its tree supports in the default style count as Organic and Orca r
 |---|---|---|---|---|---|---|
 <!-- u1 -->
 | `0_buttons_end.3mf` | buttons_top: tree, interface on toolhead 2 | 19.8 g | 2.1 g | 16 | 1 h 26 min | buttons_tub, buttons_board, buttons_top |
-| `1_case.3mf` | top: tree, interface on toolhead 2 | 41.6 g | 2.7 g | 24 | 3 h 45 min | tub_print, top |
+| `1_case.3mf` | top: tree, interface on toolhead 2 | 45.7 g | 2.7 g | 24 | 4 h 03 min | tub_print, top |
 | `2_buttons_quick.3mf` | none | 18.0 g | 0.0 g | 0 | 0 h 59 min | tune_openings, tune_stack_dpad_board, tune_stack_abxy_board, tune_stack_ss_board, tune_stack_dpad_lid_dome1.75, tune_stack_abxy_lid_dome1.75, tune_stack_ss_lid_dome1.75 |
 | `3_buttons_heights.3mf` | none | 8.1 g | 0.0 g | 0 | 0 h 35 min | tune_stack_dpad_lid_dome1.6, tune_stack_dpad_lid_dome1.9, tune_stack_abxy_lid_dome1.6, tune_stack_abxy_lid_dome1.9, tune_stack_ss_lid_dome1.6, tune_stack_ss_lid_dome1.9 |
 | `4_fit_coupons.3mf` | usb_top, seam_top, buttons_top: tree, interface on toolhead 2; usb_board: plain PLA | 26.3 g | 2.2 g | 16 | 2 h 02 min | usb_tub, usb_top, usb_board, seam_tub, seam_top, frame_top, buttons_tub, buttons_board, buttons_top |
-| `5_unit.3mf` | top: tree, interface on toolhead 2; board_mock: plain PLA | 67.3 g | 2.7 g | 24 | 5 h 42 min | tub_print, top, board_mock, panel_dummy, speaker_dummy, cell_dummy, cell_plug_dummy |
+| `5_unit.3mf` | top: tree, interface on toolhead 2; board_mock: plain PLA | 78.8 g | 2.7 g | 24 | 6 h 17 min | tub_print, top, board_mock, panel_dummy, speaker_dummy, cell_dummy, cell_plug_dummy |
 | `6_tests.3mf` | none | 15.7 g | 0.0 g | 0 | 0 h 59 min | tune_openings, test_overhangs, screws_tub, screws_top, test_column, test_rings |
 <!-- /u1 -->
 
@@ -81,7 +82,7 @@ counterbores with support that fused into them: if you change a plate, keep supp
 onto a plate with the same settings. `top.stl` and `tub.stl` are the real case, each in its print pose.
 
 **The shell (2026-10-21; the one-piece top, 2026-10-25).** The top is the case's face and sides in one piece: a band at the screen's
-height (9.55 mm) across the whole width, its two ends the DS Lite's lower screen frame in section, and beyond them the ends at the
+height (9.6 mm) across the whole width, its two ends the DS Lite's lower screen frame in section, and beyond them the ends at the
 buttons' height (7.7 mm), curving over the sides and down the back's round to the seam with the tub (2.55 mm up). The tub's tongue
 stands up inside its skirt all round (4.05 mm round the ends, 3.03 along the side walls) and keys it: two tabs into pockets in each
 side wall and grip ribs, so the two parts hold together before the screws go in. The four side screws go into the top beside the
@@ -92,10 +93,10 @@ The case's parts, as they print (P1S, 0.20 mm, from its sliced projects):
 
 | Part | Size (mm) | On |
 |---|---|---|
-| `tub.stl` | 77.4 x 132.7 x 6.7 (the tongue's top round the ends; 5.6 along the sides, the keys' tabs 6.7) | `1_case`, `5_unit` |
-| `top.stl` | 77.4 x 132.7 x 6.9 (face down: the screen face on the bed, the ends 1.85 above it) | `1_case`, `5_unit` |
+| `tub.stl` | 77.4 x 156.64 x 6.7 (the tongue's top round the ends; 5.6 along the sides, the keys' tabs 6.7) | `1_case`, `5_unit` |
+| `top.stl` | 77.4 x 156.64 x 7.0 (face down: the screen face on the bed, the ends 1.85 above it) | `1_case`, `5_unit` |
 
-`1_case` (the tub and the top, a release plate) is 49.7 g of PLA and 5.8 g of support filament, with 21 filament changes, in 4 h 27 min; `5_unit` (the
+`1_case` (the tub and the top, a release plate) is 45.7 g of PLA and 2.7 g of support filament, with 24 filament changes, in 4 h 03 min (U1, Snapmaker Orca 2.4.1-beta, 2026-10-26; the earlier 2.4 in case: 49.7 g, 4 h 27 min on a P1S); `5_unit` (the
 tub, the top, the board mock and the dummies on one plate, which fits both beds) is 75.6 g and 5.8 g in 6 h 22 min. The weights include the
 purge (the flush at each change and the prime tower: 11.4 g of PLA and 4.0 g of support filament on `1_case`). Those are with the print
 settings below; before them (2026-10-25, 2 walls, 200 mm/s outer wall, 0.20 mm layers) `1_case` was 47.1 g and 6.9 g in 2 h 10 min.
@@ -229,5 +230,5 @@ Numbers live in `case/case.scad`; after changing one, rebuild the packages
 - Speaker (in `5_unit`): the dummy (or the real speaker) drops face down into the top's pocket over the grille without play to speak
   of, and the cell dummy into the board mock's hole and the tub's pocket.
 
-**The whole case (`1_case`, or `5_unit`):** build it upside down as above. It should measure 9.55 mm at the screen and 7.7 mm at
+**The whole case (`1_case`, or `5_unit`):** build it upside down as above. It should measure 9.6 mm at the screen and 7.7 mm at
 the ends, the seam flush all round, and nothing should rattle. Press each grille slot's rim: the speaker should sit flat behind it.

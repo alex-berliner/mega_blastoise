@@ -43,7 +43,7 @@ KIT = [  # (kit name, file, what it tests)
     # the test plate (6_tests): questions for the shell's redesign
     ("test_overhangs", "test_overhangs.stl", "overhang ladder: fins at 45 to 75 degrees from vertical, a convex R6 round"),
     ("test_screws_tub", "coupon_screws_tub.stl", "two of the tub's screw holes (counterbore, clearance, boss), printed flat"),
-    ("test_screws_top", "coupon_screws_top.stl", "one of the top's bosses (H3) with its 1.6 pilot, printed face down"),
+    ("test_screws_top", "coupon_screws_top.stl", "one of the top's bosses (H5, an end screw: the side screws now stand under the slope) with its 1.6 pilot, printed face down"),
     ("test_column", "test_column.stl", "a 5.0 column, as the screw bosses"),
     ("test_rings", "test_rings.stl", "rings 0.2/0.3/0.4/0.5 a side over the 5.0 column"),
 ] + [
