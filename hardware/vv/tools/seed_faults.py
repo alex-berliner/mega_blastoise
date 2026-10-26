@@ -174,10 +174,10 @@ FAULTS = [
      lambda d: csv_edit(d, "dfmea.csv", "DF-20", occurrence="2", action_priority="M")),
     ("DONE with no detects", "structure", "DONE needs at least one 'detects' check",
      lambda d: csv_edit(d, "dfmea.csv", "DF-87", status="DONE")),
-    ("an ORDER check no gate reaches", "structure", "that gate can pass without it",
-     lambda d: (text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| VER-01 | both |"),
-                text_edit(d, "gates.md", "| PHASE:CASE | both |", "| VER-01 | both |"),
-                text_edit(d, "gates.md", "| PHASE:EVT | both |", "| VER-01 | both |"))),
+    # every ORDER check is now also named by a criterion or a requirement (2026-10-26), so dropping PHASE:ORDER
+    # no longer strands one: an advisory check taken out of its advisory criterion is reached by nothing
+    ("an ORDER check no gate reaches", "structure", "VER-21: phase ORDER, but no gate criterion",
+     lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| ADVISORY VER-40 VER-27 |")),
     ("criterion with a bad board", "structure", "board 'nowhere' not in",
      lambda d: text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| PHASE:ORDER | nowhere |")),
     ("new BOM under an old BOARD_REV", "structure", "BOARD_REV is still",
@@ -481,6 +481,21 @@ def g_order_branch_moves(repo, base):
     return "order"
 
 
+def g_order_branch_case(repo, base):
+    """2026-10-26: a case.scad commit on the order branch after the baseline holds the case gate (R8, as R7)."""
+    b = re.search(r"^- Order branch: `[^`]+` from `([0-9a-f]+)`", open(os.path.join(repo, "hardware/vv/README.md")).read(),
+                  re.M).group(1)
+    wt = os.path.join(os.path.dirname(repo), "order_wt_case")
+    git(repo, "worktree", "add", "-q", "-b", "seeded-order-case", wt, b)
+    with open(os.path.join(wt, "hardware/ref_design/case/case.scad"), "a") as f:
+        f.write("// a case change on the order branch\n")
+    commit(wt, "case change on the order branch")
+    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
+              "- Order branch: `seeded-order-case`")
+    commit(repo, "README names the seeded order branch")
+    return "case"
+
+
 def g_chg_omits(repo, base):
     """O-R21: a change record whose 'What to re-run' leaves out a bench test tied to the part."""
     open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
@@ -586,6 +601,8 @@ GIT_FAULTS = [
      "REQ-PRD-06: Status APPROVED but releases/APPROVALS.md has no committed line for it", g_bulk_edited),
     ("round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing", "dn", "RESULT: FAIL",
      g_cellgap_right_end),
+    ("R8: a case.scad commit on the order branch holds the case gate", "gate",
+     "seeded-order-case has design commits after", g_order_branch_case),
 ]
 
 

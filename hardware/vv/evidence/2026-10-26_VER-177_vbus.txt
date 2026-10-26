@@ -1,6 +1,6 @@
 # VER-177 vbus
 DATE: 2026-10-26
-COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/design_numbers.py vbus

@@ -1,0 +1,18 @@
+# VER-184 plugs
+DATE: 2026-10-26
+COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py plugs
+J2 53261-0271 (C177225) at (68.30, 97.44); J4 53261-0271 (C177225) at (131.60, 108.20): 64.2 mm apart
+the speaker's centre (129.7, 124.5) is 67.1 mm from J2: its 35 mm leads cannot reach J2; the cell's lead length is not known until VER-37 and VER-49, and with the case open the cell can sit anywhere
+J2 and J4 are the same part: the cell's plug fits J4 (DF-170)
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

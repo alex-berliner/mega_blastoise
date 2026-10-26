@@ -1,14 +1,14 @@
 # VER-131 drill
 DATE: 2026-10-26
-COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/design_numbers.py drill
-battler.drl: FileFunction MixedPlating, 495 holes, 4 slots
+battler.drl: FileFunction MixedPlating, 628 holes, 4 slots
   battler.drl is MixedPlating: plated and unplated holes share one file
 unplated holes on the board: 0.5 mm: SW20 SW21 SW22 SW23; 0.65 mm: J1; 2.2 mm: H1 H2 H3 H4 H5 H6
 plated slots: 0.6 mm (MixedPlating) (JLC's minimum 0.5 mm)
-board holes 495, in the drill files 495; missing 0, in the wrong file 495, unaccounted 0
+board holes 628, in the drill files 628; missing 0, in the wrong file 628, unaccounted 0
   via 0.3 plated in a MixedPlating file
   via 0.3 plated in a MixedPlating file
   via 0.3 plated in a MixedPlating file

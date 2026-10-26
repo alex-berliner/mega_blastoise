@@ -56,8 +56,10 @@ commits on the order branch after the baseline.
       the board/tools tree, case.scad and case/export.py) is named in a change record
       (ref_design);
   R7  the design files at HEAD are the ones README.md's design baseline names (ref_design);
-  R8  (order gate) the order branch README.md names has no design commit after the
-      baseline commit (O-R13).
+  R8  (order and case gates) the order branch README.md names has no commit after the
+      baseline commit that touches the gate's files: the board's at the order gate, the
+      case's at the case gate, as R7 (O-R13; 2026-10-26: a case-only commit on the order
+      branch does not hold the board order back).
 At DVT and PVT a check of phase EVT or later that is a test (method T) or covers a release,
 whatever its method, passes only on a result that covers a release record of that phase
 (REL-...-DVT, REL-...-PVT): an EVT unit's result does not speak for the revised spin (O-R11).
@@ -751,9 +753,10 @@ def parse_baseline():
     return out, branch
 
 
-def branch_drift(db):
+def branch_drift(db, paths=None):
     """O-R13: design commits on the order branch after the baseline commit, or why it cannot be read.
-    A local branch wins over origin's (a scratch clone has only origin's)."""
+    A local branch wins over origin's (a scratch clone has only origin's). paths: the design paths that
+    count (the default mode: all of them; the order gate the board's, the case gate the case's, as R7)."""
     if not db["order_branch"]:
         return ["README.md names no order branch ('- Order branch: `<branch>` from `<commit>`')"]
     name, base = db["order_branch"]
@@ -762,7 +765,7 @@ def branch_drift(db):
         return [f"the order branch {name} is not in this repository"]
     if not resolve(base):
         return [f"the baseline commit {base} is not in this repository"]
-    shas = git("log", "--format=%h %s", f"{resolve(base)}..{ref}", "--", *DESIGN_PATHS)[1].splitlines()
+    shas = git("log", "--format=%h %s", f"{resolve(base)}..{ref}", "--", *(paths or DESIGN_PATHS))[1].splitlines()
     return [f"{name} has design commits after {base}: " + "; ".join(s[:60] for s in shas[:4])
             + (f" (+{len(shas) - 4})" if len(shas) > 4 else "")] if shas else []
 
@@ -1045,7 +1048,8 @@ def load():
             err("README.md", "design baseline differs from HEAD at " + " ".join(drift) + ": the register describes "
                              "another design (DEF-47); re-check the rows those files touch, then update the baseline")
     for m in branch_drift(db):
-        warn("README.md", m + ": the order gate fails until those rows are re-checked (R8)")
+        warn("README.md", m + ": the gate whose files they touch (order: the board's, case: the case's) fails until "
+                              "those rows are re-checked (R8)")
     for c in crit.values():
         for t in c["needs"]:
             if t in vers and vers[t]["last_result"] == "RETIRED":
@@ -1792,9 +1796,15 @@ def gate(db, phase, board, verbose):
         bd = baseline_diff(db, which) if db["baseline"] else ["README.md has no design baseline"]
         results.append(("R7 the register describes this design", "FAIL" if bd else "PASS",
                         ["gate evaluated against a design it does not describe: " + " ".join(bd)] if bd else []))
-        if phase == "ORDER":
-            bdr = branch_drift(db)
-            results.append(("R8 the order branch has not moved past the baseline", "FAIL" if bdr else "PASS", bdr))
+        if phase in ("ORDER", "CASE"):
+            # as R7: the order gate reads the board's files, the case gate the case's (a case-only commit on the
+            # order branch does not hold the board order back, and the case release must re-check it)
+            what = "board" if phase == "ORDER" else "case"
+            bdr = branch_drift(db, ["hardware/ref_design/" + p for p in BASELINE_FOR[phase]])
+            other = branch_drift(db)
+            note = [] if bdr or not other else [f"not counted here (not {what} files): " + "; ".join(other)]
+            results.append((f"R8 the order branch has not moved past the baseline ({what} files)",
+                            "FAIL" if bdr else "PASS", bdr + note))
 
     print(f"gate {phase} for {board} at {HEAD[:7]}")
     for cid, state, reasons in results:

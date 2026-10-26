@@ -1,6 +1,6 @@
 # VER-181 cellgap
 DATE: 2026-10-26
-COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/design_numbers.py cellgap
@@ -11,6 +11,9 @@ board hole 54.0 x 37.0 mm; the tub's pocket 0.25 mm inside it each side (case.sc
   nominal cell 50 x 34, right end (pushed, at TH1): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
   nominal cell 50 x 34, left end (its leads, J2): 3.75 mm nominal, 3.35 mm after tolerances (REQ-BAT-08: 1.5): ok
   nominal cell 50 x 34, each long side (at worst against the pocket's wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+what passes: the pocket 0.90 mm inside the hole on every side; then
+  with this hole (54.0 x 37.0): a cell of at most 51.20 x 35.20 mm (its spec sheet, VER-37, and incoming inspection, VER-49)
+  with the worst-case 52 x 36 cell: a hole of at least 54.80 x 37.80 mm (+0.80 in x, +0.80 in y: copper)
 RESULT: FAIL
 
 exit 1

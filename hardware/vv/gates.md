@@ -42,9 +42,11 @@ uncommitted under passed evidence or anywhere in hardware/vv, and every evidence
 committed (O-R2); R6 every design commit since the newest release record named in a change
 record (ref_design; the design is design.py, placement.py, lib/, battler.kicad_pcb,
 battler.kicad_pro, the schematics, the board/tools tree, case.scad and case/export.py); R7
-the design files at HEAD are README's design baseline (ref_design); R8 (order gate) the order
-branch README names has no design commit after the baseline commit (O-R13). The default mode
-already fails when the baseline drifts (DEF-47) and warns when the order branch moves.
+the design files at HEAD are README's design baseline (ref_design); R8 (order and case gates)
+the order branch README names has no commit after the baseline commit that touches the gate's
+files, the board's at the order gate and the case's at the case gate, as R7 (O-R13). The
+default mode already fails when the baseline drifts (DEF-47) and warns when the order branch
+moves (2ddb7fe, a case.scad change on ref-design-35in after be437f8, holds the case gate today).
 
 A criterion that the evidence cannot meet may be waived by Alex alone: the waiver row below
 proposes the reason; it counts only when he signs it in releases/APPROVALS.md (WAIVED, with

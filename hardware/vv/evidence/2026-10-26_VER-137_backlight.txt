@@ -1,14 +1,20 @@
 # VER-137 backlight
 DATE: 2026-10-26
-COMMIT: fc862fa219f71b9c580862f11c92ffc1ebb7cfb6
+COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/design_numbers.py backlight
-R60 100000, R61 2400, sense 2.2 ohm: nominal 35.2 mA a sink, 70.3 mA in all
-worst case at 100% duty (3V3 +2%, R61 +1%, R60 -1%, offset +4.5 mV, sense -1%): 39.0 mA a sink, 78.0 mA in all (panel maximum 80 mA)
-two LEDs share each sink: 39.0 mA against 40 mA for the pair (one LED's share is not controlled: VER-43 measures each LED on the breakout; VER-62 sees only a pair)
-at the minimum duty 29% (pinmap.md): BL_REF 22.4 mV, offset +-20.1% a sink (limit +-25%, REQ-DSP-12)
-RESULT: PASS
+R60 100000, R61 3900, sense 2.2 ohm: nominal 56.3 mA a sink, 112.6 mA in all at 100% duty
+the firmware's highest duty: 100% (pinmap.md names no lower maximum)
+worst case at 100% duty (3V3 +2%, R61 +1%, R60 -1%, offset +4.5 mV, sense -1%): 61.2 mA a sink, 122.4 mA in all (panel maximum 120 mA)
+3 LEDs share each sink: 20.4 mA an LED on average against 20 mA (one LED's share is not controlled: VER-43 measures each cathode pin on the breakout)
+to stay within 120 mA: cap the duty at 97.9% or less (firmware), or lower R61 (BOM):
+  R61 3.6k: 113.6 mA worst case at 100%, 104.2 mA nominal
+  R61 3.65k: 115.1 mA worst case at 100%, 105.6 mA nominal
+  R61 3.74k: 117.7 mA worst case at 100%, 108.2 mA nominal
+  R61 3.83k: 120.4 mA worst case at 100%, 110.7 mA nominal
+at the minimum duty 18% (pinmap.md): BL_REF 22.3 mV, offset +-20.2% a sink (limit +-25%, REQ-DSP-12)
+RESULT: FAIL
 
-exit 0
-RESULT: PASS
+exit 1
+RESULT: FAIL
