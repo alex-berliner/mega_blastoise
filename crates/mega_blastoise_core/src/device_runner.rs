@@ -36,7 +36,6 @@ use crate::oled_ctl::{oled_cmds_for_event, OledCmd, OledController, BOB_TICK_MS}
 use crate::random_ai::RandomAi;
 use crate::transport::LocalTransport;
 use crate::runner;
-use crate::runner::Engine;
 use crate::{player_id_to_num, LOBBY_DEMO_DELAY_MS};
 use crate::runner::Ruleset;
 
@@ -66,12 +65,6 @@ pub trait DevicePort {
     /// web, a bench Pico on USB with the switch off) report Absent.
     fn battery(&self) -> crate::display_color::Battery {
         crate::display_color::Battery::Absent
-    }
-    /// Which engine plays the next battle (asked once per battle). Raw
-    /// configuration only: the web's `engine=` URL parameter; the firmware
-    /// takes [`Engine::DEVICE_DEFAULT`].
-    fn engine(&self) -> Engine {
-        Engine::DEVICE_DEFAULT
     }
 }
 
@@ -669,40 +662,10 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         self.run_ps(1, seed, six).await;
     }
 
+    /// A Gen 3 battle: always the PS engine (the legacy Gen 3 engine is
+    /// gone).
     async fn run_gen3(&self, seed: u64, six: bool) {
-        if self.port.engine() == Engine::Ps {
-            self.run_ps(3, seed, six).await;
-            return;
-        }
-        #[cfg(feature = "legacy_gen3")]
-        self.run_gen3_legacy(seed, six).await;
-        #[cfg(not(feature = "legacy_gen3"))]
-        {
-            self.port.line_out("Gen 3: this build has no legacy engine; using the PS engine.");
-            self.run_ps(3, seed, six).await;
-        }
-    }
-
-    /// A Gen 3 battle on the legacy engine (`gen3_battle`, [`runner::gen3`]).
-    #[cfg(feature = "legacy_gen3")]
-    async fn run_gen3_legacy(&self, seed: u64, six: bool) {
-        let Some(mut battle) = runner::gen3::drafted_battle(seed, six) else {
-            self.port.line_out("Gen 3: could not draft teams.");
-            return;
-        };
-        for (label, side) in [("White", &battle.sides[0]), ("Red", &battle.sides[1])] {
-            let names: Vec<&str> = side.party.iter().map(|m| m.species.name).collect();
-            self.port.line_out(&alloc::format!("{label}: {}", names.join(", ")));
-        }
-        let bus = InputBus::new();
-        let mut effects = RunnerEffects { r: self, bus: &bus };
-        runner::gen3::run_battle(
-            &mut battle,
-            &bus,
-            self.collect_battle_input(&bus, seed),
-            &mut effects,
-        )
-        .await;
+        self.run_ps(3, seed, six).await;
     }
 
     /// A battle on the PS engine ([`runner::ps`]): `ps_sim` in-process

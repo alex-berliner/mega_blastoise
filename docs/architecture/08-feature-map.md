@@ -11,11 +11,10 @@ runtime owns it.  Use it when deciding where new code belongs.
 
 | Feature | Symbol |
 |---------|--------|
-| Battle loop (PS engine, every Gen 1 battle) | `runner::ps::run_battle` |
+| Battle loop (PS engine, every battle in both generations) | `runner::ps::run_battle` |
 | Battle setup | `runner::ps::BattleSetup::local` |
 | Request → `SlotOptions` | `runner::ps::slot_options_from_seat` |
-| Battle loop (legacy Gen 3 engine) | `runner::gen3::run_battle` |
-| Engine switch | `Engine`, `ps_ports_every_move` |
+| Ported-move gate | `ps_ports_every_move` |
 | Idle-to-demo delay shared constant | `LOBBY_DEMO_DELAY_MS` |
 
 ### battle_effects

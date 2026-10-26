@@ -351,12 +351,12 @@ fn diff_drive_tamper_line() {
     let _ = fs::remove_file(&path);
 }
 
-/// The carried corpus (`carried/gen1/*.json` and `carried/gen3/*.json`,
-/// written by `scripts/carried-dump.sh` through showdown_fuzz.rs's
-/// `FUZZ_DUMP`): every file is one old-engine pinned entry's team pairs as
-/// PS sets, and `diff.js --carried genN` plays a pair of it. A tampered
-/// carried battle lands its divergence under the pair's own name, since
-/// every pair replays the same battle seeds.
+/// The carried corpus (`carried/gen1/*.json` and `carried/gen3/*.json`),
+/// frozen: it was dumped by the legacy fuzz suite's `FUZZ_DUMP` through the
+/// now-deleted `scripts/carried-dump.sh`, and every file is one old-engine
+/// pinned entry's team pairs as PS sets. `diff.js --carried genN` plays a
+/// pair of it. A tampered carried battle lands its divergence under the
+/// pair's own name, since every pair replays the same battle seeds.
 #[test]
 fn carried_corpus() {
     for gen in [1u64, 3] {

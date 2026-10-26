@@ -48,7 +48,7 @@ use ps_dex::{ConditionId, Dex, MoveId};
 /// parses the kind prefix and routes the id to the appropriate pool. An
 /// empty list is a valid output: `--teams wide` against `ps_sim_cli`
 /// exits 2 with "no ported pipeline for gen N" when the list is empty,
-/// while `--self --teams wide` draws from the whole showdown_fuzz space
+/// while `--self --teams wide` draws from the whole wide fuzz space
 /// regardless of the list.
 pub fn ported(gen: u8) -> &'static [&'static str] {
     match gen {

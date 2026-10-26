@@ -4,8 +4,8 @@ This page describes shared logic inside `mega_blastoise_core`.
 
 ## Primary Modules
 
-- [`runner/`](../../crates/mega_blastoise_core/src/runner/mod.rs) (one runner per engine: `ps.rs` for the PS
-  engine, every Gen 1 battle; `gen3.rs` for the legacy Gen 3 engine)
+- [`runner/`](../../crates/mega_blastoise_core/src/runner/mod.rs) (the PS engine, every
+  battle in both generations)
   - `run_battle` is the main orchestration loop.
   - setup: `ps::BattleSetup::local`.
 - [`board_event.rs`](../../crates/mega_blastoise_core/src/board_event.rs)

@@ -1,8 +1,0 @@
-[package]
-name = "battle_types"
-version = "0.1.0"
-edition = "2021"
-description = "Re-export shim: the type chart's alphabet, now `ps_dex::Type`."
-
-[dependencies]
-ps_dex = { path = "../ps_dex" }

@@ -27,7 +27,7 @@ One battle/event model should drive all runtimes. Platform-specific code should 
 6. Read each player's choice back from the bus (the `ChoiceCollector` decides it).
 7. Send it as `>p1` / `>p2` and continue until the server says the battle ended.
 
-(Gen 3 runs the same loop shape on the legacy `gen3_battle` engine through
-`runner::gen3` until `ps_sim` ports it.)
+(Both generations run the same loop, on the PS engine: the legacy Gen 1
+and Gen 3 engines are gone.)
 
 Continue with [Core Battle Engine Flow](./02-core-battle-flow.md).

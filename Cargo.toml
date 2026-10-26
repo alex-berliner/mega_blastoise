@@ -1,8 +1,6 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/battle_types",
-    "crates/gen3_battle",
     "crates/mega_blastoise_core",
     "crates/mega_blastoise_fw",
     "crates/mega_blastoise_test",

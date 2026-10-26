@@ -6,11 +6,13 @@ pass R, as 43 tasks, each sized for one worker run (one headless session,
 about 2 hours, own worktree, no commits, leaves `WORKER_REPORT.md`).
 
 Conventions used below:
-- `PS/` is `tools/showdown-parity/node_modules/pokemon-showdown/` (0.11.11).
-  Workers read the TypeScript (`PS/sim/*.ts`, `PS/data/**/*.ts`); `PS/dist/` is
-  what actually runs. For any effect, read the RESOLVED definition, not the
-  base file: `node tools/ps-diff/show-effect.js <gen> <kind> <id>` (task P1-3
-  generalises `show-ability.js` into it).
+- `PS/` is `tools/ps-diff/node_modules/pokemon-showdown/` (the only PS install
+  left; the old `tools/showdown-parity` one went with the legacy engines in
+  G3-9). Workers read the TypeScript (`PS/sim/*.ts`, `PS/data/**/*.ts`);
+  `PS/dist/` is what actually runs. For any effect, read the RESOLVED
+  definition, not the base file:
+  `node tools/ps-diff/show-effect.js <gen> <kind> <id>` (task P1-3
+  generalises the old `show-ability.js` into it).
 - Tier `C2` is Claude 2 (Opus). Tier `MM` is MiniMax M3 or Hyper.
 - `||` marks tasks that may run in parallel with the listed ones once their
   own dependencies are met.
@@ -77,8 +79,9 @@ Regression sweeps:
   ported gen.
 - Full sweep (phase exits, before a cut-over or deletion, after the re-sync,
   weekly while porting): diff 20,000 per ported gen with both team generators,
-  the pinned lists, `scripts/pinned-seeds.sh` for the old engines while they
-  exist, and `scripts/sim-budget.sh`.
+  the pinned lists, `scripts/sim-budget.sh`. (`scripts/pinned-seeds.sh` for
+  the old engines went with them in G1-10 and G3-9; the carried corpus
+  replaces it.)
 
 ## 2. Parity gates
 
@@ -474,6 +477,30 @@ feed the phase gates in section 2.
   human battles in every format. Accept: as V-3, both gens, against the new
   pin; the Gen 3 set gates G3-7.
 
+**V-5 Mine Showdown's own tests** · MM · depends: G3-8
+- Background: Showdown's mocha suite (`tools/ps-diff/node_modules/pokemon-showdown/test/`)
+  has hand-written cases per move, ability and item (`test/sim/moves`,
+  `abilities`, `items`, `misc`, `decisions.js`, `events.js`). Most target
+  Gen 5 to 9, but some run for the old gens or name them (`gen: 1`, `gen: 3`,
+  `common.gen(n)`, `Dex.mod('gen1')`, a `gen1customgame` or `gen3customgame`
+  format). They encode what the Showdown authors consider the tricky lines,
+  so they make a second corpus aimed at the corners.
+- Touches: new `docs/ps-tests-gen1-gen3.md` (the inventory), new entries in
+  `crates/ps_harness/targeted/gen1.json` and `gen3.json`, `tools/ps-diff`
+  only to read them.
+- Deliverable: (1) an inventory of every test that can run under Gen 1 or
+  Gen 3 rules (by reading the files, not guessing), each marked covered (name
+  the existing targeted entry or pinned seed that reaches the same handler
+  and line), not applicable (the move or rule does not exist in that gen) or
+  new. (2) a targeted battle for each new one: the test's teams and
+  choices, with a seed chosen so the forced RNG outcome (`forceRandomChance`
+  and the like) happens, and the test's assertion as `expect` lines. Each runs
+  as a diff against PS in the usual way. (3) any diff or crash these find
+  is reported as its own finding with a reproduction, not fixed here.
+- Accept: the inventory lists every test file checked; at least all the
+  Gen 1 and Gen 3 specific ones have an entry; `--targeted gen1` and
+  `--targeted gen3` pass or list the findings; check.sh green.
+
 ### Phase 3: Gen 1 pilot
 
 Handler batches. Each: port the listed effects (one file per effect, PS source
@@ -548,6 +575,22 @@ checklist) · depends: G1-9, Alex's device smoke battle
 - Accept: `git grep -n 'gen1_battle\|battler_data' -- crates scripts tools`
   empty; check green; the Gen 1 diff gate re-run green (`--n 2000` plus pinned
   and carried); `sim-budget.sh` still within budget.
+
+**G1-7c ActiveMove pool overflow** · C2 · depends: G1-9
+- The continuous sweep (V-2) found a crash on the current tip: Gen 1 wide
+  seed 6592751 (`--trunc cartridge`, Electrode with Metronome against
+  Magneton) stops with `more than 4 ActiveMove objects in one action` at
+  `crates/ps_sim/src/actions.rs`. Reproduce with
+  `node tools/ps-diff/diff.js --ps-cli <ps_sim_cli> --gen 1 --n 1 --seed 6592751 --teams wide`.
+- Deliverable: find which PS call chain really creates that many ActiveMoves
+  at once (Metronome into Mirror Move, Counter, a recharge or two-turn move
+  and so on) and size or recycle the pool so no PS chain can overflow it, with
+  a bounded worst case. Keep `Battle` inside its size budget (the number in
+  `budget.rs`; say what it is now). A static analysis of the longest chain PS
+  can build is better than raising the number until the seed passes; the
+  answer goes in a code comment and a unit test with a hand-made chain.
+- Accept: the seed passes both rule sets; a 20,000-battle sweep per gen and
+  team mode is clean; check.sh green; the sweep's bucket for it closes.
 
 ### Phase R: re-sync to current Showdown
 

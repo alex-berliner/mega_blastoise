@@ -49,7 +49,7 @@ pub use choice_collect::{
     PadEvent, ReadySequence, SlotOptions, AI_HOLD_MS, AI_THINK_MS, BATTLE_HELP, COLLECT_TICK_MS,
     HOLD_THRESHOLD_MS, INVALID_FLASH_MS, STATS_PAGE_CYCLE_MS, UNREADY_GRACE_MS,
 };
-pub use runner::{Engine, Ruleset};
+pub use runner::Ruleset;
 pub use runner::LOBBY_DEMO_DELAY_MS;
 pub use hp_bar::HpBarState;
 pub use move_sprites::{move_sprite, MOVE_SPRITE_SIDE};
