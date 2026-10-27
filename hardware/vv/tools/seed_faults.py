@@ -778,7 +778,7 @@ GIT_FAULTS = [
     ("O-R4: a case.scad commit that moves a button position fails the order gate", "gate",
      "case commit moves board positions", g_case_move),
     ("O-R4: a case-only commit that moves no position passes that part of R8", "gate_no",
-     "the same, so the case did not move the board", g_case_labels, "case commit moves board positions"),
+     "move no board position", g_case_labels, "case commit moves board positions"),
     ("O-R5: a check moved after Alex's signed GATE@ line fails the order gate", "gate",
      "moved after A-001", g_gate_freeze),
     ("O-R12: a software signing key fails the order gate", "gate",
