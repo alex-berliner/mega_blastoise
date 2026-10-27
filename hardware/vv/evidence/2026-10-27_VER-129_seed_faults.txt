@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-27
-COMMIT: 449dcb9c4ca4d6b787b89668835aedccc498357b
+COMMIT: 5ae8ebad0c745b11e107eab9d4ad8081f2de4bbe
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py

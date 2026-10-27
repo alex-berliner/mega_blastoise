@@ -560,3 +560,31 @@ tags the new commit.
 At 71737ae (2026-10-27), with the rows the board spin touched re-read: 77 covered, 10 not
 needed, 33 planned (no cell moved between states: the spin changed results, not tags); by
 the worst status in each covered cell 0 PASS, 10 FAIL, 6 NOT_RUN, 61 NOT_BUILT (section i).
+
+Classes 4, 6, 9 and 11 built and run (2026-10-27, at 71737ae): four new scripts and one analysis.
+`tools/paper_checks.py` (latch VER-33, usb VER-191, audio VER-100, copper VER-13, shelf VER-103,
+mlccbias VER-30, core VER-197 (new), hotplug VER-12, ampstate VER-196, mating VER-140),
+`tools/check_backpower.py` (VER-159), `tools/check_placed_contacts.py` (VER-162),
+`tools/check_land.py` (VER-125), `tools/check_bom_cpl.py` (VER-130) and
+`analysis/errata_rp2350.md` (VER-16). Each script has a `--seed` that must fail, and exit 2 means
+BLOCKED (an input not on disk): run_checks.py records nothing for it.
+
+- PASS: VER-33, VER-191, VER-100, VER-12, VER-196, VER-159, VER-16, VER-162.
+- FAIL, each a defect: VER-197 (DEF-67: DVDD pin 51 and IOVDD pins 41 and 50 have no capacitor
+  within 5 mm, the far DVDD pin has no 4.7 uF), VER-13 (DEF-68: CELL_P is 0.15 mm, VSYS to U3
+  229 mohm), VER-103 (DEF-69: 0.8 months from the cutoff to the PCM's UVP at the worst case),
+  VER-30 (DEF-70: C24 under 4.7 uF at its own tolerance), VER-125 (DEF-72: U2's pads 0.21 mm
+  from the GND pad against TI's 0.26), VER-130 (DEF-21 (x): assembly.md's 117 and 49 against
+  120 and 48). DEF-71 carries three firmware rules from the errata.
+- BLOCKED: VER-140 (the cell's PCM data, VER-37), VER-178 (the dome's drawing), VER-23 (RP-010329),
+  VER-160 (the cell's spec sheet), VER-29, VER-14 and VER-28 (Alex's JLC dry run), VER-186 (JLC's
+  parts database), VER-117 (web quotes), VER-05 (ngspice is not installed and the run is a long
+  pipeline); VER-125 covers only the five footprints whose drawings are on disk, and VER-30 only
+  the minimums that do not need Samsung's curves.
+
+Grid after this round, classes 1-15 by the worst status in each cell (120 cells): PASS 2, FAIL 37,
+NOT_RUN 10, NOT_BUILT 38, planned 23, not needed 10. Class 4: buttons and usb_debug PASS; power,
+cell, mcu and audio FAIL; display NOT_RUN (VER-05). Class 6: power and cell FAIL (VER-103); the
+others show their bench tests (NOT_RUN or NOT_BUILT), their paper checks all pass. Classes 9 and 11
+read FAIL in every subsystem because VER-125 and VER-130 name all seven. VER-13's run also clears
+class 15 for power and cell.
