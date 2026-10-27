@@ -336,10 +336,13 @@ def fpc_ground_bar(board):
                   key=lambda p: p.GetPosition().x)
     top = min(pcbnew.ToMM(p.GetBoundingBox().GetY()) for p in pads)
     bar_y, via_y = top - 0.45, top - 1.25
+    others = [xy(p.GetPosition())[0] for p in fp.Pads()
+              if p.GetNumber() != "MP" and p.GetNetname() != "GND" and not p.GetNetname().startswith("unconnected-")]
     runs, run = [], []
     for p in pads:
         x = xy(p.GetPosition())[0]
-        if run and x - run[-1][0] > 0.6:
+        # a run goes on past unconnected pins (2026-10-27: pad 8 sat alone behind three of them with no room for a via)
+        if run and x - run[-1][0] > 0.6 and any(run[-1][0] < o < x for o in others):
             runs.append(run)
             run = []
         run.append((x, p))
