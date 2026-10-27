@@ -8,6 +8,20 @@ The top replaced the island and the two decks of 2026-10-23 on 2026-10-25 (Alex:
 go uni body for the top and print with pla support material"). Those, and everything built round them, are under
 "Rejected" below and in full in [SHELL_ISLAND.md](SHELL_ISLAND.md) (this file as it stood the day before).
 
+## 2026-10-27: the ESP32-S3 board (the glass 1.1 mm higher; this section wins over the numbers below)
+The WROOM-1U (18 x 19.2 x 3.2) lies on the board's top at x 64.8 to 84.0, y 108.5 to 126.5 (KiCad), partly under the glass, so the
+panel went up: `glass_gap` 2.4 to 3.5 (the glass limit 3.3, the module passes with 0.1; the bezel limit 4.6, the panel frame 3.6).
+- **Thickness**: 10.7 in the middle (3.8 + 3.5 + panel 2.45 + tape 0.15 + face 0.8), 7.7 at the ends. The window, the width 77.4, the caps and the decks are as they were.
+- **The slopes**: the run is step / tan(angle / 2), so a step of 3.0 instead of 1.9 at the DS Lite's 36 degrees would reach the clusters' walls
+  (the assert "the slope runs into the walls on a pad" fails from +0.1). `uni_ds_angle` 54 keeps the run at 5.8 (53.6 to 54.9 pass every assert; 55
+  puts the cell's top into the slope, 53.5 a cap's opening). The only visible change on the face: both slopes are steeper.
+- **The wall where the slope meets the side round** was 0.586 (needs 0.62): the inside's round `uni_in_r` is 0.15 smaller (0.66 now); the outside is untouched.
+  `check_wall` also lost a sampling edge case (an outside sample at the region's floor counted as an inner surface, 0.458 at the end corner).
+- **J3** follows the glass as before (`conn_in_at`): 1.1 mm nearer the edge (case y 118.61, range 117.41 to 119.81); the board's J3 at 117.51 is inside the range.
+  J3 has 1.5 mm under the panel (0.4 before). The FPC zones are as they were (`fpc_low` 1.05 is an estimate and was not raised with the glass).
+- **The mock** (`fitkit.py`): the board mock has the WROOM-1U and the flex antenna (Kinghelm C4943394, 45.8 x 6.5, on the left strip's top face, y 62 to 108,
+  printed 0.8 thick) in place of the old core's envelopes; neither is on the board or in its netlist.
+
 ## 2026-10-26: the 3.5 in panel (this section wins over the numbers below, which are the 2.4 in case's)
 
 Alex: "do everything you need to get a 3mf ready with the ER-TFT035IPS-6", optimising cost, minimal bezel and minimal height. (An island with the

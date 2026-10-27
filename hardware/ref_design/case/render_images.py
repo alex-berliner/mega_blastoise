@@ -42,8 +42,9 @@ Z_BOARD, PCB_T = POS["case"]["z_board"], POS["board"]["t"]
 Z_TOP = Z_BOARD + PCB_T                         # the board's top
 SEAM = POS["case"]["seam"]
 PANEL = (54.5, 83.0, 2.45)                     # case.scad: panel_w, panel_l, panel_t
-Z_GLASS, TAPE = Z_TOP + 2.4, 0.15
 SCAD = os.path.join(HERE, "case.scad")
+GLASS_GAP = float(re.search(r"^glass_gap = ([\d.]+);", open(SCAD).read(), re.M).group(1))      # the panel's back above the board (3.5 since 2026-10-27)
+Z_GLASS, TAPE = Z_TOP + GLASS_GAP, 0.15
 COL = {"tub": "#3a3a44", "top": "#6d7482", "board": "#2e7d4f", "parts": "#8cc19c", "panel": "#101014", "cell": "#c9c9d1",
        "speaker": "#b8912e", "silicone": "#b4b7c0", "caps": "#f2f2f6", "j1": "#f08a3c"}
 SIZE = 130                                      # dpi of the section figures
