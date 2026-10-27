@@ -11,7 +11,7 @@ The file names below are what the notes and tools refer to; the source column is
 | `rp2350.pdf` | RP2350 datasheet (the RP2354B is the RP2350B with 2 MB of flash inside) | https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf |
 | (zip) | RP2350B minimal KiCad design, RP-010329-CA | https://pip.raspberrypi.com/documents/RP-010329-CA |
 | `tp4056.pdf` | TP4056 Li-ion charger | https://www.lcsc.com/datasheet/lcsc_datasheet_2410121619_TOPPOWER-Nanjing-Extension-Microelectronics-TP4056-42-ESOP8_C16581.pdf |
-| `rt9013.pdf` | Richtek RT9013 500 mA LDO (U3, RT9013-33GB, C47773), DS9013-10 April 2011 | https://www.richtek.com/assets/product_file/RT9013/DS9013-10.pdf (JLC's part page for C47773 links the same revision) |
+| `rt9013.pdf` | Richtek RT9013 500 mA LDO (U3, RT9013-33GB, C47773), DS9013-10 April 2011 (Internet Archive copy: the Richtek URL now returns 404) | https://web.archive.org/web/2024/https://www.richtek.com/assets/product_file/RT9013/DS9013-10.pdf |
 | `me6211.pdf` | ME6211 LDO series (U3 until 2026-10-22) | https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_MICRONE-Nanjing-Micro-One-Elec-ME6211C33R5G_C235316.pdf |
 | `fm8002a.pdf` | FM8002A mono audio amplifier | https://www.chipsourcetek.com/DataSheet/FM8002A.pdf |
 | `mcp6002.pdf` | Microchip MCP6002 dual op-amp (U6, backlight sinks), DS20001733L | https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_Microchip-Tech-MCP6002T-I-SN_C7377.pdf |
@@ -25,7 +25,6 @@ The file names below are what the notes and tools refer to; the source column is
 | `esp32-s3-wroom-1.pdf` | ESP32-S3-WROOM-1 / WROOM-1U module datasheet (N16R8: IO35-37 taken by the octal PSRAM) | https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf |
 | `tlv757p.pdf` | TI TLV757P 1 A LDO (candidate 3V3 regulator for Wi-Fi peaks) | https://www.ti.com/lit/ds/symlink/tlv757p.pdf |
 | `sn74hc165.pdf` | TI SN74HC165 8-bit parallel-in shift register (button chain) | https://www.ti.com/lit/ds/symlink/sn74hc165.pdf |
-| `rt9013.pdf` | Richtek RT9013 500 mA LDO, DS9013-10 (Internet Archive copy: the Richtek URL now returns 404) | https://web.archive.org/web/2024/https://www.richtek.com/assets/product_file/RT9013/DS9013-10.pdf |
 
 The SPICE models for board/sim (Microchip's MCP6001/2/4 macromodel, Alpha & Omega's AO3400)
 are not committed either: `board/sim/models.py` fetches and translates them.
