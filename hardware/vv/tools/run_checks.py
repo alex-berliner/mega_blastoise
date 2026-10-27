@@ -92,6 +92,9 @@ CHECKS = {
     # the checks of classes 2, 3, 5, 7, 10 and 12-15 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
     "VER-198": ("appcircuit", ["python3", CC, "appcircuit"], True),
     "VER-190": ("arch", ["python3", CS, "arch"], False),
+    "VER-15": ("gpio", ["python3", CC, "gpio"], False),
+    "VER-36": ("pinreview", ["python3", CC, "pinreview"], False),
+    "VER-149": ("fwpins", ["python3", CC, "fwpins"], False),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }

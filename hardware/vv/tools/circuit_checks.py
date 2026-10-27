@@ -266,7 +266,215 @@ def quotes(row):
     print(f"  {n} cited numbers read")
 
 
-CHECKS = {"appcircuit": (appcircuit, SEED_APP)}
+# ---- VER-15: the GPIO function mux --------------------------------------------------------------------------------
+TABLE = (1261, 1390)          # rp2350.txt: Table 3, the GPIO function table (F0-F11), GPIO0-47
+SPI_JOB = {"LCD_SCK_MCU": "SPI0 SCK", "LCD_MOSI_MCU": "SPI0 TX", "LCD_MISO": "SPI0 RX", "LCD_CS": "SPI0 CSn"}
+PWM_NETS = ("BL_PWM", "AUDIO_PWM")
+ADC_NETS = ("CC1_SENSE", "CC2_SENSE", "VBAT_SENSE")
+PWM_RS = "embassy-rp-0.8.0/src/pwm.rs"
+SEED_GPIO = {"gpio": {29: "AUDIO_PWM", 31: "SR_CLK_MCU"}}   # the audio PWM onto the backlight's slice 6
+
+
+def gpio_table():
+    """{gpio: set of function names} from rp2350.txt's Table 3 (QFN-80: GPIO0-47)."""
+    t = ds.text("rp2350")
+    out = {}
+    for k in range(TABLE[0], TABLE[1]):
+        m = re.match(r"^\s+(\d{1,2})\s{2,}(\S.*)$", t[k - 1])
+        if m and int(m.group(1)) <= 47:
+            out[int(m.group(1))] = {s.strip() for s in re.split(r"\s{2,}", m.group(2)) if s.strip()}
+    return out
+
+
+def gpio(seed=None):
+    parts, ns = load(None)
+    g = dict(ns["GPIO"])
+    if seed:
+        g.update(seed["gpio"])
+    row = Rows()
+    ds.quote("rp2350", 1261, "GPIO", "F0", "F11")
+    tab = gpio_table()
+    row(sorted(tab) == list(range(48)), f"Table 3 read for GPIO0-47 (rp2350.txt:{TABLE[0]}-{TABLE[1]}): {len(tab)} rows")
+    q = ds.quote("rp2350", 80737, "QFN-80", "GPIO40")
+    print(f"  ADC: '{q}' (rp2350.txt:80737): GPIO40-47 are ADC0-7")
+    slices = {}
+    print("  the whole GPIO-to-PWM table, from the datasheet, against (n >> 1) & 7 (n < 32) and 8 + ((n >> 1) & 3) (n >= 32):")
+    for n in range(48):
+        pw = [f for f in tab.get(n, ()) if re.fullmatch(r"PWM\d+ [AB]", f)]
+        want = ((n >> 1) & 7) if n < 32 else 8 + ((n >> 1) & 3)
+        ch = "A" if n % 2 == 0 else "B"
+        got = pw[0] if pw else "none"
+        slices[n] = got
+        print(f"    GPIO{n:<2} {got:8} formula PWM{want} {ch}  net {g.get(n) or '-'}")
+        row(got == f"PWM{want} {ch}", f"GPIO{n}: the table's {got} is the formula's PWM{want} {ch}") if got != f"PWM{want} {ch}" else None
+    # embassy-rp's own table
+    rs = glob.glob(os.path.expanduser(f"~/.cargo/registry/src/*/{PWM_RS}"))
+    if not rs:
+        ds.blocked(f"{PWM_RS} is not in ~/.cargo/registry (cargo fetch in crates/mega_blastoise_fw)")
+    agree = 0
+    for ln in open(rs[0], encoding="utf-8"):
+        m = re.match(r"\s*impl_pin!\(PIN_(\d+), PWM_SLICE(\d+), Channel([AB])Pin\);", ln)
+        if m:
+            n = int(m.group(1))
+            ok = slices.get(n) == f"PWM{m.group(2)} {m.group(3)}"
+            agree += ok
+            if not ok:
+                row(False, f"pwm.rs says PIN_{n} is PWM{m.group(2)} {m.group(3)}; the datasheet {slices.get(n)}")
+    row(agree == 48, f"embassy-rp 0.8.0's pwm.rs agrees on {agree} of 48 pins ({rs[0].split('/src/', 1)[1]}: PIN_28 slice 6 A, "
+                     "PIN_31 slice 7 B among them)")
+    print("  each net's job against the functions its pin has:")
+    for n, net in sorted(g.items()):
+        if not net:
+            continue
+        fns = tab.get(n, set())
+        if net in SPI_JOB:
+            row(SPI_JOB[net] in fns, f"GPIO{n} {net}: needs {SPI_JOB[net]}; the pin has {', '.join(sorted(f for f in fns if f.startswith('SPI')))}")
+        elif net in PWM_NETS:
+            row(slices[n] != "none", f"GPIO{n} {net}: a PWM output, {slices[n]}")
+        elif net in ADC_NETS:
+            row(40 <= n <= 47, f"GPIO{n} {net}: an ADC input, ADC{n - 40}" if 40 <= n <= 47 else f"GPIO{n} {net}: NOT an ADC pin")
+        else:
+            row("SIO" in fns, f"GPIO{n} {net}: plain I/O (SIO{', PIO' if 'PIO0' in fns else ''})")
+    used = {}
+    for n in (k for k, v in g.items() if v in PWM_NETS):
+        used.setdefault(slices[n].split()[0], []).append(f"GPIO{n} {g[n]}")
+    for sl, who in sorted(used.items()):
+        row(len(who) == 1, f"{sl}: {', '.join(who)}" + ("" if len(who) == 1 else ": two PWM jobs on one slice (one frequency)"))
+    spi = {SPI_JOB[g[n]].split()[0] for n in g if g[n] in SPI_JOB}
+    row(len(spi) == 1, f"the panel's SPI pins all on one instance: {', '.join(sorted(spi))}")
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
+# ---- VER-36: the pin reviews' open questions and ratings -----------------------------------------------------------
+PR = os.path.join(dn.BOARD, "pin_review")
+APPROVALS = os.path.join(os.path.dirname(HERE), "releases", "APPROVALS.md")
+FLAG = re.compile(r"OPEN QUESTION|UNKNOWN|UNVERIFIED")
+SEED_PR = {"R43": {"value": "100k", "lcsc": "C25741", "mpn": "0402WGF1003TCE"}}   # a BOM value the review did not see
+
+
+def pinreview(seed=None):
+    parts, _ = load(seed)
+    row = Rows()
+    alines = open(APPROVALS, encoding="utf-8").read() if os.path.exists(APPROVALS) else ""
+    signed = set(re.findall(r"\bA-\d{3}\b", alines))
+    kinds = {}
+
+    def fail(kind, text):
+        kinds[kind] = kinds.get(kind, 0) + 1
+        row(False, f"[{kind}] {text}")
+
+    def waived(entry):
+        w = entry.get("waiver", "")
+        cites = set(re.findall(r"\bA-\d{3}\b", w))
+        return bool(w) and bool(cites & signed), w
+
+    files = sorted(glob.glob(os.path.join(PR, "*.json")))
+    for f in files:
+        name = os.path.basename(f)
+        d = __import__("json").load(open(f, encoding="utf-8"))
+        if name == "passives.json":
+            for p in d["passives"]:
+                ref = p["ref"]
+                if ref not in parts:
+                    fail("orphan", f"passives.json {ref}: not in design.py")
+                    continue
+                q = parts[ref]
+                if not q["bom"]:
+                    continue
+                for k in ("lcsc", "mpn"):
+                    if p.get(k) and q.get(k) and p[k] != q[k]:
+                        fail("identity", f"passives.json {ref} {k} {p[k]} against design.py's {q[k]} (value {q['value']})")
+                rv, nv = p.get("rating_v"), p.get("net_max_v")
+                if rv is not None and nv is not None and rv < 1.25 * nv:
+                    fail("rating", f"passives.json {ref}: rated {rv} V against 1.25 x its net's {nv} V")
+                basis = p.get("net_max_basis", "")
+                # the limit the basis states outright: '(3.3)' or '<= 5.5'; a formula or a prose figure is not compared
+                volts = [float(x) for x in re.findall(r"\((\d+(?:\.\d+)?)\)|<=\s*(\d+(?:\.\d+)?)", basis) for x in x if x]
+                if nv is not None and volts and not any(abs(x - nv) < 1e-6 for x in volts):
+                    fail("basis", f"passives.json {ref}: net_max_basis {basis!r} states {volts[0]:g} V, net_max_v is {nv} V")
+                if p.get("ok") is False or (p.get("ok") is None and not waived(p)[0]):
+                    fail("ok", f"passives.json {ref}: ok {p.get('ok')}" + (f", waiver not cited to a signed A-line: "
+                                                                           f"{p.get('waiver')!r}" if p.get("waiver") else ""))
+            continue
+        refs = d.get("refs") or ([d["ref"]] if d.get("ref") else [])
+        live = [r for r in refs if r in parts]
+        for r in refs:
+            if r not in parts:
+                fail("orphan", f"{name}: {r} is not in design.py")
+        if name == "panel.json":
+            live = ["J3"]                       # the panel is no design.py part: it plugs into J3, and its ratings count
+        if not live:
+            continue
+        for r in live if name != "panel.json" else ():
+            for k in ("lcsc", "mpn"):
+                # a review's mpn may carry its maker and LCSC number after the part number: the part number must lead it
+                if d.get(k) and parts[r].get(k) and not str(d[k]).startswith(parts[r][k]):
+                    fail("identity", f"{name} {r} {k} {d[k]!r} against design.py's {parts[r][k]!r}")
+        if FLAG.search(__import__("json").dumps(d.get("datasheet", ""))):
+            fail("source", f"{name}: its datasheet entry says {FLAG.search(__import__('json').dumps(d['datasheet'])).group(0)}")
+        for e in d.get("ratings", []):
+            what = e.get("what") or e.get("param")
+            if e.get("ok") is False or (e.get("ok") is None and not waived(e)[0]):
+                fail("rating", f"{name} '{what}': ok {e.get('ok')}" + (f"; waiver {e.get('waiver')!r} cites no signed A-line"
+                                                                     if e.get("waiver") else ""))
+            elif FLAG.search(" ".join(str(v) for v in e.values())):
+                fail("text", f"{name} '{what}': ok but says {FLAG.search(' '.join(str(v) for v in e.values())).group(0)}")
+        for e in d.get("pins", []):
+            txt = " ".join(str(e.get(k, "")) for k in ("issue", "requirement", "quote"))
+            if e.get("ok") is False and not waived(e)[0]:
+                fail("pin", f"{name} pin {e.get('pin')}: ok false" + (f"; waiver {e.get('waiver')[:80]!r}... cites no signed A-line"
+                                                                     if e.get("waiver") else f": {e.get('issue', '')[:90]}"))
+            elif e.get("ok") is None and not waived(e)[0]:
+                fail("pin", f"{name} pin {e.get('pin')}: ok null: {e.get('issue', '')[:90]}")
+            elif e.get("ok") and FLAG.search(txt):
+                fail("text", f"{name} pin {e.get('pin')}: ok but says {FLAG.search(txt).group(0)}: {e.get('issue', '')[:90]}")
+    have = {os.path.basename(f)[:-5].upper() for f in files}
+    for ref, p in sorted(parts.items()):
+        ic = re.match(r"(U|Q|D|J|X|L)\d+$", ref) and p["bom"]
+        if ic and not any(ref in (__import__("json").load(open(f)).get("refs") or [__import__("json").load(open(f)).get("ref")])
+                          for f in files if not f.endswith("passives.json")):
+            fail("missing", f"{ref} {p['mpn']}: no pin_review file names it")
+    print("failures by kind: " + ", ".join(f"{k} {n}" for k, n in sorted(kinds.items())) if kinds else "no failures")
+    print(f"signed A-lines in releases/APPROVALS.md: {len(signed)} (a waiver counts only when it cites one)")
+    return dn.result(not row.bad)
+
+
+# ---- VER-149: the firmware's REF-A pin file against design.py ------------------------------------------------------
+FW = "crates/mega_blastoise_fw/src"
+SEED_FW = None
+
+
+def fwpins(seed=None):
+    import subprocess
+    _, ns = load(None)
+    ref = next((a.split("=", 1)[1] for a in sys.argv if a.startswith("--ref=")), "HEAD")
+    row = Rows()
+    git = ["git", "-C", dn.ROOT]
+    names = subprocess.run(git + ["ls-tree", "-r", "--name-only", ref, "--", FW], capture_output=True, text=True).stdout.split()
+    want = {f"PIN_{n}": net for n, net in ns["GPIO"].items()}
+    print(f"design.py's GPIO map: {len(want)} nets on GPIO " + ", ".join(f"{n}={v}" for n, v in sorted(ns["GPIO"].items())))
+    pinfile = f"{FW}/board_ref_a.rs"
+    if pinfile not in names:
+        row(False, f"{pinfile} does not exist at {ref}: the firmware has no generated REF-A pin file (DEF-34; "
+                   "board/tools/pinmap.py does not write one yet)")
+    else:
+        text = subprocess.run(git + ["show", f"{ref}:{pinfile}"], capture_output=True, text=True).stdout
+        got = {m.group(2): m.group(1) for m in re.finditer(r"pub const (\w+)\s*:\s*\w+\s*=\s*(\d+)\s*;", text)}
+        for n, net in sorted(ns["GPIO"].items()):
+            row(str(n) in got and got[str(n)].lower().replace("_", "") == net.lower().replace("_", ""),
+                f"GPIO{n} {net}: the pin file says {got.get(str(n), 'nothing')}")
+    lit = []
+    for f in names:
+        if re.search(r"ref", os.path.basename(f)) and f.endswith(".rs") and f != pinfile:
+            text = subprocess.run(git + ["show", f"{ref}:{f}"], capture_output=True, text=True).stdout
+            lit += [(f, m.group(0)) for m in re.finditer(r"\bPIN_\d+\b", text)]
+    row(not lit, f"literal PIN_n in the board_ref code at {ref}: {len(lit)}" + (": " + ", ".join(sorted({f'{os.path.basename(a)} {b}' for a, b in lit}))[:300] if lit else ""))
+    return dn.result(not row.bad)
+
+
+CHECKS = {"appcircuit": (appcircuit, SEED_APP), "gpio": (gpio, SEED_GPIO), "pinreview": (pinreview, SEED_PR),
+          "fwpins": (fwpins, SEED_FW)}
 
 
 def main():

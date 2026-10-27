@@ -280,7 +280,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-36 (read both rating schemas; fail on ok false or null without a waiver, on a waiver that cites no A-NNN line, on an IC's or connector's lcsc or mpn that differs from design.py, on a review of a ref absent from design.py, on open-question text, on a passive rated under 1.25 x its net; not built). Its acceptance test is the failure list it generates from the current files, never a typed list.
 - Updated: REQ-FAB-02, REQ-PWR-14, REQ-MCU-09, DF-94, DF-95, DF-96
 - Gate: EVT
-- Status: OPEN (F-R2(d): split. This defect keeps the tooling, which changes no copper, and moves to EVT; the two findings that set the BOM are DEF-61, Gate ORDER)
+- Status: OPEN (F-R2(d): split. This defect keeps the tooling, which changes no copper, and moves to EVT; the two findings that set the BOM are DEF-61, Gate ORDER). 2026-10-27: VER-36 built (circuit_checks.py pinreview) and FAIL at 71737ae on 37 items: the expected list (panel VCI and VDDI, j1's D+/D- stubs, three OPEN QUESTION texts in u4.json pins 10, 61 and 68, u4 pin 58's unsigned waiver), u10.json's UNVERIFIED datasheet entry (DEF-63), 17 orphans (the files d5, q2, r47 and j6; D6 and D7 in d3 and d5, Q4 in q1; passives.json R6, R39, R40, R47, R48-R51, C9 and C41) and 12 passives.json entries whose net_max_basis still says 'logic/3V3 domain or lower (3.3)' against a net_max_v of 1.1-6.7 V (C1, C3, R13, R15, R17, R18, C8, C20-C22, C25, R62). The fix is the pin reviews' text, outside hardware/vv; no copper.
 
 ### DEF-27: check_fit guesses part heights silently
 - Found: validation plan #96 (2026-10-05); still true at 76955d2
@@ -360,7 +360,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-149 (generated pin file and a host test) and VER-150 (an rp235xb build at 2048K), moved to EVT on 2026-10-26 (G-EVT-08: needed when the boards arrive, not to order them); VER-151 (flash budget, ORDER: more than 2 MB would need an external flash); not built.
 - Updated: REQ-MCU-10, REQ-MCU-11, DF-121, DF-122
 - Gate: EVT
-- Status: OPEN
+- Status: OPEN (2026-10-27: VER-149's comparison built, circuit_checks.py fwpins: FAIL, no crates/mega_blastoise_fw/src/board_ref_a.rs at HEAD or on fw-ref-board; VER-151 BLOCKED on the battler submodule)
 
 ### DEF-35: The trace gate could pass on evidence that did not show what it claimed
 - Board: both
