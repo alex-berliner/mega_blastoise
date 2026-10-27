@@ -298,7 +298,7 @@ FAULTS = [
     # display; VER-200 (BLOCKED, not run) holds audio; VER-193 alone clears buttons, case, mcu and usb_debug, so its NOT_RUN
     # gives 4 + 1, and counting a NOT_RUN analysis would drop the count to 1
     ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 5",
-     lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN")),
+     lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN", evidence="", commit="", date="")),
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", R666")),
