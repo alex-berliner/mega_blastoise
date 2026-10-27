@@ -6629,7 +6629,7 @@
 				)
 			)
 		)
-		(property "Value" "100k"
+		(property "Value" "220k"
 			(at 136.525 135.89 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -6672,7 +6672,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25741"
+		(property "LCSC" "C25767"
 			(at 132.08 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -6683,7 +6683,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1003TCE"
+		(property "MPN" "0402WGF2203TCE"
 			(at 132.08 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -7077,7 +7077,7 @@
 				)
 			)
 		)
-		(property "Value" "10k B3950"
+		(property "Value" "10k B4460"
 			(at 190.5 135.89 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -7087,7 +7087,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Resistor_SMD:R_0402_1005Metric"
+		(property "Footprint" "Resistor_SMD:R_0805_2012Metric"
 			(at 182.88 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -7120,7 +7120,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C95939"
+		(property "LCSC" "C525375"
 			(at 182.88 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -7131,7 +7131,7 @@
 				)
 			)
 		)
-		(property "MPN" "SDNT1005X103F3950FTF"
+		(property "MPN" "TCTR0805F10K0F4460T"
 			(at 182.88 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -7142,7 +7142,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "Sunlord"
+		(property "Manufacturer" "Resistor.Today"
 			(at 182.88 132.08 0)
 			(hide yes)
 			(show_name no)

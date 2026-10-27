@@ -371,7 +371,16 @@ def power():
     sh.place("C8", bx + 10.16, by + 3.81 + 3.81, 0, f=("r", G))
     sh.wire((bx, by + 3.81), (bx + 20.32, by + 3.81))
     sh.wire((bx + 10.16, by + 3.81), "C8.1"); sh.tag("C8.2", 0)
-    sh.label("VBAT_SENSE", (bx + 20.32, by + 3.81), "right")
+    sh.label("VBAT_DIV", (bx + 20.32, by + 3.81), "right")
+    # U10 buffers the divider for GPIO47 (the pin's leakage flows from its output, not through the divider)
+    sh.place("U10", bx + 50.8, by + 3.81, 0, f=(0, -10.16))
+    sh.tag("U10.3", d="left", net="VBAT_DIV")
+    sh.tag("U10.4", d="left")
+    sh.tag("U10.1", d="right")
+    sh.tag("U10.5", d="up")
+    sh.tag("U10.2", d="down")
+    sh.place("C54", bx + 66.04, by + 7.62, 0, f=("r", G))
+    sh.tag("C54.1"); sh.tag("C54.2", 0)
     # ---- ground pads for probe and scope clips
     sh.heading(195.58, 124.46, "Ground pads (probe clips)")
     for i, ref in enumerate(("TP5", "TP15", "TP16")):

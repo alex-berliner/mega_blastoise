@@ -11,6 +11,201 @@
 		(comment 1 "Generated from board/design.py by tools/build_sch.py: edit design.py, not this sheet")
 	)
 	(lib_symbols
+		(symbol "Amplifier_Operational:MCP6L91T-EOT"
+			(pin_names
+				(offset 0.127)
+			)
+			(exclude_from_sim no)
+			(in_bom yes)
+			(on_board yes)
+			(in_pos_files yes)
+			(duplicate_pin_numbers_are_jumpers no)
+			(property "Reference" "U"
+				(at -1.27 6.35 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Value" "MCP6L91T-EOT"
+				(at -1.27 3.81 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+				(at -2.54 -5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+					(justify left)
+				)
+			)
+			(property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/22141b.pdf"
+				(at 0 5.08 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "Description" "10 MHz, 850 µA Op Amps, SOT-23-5"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_keywords" "single opamp"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(property "ki_fp_filters" "SOT?23*"
+				(at 0 0 0)
+				(show_name no)
+				(do_not_autoplace no)
+				(hide yes)
+				(effects
+					(font
+						(size 1.27 1.27)
+					)
+				)
+			)
+			(symbol "MCP6L91T-EOT_0_1"
+				(polyline
+					(pts
+						(xy -5.08 5.08) (xy 5.08 0) (xy -5.08 -5.08) (xy -5.08 5.08)
+					)
+					(stroke
+						(width 0.254)
+						(type default)
+					)
+					(fill
+						(type background)
+					)
+				)
+				(pin power_in line
+					(at -2.54 -7.62 90)
+					(length 3.81)
+					(name "V-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "2"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin power_in line
+					(at -2.54 7.62 270)
+					(length 3.81)
+					(name "V+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "5"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(symbol "MCP6L91T-EOT_1_1"
+				(pin output line
+					(at 7.62 0 180)
+					(length 2.54)
+					(name ""
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "1"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 2.54 0)
+					(length 2.54)
+					(name "+"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "3"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+				(pin input line
+					(at -7.62 -2.54 0)
+					(length 2.54)
+					(name "-"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+					(number "4"
+						(effects
+							(font
+								(size 1.27 1.27)
+							)
+						)
+					)
+				)
+			)
+			(embedded_fonts no)
+		)
 		(symbol "Connector:TestPoint"
 			(pin_numbers
 				(hide yes)
@@ -2856,6 +3051,26 @@
 	)
 	(wire
 		(pts
+			(xy 205.74 87.63) (xy 215.9 87.63)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "a7ec194a-1bb1-50dc-b8e7-a910572f09e8")
+	)
+	(wire
+		(pts
+			(xy 213.36 92.71) (xy 215.9 92.71)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "bbee73b5-b6ce-5f3d-9422-135c3ef46b4b")
+	)
+	(wire
+		(pts
 			(xy 215.9 139.7) (xy 215.9 142.24)
 		)
 		(stroke
@@ -2866,6 +3081,36 @@
 	)
 	(wire
 		(pts
+			(xy 220.98 80.01) (xy 220.98 82.55)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "ddd42c45-54ed-5113-a464-15895469cd9f")
+	)
+	(wire
+		(pts
+			(xy 220.98 97.79) (xy 220.98 100.33)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "932b83a2-18c3-5d9f-bd4f-22434dd9209a")
+	)
+	(wire
+		(pts
+			(xy 231.14 90.17) (xy 233.68 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "9817f70e-f01e-50af-9ef6-2e44868fe0d1")
+	)
+	(wire
+		(pts
 			(xy 231.14 139.7) (xy 231.14 142.24)
 		)
 		(stroke
@@ -2873,6 +3118,16 @@
 			(type default)
 		)
 		(uuid "13965f4d-f0d0-5b5d-b957-793ff2077634")
+	)
+	(wire
+		(pts
+			(xy 238.76 87.63) (xy 238.76 90.17)
+		)
+		(stroke
+			(width 0)
+			(type default)
+		)
+		(uuid "16002282-e3d9-541c-86f1-fbf44a4d3886")
 	)
 	(text "3V3 regulator (RT9013)"
 		(exclude_from_sim no)
@@ -3178,9 +3433,52 @@
 			)
 		)
 	)
+	(label "VBAT_DIV"
+		(at 193.04 90.17 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "d3b0a099-a6c0-5402-b8e4-d18c47cb6a92")
+	)
+	(label "VBAT_DIV"
+		(at 205.74 87.63 0)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify left bottom)
+		)
+		(uuid "46f95e79-2efa-5cf4-bd11-852ed66f8db1")
+	)
 	(global_label "VBAT_SENSE"
 		(shape passive)
-		(at 193.04 90.17 0)
+		(at 213.36 92.71 180)
+		(fields_autoplaced yes)
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+			(justify right)
+		)
+		(uuid "76d98ef1-2992-5377-aa01-d80425bd6f9f")
+		(property "Intersheetrefs" "${INTERSHEET_REFS}"
+			(at 213.36 92.71 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+	)
+	(global_label "VBAT_SENSE"
+		(shape passive)
+		(at 233.68 90.17 0)
 		(fields_autoplaced yes)
 		(effects
 			(font
@@ -3188,9 +3486,9 @@
 			)
 			(justify left)
 		)
-		(uuid "d5e71551-eb49-5af8-b270-6f2fca567b09")
+		(uuid "cc2c1bb4-5c3e-5b83-a85a-eecd92861a27")
 		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 193.04 90.17 0)
+			(at 233.68 90.17 0)
 			(hide yes)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4801,7 +5099,7 @@
 				)
 			)
 		)
-		(property "Value" "10k"
+		(property "Value" "47k"
 			(at 140.97 106.756 90)
 			(show_name no)
 			(do_not_autoplace no)
@@ -4844,7 +5142,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C25744"
+		(property "LCSC" "C25792"
 			(at 140.97 104.14 0)
 			(hide yes)
 			(show_name no)
@@ -4855,7 +5153,7 @@
 				)
 			)
 		)
-		(property "MPN" "0402WGF1002TCE"
+		(property "MPN" "0402WGF4702TCE"
 			(at 140.97 104.14 0)
 			(hide yes)
 			(show_name no)
@@ -6064,6 +6362,239 @@
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
 					(reference "C8")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Amplifier_Operational:MCP6L91T-EOT")
+		(at 223.52 90.17 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "69fd85fe-7376-51ff-9b0a-13a7bcd50a69")
+		(property "Reference" "U10"
+			(at 223.52 78.74 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "MCP6001"
+			(at 223.52 81.28 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Package_TO_SOT_SMD:SOT-23-5"
+			(at 223.52 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" "http://ww1.microchip.com/downloads/en/DeviceDoc/22141b.pdf"
+			(at 223.52 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "10 MHz, 850 µA Op Amps, SOT-23-5"
+			(at 223.52 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C116490"
+			(at 223.52 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "MCP6001T-I/OT"
+			(at 223.52 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "Microchip Tech"
+			(at 223.52 90.17 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "6cdcbc62-f61f-504b-af19-458bbe649ac3")
+		)
+		(pin "2"
+			(uuid "e56872a9-c55f-5630-a847-b6bbc0f21ea4")
+		)
+		(pin "3"
+			(uuid "f34517ce-85ca-5dd4-9b57-21f336987946")
+		)
+		(pin "4"
+			(uuid "d2be6551-fecd-55f8-97a2-9bb2b95e84d5")
+		)
+		(pin "5"
+			(uuid "c3e3bf57-6472-5bb4-ab7a-3ce9440f49a5")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
+					(reference "U10")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "Device:C")
+		(at 238.76 93.98 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "21736bf4-2b03-5d13-872a-9e9f9cfd31cf")
+		(property "Reference" "C54"
+			(at 243.84 95.25 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "100n"
+			(at 243.84 97.79 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" "Capacitor_SMD:C_0402_1005Metric"
+			(at 238.76 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 238.76 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Unpolarized capacitor"
+			(at 238.76 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "LCSC" "C1525"
+			(at 238.76 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "MPN" "CL05B104KO5NNNC"
+			(at 238.76 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Manufacturer" "Samsung"
+			(at 238.76 93.98 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "bb527f71-27a5-5e89-9d41-7d9b2413530b")
+		)
+		(pin "2"
+			(uuid "6860c159-d6b6-5ba6-ba37-669a0635d86b")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
+					(reference "C54")
 					(unit 1)
 				)
 			)
@@ -7794,8 +8325,8 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 200.66 142.24 0)
+		(lib_id "power:+3V3")
+		(at 220.98 80.01 0)
 		(unit 1)
 		(body_style 1)
 		(exclude_from_sim no)
@@ -7805,6 +8336,314 @@
 		(dnp no)
 		(uuid "0a8621be-eadf-54f7-8079-e74ba929194d")
 		(property "Reference" "#PWR052"
+			(at 220.98 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 220.98 76.2 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 220.98 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 220.98 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 220.98 80.01 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "2ded15b3-a95f-5a32-b462-4ede2cf1de61")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
+					(reference "#PWR052")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 220.98 100.33 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "b132b39b-112c-5451-b030-f71174a0b9ab")
+		(property "Reference" "#PWR053"
+			(at 220.98 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 220.98 104.14 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 220.98 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 220.98 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 220.98 100.33 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "8a87882c-4bc7-5be4-a626-cafbdebe80fe")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
+					(reference "#PWR053")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:+3V3")
+		(at 238.76 87.63 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "fc167e9e-2335-542a-accf-76801a734b57")
+		(property "Reference" "#PWR054"
+			(at 238.76 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "+3V3"
+			(at 238.76 83.82 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 238.76 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 238.76 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"+3V3\""
+			(at 238.76 87.63 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "af8f724a-15ef-5e6a-9b99-d9b2ab206ec1")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
+					(reference "#PWR054")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 238.76 97.79 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "14668dbb-9295-5826-abc8-d1e8ac973fd2")
+		(property "Reference" "#PWR055"
+			(at 238.76 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Value" "GND"
+			(at 238.76 101.6 0)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Footprint" ""
+			(at 238.76 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Datasheet" ""
+			(at 238.76 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
+			(at 238.76 97.79 0)
+			(hide yes)
+			(show_name no)
+			(do_not_autoplace no)
+			(effects
+				(font
+					(size 1.27 1.27)
+				)
+			)
+		)
+		(pin "1"
+			(uuid "5222a266-8258-5900-8c7f-40e4c179a544")
+		)
+		(instances
+			(project "battler"
+				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
+					(reference "#PWR055")
+					(unit 1)
+				)
+			)
+		)
+	)
+	(symbol
+		(lib_id "power:GND")
+		(at 200.66 142.24 0)
+		(unit 1)
+		(body_style 1)
+		(exclude_from_sim no)
+		(in_bom yes)
+		(on_board yes)
+		(in_pos_files yes)
+		(dnp no)
+		(uuid "156acd8a-6776-50c6-8f80-8a4fe60c0e23")
+		(property "Reference" "#PWR056"
 			(at 200.66 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -7859,12 +8698,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "2ded15b3-a95f-5a32-b462-4ede2cf1de61")
+			(uuid "0f2f555c-cc71-5858-a4a5-aae04f4041c8")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
-					(reference "#PWR052")
+					(reference "#PWR056")
 					(unit 1)
 				)
 			)
@@ -7880,8 +8719,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "b132b39b-112c-5451-b030-f71174a0b9ab")
-		(property "Reference" "#PWR053"
+		(uuid "3ba80eec-95c0-5a36-884a-f6eb5cf866c0")
+		(property "Reference" "#PWR057"
 			(at 215.9 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -7936,12 +8775,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "8a87882c-4bc7-5be4-a626-cafbdebe80fe")
+			(uuid "6c4cc0b7-6737-54e5-803e-74e674781feb")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
-					(reference "#PWR053")
+					(reference "#PWR057")
 					(unit 1)
 				)
 			)
@@ -7957,8 +8796,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "fc167e9e-2335-542a-accf-76801a734b57")
-		(property "Reference" "#PWR054"
+		(uuid "918c7594-bc3a-5010-9723-c262a304bf66")
+		(property "Reference" "#PWR058"
 			(at 231.14 142.24 0)
 			(hide yes)
 			(show_name no)
@@ -8013,12 +8852,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "af8f724a-15ef-5e6a-9b99-d9b2ab206ec1")
+			(uuid "28a8a2a3-62bb-5a2b-8a87-4c84983c4eef")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/12309b0f-8428-588e-b21a-9718fb1af850"
-					(reference "#PWR054")
+					(reference "#PWR058")
 					(unit 1)
 				)
 			)

@@ -1035,11 +1035,11 @@
    "quote": "GPIO47_ADC7       -        Digital IO /      IOVDD /        Pull-Down     User IO or ADC input",
    "symbol_name": "GPIO47/ADC7",
    "ok": false,
-   "issue": "ISSUE: VBAT_SENSE = VBAT/2 (R17/R18 470k/470k, 1.5-2.1 V for a Li-ion cell) is present whenever the cell is connected, including when the device is off and +3V3 (IOVDD) is 0 V. GPIO47_ADC7 is a standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335), and 6.1.5 (p.401) says voltages above IOVDD cause leakage through the ESD diodes. The current is limited to a few uA by the 235 kOhm source, but it is outside the abs max rating. Also: clear IE and the reset pull-down (36-113 kOhm against a 235 kOhm divider) before sampling.",
+   "issue": "ISSUE: VBAT_SENSE is U10's output (a unity buffer of VBAT/2, R17/R18 470k/470k, 1.5-2.1 V for a Li-ion cell), powered from +3V3. GPIO47_ADC7 is a standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335), and 6.1.5 (p.401) says voltages above IOVDD cause leakage through the ESD diodes. With the device off U10 is unpowered, so its output is near 0 V; its input sits at VBAT/2 behind 235 kOhm (a few uA into the op-amp's own ESD diodes, inside its input clamp rating). The pad's 1 uA leakage now flows from the op-amp, not through the divider. Clear IE and the reset pull-down before sampling.",
    "nets": {
     "U4": "VBAT_SENSE"
    },
-   "waiver": "accepted: the 235k source limits the clamp current to a few uA with the device off; a switched divider would cost a part and a GPIO. design_review.md, Off state"
+   "waiver": "accepted: U10 (MCP6001, V&V DEC-07) isolates the pad from the divider; off, the divider drives only the unpowered op-amp input through 235k (a few uA). design_review.md, Off state"
   },
   {
    "pin": "59",

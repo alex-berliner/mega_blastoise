@@ -73,6 +73,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "1.2k": ("C25862", "0402WGF1201TCE"),
     "2.4k": ("C25882", "0402WGF2401TCE"),
     "3.3k": ("C25890", "0402WGF3301TCE"),
+    "3.74k": ("C15172", "0402WGF3741TCE"),
     "3.9k": ("C51721", "0402WGF3901TCE"),      # JLC Preferred
     "4.7k": ("C25900", "0402WGF4701TCE"),
     "5.1k": ("C25905", "0402WGF5101TCE"),
@@ -84,6 +85,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "47k": ("C25792", "0402WGF4702TCE"),
     "100k": ("C25741", "0402WGF1003TCE"),
     "150k": ("C25755", "0402WGF1503TCE"),      # JLC Preferred
+    "220k": ("C25767", "0402WGF2203TCE"),      # JLC Preferred
     "470k": ("C25790", "0402WGF4703TCE"),
 }
 CAP = {  # value: (lcsc, mpn, footprint)
@@ -180,19 +182,20 @@ R("R5", S, "3.3k", "CHG_ISET", "GND")          # ICHG = 890 / 3.3k = 270 mA (242
                                                # termination
 R("R64", S, "3.3k", "CHG_ILIM", "GND")         # ILIM must not float (it would disable charging); used only in
                                                # ILIM mode, which EN1/EN2 don't select
-R("R43", S, "100k", "VBUS", "CHG_EN1")         # EN1 high, EN2 low: USB500 (475 mA in, VIN-DPM at 4.5 V); from
+R("R43", S, "220k", "VBUS", "CHG_EN1")         # EN1 high, EN2 low: USB500 (475 mA in, VIN-DPM at 4.5 V); from
                                                # VBUS, so a board without a cell can't start in USB100
 # CE (active low) straight from GPIO43: charging on by default (internal 285k pull-down); CHG_OFF
 # high stops it. R44 holds the pad low through any processor state (E9: <= 8.2k)
 R("R44", S, "4.7k", "CHG_OFF", "GND")
 R("R9", S, "100k", "CHG_PG_N", "+3V3")         # PGOOD: low while VIN is valid
 R("R10", S, "100k", "CHG_STAT_N", "+3V3")      # CHG: low while charging, 2 Hz on a timer fault
-# cell temperature: TS biased at 75 uA, charging between 0.30 V (hot) and 2.1 V (cold): with a
-# B3950 10k, 3.5 to 47 C. The 403450 has no NTC wire, so TH1 sits on the board at the right edge
-# of the cell's hole, which the case pushes the cell against; it reads the cell through the
-# board's edge and lags it
-part("TH1", S, "Device:Thermistor_NTC", "10k B3950", R0402, {"1": "CHG_TEMP", "2": "GND"},
-     "C95939", "SDNT1005X103F3950FTF", "Sunlord")
+# cell temperature: TS biased at 75 uA, charging between 0.30 V (hot) and 2.1 V (cold). TH1 is a 10k 1% NTC with the highest B JLC stocks
+# at 10k, Resistor.Today's TCTR0805F10K0F4460T (B4460, C525375, 0805): at the charger's worst corner charging runs from 4.6 C to 48.2 C
+# (the 0402 B3950 it replaced: 1.4 C to 51.5 C). No stocked 10k NTC has the B of 5130 a 45 C hot edge needs (V&V DEF-48, DEC-05).
+# The 403450 has no NTC wire, so TH1 sits on the board at the edge of the cell's hole, which the case pushes the cell against; it
+# reads the cell through the board's edge and lags it
+part("TH1", S, "Device:Thermistor_NTC", "10k B4460", "Resistor_SMD:R_0805_2012Metric", {"1": "CHG_TEMP", "2": "GND"},
+     "C525375", "TCTR0805F10K0F4460T", "Resistor.Today")
 C("C2", S, "4.7u", "VSYS")
 C("C3", S, "10u", "VBAT")
 # J2: Molex PicoBlade, 3.4 mm tall (the 5.5 mm JST PH it replaced needed a pad on the lowered lid,
@@ -230,11 +233,13 @@ R("R13", S, "33k", "PWR_BTN_RAW", "GND")       # 33k, not 100k: about twice the 
                                                # condensation) before the Start contact lifts PWR_EN
 part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "PWR_HOLD", "3": "PWR_EN"}, "C37704", "BAT54C,215", "Nexperia")
-R("R14", S, "10k", "VBUS", "VBUS_EN")
+R("R14", S, "47k", "VBUS", "VBUS_EN")      # 47k (was 10k): U3 EN stays inside its 6 V limit up to about 9 V of VBUS (V&V DEC-17)
 part("D3", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
      {"1": "PWR_EN", "2": "VBUS_EN"}, "C7502694", "BAT54WS", "")
 R("R15", S, "100k", "PWR_EN", "GND")
-# C47 slows PWR_EN's rise from VBUS (R14, about 10 ms) so a live plug-in couldn't lift the ME6211's
+# U3's EN (6 V absolute) sees VBUS through R14 and D3, U3's EN1 through R43: 47k and 220k keep it inside its limit up to about 9.1 V
+# (EN) and 12.4 V (EN1) of VBUS, with no clamp (V&V DEC-17)
+# C47 slows PWR_EN's rise from VBUS (R14 47k, about 40 ms) so a live plug-in couldn't lift the ME6211's
 # CE above its VIN plus 0.3 V; the RT9013's EN has no such limit (6 V absolute), C47 stays as a filter
 C("C47", S, "1u", "PWR_EN")
 # RP2350-E9 can hold a released pad near 2 V; through D2 that would keep PWR_EN up after a
@@ -251,9 +256,14 @@ part("D8", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
 part("Q7", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "P2_START_RAW", "2": "GND", "3": "P2_START"}, "C8545", "2N7002", "Changjiang")
 R("R63", S, "100k", "P2_START", "+3V3")
-R("R17", S, "470k", "VBAT", "VBAT_SENSE")
-R("R18", S, "470k", "VBAT_SENSE", "GND")
-C("C8", S, "100n", "VBAT_SENSE")
+# VBAT/2 into a unity buffer (U10, MCP6001 SOT-23-5 from 3V3), so GPIO47's pad leakage (1 uA at most) flows from the op-amp's output and not
+# through 235 kohm (0.47 V of VBAT, nine times REQ-BAT-12's window: V&V DEF-40, DEC-07). Off, U10 is unpowered and the pin reads 0 V
+R("R17", S, "470k", "VBAT", "VBAT_DIV")
+R("R18", S, "470k", "VBAT_DIV", "GND")
+C("C8", S, "100n", "VBAT_DIV")
+part("U10", S, "Amplifier_Operational:MCP6L91T-EOT", "MCP6001", "Package_TO_SOT_SMD:SOT-23-5",
+     {"1": "VBAT_SENSE", "2": "GND", "3": "VBAT_DIV", "4": "VBAT_SENSE", "5": "+3V3"}, "C116490", "MCP6001T-I/OT", "Microchip Tech")
+C("C54", S, "100n", "+3V3")
 for i, net in enumerate(["VBUS", "VSYS", "VBAT", "+3V3", "GND"]):
     part(f"TP{i + 1}", S, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # bring-up test pads on the top side: the power latch, the charger's TS node (TP7 was the load-
@@ -418,7 +428,7 @@ for k, (q, rs, rg, rpd, rf, cf) in ((1, ("Q5", "R52", "R54", "R56", "R58", "C48"
     R(rf, S, "10k", f"BL_S{k}", f"BL_FB{k}")
     C(cf, S, "1n", f"BL_OUT{k}", f"BL_FB{k}")
 R("R60", S, "100k", "BL_PWM", "BL_REF")            # GPIO28 PWM into the reference filter
-R("R61", S, "3.9k", "BL_REF", "GND")               # 3.3 V x 3.9 / 103.9 = 0.124 V at 100%
+R("R61", S, "3.74k", "BL_REF", "GND")              # 3.3 V x 3.74 / 103.74 = 0.119 V at 100% (117.7 mA worst case; 3.9k gave 122.4 over the panel's 120: V&V DEF-39)
 C("C50", S, "1u", "BL_REF")
 JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an ammeter to read the LED current
 
@@ -450,14 +460,13 @@ C("C35", S, "100n", "AMP_VDD")
 # JP3: cut it to take the amplifier off VSYS (a noisy or shorted amplifier), or to read its current
 JP("JP3", S, "VSYS", "AMP_VDD")
 part("#FLG09", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "AMP_VDD"}, bom=False)   # fed through JP3
-# J4 (2026-10-20, Alex: no soldering at assembly): the speaker (INGHAi GSPK151035PN) comes with a
-# 1.25 mm 2-pin plug, so J4 is J2's PicoBlade header (no new part number at JLC). The cell's plug
-# fits it too. Since 2026-10-22 the speaker lies on the board's top in the right bezel beside the
-# screen (stuck down with foam tape at assembly, firing up through a grille in the face), J4 just
-# below it (placement.SPEAKER)
-part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "53261-0271",
-     "Connector_Molex:Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal",
-     {"1": "SPK_P", "2": "SPK_N", "MP": None}, "C177225", "532610271", "Molex")
+# J4 (2026-10-20, Alex: no soldering at assembly): the speaker (INGHAi GSPK151035PN) plugs in. Since 2026-10-27 J4 is a JST SH
+# 2-pin header (1.0 mm, SM02B-SRSS-TB, C160402, the 2-pin of J5's family) and the speaker's leads carry an SH plug: the cell's
+# PicoBlade plug (J2, 1.25 mm) cannot enter it (V&V DF-170, DEC-33). The speaker lies in a hole in the board beside the
+# screen (placement.CUTOUTS), J4 just above it
+part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "SM02B-SRSS-TB",
+     "Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal",
+     {"1": "SPK_P", "2": "SPK_N", "MP": None}, "C160402", "SM02B-SRSS-TB(LF)(SN)", "JST")
 
 
 # =================================================================================
@@ -490,10 +499,10 @@ C("C53", S, "100n", "+3V3")                    # U9 supply
 RPACK = "Resistor_SMD:R_Array_Convex_4x0402"
 for k, rn in enumerate(("RN1", "RN2", "RN3", "RN4")):
     nets_ = BUTTONS[4 * k:4 * k + 4]
-    part(rn, S, "Device:R_Pack04", "10k", RPACK,
+    part(rn, S, "Device:R_Pack04", "47k", RPACK,
          {"1": nets_[0], "2": nets_[1], "3": nets_[2], "4": nets_[3],
           "5": "+3V3", "6": "+3V3", "7": "+3V3", "8": "+3V3"},
-         "C25725", "4D02WGJ0103TCE", "UNI-ROYAL")
+         "C2028", "4D02WGJ0473TCE", "UNI-ROYAL")   # 47k pull-ups: margin for the membrane pill's contact resistance (V&V DEC-24)
 # Start and Select under each seat's DS Lite Start/Select membrane, between the clusters near the
 # case's end: metal snap domes (2026-10-21, row 4: HYP 600-415S-260, 4.0 mm, hand-placed under
 # Kapton dots), a 1.6 mm centre pad and a 3.4-4.6 mm ring. On the power contacts the ring is VSYS,
