@@ -5,11 +5,15 @@ KiCad files, the case or the firmware has changed. Several items need a respin, 
 before the 5-board JLC order. Items marked "unverified" were not checked against a datasheet
 or a live source.
 
+**MCU change (2026-10-27):** the next board uses the ESP32-S3-WROOM-1-N16R8, not the
+RP2354B, for its 16 MB of flash. Its board changes and pin map are in
+`docs/esp32s3_board_proposal.md`, which wins where it conflicts with this file. The
+RP2350-specific parts here (bootrom partitions, PIO, the section 6 GPIO budget) are
+superseded; the launcher on the S3 uses a factory partition plus one OTA game slot.
+
 Related: `docs/display_parallel_proposal.md` (the 60 fps display link, in full detail),
-`docs/bom.md`. The current board is on branch `ref-design-35in` (worktree
-`mega_blastoise_35in`, commit a8ead6a when this was written); its `docs/pinmap.md` is the
-GPIO map this proposal uses. Main's `docs/pinmap.md` is stale (direct-GPIO buttons and
-revision straps, both gone).
+`docs/bom.md`. The GPIO map this file uses is the 3.5 in board's `docs/pinmap.md`, merged
+to main in bfe9609.
 
 ## 1. Direction
 
@@ -264,4 +268,4 @@ save 2 more.
 - That the EastRising module's 8080 mode works on the bench (set IM `011`, read the ID).
 - Chrome on Android WebUSB with this device (plug-in test above).
 
-Last updated: 2026-10-27 08:06 EDT
+Last updated: 2026-10-27 17:36 EDT
