@@ -96,6 +96,8 @@ CHECKS = {
     "VER-36": ("pinreview", ["python3", CC, "pinreview"], False),
     "VER-149": ("fwpins", ["python3", CC, "fwpins"], False),
     "VER-31": ("ratings", ["python3", CC, "ratings"], False),
+    "VER-195": ("usbfault", ["python3", CC, "usbfault"], False),
+    "VER-148": ("bridges", ["python3", LC, "bridges"], True),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }

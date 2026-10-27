@@ -659,8 +659,62 @@ def ratings(seed=None):
     return dn.result(not row.bad)
 
 
+# ---- VER-195: VBUS on J1's CC and data pins ---------------------------------------------------------------------------
+PD_MAX = dn.PD_MAX                # V: the highest fixed USB PD voltage, what a broken source may put out
+U1_VF = (0.6, 1.2, 15e-3)         # V, V, A: U1's steering diode, about 0.6 V at onset (stand-in) and 1.2 V max at 15 mA
+                                  # (u1.json p2, not on disk)
+U1_VC = 17.5                      # V: U1's clamp at 5 A, maximum (u1.json p1-p2, not on disk)
+STAND_PAD_VF = (0.5, 20e-6, 0.06)  # V at A, V a decade: a pad's ESD diode reaches IOVDD + 0.5 V at about 20 uA (stand-in)
+STAND_3V3_SINK = 10e-3            # A: the least 3V3 load that can absorb current pushed into the rail (stand-in: the
+                                  # RT9013 sources only, rt9013.pdf shows no sink)
+SEED_USBF = None                  # it fails at 71737ae: no seed is needed to show it can fail
+
+
+def usbfault(seed=None):
+    """PASS means no part over its absolute maximum for VBUS up to 20 V on any of J1's CC and data pins."""
+    parts, _ = load(seed)
+    row = Rows()
+    ds.quote("rp2350", 101043, "VPIN", "IOVDD + 0.5")
+    ds.quote("rp2350", 100897, "GPIO46_ADC6", "Digital IO")
+    ds.quote("rp2350", 100951, "USB_DP", "USB IO", "USB_OTP_VDD")
+    iovdd = 3.3 * (1 - dn.VREG_TOL)
+
+    def pad_onset(r_series):
+        """the source voltage where a pad behind r_series first passes IOVDD + 0.5 V"""
+        return iovdd + STAND_PAD_VF[0] + STAND_PAD_VF[1] * r_series
+
+    print(f"VBUS up to {PD_MAX:g} V (PD_MAX) on each of J1's CC and data pins; IOVDD {iovdd:.3f} V (3V3 at -2%); GPIO45-47 are "
+          "'Digital IO / Analogue', not FT (rp2350.txt:100894-100900), so VPIN is IOVDD + 0.5 V (101043); a pad's diode "
+          f"modelled as {STAND_PAD_VF[0]} V at {STAND_PAD_VF[1] * 1e6:.0f} uA (stand-in)")
+    for cc, rd, rs, gp in (("CC1 (A5)", "R1", "R3", "GPIO46 CC1_SENSE"), ("CC2 (B5)", "R2", "R4", "GPIO45 CC2_SENSE")):
+        r_d, r_s = val(parts, rd), val(parts, rs)
+        p_rd = PD_MAX ** 2 / r_d
+        v_rd = math.sqrt(0.0625 * r_d)
+        i_pad = (PD_MAX - iovdd - STAND_PAD_VF[0]) / r_s
+        on = pad_onset(r_s)
+        row(p_rd <= 0.0625, f"{cc}: {rd} {parts[rd]['value']} dissipates {p_rd * 1e3:.0f} mW at {PD_MAX:g} V against its 62.5 mW "
+            f"(0402, JLC's description); it reaches 62.5 mW at {v_rd:.1f} V")
+        row(on >= PD_MAX, f"{cc}: {gp} behind {rs} {parts[rs]['value']} passes IOVDD + 0.5 V from about {on:.1f} V; at {PD_MAX:g} V "
+            f"{i_pad * 1e3:.2f} mA flows into its clamp (rp2350.pdf gives no injection limit)")
+    u1_on = "USB_DP" in parts["U1"]["pins"].values()
+    for line, pins in (("D+ (A6, B6)", ("R21", "USB_DP_MCU")), ("D- (A7, B7)", ("R22", "USB_DM_MCU"))):
+        r = val(parts, pins[0])
+        onset = V3V3 + U1_VF[0] if u1_on else pad_onset(r)
+        print(f"  {line}: from about {onset:.1f} V {'U1 steers' if u1_on else 'the pad steers'} the line into +3V3 "
+              f"({'U1 VF 1.2 V max at 15 mA, u1.json p2' if u1_on else 'no U1'}); the RT9013 cannot sink, so once the fault "
+              f"pushes more than the rail's load (stand-in {STAND_3V3_SINK * 1e3:.0f} mA) +3V3 rises; through {pins[0]} "
+              f"{parts[pins[0]]['value']} ohm the RP2350's USB pad ({pins[1]}) sits at the line's clamp")
+        row(onset >= PD_MAX, f"{line}: the RP2350's USB pad and the whole +3V3 domain are over their absolute maximum "
+            f"(IOVDD 3.63 V, rp2350.txt:101026) from about {onset:.1f} V; at {PD_MAX:g} V U1's clamp holds +3V3 near "
+            f"{U1_VC:g} V at 5 A (u1.json, not on disk)" if u1_on else f"{line}: the pad alone from about {onset:.1f} V")
+    print("for DEC-17: the CC paths are over from about 3.9 V (the pads, at a current R3 and R4 limit to under 2 mA) and "
+          "17.9 V (R1, R2); a data line shorted to VBUS above about 4 V destroys the 3V3 domain whatever the series parts")
+    print(f"{len(row.bad)} over")
+    return dn.result(not row.bad)
+
+
 CHECKS = {"appcircuit": (appcircuit, SEED_APP), "gpio": (gpio, SEED_GPIO), "pinreview": (pinreview, SEED_PR),
-          "fwpins": (fwpins, SEED_FW), "ratings": (ratings, SEED_RATINGS)}
+          "fwpins": (fwpins, SEED_FW), "ratings": (ratings, SEED_RATINGS), "usbfault": (usbfault, SEED_USBF)}
 
 
 def main():

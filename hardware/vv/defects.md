@@ -745,3 +745,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-148
 - Gate: ORDER
 - Status: OPEN (a footprint with TI's 0.60 mm pads at 2.80 mm, the same EP, in board/lib; or Alex accepts KiCad's for EVT with VER-52's TP3-to-TP5 resistance before every first cell and VER-89's microscope look at U2 as the checks)
+
+### DEF-73: VBUS on J1's CC or data pins overstresses the CC parts above 3.9 V and the whole 3V3 domain above 4 V
+- Found: VER-195 (circuit_checks.py usbfault), built 2026-10-27, at 71737ae
+- Symptom: with a broken source's voltage on J1's CC or data pins (a CC or data line shorted to VBUS in a cable or charger; a solder bridge on J1's row puts VBUS on CC2 at B4-B5 and A9-B5, bridges.csv): GPIO46 and GPIO45 (CC1_SENSE, CC2_SENSE, not 5 V tolerant, rp2350.txt:100894-100900) pass IOVDD + 0.5 V (101043) from about 3.9 V behind R3 and R4's 10k, 1.6 mA into each clamp at 20 V; R1 and R2 (5.1k 0402, 62.5 mW) pass their rating at 17.9 V (78 mW at 20 V); on D+ or D- U1's steering diodes push the fault into +3V3 from about 4.0 V, and the RT9013 cannot sink, so the RP2350, the panel and everything on 3V3 go over 3.63 V. The pad's diode and U1's onset are stand-ins (the SRV05-4's datasheet is not on disk).
+- Root cause: the CC sense taps and the data lines were sized for USB 2.0's 5 V world; nothing bounds a 20 V fault on them. VER-177 (DEF-50) covered VBUS itself, not the pins beside it.
+- Why missed: VER-195 was NOT_BUILT.
+- Check added or changed: VER-195 (built; FAIL at 71737ae, so no seed is needed to show it can fail)
+- Updated: DF-101, DF-51
+- Gate: EVT
+- Status: OPEN (for DEC-17 with DEF-50: proposed, accept for EVT, since a data line at VBUS is outside USB 2.0 and any fix needs copper; at DVT, R3 and R4 to 100k or more with a clamp at the pads, R1 and R2 in 0603 (100 mW), and a series element or a crowbar on the data lines only if REQ-PWR-17's accepted value asks for it)
