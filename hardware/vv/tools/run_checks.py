@@ -82,6 +82,8 @@ CHECKS = {
     "VER-196": ("ampstate", ["python3", PC, "ampstate"], False),
     "VER-140": ("mating", ["python3", PC, "mating"], False),
     "VER-159": ("check_backpower", ["python3", "hardware/vv/tools/check_backpower.py"], False),
+    "VER-162": ("check_placed_contacts", ["python3", "hardware/vv/tools/check_placed_contacts.py"], True),
+    "VER-125": ("check_land", ["python3", "hardware/vv/tools/check_land.py"], True),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }

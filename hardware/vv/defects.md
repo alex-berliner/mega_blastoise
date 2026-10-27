@@ -735,3 +735,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-94, REQ-PWR-09
 - Gate: EVT
 - Status: OPEN (three lines in pinmap.md's Power control: AMP_EN driven low before sleep and never left an input; keep the SDK's watchdog_enable() (PSM WDSEL with RESETS); write no OTP and keep secure boot off. No copper)
+
+### DEF-72: U2's footprint puts the cell's pins closer to the GND pad than TI's land pattern
+- Found: VER-125 (check_land.py), built 2026-10-27, at 71737ae
+- Symptom: U2 uses KiCad's VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm: its pads are 0.82 x 0.25 mm at a 2.92 mm span, so each pad's inner end sits 0.21 mm from the 1.68 mm exposed pad. TI's land pattern for the RGT0016C (bq24074.txt:3061-3100) has 0.60 x 0.24 mm pads at a 2.80 mm span: 0.26 mm. On U2 the exposed pad is GND and pins 2 and 3 are BAT, so a bridge there shorts the cell on the board (DF-148, severity 10). The count, pitch, pin 1 and the exposed pad match.
+- Root cause: design.py takes KiCad's generic IPC-7351 VQFN footprint, whose pads run 0.22 mm longer, inward as well as out, than the maker's example; nobody compared it with TI's page.
+- Why missed: VER-125 was NOT_BUILT; DRC passes 0.21 mm.
+- Check added or changed: VER-125 (built; --seed shrinks the exposed pad and must fail)
+- Updated: DF-148
+- Gate: ORDER
+- Status: OPEN (a footprint with TI's 0.60 mm pads at 2.80 mm, the same EP, in board/lib; or Alex accepts KiCad's for EVT with VER-52's TP3-to-TP5 resistance before every first cell and VER-89's microscope look at U2 as the checks)
