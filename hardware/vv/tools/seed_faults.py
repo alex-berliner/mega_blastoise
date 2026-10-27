@@ -294,7 +294,9 @@ FAULTS = [
      "3 case no check",
      lambda d: (drop_line(d, "grid_reasons.csv", "3,case,"),
                 csv_edit(d, "verification.csv", "VER-70", classes="3", subsystems="case"))),
-    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 8",
+    # 6 since 2026-10-27: VER-13 (an analysis that ran, FAIL) clears class 15 for power and cell; VER-193 alone
+    # holds buttons, case, mcu and usb_debug, so counting a NOT_RUN analysis would drop the count to 2
+    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 6",
      lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN")),
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
@@ -466,6 +468,10 @@ def g_expired_accept(repo, base):
 
 
 def g_signed_waiver(repo, base):
+    # VER-33 (G-ORD-06's check) passes since 2026-10-27: undo it in the clone so the criterion fails and the waiver acts
+    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-33", last_result="NOT_BUILT", evidence="",
+             commit="", date="")
+    commit(repo, "VER-33 not built in this clone")
     approve(os.path.join(repo, "hardware/vv"), "| A-001 | W-01 | WAIVED | ORDER | the latch replica is cut | Alex | 2026-10-25 |")
     commit(repo, "waive W-01")
     return "order"
