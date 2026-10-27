@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "3V3 regulator, power latch, cell voltage sense")
-		(rev "1")
+		(rev "2")
 		(company "Two-player handheld: reference design (REF-A)")
 		(comment 1 "Generated from board/design.py by tools/build_sch.py: edit design.py, not this sheet")
 	)
@@ -3129,9 +3129,9 @@
 		)
 		(uuid "16002282-e3d9-541c-86f1-fbf44a4d3886")
 	)
-	(text "3V3 regulator (RT9013)"
+	(text "3V3 regulator (TLV75733P)"
 		(exclude_from_sim no)
-		(at 33.8081 25.4 0)
+		(at 36.1652 25.4 0)
 		(effects
 			(font
 				(size 1.8 1.8)
@@ -3550,7 +3550,7 @@
 				)
 			)
 		)
-		(property "Value" "RT9013-33GB"
+		(property "Value" "TLV75733PDBVR"
 			(at 88.9 36.83 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -3593,7 +3593,7 @@
 				)
 			)
 		)
-		(property "LCSC" "C47773"
+		(property "LCSC" "C485517"
 			(at 88.9 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -3604,7 +3604,7 @@
 				)
 			)
 		)
-		(property "MPN" "RT9013-33GB"
+		(property "MPN" "TLV75733PDBVR"
 			(at 88.9 45.72 0)
 			(hide yes)
 			(show_name no)
@@ -3615,7 +3615,7 @@
 				)
 			)
 		)
-		(property "Manufacturer" "Richtek"
+		(property "Manufacturer" "Texas Instruments"
 			(at 88.9 45.72 0)
 			(hide yes)
 			(show_name no)

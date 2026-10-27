@@ -59,14 +59,25 @@ def buttons():
             sh.place(rn, x0 + 12.7 + k * 20.32, 129.54, 0, f=(0, -10.16))
             for n in "12345678":
                 sh.tag(f"{rn}.{n}", 5.08)
-    # the clock's series resistor (on the board by the RP2354B's pin)
+    # the third register: both Starts, both Selects and the charger's two status lines
+    sh.heading(248.92, 70.0, "Third register: Start/Select and charger status")
+    sh.place("U11", 284.48, 104.14, 0, f=(0, -15.24))
+    for n in ("1", "2", "15", "8", "16", "10", "9", "11", "12", "13", "14", "3", "4", "5", "6"):
+        sh.tag(f"U11.{n}", 5.08)
+    sh.nc("U11.7")
+    sh.place("C62", 304.8, 104.14, 0, f=("r", G))
+    sh.tag("C62.1", G); sh.tag("C62.2", G)
+    for k, r in enumerate(("R86", "R87")):
+        sh.place(r, 256.54 + k * 12.7, 160.02, 0, f=("r", G))
+        sh.tag(f"{r}.1", G); sh.tag(f"{r}.2", G)
+    # the clock's series resistor (on the board by the module pin)
     sh.heading(116.84, 101.6, "SR_CLK source termination")
     sh.place("R65", 129.54, 111.76, 90)
     sh.tag("R65.1", 5.08)
     sh.tag("R65.2", 5.08)
-    sh.text(17.78, 165.1, "D-pad and face buttons: bare ENIG combs under DS Lite silicone, read through a 74HC165 per seat (chained: U9's")
-    sh.text(17.78, 168.91, "Q7 into U8's DS; SR_PL low loads, 16 SR_CLK rises shift P1 Y..UP then P2 Y..UP out of SR_DATA, low = pressed).")
-    sh.text(17.78, 172.72, "Start/Select: 4 mm metal domes (HYP 600-415S-260), their own GPIOs; both Starts sit on VSYS (Power sheet).")
+    sh.text(17.78, 165.1, "D-pad and face buttons: bare ENIG combs under DS Lite silicone, read through a 74HC165 per seat (chained: U11 to U9 to U8, U9's")
+    sh.text(17.78, 168.91, "Q7 into U8's DS; SR_PL low loads, 16 SR_CLK rises shift P1 Y..UP then P2 Y..UP out of SR_DATA, low = pressed; 8 more give U11).")
+    sh.text(17.78, 172.72, "Start/Select: 4 mm metal domes (HYP 600-415S-260), read by U11 (24-clock read: the extra 8 bits: Start/Select/charger); both Starts sit on VSYS (Power sheet).")
     return sh
 
 
@@ -86,6 +97,7 @@ def audio():
     a = (27.94, Yc)
     sh.wire(a, "R32.1")
     sh.label("AUDIO_PWM", a, "left")
+    tp(sh, "TP9", (31.75, Yc))
     sh.wire("R32.2", "R33.1"); sh.wire((44.45, Yc), "C37.1"); sh.tag("C37.2", 0)
     sh.wire("R33.2", "C39.1"); sh.wire((67.31, Yc), "C38.1"); sh.tag("C38.2", 0)
     sh.wire("C39.2", "R34.1")
@@ -154,41 +166,21 @@ def audio():
 
 def debug():
     sh = Sheet("debug.kicad_sch")
-
-    def three_pin(ref, x, y, title):
-        """A 3-pin JST-SH debug connector, pins to the right: signal, GND, signal."""
-        sh.heading(x - 7.62, y - 15.24, title)
-        sh.place(ref, x, y, 180, f=(-5.08, 0))
-        sh.nc(f"{ref}.MP")
-        sh.tag(f"{ref}.3", 7.62)
-        sh.wire(f"{ref}.2", (x + 10.16, y))
-        sh.gnd((x + 10.16, y))
-        end = sh.wire(f"{ref}.1", (x + 7.62, y + 2.54), (x + 7.62, y + 7.62), (x + 17.78, y + 7.62))
-        sh.label(sh.parts[ref]["pins"]["1"], end, "right")
-
-    three_pin("J5", 27.94, 50.8, "SWD connector J5")
-    # -- BOOTSEL and RESET buttons, J7 (the same SWD on bare pads, for a pogo jig) between
-    # them with its BOOTSEL pad wired straight to the BOOTSEL button
-    by = 115.57
-    for bx, r, sw, title in ((40.64, "R25", "SW18", "BOOTSEL button"), (152.4, "R26", "SW19", "RESET button")):
+    # -- BOOT (IO0) and RESET (EN) buttons, J7 (the same signals on bare pads, for a pogo jig) between them
+    by = 63.5
+    for bx, sw, title, net in ((40.64, "SW18", "BOOT button (IO0)", "BOOT"), (152.4, "SW19", "RESET button (EN)", "EN")):
         sh.heading(bx - 12.7, by - 17.78, title)
-        sh.place(r, bx, by, 0, f="r")
-        sh.tag(f"{r}.1", G, d="up")
-        sh.place(sw, bx, by + 3.81 + 5.08 + 10.16, 270, f="l")
-        sh.wire(f"{r}.2", f"{sw}.1")
-        sh.tag(f"{sw}.2", 0)
-    yb = by + 3.81 + 2.54                            # the BOOTSEL node
-    x = 83.82
+        sh.place(sw, bx, by, 270, f="l")
+        sh.tag(f"{sw}.1", G)
+        sh.tag(f"{sw}.2", G)
+    x = 96.52
     sh.heading(x - 22.86, by - 17.78, "Debug pads J7 (back side, 2.54 mm)")
-    sh.place("J7", x, yb - 5.08, 0, f="r")
-    sh.wire((40.64, yb), "J7.5")
-    for n in ("4", "3", "2"):
+    sh.place("J7", x, by - 7.62, 0, f="r")
+    for n in ("1", "2", "3", "4"):
         sh.tag(f"J7.{n}")
-    sh.tag("J7.1")
-    sh.tag("J7.6")
-    sh.text(17.78, 165.1, "J5 SWD follows the Raspberry Pi 3-pin debug connector pinout (Debug Probe cable).")
-    sh.text(17.78, 168.91, "SW18 BOOTSEL and SW19 RESET sit under pinholes in the lid. J7: power through its 3V3 pad only with the")
-    sh.text(17.78, 172.72, "cell out and nothing on USB; BOOTSEL to GND at reset enters the USB boot loader, RUN to GND resets.")
+    sh.text(17.78, 165.1, "SW18 BOOT (IO0) and SW19 RESET (EN, through the module's 10k / 1 uF) sit under pinholes in the lid. BOOT low at reset enters")
+    sh.text(17.78, 168.91, "the ROM's download mode (USB Serial/JTAG on the board's USB-C, or UART0 on the module's TXD0/RXD0 pads, not brought out).")
+    sh.text(17.78, 172.72, "J7: power through its 3V3 pad only with the cell out and nothing on USB; EN to GND resets; IO0 to GND at reset: download mode.")
     return sh
 
 
@@ -289,7 +281,7 @@ def power():
     sh = Sheet("power.kicad_sch")
     # ---- 3V3 LDO
     Ux, Uy = 88.9, 45.72
-    sh.heading(17.78, 25.4, "3V3 regulator (RT9013)")
+    sh.heading(17.78, 25.4, "3V3 regulator (TLV75733P)")
     sh.place("U3", Ux, Uy, 0, f=(0, -10.16))
     vin = (45.72, Uy - 2.54)
     sh.wire(vin, "U3.1")
@@ -415,35 +407,31 @@ def display():
     sh.wire("J3.50", (T + 7.62, yj(50)), (T + 7.62, 21.59), "JP2.2")
     sh.rail("VSYS", sh.stub("JP2.1", G))
     sh.tag("J3.49", 5.08); sh.tag("J3.48", 5.08)
-    # panel logic supply pins
-    for grp in ((44, 43, 42), (11, 10, 9)):
+    # panel logic supply pins (VDDI x2, VCI, IM0/IM1, RD high)
+    for grp in ((44, 43), (11, 10, 9)):
         bus(grp)
         sh.label("LCD_3V3", sh.wire((T + 2.54, yj(grp[1])), (T + 7.62, yj(grp[1]))), "right")
-    sh.tag("J3.41", 5.08)
-    # ground pins: panel 11-32 (RGB bus and DB0-17 held low), 43, 48-50
-    bus(range(19, 41))
-    sh.gnd(sh.wire((T + 2.54, yj(35)), (T + 5.08, yj(35))))
-    sh.gnd(sh.wire("J3.8", (T + 5.08, yj(8))))
+    sh.tag("J3.16", 5.08)
+    # ground pins: panel 11-24 (RGB sync and DB17-DB8 held low), 9 (IM2), 34, 38, 43, 48-50
+    bus(range(27, 41))
+    sh.gnd(sh.wire((T + 2.54, yj(33)), (T + 5.08, yj(33))))
+    for j in (42, 17, 13, 8):                    # between signal pins: the ground symbol hangs right on the stub
+        sh.gnd(sh.stub(f"J3.{j}", 2.54, "right"))
     bus((1, 2, 3))
     sh.gnd((T + 2.54, yj(1)))
-    # SPI pins fan out upwards into 7.62 mm lanes
-    lanes = [(18, 60.96), (17, 68.58), (16, 76.2), (15, 83.82), (14, 91.44), (13, 99.06), (12, 106.68)]
-    for i, (j, ly) in enumerate(lanes):
-        sh.wire(f"J3.{j}", (35.56 + i * 2.54, yj(j)), (35.56 + i * 2.54, ly), v=False)
-    lane = {j: (35.56 + i * 2.54, ly) for i, (j, ly) in enumerate(lanes)}
-    sh.heading(53.34, 54.61, "SPI series resistors, probe points")
-    for j, net in ((18, "LCD_MISO"), (16, "LCD_3V3"), (12, "LCD_TE")):
-        sh.label(net, sh.wire(lane[j], (55.88, lane[j][1])), "right")
-    for j, tpr, r in ((17, "TP12", "R29"), (15, "TP11", "R28")):
-        ly = lane[j][1]
-        sh.place(r, 83.82, ly, 270)
-        sh.wire(lane[j], f"{r}.2")
-        tp(sh, tpr, (68.58, ly))
-        sh.label(sh.parts[r]["pins"]["1"], sh.stub(f"{r}.1", 5.08), "right")
-    for j, tpr, side in ((14, "TP14", -3.81), (13, "TP13", -3.81)):
-        ly = lane[j][1]
-        sh.label(sh.parts["J3"]["pins"][str(j)], sh.wire(lane[j], (66.04, ly)), "right")
-        tp(sh, tpr, (58.42, ly), "l" if side < 0 else "r")
+    # RST, TE, DC and the panel side of the series resistors
+    for j in (41, 12, 14, 15, *range(19, 27)):
+        sh.tag(f"J3.{j}", 7.62)
+    # ---- 33 ohm in series on D0-D7 and WR, by the module (source termination), and the probe pads
+    sh.heading(66.04, 140.97, "8080 bus: 33 ohm series resistors, probe points")
+    for i, r in enumerate([f"R{70 + k}" for k in range(8)] + ["R78"]):
+        sh.place(r, 66.04 + i * 12.7, 154.94, 0, f=("r", G))
+        sh.tag(f"{r}.1")
+        sh.tag(f"{r}.2")
+    for i, t in enumerate(("TP11", "TP12", "TP13", "TP14")):
+        sh.place(t, 190.5 + i * 7.62, 154.94, 0, f=("r", G))
+        sh.tag(f"{t}.1")
+
     # ---- panel logic supply: JP4 from 3V3, decoupling at the connector
     sy = 132.08
     sh.heading(66.04, 121.92, "Panel supply (LCD_3V3)")
@@ -505,8 +493,8 @@ def display():
         sh.wire(node, (Ux + 55.88, node[1]), (Ux + 55.88, frow), v=False)
         sh.place(rf, Ux + 15.24, frow, 270)
         sh.wire((Ux + 55.88, frow), f"{rf}.1"); sh.wire(f"{rf}.2", (Ux - 15.24, frow))
-    sh.text(17.78, 175.26, "EastRising ER-TFT035IPS-6 (ILI9488, 4-wire SPI); its 50-pin FPC folds under the panel into J3 (ZIF). J3 pin j is panel pin 51 - j.")
-    sh.text(17.78, 179.07, "Unused bus pins as the datasheet says: DB0-17 and RGB low, RD and IM2-0 high. Backlight: LED_A on VSYS; a current sink per")
+    sh.text(17.78, 175.26, "EastRising ER-TFT035IPS-6 (ILI9488, 8-bit 8080 bus, IM = 011); its 50-pin FPC folds under the panel into J3 (ZIF). J3 pin j is panel pin 51 - j.")
+    sh.text(17.78, 179.07, "Unused bus pins as the datasheet says: DB8-17 and RGB low, RD high, CSX low, SDA low, SDO open. Backlight: LED_A on VSYS; a current sink per")
     sh.text(17.78, 182.88, "cathode pin (U6 half, Q5/Q6, 2.2 ohm R52/R53). GPIO28 PWM, filtered by R60/R61/C50, sets BL_REF: 0.124 V (56 mA a pin)")
     sh.text(17.78, 186.69, "at 100%. Stability: sim/backlight.py. JP2 and JP4: cut to measure the LED or panel logic current.")
     return sh
@@ -514,160 +502,82 @@ def display():
 
 def mcu():
     sh = Sheet("mcu.kicad_sch")
-    Ux, Uy = 140.97, 96.52
+    Ux, Uy = 139.7, 101.6
     sh.place("U4", Ux, Uy, 0, f=(0, 0))
     pins = sh.parts["U4"]["pins"]
-    import kisym
-    geo = kisym.placed(sh.parts["U4"]["lib"], Ux, Uy, 0)
-    # right side: GPIO0-39 straight out to their labels
-    for num, g in geo.items():
-        if g["out"] != "right":
+    sh.heading(Ux - 20.32, Uy - 38.1, "ESP32-S3-WROOM-1U-N16R8 (16 MB flash, 8 MB octal PSRAM, U.FL antenna connector)")
+    for num, net in pins.items():
+        if num in ("1", "2", "40", "41"):
             continue
-        net = pins[num]
         if net is None:
             sh.nc(f"U4.{num}")
         else:
-            sh.tag(f"U4.{num}", 5.08)
-    # top: supply pins on two short buses, the regulator's own pins labelled
-    yb = Uy - 60.96
-    for dx in (-12.7, -10.16, -5.08, -2.54, 2.54):
-        sh.wire((Ux + dx, Uy - 55.88), (Ux + dx, yb))
-    sh.wire((Ux - 12.7, yb), (Ux + 2.54, yb))
-    sh.rail("+3V3", sh.wire((Ux - 7.62, yb), (Ux - 7.62, yb - G)))
-    for dx in (7.62, 12.7):
-        sh.wire((Ux + dx, Uy - 55.88), (Ux + dx, yb))
-    sh.wire((Ux + 7.62, yb), (Ux + 12.7, yb))
-    sh.rail("+1V1", sh.wire((Ux + 10.16, yb), (Ux + 10.16, yb - G)))
-    for num in ("61", "63"):
-        sh.label(pins[num], sh.stub(f"U4.{num}", G), "up", vertical=True)
-    sh.wire("U4.62", (Ux - 2.54, Uy + 60.96), (Ux, Uy + 60.96))
-    sh.wire("U4.81", (Ux, Uy + 60.96))
-    sh.gnd((Ux, Uy + 60.96))
-    # left side
-    L = Ux - 25.4
-    sh.label("RUN", sh.wire("U4.35", (Ux - 35.56, Uy - 33.02)), "left")
-    # USB series resistors on the D-/D+ pin rows, staggered so each has room for its name
-    sh.heading(58.42, 59.69, "USB series resistors")
-    yd, yp = sh.P("U4.66")[1], sh.P("U4.67")[1]
-    sh.place("R22", 86.36, yd, 90, f=("at", 86.36, yd - 3.81))
-    sh.place("R21", 96.52, yp, 90, f=("at", 96.52, yp + 3.81))
-    sh.wire("U4.66", "R22.2"); sh.wire("U4.67", "R21.2")
-    sh.wire("R22.1", (74.93, yd)); sh.wire("R21.1", (74.93, yp))
-    sh.label("USB_DM", (74.93, yd), "left"); sh.label("USB_DP", (74.93, yp), "left")
-    for n in ("71", "72", "74", "73", "70"):
-        sh.nc(f"U4.{n}")
-    qs = (43.18, Uy - 15.24)
-    sh.wire("U4.75", qs)
-    sh.label("QSPI_SS", qs, "left")
-    sh.place("R23", 53.34, Uy - 15.24 - 3.81, 0, f=("r", -H))
-    sh.tag("R23.1", 0)
-    # 12 MHz crystal under its pins: XIN straight across, XOUT through R20
-    xi, xo = sh.P("U4.30")[1], sh.P("U4.31")[1]
-    yx = xo + 5.08                                   # the crystal's row
-    sh.heading(50.8, xi - 5.08, "12 MHz crystal")
-    sh.place("X1", 73.66, yx, 0, f=("at", 73.66, yx - 6.99))
-    sh.place("C27", 64.77, yx + 3.81, 0, f=("l", G))
-    sh.place("C28", 82.55, yx + 3.81, 0, f=("r", G))
-    sh.place("R20", 93.98, xo, 270)
-    sh.wire("X1.1", (60.96, yx), (60.96, xi), "U4.30")
-    sh.wire("X1.3", (86.36, yx), (86.36, xo), "R20.2")
-    sh.wire("R20.1", "U4.31")
-    sh.wire((64.77, yx), "C27.1"); sh.tag("C27.2", 0)
-    sh.wire((82.55, yx), "C28.1"); sh.tag("C28.2", 0)
-    sh.wire("X1.2", (73.66, yx + 7.62)); sh.gnd((73.66, yx + 7.62))
-    sh.label("SWCLK", sh.wire("U4.33", (Ux - 38.1, Uy + 22.86)), "left")
-    sh.label("SWDIO", sh.wire("U4.34", (Ux - 38.1, Uy + 25.4)), "left")
-    # GPIO40-47 (the ADC pins) fan out into 5.08 mm lanes, each with its label above
-    adc = ["49", "52", "53", "54", "55", "56", "57", "58"]
-    for k, num in enumerate(adc):
-        if pins[num] is None:
-            sh.nc(f"U4.{num}")
-            continue
-        y = Uy + 33.02 + 2.54 * k
-        lane = Uy + 33.02 + 5.08 * k
-        end = (Ux - 63.5, lane)
-        if k == 0:
-            sh.wire(f"U4.{num}", end)
-        else:
-            rx = L - 2.54 * (9 - k)
-            sh.wire(f"U4.{num}", (rx, y), (rx, lane), end)
-        sh.label(pins[num], end, "left")
-    sh.text(198.12, 20.32, "Core from Raspberry Pi's RP2350B minimal design (MIT),")
-    sh.text(198.12, 24.13, "fitted with an RP2354B: its 2 MB flash is inside the package,")
-    sh.text(198.12, 27.94, "so only QSPI_SS (the BOOTSEL strap, R23 pull-up) is wired outside.")
+            sh.tag(f"U4.{num}")
+    sh.tag("U4.2", G)
+    sh.tag("U4.1", G)
+    # -- supply: 22 uF and 100 nF at the 3V3 pin
+    sh.heading(17.78, 25.4, "3V3 at the module")
+    sh.place("C10", 30.48, 45.72, 0, f=("r", G))
+    sh.place("C11", 45.72, 45.72, 0, f=("r", G))
+    for c in ("C10", "C11"):
+        sh.tag(f"{c}.1", G)
+        sh.tag(f"{c}.2", G)
+    # -- EN: 10k to 3V3, 1 uF to ground; RESET (Debug sheet) pulls it low
+    sh.heading(17.78, 63.5, "EN: power-up delay, never floating")
+    sh.place("R23", 30.48, 83.82, 0, f=("r", G))
+    sh.place("C12", 45.72, 83.82, 0, f=("r", G))
+    sh.tag("R23.1", G)
+    sh.tag("R23.2", G)
+    sh.tag("C12.1", G)
+    sh.tag("C12.2", G)
+    # -- USB: 22 ohm in series close to the module, spare pads for capacitors
+    sh.heading(17.78, 116.84, "USB D+/D- (module IO20/IO19)")
+    sh.place("R21", 30.48, 134.62, 0, f=("r", G))
+    sh.place("R22", 45.72, 134.62, 0, f=("r", G))
+    sh.place("C13", 60.96, 134.62, 0, f=("r", G))
+    sh.place("C14", 76.2, 134.62, 0, f=("r", G))
+    for r in ("R21", "R22", "C13", "C14"):
+        sh.tag(f"{r}.1", G)
+        sh.tag(f"{r}.2", G)
+    sh.text(198.12, 20.32, "ESP32-S3-WROOM-1U-N16R8 (Espressif, C3013946): Wi-Fi on, its antenna a flex antenna on a U.FL cable")
+    sh.text(198.12, 24.13, "(no antenna on the board). IO35-IO37 are the octal PSRAM's. Strapping pins: IO0 BOOT, IO3 SR_DATA (JTAG source,")
+    sh.text(198.12, 27.94, "ignored), IO45 AMP_EN (low at reset: R37) and IO46 CHG_OFF (low: R44). IO43/IO44 are UART0: LCD_D5/D6 toggle with")
+    sh.text(198.12, 31.75, "the ROM's boot log while LCD_WR stays still. USB D-/D+ on IO19/IO20 (series 22 ohm, caps to ground not fitted).")
     return sh
 
 
-def mcu_power():
-    sh = Sheet("mcu_power.kicad_sch")
-    # which U4 pin each cap serves, from the routed board (the core's caps sit where Raspberry
-    # Pi's minimal design puts them, each on a short track to its pin); lines read top down
-    SERVES = {
-        "C14": ["5 IOVDD"], "C16": ["15 IOVDD"], "C19": ["24 IOVDD"], "C12": ["29 IOVDD"],
-        "C17": ["41 IOVDD"], "C15": ["50 IOVDD"], "C18": ["59 ADC_AVDD", "60 IOVDD"],
-        "C11": ["68 USB_OTP_VDD", "69 QSPI_IOVDD"], "C13": ["76 IOVDD"],
-        "C10": ["3V3 feed,", "no U4 pin"], "C23": ["bulk, by", "regulator"],
-        "C20": ["10 DVDD"], "C21": ["32 DVDD"], "C22": ["51 DVDD"],
-        "C24": ["64 VREG_VIN"], "C26": ["61 VREG_AVDD"], "C25": ["65 VREG_FB", "(output)"],
-    }
-
-    def serves(c, x, y):
-        """The pin(s) cap c serves, centred on x, the last line just above y (its tap)."""
-        lines = SERVES[c]
-        for i, s in enumerate(lines):
-            sh.text(x, y - 2.54 - 2.03 * (len(lines) - 1 - i), s, align="c")
-
-    def cap_row(x0, y0, caps, rail, title):
-        """Caps side by side between a supply wire on top and a ground wire below, each
-        with the pin it serves over its tap."""
-        sh.heading(x0 - 10.16, y0 - 12.7, title)
-        xs = [x0 + 17.78 * i for i in range(len(caps))]
-        sh.rail(rail, (x0 - 10.16, y0))
-        sh.wire((x0 - 10.16, y0), (xs[-1], y0))
-        for x, c in zip(xs, caps):
-            sh.place(c, x, y0 + 6.35, 0, f=("r", 0))
-            sh.wire((x, y0), f"{c}.1")
-            sh.wire(f"{c}.2", (x, y0 + 12.7))
-            serves(c, x, y0)
-        sh.wire((xs[0], y0 + 12.7), (xs[-1], y0 + 12.7))
-        sh.gnd((xs[len(xs) // 2], y0 + 12.7))
-        return xs
-
-    # in U4's pin order
-    cap_row(30.48 + 5.08, 45.72, ["C14", "C16", "C19", "C12", "C17", "C15", "C18", "C11", "C13", "C10", "C23"], "+3V3",
-            "+3V3 decoupling, by U4 pin: 100 nF at each IOVDD, ADC_AVDD, USB_OTP_VDD, QSPI_IOVDD; bulk C23")
-    cap_row(30.48 + 5.08, 88.9, ["C20", "C21", "C22"], "+1V1", "DVDD decoupling (+1V1), by U4 pin")
-    # ---- the core regulator: VREG_AVDD filter, VREG_VIN cap, inductor and output cap
-    sh.heading(83.82, 76.2, "Core 1.1 V switcher: VREG_VIN cap, AVDD filter, inductor, output")
-    y = 88.9
-    sh.rail("+3V3", (88.9, y))
-    sh.place("C24", 99.06, y + 3.81, 0, f=("r", G))
-    sh.wire((88.9, y), (106.68, y)); sh.wire((99.06, y), "C24.1"); sh.tag("C24.2", 0)
-    serves("C24", 99.06, y)
-    sh.place("R19", 111.76, y, 90)
-    sh.wire((106.68, y), "R19.1")
-    sh.place("C26", 124.46, y + 3.81, 0, f=("r", G))
-    sh.wire("R19.2", (142.24, y))
-    sh.wire((124.46, y), "C26.1"); sh.tag("C26.2", 0)
-    serves("C26", 124.46, y)
-    sh.flag("#FLG06", (134.62, y))
-    sh.label("VREG_AVDD", (142.24, y), "right")
-    yl = 121.92
-    lx = (88.9, yl)
-    sh.place("L2", 101.6, yl, 270)
-    sh.wire(lx, "L2.2")
-    sh.label("VREG_LX", lx, "left")
-    sh.wire("L2.1", (147.32, yl))
-    sh.place("C25", 116.84, yl + 3.81, 0, f=("r", G))
-    sh.wire((116.84, yl), "C25.1"); sh.tag("C25.2", 0)
-    serves("C25", 116.84, yl)
-    sh.flag("#FLG05", (127.0, yl))
-    tp(sh, "TP9", (137.16, yl))
-    sh.rail("+1V1", (147.32, yl))
-    sh.text(17.78, 170.18, "RP2354B supply, as in Raspberry Pi's minimal design: a 100 nF beside every IOVDD, DVDD, ADC, OTP and QSPI pin")
-    sh.text(17.78, 173.99, "(the number and name over each cap is the U4 pin it sits by on the board), 4.7 uF at the regulator's input")
-    sh.text(17.78, 177.8, "and output, and L2 (a polarity-marked 3.3 uH inductor, fit as drawn). C10 is the 100 nF Raspberry Pi gave its")
-    sh.text(17.78, 181.61, "external flash; the RP2354B has its flash inside, so C10 sits on the 3V3 feed to the core, by no U4 pin.")
+def storage():
+    sh = Sheet("storage.kicad_sch")
+    Jx, Jy = 139.7, 96.52
+    sh.heading(Jx - 38.1, 40.64, "microSD slot (push-push, card detect)")
+    sh.place("J8", Jx, Jy, 0, f=(0, 0))
+    for num in ("1", "2", "3", "4", "5", "7", "8", "9"):
+        sh.tag(f"J8.{num}")
+    for num in ("6", "10"):                      # next to signal pins: the ground symbol hangs right on the stub
+        sh.gnd(sh.stub(f"J8.{num}", 2.54, "left"))
+    sh.tag("J8.SH", G)
+    # -- pull-ups on CMD, D0-D3 and the detect line
+    sh.heading(17.78, 40.64, "Pull-ups (10k)")
+    for i, r in enumerate(("R79", "R80", "R81", "R82", "R83", "R84")):
+        x = 25.4 + i * 12.7
+        sh.place(r, x, 63.5, 0, f=("r", G))
+        sh.tag(f"{r}.1", G)
+        sh.tag(f"{r}.2", G)
+    # -- the card's supply through JP6, decoupling by the slot
+    sh.heading(17.78, 91.44, "Card supply (SD_VDD)")
+    sh.place("JP6", 30.48, 106.68, 0)
+    sh.tag("JP6.1", G)
+    sh.wire("JP6.2", (50.8, 106.68))
+    sh.flag("#FLG10", (40.64, 106.68))
+    sh.label("SD_VDD", sh.wire((50.8, 106.68), (55.88, 106.68)), "right")
+    sh.place("C60", 53.34, 109.22, 0, f=("r", G))
+    sh.place("C61", 66.04, 109.22, 0, f=("r", G))
+    for c in ("C60", "C61"):
+        sh.tag(f"{c}.1", G)
+        sh.tag(f"{c}.2", G)
+    sh.text(17.78, 165.1, "Hirose DM3AT-SF-PEJM5: push-push, 1.85 mm tall, its card-detect switch closes to ground with a card in (SD_CD low).")
+    sh.text(17.78, 168.91, "4-bit SDMMC through the module's GPIO matrix: CMD IO11, CLK IO12, D0-D3 IO13-IO16, CD IO17. JP6: cut it to read the card's")
+    sh.text(17.78, 172.72, "current or to power it from outside.")
     return sh
 
 
@@ -675,20 +585,20 @@ def mcu_power():
 SHEET_NOTES = {
     "USB_Charger": ("USB-C receptacle + CC pull-downs", "ESD (SRV05-4), VBUS input",
                     "charger (TP4056), load sharing", "battery connector J2"),
-    "Power": ("3V3 regulator (RT9013)", "power latch (button, MCU, USB)",
+    "Power": ("3V3 regulator (TLV75733P)", "power latch (button, MCU, USB)",
               "button sense, cell voltage sense", "ground pads"),
-    "MCU": ("RP2354B (2 MB flash inside)", "USB series resistors",
-            "12 MHz crystal", ""),
-    "MCU_Power": ("+3V3 and DVDD decoupling", "core 1.1 V switcher: VREG_VIN cap,",
-                  "AVDD filter, inductor, output", ""),
-    "Debug": ("SWD connector J5", "debug pads J7",
-              "BOOTSEL and RESET buttons", ""),
-    "Display": ("panel connector J3 (50-pin ZIF)", "SPI series resistors, panel supply",
+    "MCU": ("ESP32-S3-WROOM-1U-N16R8", "3V3 decoupling, EN delay",
+            "USB series resistors", "(flex antenna on a U.FL cable)"),
+    "Storage": ("microSD slot J8 (push-push)", "pull-ups, card supply JP6",
+                "4-bit SDMMC + card detect", ""),
+    "Debug": ("BOOT and RESET buttons", "debug pads J7 (3V3, EN, IO0, GND)",
+              "", ""),
+    "Display": ("panel connector J3 (50-pin ZIF)", "8080 bus series resistors, panel supply",
                 "backlight reference", "backlight current sinks ch1, ch2"),
     "Audio": ("PWM low-pass filter, DC block", "amplifier (FM8002A) and supply",
               "shutdown control", "speaker plug J4"),
     "Buttons": ("seat 1 and seat 2 contacts", "Start/Select per seat (P1 Start",
-                "is the power button),", "20 contacts, one GPIO each"),
+                "is the power button),", "20 contacts + 2 Start/Select on 3 shift registers"),
 }
 
 
@@ -701,8 +611,8 @@ def root():
     import design
     sh = Sheet("battler.kicad_sch")
     sh.text(20.32, 20.32, "Two-player handheld: reference design (REF-A)", size=2.0)
-    sh.text(20.32, 27.94, "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 20 membrane contacts under DS Lite silicone,")
-    sh.text(20.32, 31.75, "one Li-ion cell (in a hole in the board) on a BQ24073 charger, RT9013 3V3, PWM audio into an FM8002A.")
+    sh.text(20.32, 27.94, "ESP32-S3-WROOM-1U (Wi-Fi), 3.5in 320x480 IPS (ILI9488, 8080 bus), 20 membrane contacts under DS Lite silicone,")
+    sh.text(20.32, 31.75, "one Li-ion cell (in a hole in the board) on a BQ24073 charger, TLV75733P 3V3, PWM audio into an FM8002A.")
     sh.text(20.32, 35.56, "Every sheet is generated from board/design.py by tools/build_sch.py. Edit design.py, not the sheets.")
     for i, (f, name) in enumerate(design.SHEETS):
         x, y, w, h = SHEET_BOX(i)
@@ -721,7 +631,7 @@ def root():
 LAYOUTS = {
     "battler.kicad_sch": root,
     "mcu.kicad_sch": mcu,
-    "mcu_power.kicad_sch": mcu_power,
+    "storage.kicad_sch": storage,
     "display.kicad_sch": display,
     "power.kicad_sch": power,
     "usb_charger.kicad_sch": usb_charger,

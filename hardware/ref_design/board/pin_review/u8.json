@@ -2,7 +2,8 @@
  "part": "74HC165 8-bit parallel-in serial-out shift register, TSSOP-16",
  "refs": [
   "U8",
-  "U9"
+  "U9",
+  "U11"
  ],
  "mpn": "SN74HC165PWR",
  "lcsc": "C43420",
@@ -49,7 +50,8 @@
    "issue": "",
    "nets": {
     "U8": "SR_PL",
-    "U9": "SR_PL"
+    "U9": "SR_PL",
+    "U11": "SR_PL"
    }
   },
   {
@@ -65,7 +67,8 @@
    "issue": "",
    "nets": {
     "U8": "SR_CLK",
-    "U9": "SR_CLK"
+    "U9": "SR_CLK",
+    "U11": "SR_CLK"
    }
   },
   {
@@ -81,7 +84,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_A",
-    "U9": "P2_A"
+    "U9": "P2_A",
+    "U11": "P2_SELECT"
    }
   },
   {
@@ -97,7 +101,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_B",
-    "U9": "P2_B"
+    "U9": "P2_B",
+    "U11": "P1_SELECT"
    }
   },
   {
@@ -113,7 +118,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_X",
-    "U9": "P2_X"
+    "U9": "P2_X",
+    "U11": "P2_START"
    }
   },
   {
@@ -129,7 +135,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_Y",
-    "U9": "P2_Y"
+    "U9": "P2_Y",
+    "U11": "PWR_BTN_N"
    }
   },
   {
@@ -145,7 +152,8 @@
    "issue": "",
    "nets": {
     "U8": null,
-    "U9": null
+    "U9": null,
+    "U11": null
    }
   },
   {
@@ -161,7 +169,8 @@
    "issue": "",
    "nets": {
     "U8": "GND",
-    "U9": "GND"
+    "U9": "GND",
+    "U11": "GND"
    }
   },
   {
@@ -177,7 +186,8 @@
    "issue": "",
    "nets": {
     "U8": "SR_DATA",
-    "U9": "SR_CHAIN"
+    "U9": "SR_CHAIN",
+    "U11": "SR_CHAIN2"
    }
   },
   {
@@ -193,7 +203,8 @@
    "issue": "",
    "nets": {
     "U8": "SR_CHAIN",
-    "U9": "+3V3"
+    "U9": "SR_CHAIN2",
+    "U11": "+3V3"
    }
   },
   {
@@ -209,7 +220,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_UP",
-    "U9": "P2_UP"
+    "U9": "P2_UP",
+    "U11": "+3V3"
    }
   },
   {
@@ -225,7 +237,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_DOWN",
-    "U9": "P2_DOWN"
+    "U9": "P2_DOWN",
+    "U11": "+3V3"
    }
   },
   {
@@ -241,7 +254,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_LEFT",
-    "U9": "P2_LEFT"
+    "U9": "P2_LEFT",
+    "U11": "CHG_PG_N"
    }
   },
   {
@@ -257,7 +271,8 @@
    "issue": "",
    "nets": {
     "U8": "P1_RIGHT",
-    "U9": "P2_RIGHT"
+    "U9": "P2_RIGHT",
+    "U11": "CHG_STAT_N"
    }
   },
   {
@@ -273,7 +288,8 @@
    "issue": "",
    "nets": {
     "U8": "GND",
-    "U9": "GND"
+    "U9": "GND",
+    "U11": "GND"
    }
   },
   {
@@ -289,7 +305,8 @@
    "issue": "",
    "nets": {
     "U8": "+3V3",
-    "U9": "+3V3"
+    "U9": "+3V3",
+    "U11": "+3V3"
    }
   }
  ]

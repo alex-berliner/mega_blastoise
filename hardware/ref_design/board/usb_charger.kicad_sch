@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "USB-C, charger, load sharing, cell connector")
-		(rev "1")
+		(rev "2")
 		(company "Two-player handheld: reference design (REF-A)")
 		(comment 1 "Generated from board/design.py by tools/build_sch.py: edit design.py, not this sheet")
 	)

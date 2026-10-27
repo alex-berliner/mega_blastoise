@@ -1,0 +1,182 @@
+(footprint "Pogo_Pads_1x04_P2.54mm"
+	(version 20260206)
+	(generator "pcbnew")
+	(generator_version "10.0")
+	(layer "F.Cu")
+	(descr "Debug pads: 3V3, EN (reset), IO0 (BOOT), GND; 1.6 mm round pads at 2.54 mm for P75/P100 pogo pins, a clip or soldered wires (no part fitted)")
+	(tags "debug pogo pads")
+	(property "Reference" ""
+		(at 0 -2.4 0)
+		(layer "F.Fab")
+		(uuid "0f3d7656-23e4-42b8-9c39-2ab88cc0c0e5")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Value" ""
+		(at 0 3.6 0)
+		(layer "F.Fab")
+		(uuid "23f30805-8359-4f68-a04d-d61d6968b38a")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Datasheet" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "86de588d-a2da-409b-a58e-383c9ebc79ec")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(property "Description" ""
+		(at 0 0 0)
+		(layer "F.Fab")
+		(hide yes)
+		(uuid "ebf7fb06-dd4d-4b72-94df-e2883b6f16f8")
+		(effects
+			(font
+				(size 1.27 1.27)
+			)
+		)
+	)
+	(attr smd exclude_from_pos_files exclude_from_bom)
+	(duplicate_pad_numbers_are_jumpers no)
+	(fp_line
+		(start -4.76 -1.15)
+		(end -4.76 -0.1)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "5e692b1f-0b7e-4b10-a510-533b5da96985")
+	)
+	(fp_line
+		(start -4.76 -1.15)
+		(end -3.71 -1.15)
+		(stroke
+			(width 0.15)
+			(type default)
+		)
+		(layer "F.SilkS")
+		(uuid "e5da8ea6-d445-463f-9d46-f9b658b8227b")
+	)
+	(fp_line
+		(start -4.86 -1.25)
+		(end 4.86 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "71b3b177-302d-427f-b3c6-322d1e5e4b1e")
+	)
+	(fp_line
+		(start -4.86 2.7)
+		(end -4.86 -1.25)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "e6670130-a487-4947-838f-5c9de27c3574")
+	)
+	(fp_line
+		(start 4.86 -1.25)
+		(end 4.86 2.7)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "3e8a5ecb-ffa0-44b9-9937-4b2172023b35")
+	)
+	(fp_line
+		(start 4.86 2.7)
+		(end -4.86 2.7)
+		(stroke
+			(width 0.05)
+			(type default)
+		)
+		(layer "F.CrtYd")
+		(uuid "148f0e4a-c472-425c-8b59-36bb89bde0f2")
+	)
+	(fp_text user "3V3"
+		(at -3.81 2 0)
+		(layer "F.SilkS")
+		(uuid "da0a2330-c7b5-47b3-8554-2915c50f6cc3")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "EN"
+		(at -1.27 2 0)
+		(layer "F.SilkS")
+		(uuid "a383852d-8309-49d5-8d14-0db0b0ec0bcb")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "BOOT"
+		(at 1.27 2 0)
+		(layer "F.SilkS")
+		(uuid "240ffaab-8c2b-4d7b-b224-d57aa6101875")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(fp_text user "GND"
+		(at 3.81 2 0)
+		(layer "F.SilkS")
+		(uuid "58e85bdc-374f-474d-8d13-06178ef54275")
+		(effects
+			(font
+				(size 0.8 0.8)
+				(thickness 0.12)
+			)
+		)
+	)
+	(pad "1" smd rect
+		(at -3.81 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(thermal_bridge_angle 45)
+		(uuid "298c8c5b-3272-4765-951a-b976723956f0")
+	)
+	(pad "2" smd circle
+		(at -1.27 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "96ed9af4-358d-4686-bde7-8a6ae3e89ffd")
+	)
+	(pad "3" smd circle
+		(at 1.27 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "9ce63f50-65c2-4ea1-b766-0c07d69a1bfe")
+	)
+	(pad "4" smd circle
+		(at 3.81 0)
+		(size 1.6 1.6)
+		(layers "F.Cu" "F.Mask")
+		(uuid "04f0db25-bc45-4879-8a7f-d951e6fa7db1")
+	)
+	(embedded_fonts no)
+)

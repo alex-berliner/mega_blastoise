@@ -6,7 +6,7 @@
 	(paper "A4")
 	(title_block
 		(title "Sheets and mechanical parts")
-		(rev "1")
+		(rev "2")
 		(company "Two-player handheld: reference design (REF-A)")
 		(comment 1 "Generated from board/design.py by tools/build_sch.py: edit design.py, not this sheet")
 	)
@@ -217,9 +217,9 @@
 		)
 		(uuid "ac129c6b-7c52-5c30-a350-c18109fcee26")
 	)
-	(text "RP2354B, 3.5in 320x480 IPS (ILI9488, SPI), 20 membrane contacts under DS Lite silicone,"
+	(text "ESP32-S3-WROOM-1U (Wi-Fi), 3.5in 320x480 IPS (ILI9488, 8080 bus), 20 membrane contacts under DS Lite silicone,"
 		(exclude_from_sim no)
-		(at 65.0081 27.94 0)
+		(at 78.9788 27.94 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -227,9 +227,9 @@
 		)
 		(uuid "70d57ce9-e31c-5513-8009-e9b37f8b33ea")
 	)
-	(text "one Li-ion cell (in a hole in the board) on a BQ24073 charger, RT9013 3V3, PWM audio into an FM8002A."
+	(text "one Li-ion cell (in a hole in the board) on a BQ24073 charger, TLV75733P 3V3, PWM audio into an FM8002A."
 		(exclude_from_sim no)
-		(at 72.9958 31.75 0)
+		(at 74.6589 31.75 0)
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -287,9 +287,9 @@
 		)
 		(uuid "ba1eaffd-d4ab-5d74-abfb-c011ca19998c")
 	)
-	(text "3V3 regulator (RT9013)"
+	(text "3V3 regulator (TLV75733P)"
 		(exclude_from_sim no)
-		(at 97.8045 57.15 0)
+		(at 99.114 57.15 0)
 		(effects
 			(font
 				(size 1 1)
@@ -327,9 +327,9 @@
 		)
 		(uuid "c0532fd8-7bf6-5d47-ae94-f7bc80801fc2")
 	)
-	(text "RP2354B (2 MB flash inside)"
+	(text "ESP32-S3-WROOM-1U-N16R8"
 		(exclude_from_sim no)
-		(at 166.0595 57.15 0)
+		(at 166.7965 57.15 0)
 		(effects
 			(font
 				(size 1 1)
@@ -337,9 +337,9 @@
 		)
 		(uuid "53b2a7af-0786-5e16-9743-2ba8f9037d66")
 	)
-	(text "USB series resistors"
+	(text "3V3 decoupling, EN delay"
 		(exclude_from_sim no)
-		(at 162.56 61.6 0)
+		(at 164.6315 61.6 0)
 		(effects
 			(font
 				(size 1 1)
@@ -347,9 +347,9 @@
 		)
 		(uuid "d1e12c48-ef66-5ffa-83ce-551dd94dcb86")
 	)
-	(text "12 MHz crystal"
+	(text "USB series resistors"
 		(exclude_from_sim no)
-		(at 160.5835 66.05 0)
+		(at 162.56 66.05 0)
 		(effects
 			(font
 				(size 1 1)
@@ -357,9 +357,9 @@
 		)
 		(uuid "ef431bd3-9e1f-5a9b-83e9-c8c640d29006")
 	)
-	(text "+3V3 and DVDD decoupling"
+	(text "(flex antenna on a U.FL cable)"
 		(exclude_from_sim no)
-		(at 231.3855 57.15 0)
+		(at 166.7515 70.5 0)
 		(effects
 			(font
 				(size 1 1)
@@ -367,9 +367,9 @@
 		)
 		(uuid "d5922642-9fc1-5c83-8e6a-d1b78c637d98")
 	)
-	(text "core 1.1 V switcher: VREG_VIN cap,"
+	(text "microSD slot J8 (push-push)"
 		(exclude_from_sim no)
-		(at 234.361 61.6 0)
+		(at 232.172 57.15 0)
 		(effects
 			(font
 				(size 1 1)
@@ -377,9 +377,9 @@
 		)
 		(uuid "b49b1056-08f3-5fc2-8f76-380ae6e24d88")
 	)
-	(text "AVDD filter, inductor, output"
+	(text "pull-ups, card supply JP6"
 		(exclude_from_sim no)
-		(at 231.6225 66.05 0)
+		(at 231.0295 61.6 0)
 		(effects
 			(font
 				(size 1 1)
@@ -387,9 +387,9 @@
 		)
 		(uuid "e623170e-22d5-5f37-b7a5-30a7616ecf2c")
 	)
-	(text "SWD connector J5"
+	(text "4-bit SDMMC + card detect"
 		(exclude_from_sim no)
-		(at 29.622 107.95 0)
+		(at 231.67 66.05 0)
 		(effects
 			(font
 				(size 1 1)
@@ -397,9 +397,9 @@
 		)
 		(uuid "a8e34f0d-8346-5faf-865a-b8f6fa1465e3")
 	)
-	(text "debug pads J7"
+	(text "BOOT and RESET buttons"
 		(exclude_from_sim no)
-		(at 28.385 112.4 0)
+		(at 32.2425 107.95 0)
 		(effects
 			(font
 				(size 1 1)
@@ -407,9 +407,9 @@
 		)
 		(uuid "58a0c112-62dd-5a86-a46e-42c32b74a623")
 	)
-	(text "BOOTSEL and RESET buttons"
+	(text "debug pads J7 (3V3, EN, IO0, GND)"
 		(exclude_from_sim no)
-		(at 33.576 116.85 0)
+		(at 36.409 112.4 0)
 		(effects
 			(font
 				(size 1 1)
@@ -427,9 +427,9 @@
 		)
 		(uuid "51433b0b-14f7-5673-b78c-5c89baf43229")
 	)
-	(text "SPI series resistors, panel supply"
+	(text "8080 bus series resistors, panel supply"
 		(exclude_from_sim no)
-		(at 101.6875 112.4 0)
+		(at 104.0685 112.4 0)
 		(effects
 			(font
 				(size 1 1)
@@ -527,9 +527,9 @@
 		)
 		(uuid "2110bae2-4340-5769-b6c2-cbd324b135bc")
 	)
-	(text "20 contacts, one GPIO each"
+	(text "20 contacts + 2 Start/Select on 3 shift registers"
 		(exclude_from_sim no)
-		(at 231.647 121.3 0)
+		(at 240.122 121.3 0)
 		(effects
 			(font
 				(size 1 1)
@@ -1452,8 +1452,8 @@
 		(fill
 			(color 0 0 0 0)
 		)
-		(uuid "758b388a-f172-54f6-bd07-7141bb9c05f9")
-		(property "Sheetname" "MCU_Power"
+		(uuid "339394dd-c989-5e4d-a217-8be96412609f")
+		(property "Sheetname" "Storage"
 			(at 218.44 50.0884 0)
 			(show_name no)
 			(do_not_autoplace no)
@@ -1464,7 +1464,7 @@
 				(justify left bottom)
 			)
 		)
-		(property "Sheetfile" "mcu_power.kicad_sch"
+		(property "Sheetfile" "storage.kicad_sch"
 			(at 218.44 84.4184 0)
 			(show_name no)
 			(do_not_autoplace no)

@@ -22,20 +22,21 @@ Symbols are KiCad's own for the real part where its library has one (the
 RP2354B, 2N7002, AO3400A, AO3401A); generic ones (Device:R, Device:D_Schottky)
 carry the part number as their value.
 
-This is the 2-layer build: BQ24073 power-path charger, RT9013 3V3, RP2354B (flash
-inside), PWM audio into an FM8002A, either seat's Start as the power button, a board
-thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel
-in a ZIF connector.
+This is the 2-layer ESP32-S3 build (2026-10-27, docs/esp32s3_board_proposal.md): an ESP32-S3-WROOM-1U-N16R8
+module (16 MB flash, 8 MB octal PSRAM, Wi-Fi on, its antenna a flex antenna on a U.FL cable), BQ24073 power-path
+charger, TLV75733P 3V3 (1 A), a microSD slot, PWM audio into an FM8002A, either seat's Start as the power button, a
+board thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel on its 8-bit 8080
+bus in a ZIF connector. Three 74HC165s read the buttons, both Starts and Selects and the charger's status.
 """
 
-POWER = {"GND", "+3V3", "+1V1", "VBUS", "VSYS", "VBAT"}
+POWER = {"GND", "+3V3", "VBUS", "VSYS", "VBAT"}
 
 SHEETS = [
     # file, sheet name (also the prefix KiCad puts on local net names)
     ("usb_charger.kicad_sch", "USB_Charger"),
     ("power.kicad_sch", "Power"),
     ("mcu.kicad_sch", "MCU"),
-    ("mcu_power.kicad_sch", "MCU_Power"),
+    ("storage.kicad_sch", "Storage"),
     ("debug.kicad_sch", "Debug"),
     ("display.kicad_sch", "Display"),
     ("audio.kicad_sch", "Audio"),
@@ -71,6 +72,7 @@ RES = {  # value: (lcsc, mpn)  all UNI-ROYAL 0402 1% unless noted
     "0.1 1206": ("C25334", "1206W4F100LT5E"),
     "2.2 0603": ("C22939", "0603WAF220KT5E"),
     "1.2k": ("C25862", "0402WGF1201TCE"),
+    "1.5k": ("C25867", "0402WGF1501TCE"),
     "2.4k": ("C25882", "0402WGF2401TCE"),
     "3.3k": ("C25890", "0402WGF3301TCE"),
     "3.74k": ("C15172", "0402WGF3741TCE"),
@@ -214,14 +216,13 @@ part("#FLG02", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "GND"}, bom=False)
 # 3V3 LDO, power switch latch, sensing
 # =================================================================================
 S = "power.kicad_sch"
-# U3 (2026-10-22, Alex): Richtek's RT9013-33GB (C47773), stocked at JLC, for the ME6211C33M5G-N
-# (C82942). Same SOT-23-5 pinout (VIN 1, GND 2, EN 3, NC 4, VOUT 5; DS9013-10 p2), so it keeps
-# KiCad's ME6211 symbol (RT9013 isn't in KiCad's library). VIN 2.2-5.5 V (6 V absolute) against
-# VSYS at most 4.5 V (BQ24073 OUT 4.3-4.5 V with USB in, VBAT <= 4.2 V without); EN high >= 1.6 V,
-# 6 V absolute whatever VIN is (the ME6211's CE was VIN + 0.3); 1 uF ceramic in and out minimum
-part("U3", S, "Regulator_Linear:ME6211C33M5", "RT9013-33GB", "Package_TO_SOT_SMD:SOT-23-5",
+# U3 (2026-10-27, the ESP32-S3 board): TI's TLV75733PDBVR (C485517), 1 A, for the RT9013-33GB (500 mA): the module's Wi-Fi
+# transmit peaks at 355 mA and Espressif asks for a 0.5 A supply. Same SOT-23-5 pinout (IN 1, GND 2, EN 3, NC 4, OUT 5), the
+# same KiCad symbol. VIN 1.45-5.5 V against VSYS at most 4.5 V; EN high 1.0 V min (6 V absolute with VIN); dropout 425 mV
+# at 1 A (3.3 V out); stable from 1 to 200 uF at the output (C6 + C7 + the module's 22 uF = 42 uF)
+part("U3", S, "Regulator_Linear:ME6211C33M5", "TLV75733PDBVR", "Package_TO_SOT_SMD:SOT-23-5",
      {"1": "VSYS", "2": "GND", "3": "PWR_EN", "4": None, "5": "3V3_LDO"},
-     "C47773", "RT9013-33GB", "Richtek")
+     "C485517", "TLV75733PDBVR", "Texas Instruments")
 C("C5", S, "10u", "VSYS")
 C("C6", S, "10u", "3V3_LDO")
 C("C7", S, "10u", "3V3_LDO")
@@ -273,9 +274,10 @@ for i, (net, sheet) in enumerate([("PWR_EN", S), ("CHG_TEMP", "usb_charger.kicad
     part(f"TP{i + 6}", sheet, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # 2026-10-19 (Alex's debug-readiness review): the core's 1.1 V rail, the backlight's set point and the
 # panel's SPI lines get probe pads too (the panel is the part most likely to need a logic analyser)
-for i, (net, sheet) in enumerate([("+1V1", "mcu_power.kicad_sch"), ("BL_REF", "display.kicad_sch"),
-                                  ("LCD_SCK", "display.kicad_sch"), ("LCD_MOSI", "display.kicad_sch"),
-                                  ("LCD_CS", "display.kicad_sch"), ("LCD_DC", "display.kicad_sch"),
+# (2026-10-27: the panel's bus is 8080: WR, DC, D0 and TE get the pads that SCK, MOSI, CS and DC had; TP9 is the audio PWM)
+for i, (net, sheet) in enumerate([("AUDIO_PWM", "audio.kicad_sch"), ("BL_REF", "display.kicad_sch"),
+                                  ("LCD_WR", "display.kicad_sch"), ("LCD_DC", "display.kicad_sch"),
+                                  ("LCD_D0", "display.kicad_sch"), ("LCD_TE", "display.kicad_sch"),
                                   ("GND", S), ("GND", S)]):    # two ground pads on top for scope clips
     part(f"TP{i + 9}", sheet, "Connector:TestPoint", net, "TestPoint:TestPoint_Pad_D1.0mm", {"1": net}, bom=False)
 # hand-solderable spare filter capacitors, fitted only if bring-up shows noise on these lines
@@ -283,112 +285,72 @@ DNP("C42", "usb_charger.kicad_sch", "C", "CC1", "GND")
 DNP("C43", "usb_charger.kicad_sch", "C", "CC2", "GND")
 
 # =================================================================================
-# RP2350B core (Raspberry Pi RP2350B minimal design, MIT) + flash, boot, debug
+# ESP32-S3-WROOM-1U-N16R8 (the board's MCU since 2026-10-27), its USB lines, EN and BOOT
 # =================================================================================
 S = "mcu.kicad_sch"
-BOARD_REV = 1             # this board's revision number, on the silkscreen (no strap pins since 2026-10-24)
-GPIO = {  # GPIO number: net
-    # 2 layers: each net's pin faces where it goes. The chip sits in the left bezel as Raspberry Pi
-    # drew it: GPIO4-19 face the left bezel and, past J2, the left strip beside the cell's hole;
-    # GPIO0-3 the hole; GPIO33-47 J3 and the right; GPIO20-32 seat 1. The D-pads and face buttons
-    # come in through two 74HC165s (Buttons sheet).
-    # 2026-10-24 (routing levers, Alex): pins picked by tools/strip_load.py's ratsnest, each net on the
-    # side facing its far end (the latch above the hole's top edge is reached up the left strip, the
-    # amplifier and the backlight's filter below the core). Free: GPIO0, 1, 5-18, 20-27
-    2: "P2_START", 3: "PWR_BTN_N",              # seat 2's Start (Q7) and seat 1's (Q1), up the left strip
-    4: "P2_SELECT",                             # seat 2's Select: the pin nearest the left strip
-    # the buttons' shift registers: load (low; to both registers, so up the left strip too), clock,
-    # data in
-    19: "SR_PL", 29: "SR_CLK_MCU", 30: "SR_DATA",
-    28: "BL_PWM",                               # PWM6 A: the backlight's reference filter, below
-    31: "AUDIO_PWM",                            # PWM7 B: the audio filter by the amplifier
-    32: "LCD_TE",
-    # the panel's pins in its connector's order where SPI0 allows; GPIO33 is an SPI0 CSn pin as
-    # well, DC is a plain output
-    33: "LCD_CS", 36: "LCD_MISO", 37: "LCD_DC", 38: "LCD_SCK_MCU", 39: "LCD_MOSI_MCU",
-    35: "P1_SELECT",
-    34: "AMP_EN",                               # the amplifier's SHUTDOWN switch (Q3)
-    # the charger's status and control, the latch's hold (D2, right strip), on the edge facing them
-    41: "CHG_STAT_N", 42: "CHG_PG_N", 43: "CHG_OFF", 44: "PWR_HOLD",
-    # the panel's reset, then the ADC inputs (GPIO40-47 are the ADC pins) for the USB-C CC lines
-    # and the cell (P1 Start is the power button: read on GPIO3)
-    40: "LCD_RST",
-    45: "CC2_SENSE", 46: "CC1_SENSE", 47: "VBAT_SENSE",
+BOARD_REV = 2             # this board's revision number, on the silkscreen
+# module pin -> net. The module's own pin numbers (datasheet table 3-1); GPIOn is "IOn" on the module. The pins are the proposal's
+# (docs/esp32s3_board_proposal.md), see docs/esp32s3_pinmap_diff.md for what differs and why
+ESP32 = {
+    1: "GND", 2: "+3V3", 3: "EN",
+    27: "BOOT",                                  # IO0: strapping pin, low at reset = download mode
+    39: "VBAT_SENSE", 38: "CC1_SENSE", 4: "CC2_SENSE",   # IO1, IO2, IO4: ADC1 (works with Wi-Fi on)
+    15: "SR_DATA", 5: "SR_PL", 11: "SR_CLK_MCU",          # IO3, IO5, IO18: the three 74HC165s
+    6: "LCD_DC", 7: "LCD_RST", 18: "LCD_TE",              # IO6, IO7, IO10
+    12: "AUDIO_PWM", 17: "BL_PWM",                        # IO8, IO9: LEDC
+    19: "SD_CMD", 20: "SD_CLK", 21: "SD_D0", 22: "SD_D1", 8: "SD_D2", 9: "SD_D3", 10: "SD_CD",   # IO11-IO17
+    13: "USB_DM_MCU", 14: "USB_DP_MCU",                   # IO19, IO20: the module's USB
+    23: "PWR_HOLD",                                       # IO21
+    31: "LCD_D0_MCU", 32: "LCD_D1_MCU", 33: "LCD_D2_MCU", 34: "LCD_D3_MCU", 35: "LCD_D4_MCU",     # IO38-IO42
+    37: "LCD_D5_MCU", 36: "LCD_D6_MCU", 24: "LCD_D7_MCU",                                         # IO43 (TXD0), IO44 (RXD0), IO47
+    25: "LCD_WR_MCU",                                     # IO48
+    26: "AMP_EN", 16: "CHG_OFF",                          # IO45, IO46: strapping pins, held low by R37 and R44
+    28: None, 29: None, 30: None,                         # IO35-IO37: the octal PSRAM's
+    40: "GND", 41: "GND",
 }
-GPIO_PIN = {0: 77, 1: 78, 2: 79, 3: 80, 4: 1, 5: 2, 6: 3, 7: 4, 8: 6, 9: 7, 10: 8, 11: 9,
-            12: 11, 13: 12, 14: 13, 15: 14, 16: 16, 17: 17, 18: 18, 19: 19, 20: 20, 21: 21,
-            22: 22, 23: 23, 24: 25, 25: 26, 26: 27, 27: 28, 28: 36, 29: 37, 30: 38, 31: 39,
-            32: 40, 33: 42, 34: 43, 35: 44, 36: 45, 37: 46, 38: 47, 39: 48, 40: 49, 41: 52,
-            42: 53, 43: 54, 44: 55, 45: 56, 46: 57, 47: 58}
-u4 = {str(GPIO_PIN[g]): GPIO.get(g) for g in range(48)}
-u4.update({str(p): "+3V3" for p in (5, 15, 24, 29, 41, 50, 60, 76, 59, 64, 68, 69)})
-u4.update({str(p): "+1V1" for p in (10, 32, 51, 65)})
-u4.update({"61": "VREG_AVDD", "63": "VREG_LX", "62": "GND", "81": "GND",
-           "30": "XIN", "31": "XOUT", "33": "SWCLK", "34": "SWDIO", "35": "RUN",
-           "66": "USB_DM_MCU", "67": "USB_DP_MCU",
-           # the RP2354B's 2 MB flash sits on these inside the package: only the chip
-           # select (the BOOTSEL strap) is used outside
-           "75": "QSPI_SS", "71": None, "72": None, "74": None, "73": None, "70": None})
-part("U4", S, "MCU_RaspberryPi:RP2354B", "RP2354B", "battler:RP2350B_QFN80_RPi", u4,
-     "C39843328", "RP2354B", "Raspberry Pi")
-P = "mcu_power.kicad_sch"                         # the RP2350B's supply: decoupling + 1V1 switcher
-for i in range(10):                              # IOVDD, ADC, OTP, QSPI decoupling (C10: the reference's
-    # flash cap, on the 3V3 feed by no U4 pin); the pin each serves: sch_sheets.mcu_power
-    C(f"C{10 + i}", P, "100n", "+3V3", fp=C0402_RPI)
-for i in range(3):                               # DVDD
-    C(f"C{20 + i}", P, "100n", "+1V1", fp=C0402_RPI)
-C("C23", P, "10u", "+3V3")
-C("C24", P, "4.7u 0402", "+3V3", fp=C0402_RPI_WIDE)     # VREG_VIN
-C("C25", P, "4.7u 0402", "+1V1", fp=C0402_RPI_WIDE)     # VREG output
-C("C26", P, "4.7u 0402", "VREG_AVDD", fp=C0402_RPI)
-R("R19", P, "33", "+3V3", "VREG_AVDD", fp=R0402_RPI)
-part("L2", P, "Device:L", "3.3u", "battler:AOTA-B201610S3R3-101-T", {"1": "+1V1", "2": "VREG_LX"},
-     "C42411119", "AOTA-B201610S3R3-101-T", "Abracon")
-part("X1", S, "Device:Crystal_GND24", "12MHz", "battler:ABM8-272-T3",
-     {"1": "XIN", "3": "XO", "2": "GND", "4": "GND"}, "C20625731", "ABM8-272-T3", "Abracon")
-C("C27", S, "15p", "XIN", fp=C0402_RPI)
-C("C28", S, "15p", "XO", fp=C0402_RPI)
-R("R20", S, "1k", "XOUT", "XO", fp=R0402_RPI)
-# 22 ohm: a basic part in Raspberry Pi's own 0402 spot (a 27 ohm 0603 doesn't fit the copied
-# layout, and the 27 ohm 0402 is an extended part); 22 ohm is fine for full-speed USB
-R("R21", S, "27", "USB_DP", "USB_DP_MCU", fp=R0402_RPI)     # 27: the RP2350 datasheet requires it (Table 2),
-R("R22", S, "27", "USB_DM", "USB_DM_MCU", fp=R0402_RPI)     # and Raspberry Pi's own minimal design fits it
-R("R23", S, "10k", "+3V3", "QSPI_SS", fp=R0402_RPI)     # the flash's chip select high at power-up
-# 2026-10-24 (routing levers, Alex): the board-revision straps (REV0-REV3 on GPIO22-25, R48-R51)
-# and the UART console (J6 on GPIO20/21) went to free the strip beside the cell's hole; firmware
-# logs over USB or SWD (RTT), and the revision is on the silkscreen
-R("R25", "debug.kicad_sch", "1k", "QSPI_SS", "BOOTSEL", fp=R0402_RPI)
-part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOTSEL", "battler:SW_SPST_TS-1088-xR020",
-     {"1": "BOOTSEL", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
-R("R26", "debug.kicad_sch", "1k", "RUN", "RUN_SW")
+part("U4", S, "RF_Module:ESP32-S3-WROOM-1", "ESP32-S3-WROOM-1U-N16R8", "battler:ESP32-S3-WROOM-1U",
+     {str(k): v for k, v in ESP32.items()}, "C3013946", "ESP32-S3-WROOM-1U-N16R8", "Espressif Systems")
+C("C10", S, "22u 25V", "+3V3")                   # the module's 3V3 pin: 22 uF (Espressif) with 100 nF
+C("C11", S, "100n", "+3V3")
+# EN: 10k to 3V3 and 1 uF to ground (power-up delay), RESET (SW19) pulls it low. Never floating
+R("R23", S, "10k", "+3V3", "EN")
+C("C12", S, "1u", "EN")
+# USB D-/D+: 22 ohm in series close to the module and spare pads for capacitors to ground (not fitted), as the design guidelines
+# ask (1.3.13); the line goes on to the ESD array U1 and the receptacle. The module pulses D+ at power-up: PWR_HOLD is the
+# thing that must be stable, and it is (R42)
+R("R21", S, "22", "USB_DP", "USB_DP_MCU")
+R("R22", S, "22", "USB_DM", "USB_DM_MCU")
+part("C13", S, "Device:C", "DNP", C0402, {"1": "USB_DP_MCU", "2": "GND"}, bom=False)
+part("C14", S, "Device:C", "DNP", C0402, {"1": "USB_DM_MCU", "2": "GND"}, bom=False)
+# BOOT (IO0) and RESET (EN) under pinholes in the lid; J7 the same signals on bare pads on the board's back (pogo jig, clip):
+# power through its 3V3 pad only with the cell out and nothing on USB. BOOT low at reset enters the ROM's download mode
+part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOT", "battler:SW_SPST_TS-1088-xR020",
+     {"1": "BOOT", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
 part("SW19", "debug.kicad_sch", "Switch:SW_Push", "RESET", "battler:SW_SPST_TS-1088-xR020",
-     {"1": "RUN_SW", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
-part("J5", "debug.kicad_sch", "Connector_Generic_MountingPin:Conn_01x03_MountingPin", "SWD",
-     "battler:JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal",
-     {"1": "SWCLK", "2": "GND", "3": "SWDIO", "MP": None}, "C160403", "SM03B-SRSS-TB(LF)(SN)", "JST")
-# J7: the same SWD in a row of bare pads on the board's back at 2.54 mm, for pogo pins in a jig,
-# a clip, or soldered wires: flash and debug without J5's cable or the USB port. Power through
-# the 3V3 pad only with the cell out and nothing on USB. BOOTSEL to GND at reset enters the USB
-# boot loader; RUN to GND resets
-part("J7", "debug.kicad_sch", "Connector_Generic:Conn_01x06", "DEBUG PADS", "battler:Pogo_Pads_1x06_P2.54mm",
-     {"1": "+3V3", "2": "SWCLK", "3": "SWDIO", "4": "RUN", "5": "BOOTSEL", "6": "GND"}, bom=False)
-part("#FLG05", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+1V1"}, bom=False)
-part("#FLG06", P, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "VREG_AVDD"}, bom=False)
+     {"1": "EN", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
+part("J7", "debug.kicad_sch", "Connector_Generic:Conn_01x04", "DEBUG PADS", "battler:Pogo_Pads_1x04_P2.54mm",
+     {"1": "+3V3", "2": "EN", "3": "BOOT", "4": "GND"}, bom=False)
 
 # =================================================================================
 # Display: EastRising ER-TFT035IPS-6 (3.5in IPS 320x480, ILI9488), its FPC in a 50-pin ZIF
-# connector; the panel's six parallel backlight LEDs (common anode on VSYS, two cathode pins of
-# three LEDs each) sink through two op-amp current regulators, one per cathode pin
+# connector, on its 8-bit 8080 bus since 2026-10-27 (docs/display_parallel_proposal.md); the panel's six parallel
+# backlight LEDs (common anode on VSYS, two cathode pins of three LEDs each) sink through two op-amp current regulators,
+# one per cathode pin
 # =================================================================================
 S = "display.kicad_sch"
 PANEL = {1: "LED_A", 2: "LED_K1", 3: "LED_K2",                  # panel pin -> net (datasheet 4.1)
-         7: "LCD_3V3", 8: "LCD_3V3", 9: "LCD_3V3",                 # IM0-2 = 111: 4-wire 8-bit SPI
-         10: "LCD_RST", 33: "LCD_MISO", 34: "LCD_MOSI",
-         35: "LCD_3V3",                                            # RD: parallel read strobe, unused: high
-         36: "LCD_SCK", 37: "LCD_DC", 38: "LCD_CS", 39: "LCD_TE",
+         7: "LCD_3V3", 8: "LCD_3V3", 9: "GND",                      # IM0, IM1 high, IM2 low: 011 = 8080 8-bit
+         10: "LCD_RST",
+         33: None,                                                 # SDO: left open when not in use
+         34: "GND",                                                # SDA: fixed to DGND when not in use
+         35: "LCD_3V3",                                            # RD (RDX): read strobe, unused: high
+         36: "LCD_WR", 37: "LCD_DC",                               # WRX, D/CX
+         38: "GND",                                                # CSX tied low: the panel is always selected
+         39: "LCD_TE",
          40: "LCD_3V3", 41: "LCD_3V3", 42: "LCD_3V3",              # VDDI x2, VCI
          43: "GND", 48: "GND", 49: "GND", 50: "GND"}
-PANEL.update({p: "GND" for p in range(11, 33)})                   # VSYNC, HSYNC, DOTCLK, DE, DB17-0: low
+PANEL.update({p: "GND" for p in range(11, 25)})                   # VSYNC, HSYNC, DOTCLK, DE, DB17-DB8: low
+PANEL.update({32 - k: f"LCD_D{k}" for k in range(8)})             # DB0 (pin 32) .. DB7 (pin 25)
 PANEL.update({p: None for p in (4, 5, 6, 44, 45, 46, 47)})        # NC, and the touch pins (no touch layer)
 # J3 faces seat 1 with its pin 1 on the left (seen from above); the folded FPC's contact 1
 # lands on the right, so connector pin j carries panel pin 51 - j
@@ -397,12 +359,14 @@ fpc["MP"] = None
 part("J3", S, "Connector_Generic_MountingPin:Conn_01x50_MountingPin", "FH12-50S-0.5SH(55)",
      "Connector_FFC-FPC:Hirose_FH12-50S-0.5SH_1x50-1MP_P0.50mm_Horizontal", fpc,
      "C202116", "FH12-50S-0.5SH(55)", "HRS(Hirose)")
-R("R28", S, "33", "LCD_SCK_MCU", "LCD_SCK")       # source termination, fitted next to the MCU
-R("R29", S, "33", "LCD_MOSI_MCU", "LCD_MOSI")
+# 33 ohm in series on D0-D7 and WR, fitted next to the module (source termination)
+for k in range(8):
+    R(f"R{70 + k}", S, "33", f"LCD_D{k}_MCU", f"LCD_D{k}")
+R("R78", S, "33", "LCD_WR_MCU", "LCD_WR")
 C("C29", S, "1u", "LCD_3V3")
 C("C30", S, "100n", "LCD_3V3")
 # JP4: cut it to run the board with the panel unpowered, or to read the panel's logic current.
-# With it open, firmware must hold the SPI pins low (the panel's inputs would feed it otherwise)
+# With it open, firmware must hold the bus pins low (the panel's inputs would feed it otherwise)
 JP("JP4", S, "+3V3", "LCD_3V3")
 part("#FLG08", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "LCD_3V3"}, bom=False)   # fed through JP4
 # Backlight: a current sink per cathode pin. U6 (MCP6002) holds each 2.2 ohm sense resistor at
@@ -433,19 +397,19 @@ C("C50", S, "1u", "BL_REF")
 JP("JP2", S, "VSYS", "LED_A")                      # cut it and bridge with an ammeter to read the LED current
 
 # =================================================================================
-# Audio: PWM from the RP2354B, filtered, into an FM8002A bridge amplifier (8 ohm speaker)
+# Audio: PWM from the ESP32-S3 (LEDC), filtered, into an FM8002A bridge amplifier (8 ohm speaker)
 # =================================================================================
 S = "audio.kicad_sch"
 part("U7", S, "battler:FM8002A", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
      {"3": "AMP_BYP", "4": "AMP_INN", "2": "AMP_BYP", "1": "AMP_SHDN",
       "5": "SPK_P", "8": "SPK_N", "6": "AMP_VDD", "7": "GND"},
      "C94625", "FM8002A", "Shenzhen Fuman Elec")
-# two RC stages (1k, 4.7 nF) take out the PWM carrier: with the PWM at 8 bits (586 kHz) it
-# comes out 49 dB down and the audio band is -3 dB at about 14 kHz loaded. 10-bit PWM
-# (146 kHz) would only be 26 dB down: firmware runs 8 bits (dithers for more resolution)
-R("R32", S, "1k", "AUDIO_PWM", "AUDIO_F1")
+# two RC stages (1.5k, 4.7 nF) take out the PWM carrier: the ESP32-S3's LEDC runs from the 80 MHz APB clock, so 8 bits is
+# 312.5 kHz (it was 586 kHz on the RP2354B). The old 1k filter would be only 39 dB down there; 1.5k is 46 dB down, with the audio
+# band -3 dB at 6.7 kHz (a 15 x 10 mm speaker has little above that; sim/audio_filter.py). 7 bits at 625 kHz would be 58 dB down
+R("R32", S, "1.5k", "AUDIO_PWM", "AUDIO_F1")
 C("C37", S, "4.7n", "AUDIO_F1")
-R("R33", S, "1k", "AUDIO_F1", "AUDIO_F2")
+R("R33", S, "1.5k", "AUDIO_F1", "AUDIO_F2")
 C("C38", S, "4.7n", "AUDIO_F2")
 C("C39", S, "220n", "AUDIO_F2", "AMP_CI")       # Ci: blocks the PWM's DC; 36 Hz corner with Ri
 R("R34", S, "20k", "AMP_CI", "AMP_INN")          # Ri
@@ -470,6 +434,24 @@ part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "SM02B-SRS
 
 
 # =================================================================================
+# microSD (2026-10-27): a push-push slot, 4-bit bus plus card detect
+# =================================================================================
+S = "storage.kicad_sch"
+# Hirose DM3AT-SF-PEJM5 (C114218): push-push, 8 contacts and a normally open card-detect switch that closes to ground when
+# a card is in, 1.85 mm tall. The module's SDMMC host takes any GPIO (the matrix), so the bus follows the module's pin order
+part("J8", S, "Connector:Micro_SD_Card_Det_Hirose_DM3AT", "DM3AT-SF-PEJM5", "Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5",
+     {"1": "SD_D2", "2": "SD_D3", "3": "SD_CMD", "4": "SD_VDD", "5": "SD_CLK", "6": "GND", "7": "SD_D0", "8": "SD_D1",
+      "9": "SD_CD", "10": "GND", "SH": "GND"}, "C114218", "DM3AT-SF-PEJM5", "HRS(Hirose)")
+# 10k pull-ups on CMD and D0-D3 (the SD spec's idle levels; D3 doubles as the card's SPI chip select) and on the detect line
+for k, net in enumerate(("SD_CMD", "SD_D0", "SD_D1", "SD_D2", "SD_D3", "SD_CD")):
+    R(f"R{79 + k}", S, "10k", "+3V3", net)
+# the card's supply through JP6: cut it to power the card from outside or to read its current; 10 uF and 100 nF beside the slot
+JP("JP6", S, "+3V3", "SD_VDD")
+part("#FLG10", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "SD_VDD"}, bom=False)     # fed through JP6
+C("C60", S, "10u", "SD_VDD")
+C("C61", S, "100n", "SD_VDD")
+
+# =================================================================================
 # Membrane contacts: DS Lite silicone over bare ENIG pads
 # =================================================================================
 S = "buttons.kicad_sch"
@@ -485,11 +467,23 @@ for i, net in enumerate(BUTTONS):
     part(f"SW{i + 1}", S, "Switch:SW_Push", net.replace("_", " "), "battler:DSL_button_4ring",
          {"1": net, "2": "GND"}, bom=False)
 SR = "Package_SO:TSSOP-16_4.4x5mm_P0.65mm"     # 1.2 mm: fits under the decks
-for u, seat, ds, q7 in (("U8", "P1", "SR_CHAIN", "SR_DATA"), ("U9", "P2", "+3V3", "SR_CHAIN")):
+for u, seat, ds, q7 in (("U8", "P1", "SR_CHAIN", "SR_DATA"), ("U9", "P2", "SR_CHAIN2", "SR_CHAIN")):
     pins = {"1": "SR_PL", "2": "SR_CLK", "15": "GND", "8": "GND", "16": "+3V3", "10": ds, "9": q7, "7": None}
     for k, d in enumerate(("11", "12", "13", "14", "3", "4", "5", "6")):   # D0..D7
         pins[d] = BUTTONS[(0 if seat == "P1" else 8) + k]
     part(u, S, "74xx:74HC165", "SN74HC165PWR", SR, pins, "C43420", "SN74HC165PWR", "Texas Instruments")
+# U11 (2026-10-27, the ESP32-S3 board) is the third register, 8 more bits after seat 2's: both Starts and both Selects (their
+# GPIOs went to the SD bus), the charger's PGOOD and CHG status; its two spare inputs are tied high. 24 clocks read the lot:
+# bits 0 to 15 are as before (P1 Y .. UP, then P2), bits 16 to 23 are U11's D7 .. D0: P1 START (PWR_BTN_N), P2 START, P1 SELECT,
+# P2 SELECT, CHG_STAT_N, CHG_PG_N, 1, 1. Start and the charger's lines already have their pull-ups (R16, R63, R9, R10)
+part("U11", S, "74xx:74HC165", "SN74HC165PWR", SR,
+     {"1": "SR_PL", "2": "SR_CLK", "15": "GND", "8": "GND", "16": "+3V3", "10": "+3V3", "9": "SR_CHAIN2", "7": None,
+      "11": "+3V3", "12": "+3V3", "13": "CHG_PG_N", "14": "CHG_STAT_N", "3": "P2_SELECT", "4": "P1_SELECT",
+      "5": "P2_START", "6": "PWR_BTN_N"},
+     "C43420", "SN74HC165PWR", "Texas Instruments")
+C("C62", S, "100n", "+3V3")                    # U11 supply
+R("R86", S, "47k", "+3V3", "P1_SELECT")        # the Selects had the MCU's own pull-ups
+R("R87", S, "47k", "+3V3", "P2_SELECT")
 # SR_CLK crosses the whole board to both registers: R65, at the RP2354B's end, slows its edges
 # (source termination) so they ring less and couple less into SR_PL and SR_DATA, which run beside
 # it up the left strip (a clearance rule for that left SR_CLK or SR_PL to U9 unrouted, 2026-10-22)

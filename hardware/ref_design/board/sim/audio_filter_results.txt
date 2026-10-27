@@ -1,0 +1,4 @@
+old 1k / 4.7n (RP2354B, 586 kHz)     -3 dB at  10.8 kHz; at 20 kHz   -6.0 dB; carrier 312.5 kHz  -39.3 dB, 586 kHz  -50.0 dB, 625 kHz  -51.1 dB
+1.2k / 4.7n                          -3 dB at   8.8 kHz; at 20 kHz   -7.2 dB; carrier 312.5 kHz  -42.3 dB, 586 kHz  -53.0 dB, 625 kHz  -54.2 dB
+this board 1.5k / 4.7n               -3 dB at   6.7 kHz; at 20 kHz   -8.9 dB; carrier 312.5 kHz  -46.0 dB, 586 kHz  -56.8 dB, 625 kHz  -58.0 dB
+1k / 10n                             -3 dB at   5.1 kHz; at 20 kHz  -12.0 dB; carrier 312.5 kHz  -52.1 dB, 586 kHz  -63.0 dB, 625 kHz  -64.1 dB

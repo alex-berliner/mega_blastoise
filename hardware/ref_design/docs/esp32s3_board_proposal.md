@@ -15,9 +15,9 @@ full 307,200 B frame, so the shared core needs no band rendering.
 
 | | |
 |---|---|
-| Part | ESP32-S3-WROOM-1-N16R8, JLC C2913202 |
+| Part | ESP32-S3-WROOM-1U-N16R8 (U.FL connector, external flex antenna), LCSC C3013946 (the PCB-antenna WROOM-1-N16R8 was C2913202) |
 | Price | $5.35 at 1, $3.59 at 650+ (JLC search page, 2026-10-27) |
-| Size | 25.5 x 18 mm, PCB antenna at one end |
+| Size | 18 x 19.2 x 3.2 mm (WROOM-1U), no antenna on the board; the antenna sits on the case's left wall on a 40 mm U.FL cable |
 | Ambient limit | 65 C (the R8 PSRAM variant; `datasheets/esp32-s3-wroom-1.pdf`) |
 | JLC assembly | Standard only, X-ray inspection |
 | Radio | Wi-Fi is used from this board on (Alex, 2026-10-27, replacing the earlier no-radio decision). BLE stays off. The module may become the WROOM-1U-N16R8 with an external antenna, pending Blastoise Schematic's antenna analysis; that changes the part number. |

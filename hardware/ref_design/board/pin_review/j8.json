@@ -1,0 +1,200 @@
+{
+ "part": "J8",
+ "refs": [
+  "J8"
+ ],
+ "mpn": "DM3AT-SF-PEJM5",
+ "lcsc": "C114218",
+ "manufacturer": "Hirose",
+ "symbol": "Connector:Micro_SD_Card_Det_Hirose_DM3AT",
+ "footprint": "Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5",
+ "datasheet": {
+  "url": "https://www.hirose.com/product/series/DM3",
+  "revision_or_date": "not downloaded (LCSC datasheet link returned a web page): pins from the SD Physical Layer spec and KiCad's symbol"
+ },
+ "ratings": [
+  {
+   "what": "card VDD",
+   "limit": "2.7-3.6 V",
+   "design": "3.3 V via JP6",
+   "ok": true,
+   "cite": "SD spec"
+  },
+  {
+   "what": "contact current",
+   "limit": "0.5 A per contact",
+   "design": "card peaks about 100 mA",
+   "ok": true,
+   "cite": "Hirose DM3 series (from memory, unverified)"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "DAT2",
+   "type": "passive",
+   "requirement": "SD bus data 2, 10k pull-up (R81)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "DAT2",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_D2"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "CD/DAT3",
+   "type": "passive",
+   "requirement": "SD bus data 3, 10k pull-up (R82)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "CD/DAT3",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_D3"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "CMD",
+   "type": "passive",
+   "requirement": "command, 10k pull-up (R79)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "CMD",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_CMD"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "VDD",
+   "type": "passive",
+   "requirement": "card supply 2.7-3.6 V, from 3V3 through JP6 with 10 uF + 100 nF (C60, C61)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "VDD",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_VDD"
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "CLK",
+   "type": "passive",
+   "requirement": "clock from the module",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "CLK",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_CLK"
+   }
+  },
+  {
+   "pin": "6",
+   "ds_name": "VSS",
+   "type": "passive",
+   "requirement": "ground",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "VSS",
+   "footprint_pad": "6",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "GND"
+   }
+  },
+  {
+   "pin": "7",
+   "ds_name": "DAT0",
+   "type": "passive",
+   "requirement": "data 0, 10k pull-up (R80)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "DAT0",
+   "footprint_pad": "7",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_D0"
+   }
+  },
+  {
+   "pin": "8",
+   "ds_name": "DAT1",
+   "type": "passive",
+   "requirement": "data 1, 10k pull-up (R83)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "DAT1",
+   "footprint_pad": "8",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "SD_D1"
+   }
+  },
+  {
+   "pin": "9",
+   "ds_name": "DET_B (card detect switch)",
+   "type": "passive",
+   "requirement": "detect switch contact: with a card inserted it closes to pin 10 (ground), SD_CD low; 10k pull-up (R84)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "DET_B (card detect switch)",
+   "footprint_pad": "9",
+   "ok": false,
+   "issue": "detect-switch pin order and polarity from the KiCad symbol and the usual DM3AT drawing; Hirose's drawing is not in datasheets/ (unverified)",
+   "nets": {
+    "J8": "SD_CD"
+   },
+   "waiver": "a wrong order only inverts or disables card detect (SD_CD), the bus works; check against the Hirose DM3AT drawing before ordering"
+  },
+  {
+   "pin": "10",
+   "ds_name": "DET_A (card detect switch)",
+   "type": "passive",
+   "requirement": "detect switch common, to ground",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "DET_A (card detect switch)",
+   "footprint_pad": "10",
+   "ok": false,
+   "issue": "detect-switch pin order and polarity from the KiCad symbol and the usual DM3AT drawing; Hirose's drawing is not in datasheets/ (unverified)",
+   "nets": {
+    "J8": "GND"
+   },
+   "waiver": "a wrong order only inverts or disables card detect (SD_CD), the bus works; check against the Hirose DM3AT drawing before ordering"
+  },
+  {
+   "pin": "SH",
+   "ds_name": "shell",
+   "type": "passive",
+   "requirement": "shell, to ground (mounting tabs on the board's ground)",
+   "cite": "SD Physical Layer Simplified Spec (pin assignment, 4-bit mode); Hirose DM3AT-SF-PEJM5 outline (not in datasheets/)",
+   "quote": "",
+   "symbol_name": "shell",
+   "footprint_pad": "SH",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "J8": "GND"
+   }
+  }
+ ]
+}

@@ -1,4 +1,4 @@
-"""The debug pad row (J7): six bare round pads at 2.54 mm for pogo pins, a clip or soldered
+"""The debug pad row (J7): four bare round pads at 2.54 mm for pogo pins, a clip or soldered
 wires, each named on the silkscreen. Written into lib/battler.pretty.
 
     python3 tools/fp_pogo.py
@@ -12,9 +12,9 @@ import pcbnew
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 LIB = os.path.join(os.path.dirname(HERE), "lib", "battler.pretty")
-NAME = "Pogo_Pads_1x06_P2.54mm"
+NAME = "Pogo_Pads_1x04_P2.54mm"
 PITCH, PAD_D = 2.54, 1.6
-LABELS = ["3V3", "CLK", "DIO", "RUN", "BOOT", "GND"]
+LABELS = ["3V3", "EN", "BOOT", "GND"]
 
 
 def mm(v):
@@ -44,9 +44,9 @@ def main():
     io = pcbnew.GetPluginForPath(LIB)
     fp = pcbnew.FOOTPRINT(None)
     fp.SetFPID(pcbnew.LIB_ID("battler", NAME))
-    fp.SetLibDescription("SWD debug pads: 3V3, SWCLK, SWDIO, RUN, BOOTSEL, GND; 1.6 mm round pads at 2.54 mm "
+    fp.SetLibDescription("Debug pads: 3V3, EN (reset), IO0 (BOOT), GND; 1.6 mm round pads at 2.54 mm "
                          "for P75/P100 pogo pins, a clip or soldered wires (no part fitted)")
-    fp.SetKeywords("SWD debug pogo pads")
+    fp.SetKeywords("debug pogo pads")
     fp.SetAttributes(pcbnew.FP_SMD | pcbnew.FP_EXCLUDE_FROM_BOM | pcbnew.FP_EXCLUDE_FROM_POS_FILES)
     fp.Reference().SetPosition(pcbnew.VECTOR2I(0, mm(-2.4)))
     fp.Reference().SetLayer(pcbnew.F_Fab)
