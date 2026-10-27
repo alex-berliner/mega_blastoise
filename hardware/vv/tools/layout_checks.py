@@ -538,7 +538,151 @@ def jlc(seed=None):
     return dn.result(not row.bad)
 
 
-CHECKS = {"bridges": (bridges, SEED_BRIDGES), "fab": (fab, SEED_FAB), "jlc": (jlc, None)}
+# ---- VER-21: return paths under the fast nets ------------------------------------------------------------------------
+FAST = ["LCD_SCK", "LCD_SCK_MCU", "LCD_MOSI", "LCD_MOSI_MCU", "USB_DP", "USB_DM", "USB_DP_MCU", "USB_DM_MCU", "AUDIO_PWM",
+        "SR_CLK", "SR_CLK_MCU", "SR_PL", "SR_DATA"]
+GAP_MM, STEP_MM = 2.0, 0.1
+SEED_RET = "nofill"          # the opposite layer's GND fill dropped in memory: every sample is over a gap
+
+
+def ret(seed=None):
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    row = Rows()
+    fills = {}
+    for z in b.Zones():
+        if z.GetIsRuleArea() or z.GetNetname() != "GND":
+            continue
+        for lay in (pcb.F_Cu, pcb.B_Cu):
+            if z.IsOnLayer(lay):
+                fills.setdefault(lay, []).append(z.GetFilledPolysList(lay))
+    if seed == "nofill":
+        fills = {}
+    print(f"GND fills: F.Cu {len(fills.get(pcb.F_Cu, []))} zone(s), B.Cu {len(fills.get(pcb.B_Cu, []))}; each fast net's tracks "
+          f"sampled every {STEP_MM} mm, a sample over no GND fill on the other layer is a gap; limit {GAP_MM} mm in a run")
+    worst = {}
+    for t in b.GetTracks():
+        n = t.GetNetname().split("/")[-1]
+        if n not in FAST or t.GetClass() != "PCB_TRACK":
+            continue
+        other = pcb.B_Cu if t.GetLayer() == pcb.F_Cu else pcb.F_Cu
+        x0, y0, x1, y1 = mm(t.GetStart().x), mm(t.GetStart().y), mm(t.GetEnd().x), mm(t.GetEnd().y)
+        L = math.hypot(x1 - x0, y1 - y0)
+        k = max(1, int(L / STEP_MM))
+        run = best = 0.0
+        for i in range(k + 1):
+            px, py = x0 + (x1 - x0) * i / k, y0 + (y1 - y0) * i / k
+            pt = pcb.VECTOR2I(pcb.FromMM(px), pcb.FromMM(py))
+            covered = any(f.Contains(pt) for f in fills.get(other, []))
+            run = 0.0 if covered else run + (L / k if i else 0.0)
+            best = max(best, run)
+        if best > worst.get(n, (0, None))[0]:
+            worst[n] = (best, (round(x0, 2), round(y0, 2)), "F.Cu" if t.GetLayer() == pcb.F_Cu else "B.Cu")
+    for n in FAST:
+        g, at, lay = worst.get(n, (0.0, None, ""))
+        row(g <= GAP_MM, f"{n}: longest run over no GND on the other layer {g:.2f} mm" + (f" (a {lay} track from {at})" if g else ""))
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
+# ---- VER-108: USB D+/D- stubs and pair length ------------------------------------------------------------------------
+STUB_MM, SKEW_MM = 3.5, 2.0
+
+
+def net_lengths(pcb, b, nets):
+    """{(ref, pad): {(ref, pad): track length}} by Dijkstra over the nets' tracks (vias join layers, a pad joins every
+    track end inside it)."""
+    import heapq
+    mm = pcb.ToMM
+    key = lambda x, y, l: (round(x, 3), round(y, 3), l)   # noqa: E731
+    adj = {}
+
+    def link(a, c, w):
+        adj.setdefault(a, []).append((c, w))
+        adj.setdefault(c, []).append((a, w))
+    ends = []
+    for t in b.GetTracks():
+        if t.GetNetname().split("/")[-1] not in nets:
+            continue
+        if t.GetClass() == "PCB_VIA":
+            x, y = mm(t.GetPosition().x), mm(t.GetPosition().y)
+            link(key(x, y, "F"), key(x, y, "B"), 0.0)
+            ends += [(key(x, y, "F"), t), (key(x, y, "B"), t)]
+        else:
+            lay = "F" if t.GetLayer() == pcb.F_Cu else "B"
+            a = key(mm(t.GetStart().x), mm(t.GetStart().y), lay)
+            c = key(mm(t.GetEnd().x), mm(t.GetEnd().y), lay)
+            link(a, c, mm(t.GetLength()))
+            ends += [(a, t), (c, t)]
+    nodes = list(adj)
+    for i, n in enumerate(nodes):                      # ends that touch (a T or a width change)
+        for m in nodes[i + 1:]:
+            if n[2] == m[2] and math.hypot(n[0] - m[0], n[1] - m[1]) < 0.02:
+                link(n, m, 0.0)
+    pads = {}
+    for fp in b.GetFootprints():
+        for p in fp.Pads():
+            if p.GetNetname().split("/")[-1] in nets:
+                pk = (fp.GetReference(), p.GetNumber())
+                pads[pk] = p
+                for n in nodes:
+                    lay = pcb.F_Cu if n[2] == "F" else pcb.B_Cu
+                    if p.IsOnLayer(lay) and p.HitTest(pcb.VECTOR2I(pcb.FromMM(n[0]), pcb.FromMM(n[1]))):
+                        link(("pad",) + pk, n, 0.0)
+    out = {}
+    for pk in pads:
+        src = ("pad",) + pk
+        dist = {src: 0.0}
+        h, k = [(0.0, 0, src)], 0
+        while h:
+            d, _, u = heapq.heappop(h)
+            if d > dist.get(u, 1e18):
+                continue
+            for v, w in adj.get(u, []):
+                if d + w < dist.get(v, 1e18):
+                    dist[v] = d + w
+                    k += 1
+                    heapq.heappush(h, (d + w, k, v))
+        out[pk] = {q: dist[("pad",) + q] for q in pads if ("pad",) + q in dist}
+    return out
+
+
+SEED_USB = 5.0               # mm added in memory to one J1 branch: the stub must fail
+
+
+def usbpair(seed=None):
+    pcb, b = dn.board()
+    row = Rows()
+    parts, _ = dn.design()
+    total = {}
+    for line, rser in (("DP", "R21"), ("DM", "R22")):
+        d = net_lengths(pcb, b, {f"USB_{line}"})
+        j1 = sorted(pk for pk in d if pk[0] == "J1")
+        rp = next(pk for pk in d if pk[0] == rser)
+        u1 = [pk for pk in d if pk[0] == "U1"]
+        a, c = j1
+        da, dc, dac = d[a][rp], d[c][rp], d[a][c]
+        sa, sc = (da + dac - dc) / 2, (dc + dac - da) / 2       # each branch from its pad to the junction
+        if seed:                                                 # lengthen the shorter branch in memory
+            sa, sc = (sa + seed, sc) if sa < sc else (sa, sc + seed)
+        stub = min(sa, sc)
+        row(stub <= STUB_MM, f"USB_{line}: J1 {a[1]} and {c[1]} join {sa:.2f} and {sc:.2f} mm from their pads; the stub (the shorter "
+            f"branch) {stub:.2f} mm against {STUB_MM} mm (pin_review/j1.json)")
+        if u1:
+            du = min(d[u1[0]][rp], min(d[u1[0]][q] for q in j1))
+            print(f"  USB_{line}: U1 pin {u1[0][1]} is {du:.2f} mm from the line's nearest point it was measured to")
+        dm = net_lengths(pcb, b, {f"USB_{line}_MCU"})
+        u4 = next(pk for pk in dm if pk[0] == "U4")
+        r2 = next(pk for pk in dm if pk[0] == rser)
+        total[line] = max(da, dc) + dm[r2][u4]
+        print(f"  USB_{line}: J1 to {rser} {max(da, dc):.2f} mm (the longer branch), {rser} to U4 {dm[r2][u4]:.2f} mm")
+    skew = abs(total["DP"] - total["DM"])
+    row(skew <= SKEW_MM, f"D+ {total['DP']:.2f} mm, D- {total['DM']:.2f} mm: mismatch {skew:.2f} mm against {SKEW_MM} mm")
+    return dn.result(not row.bad)
+
+
+CHECKS = {"bridges": (bridges, SEED_BRIDGES), "fab": (fab, SEED_FAB), "jlc": (jlc, None), "ret": (ret, SEED_RET),
+          "usbpair": (usbpair, SEED_USB)}
 
 
 def main():

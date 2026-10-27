@@ -765,3 +765,23 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BTN-04
 - Gate: ORDER
 - Status: OPEN (copper. Proposed: Alex restates REQ-BTN-04 as no via within 2.9 mm and no other copper within 2.85 mm (the pour is flat), or a rule area of 2.9 mm round each comb in build_pcb.py with a re-pour, no re-route)
+
+### DEF-75: The fast nets cross gaps in the ground under them, and D+ and D- differ by 3.6 mm
+- Found: VER-21 (layout_checks.py ret) and VER-108 (layout_checks.py usbpair), built 2026-10-27, at 71737ae
+- Symptom: sampled every 0.1 mm against the GND fill on the other layer, the longest runs with no ground under them are USB_DP and USB_DM 38.7 mm (the pair runs stacked, D+ on B.Cu over D- on F.Cu, along the cell's hole from (80.65, 107.3), so each sees the other and no ground), SR_CLK 6.9 mm, SR_PL 6.0, AUDIO_PWM 5.5, LCD_SCK 3.4, LCD_MOSI 3.1, SR_DATA 2.5, LCD_SCK_MCU 2.25 and LCD_MOSI_MCU 2.15 mm, against VER-21's 2 mm. The USB pair's stubs pass (0.98 mm at most against 3.5) but D+ is 70.9 mm and D- 67.2 mm, 3.64 mm apart against VER-108's 2 mm. For a sense of size: full-speed USB's bit is 83 ns and its edges 4-20 ns, so 3.64 mm (about 24 ps) and a 39 mm run (well under a tenth of an edge's length) do not break the link on their own; the gaps raise emissions and crosstalk, which EVT's near-field scan (VER-96) and the SR_CLK test (VER-179) measure.
+- Root cause: on two layers with the cell's hole and the panel's strip taking room, the router kept no ground under these nets, and nothing checked it; the 2 mm limits are generic, written before the route.
+- Why missed: VER-21 and VER-108 were NOT_BUILT.
+- Check added or changed: VER-21, VER-108 (built; their seeds drop the ground fill and lengthen a stub, and must fail)
+- Updated: DF-51, DF-184
+- Gate: ORDER
+- Status: OPEN (copper. Proposed: Alex accepts both for EVT with VER-96, VER-80 and VER-179 as the measurements, since full-speed USB and an 18.75 MHz SPI have the margin above; at DVT, route the USB pair side by side on one layer over the B.Cu pour and stitch ground beside SR_CLK and SR_PL)
+
+### DEF-76: pinmap.md states no clock limits for the panel's SPI or the buttons' shift registers
+- Found: VER-199 (circuit_checks.py timing), built 2026-10-27, at 71737ae
+- Symptom: the hardware closes its timing: the panel's SPI write at 18.75 MHz (clk_peri / 8) has 3.3 ns over the ILI9488's 50 ns write cycle (ili9488.txt:16258; at 20 MHz it would have none), 19.2 ns of SCL high and low against 10 ns, and 16.6 ns of set-up against 10 ns; SR_CLK's edge is 16.9 ns. But the limits the firmware must keep are written nowhere: a panel read (LCD_MISO) needs 6.25 MHz or less (trc 150 ns, 16262), the write 18.75 MHz or less (never 20 MHz), and SR_CLK 5.44 MHz or less with SR_PL low 80 ns and high 80 ns before the first edge (the 74HC165's 2 V figures, read as the bound at 3.3 V: sn74hc165.txt:371-377, 472, 488).
+- Root cause: pinmap.md describes the pins, not the buses' timing; the clocks were left to the firmware.
+- Why missed: VER-199 is new (2026-10-27), the paper check class 12 lacked for the mcu.
+- Check added or changed: VER-199 (built; its seed puts 1k in LCD_SCK and must fail)
+- Updated: REQ-DSP-11, DF-180
+- Gate: EVT
+- Status: OPEN (no copper: three lines in pinmap.md, the SPI write and read clocks and the shift-register clock and load widths; VER-199 then passes)

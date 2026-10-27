@@ -713,8 +713,89 @@ def usbfault(seed=None):
     return dn.result(not row.bad)
 
 
+# ---- VER-199: the clocked buses on paper ------------------------------------------------------------------------------
+CLK_PERI = 150e6                  # Hz: clk_peri at the SDK's default clk_sys (paper_checks.RP_PWM_CLK)
+SPI_WRITE_HZ = CLK_PERI / 8       # 18.75 MHz: the fastest even divider of 150 MHz under 20 MHz (PLAN.md DEC-13)
+STAND_PIN_C = 10e-12              # F: one CMOS input (the ILI9488's, a 74HC165's): datasheets on disk give none
+STAND_FPC_C = 3e-12               # F: J3 and the panel's FPC to the controller
+STAND_SPI_DELAY = 10e-9           # s: the RP2350 SPI's data change after SCK's edge (rp2350.pdf gives no figure)
+SEED_TIMING = {"R28": {"value": "1k"}}   # a 1k source resistor on LCD_SCK: its edges eat the SCL high time
+
+
+def timing(seed=None):
+    parts, _ = load(seed)
+    row = Rows()
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    length = {}
+    for t in b.GetTracks():
+        if t.GetClass() == "PCB_TRACK":
+            n = t.GetNetname().split("/")[-1]
+            length[n] = length.get(n, 0.0) + mm(t.GetLength())
+    q = ds.quote
+    q("rp2350", 101144, "2.62")
+    q("ili9488", 16258, "twc", "50")
+    q("ili9488", 16259, "twrh", "10")
+    q("ili9488", 16262, "trc", "150")
+    q("ili9488", 16269, "tds", "10")
+    q("ili9488", 16277, "Does not include signal rising and falling times")
+    r_pad = (3.3 - 2.62) / 4e-3      # ohm: VOH 2.62 V at 4 mA (rp2350.txt:101144), the reset drive
+    import paper_checks as pc
+    cpm = pc.STAND_TRACK_C
+    print(f"the RP2350's pad at its reset 4 mA drive: {r_pad:.0f} ohm (VOH 2.62 V at 4 mA, rp2350.txt:101144); tracks "
+          f"{cpm * 1e12:.1f} pF/mm (paper_checks.py's stand-in); an input {STAND_PIN_C * 1e12:.0f} pF, the FPC {STAND_FPC_C * 1e12:.0f} pF (stand-ins)")
+    # the panel's SPI (DBI type C option 3, 4-line)
+    print(f"SPI0 to the panel at {SPI_WRITE_HZ / 1e6:.2f} MHz (clk_peri 150 MHz / 8: 20 MHz is no divider of it):")
+    for net, rs, far in (("LCD_SCK", "R28", "SCL"), ("LCD_MOSI", "R29", "SDA")):
+        c = (length.get(net, 0) + length.get(net + "_MCU", 0)) * cpm + STAND_FPC_C + STAND_PIN_C
+        tr = 2.2 * (r_pad + val(parts, rs)) * c
+        print(f"  {net}: {length.get(net + '_MCU', 0) + length.get(net, 0):.1f} mm of track, {c * 1e12:.1f} pF, through {rs} "
+              f"{parts[rs]['value']} ohm: 10-90% edge {tr * 1e9:.1f} ns")
+        if net == "LCD_SCK":
+            t_sck = tr
+        else:
+            t_mosi = tr
+    period = 1 / SPI_WRITE_HZ
+    row(period >= 50e-9, f"write cycle {period * 1e9:.1f} ns against twc 50 ns (ili9488.txt:16258): {period * 1e9 - 50:.1f} ns spare "
+        "(at 20 MHz it would be 0.0)")
+    high = period / 2 - t_sck
+    row(high >= 10e-9, f"SCL high and low {period / 2 * 1e9:.1f} ns less an edge of {t_sck * 1e9:.1f} ns = {high * 1e9:.1f} ns against "
+        "twrh and twrl 10 ns (16259-16260; edges not included, 16277)")
+    # at the 50% crossings: an RC edge crosses half way 0.69 RC after launch, 0.31 of its 10-90% time (2.2 RC)
+    setup = period / 2 + 0.31 * t_sck - STAND_SPI_DELAY - 0.31 * t_mosi
+    row(setup >= 10e-9, f"SDA set-up before SCL rises, at the 50% crossings: half a cycle {period / 2 * 1e9:.1f} ns less the SPI's "
+        f"{STAND_SPI_DELAY * 1e9:.0f} ns (stand-in) and the two edges' difference: {setup * 1e9:.1f} ns against tds 10 ns (16269)")
+    rd = CLK_PERI / math.ceil(CLK_PERI * 150e-9 / 2) / 2
+    print(f"  firmware rule: a read (LCD_MISO) at {rd / 1e6:.2f} MHz or less (trc 150 ns, ili9488.txt:16262)")
+    # the buttons' chain
+    q("sn74hc165", 371, "2V", "6")
+    q("sn74hc165", 377, "2V", "75", "150")
+    q("sn74hc165", 472, "2V", "80")
+    q("sn74hc165", 488, "2V", "80")
+    c_clk = (length.get("SR_CLK", 0) + length.get("SR_CLK_MCU", 0)) * cpm + 2 * STAND_PIN_C
+    t_clk = 2.2 * (r_pad + val(parts, "R65")) * c_clk
+    f_sr = min(6e6, 1 / (2 * 80e-9), 1 / (150e-9 + 2 * t_clk))
+    print(f"SR_CLK to U8 and U9: {length.get('SR_CLK', 0) + length.get('SR_CLK_MCU', 0):.1f} mm of track, {c_clk * 1e12:.1f} pF, edge "
+          f"{t_clk * 1e9:.1f} ns through R65; at 3.3 V the 74HC165 is read at its 2 V figures (fmax 6 MHz, tw 80 ns, tpd CLK to QH "
+          "150 ns, SH/LD high 80 ns before CLK: sn74hc165.txt:371-377, 472, 488), which bound it from the slow side")
+    row(t_clk <= 500e-9, f"SR_CLK's edge {t_clk * 1e9:.1f} ns against the 74HC165's input transition limit, 1000 ns/V at 2 V "
+        "(sn74hc165.txt:264-265)")
+    print(f"  firmware rule: SR_CLK at {f_sr / 1e6:.2f} MHz or less, SR_PL low 80 ns or more and high 80 ns before the first edge")
+    skew = (length.get("SR_CLK", 0)) * 6.5e-12
+    row(skew < 5e-9, f"the chain U9 QH to U8 SER: the clock reaches the two {skew * 1e12:.0f} ps apart (6.5 ps/mm), inside the "
+        "5 ns SER hold (sn74hc165.txt:503-504)")
+    pm = open(os.path.join(dn.REF, "docs", "pinmap.md"), encoding="utf-8").read()
+    for what, pat in (("the panel's SPI write and read clocks", r"(?i)(SPI|LCD_SCK)[^\n]*\b\d+(\.\d+)?\s*MHz"),
+                      ("the buttons' SR_CLK rate and SR_PL widths", r"(?i)SR_CLK[^\n]*\b\d+(\.\d+)?\s*(MHz|kHz)")):
+        row(bool(re.search(pat, pm)), f"pinmap.md states {what}" + ("" if re.search(pat, pm) else
+                                                                    ": it does not, so no firmware is held to these limits"))
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
 CHECKS = {"appcircuit": (appcircuit, SEED_APP), "gpio": (gpio, SEED_GPIO), "pinreview": (pinreview, SEED_PR),
-          "fwpins": (fwpins, SEED_FW), "ratings": (ratings, SEED_RATINGS), "usbfault": (usbfault, SEED_USBF)}
+          "fwpins": (fwpins, SEED_FW), "ratings": (ratings, SEED_RATINGS), "usbfault": (usbfault, SEED_USBF),
+          "timing": (timing, SEED_TIMING)}
 
 
 def main():
