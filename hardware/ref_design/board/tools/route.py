@@ -33,6 +33,7 @@ left a connection or two.
        every other GND pad: a short stub and a via down to the GND pour
        USB-C's shell legs: joined in pairs on the back, and a via beside each
        USB D+/D-: one pair from J1 through U1 to R21/R22 (usb_pair)
+       PWR_BTN_RAW: SW21's pad to the latch, 117 mm round the hole, by the maze router (long_nets; 16 s)
   4. Freerouting (1.9.0; 2.x loops on this board: 2.5.0 left 47 connections open,
      2026-10-21) routes the signals and the supplies (3V3 included: two layers have
      no 3V3 plane) on F.Cu and B.Cu. GND is
@@ -673,22 +674,23 @@ def slot_boxes():
 MAX_RIPPED = 12           # connections the maze pass may take other nets' copper up for
 
 
-def maze_for(board, net, a, b, reach=6.0, ignore=()):
+def maze_for(board, net, a, b, reach=6.0, ignore=(), blocks=()):
     c = net_class(net)
     e = edge_box()
-    box = (max(min(a[0], b[0]) - reach, e[0]), max(min(a[1], b[1]) - reach, e[1]),
-           min(max(a[0], b[0]) + reach, e[2]), min(max(a[1], b[1]) + reach, e[3]))
+    rx, ry = reach if isinstance(reach, tuple) else (reach, reach)
+    box = (max(min(a[0], b[0]) - rx, e[0]), max(min(a[1], b[1]) - ry, e[1]),
+           min(max(a[0], b[0]) + rx, e[2]), min(max(a[1], b[1]) + ry, e[3]))
     return Maze(board, net, box, (pcbnew.F_Cu, pcbnew.B_Cu), c["track"], c["clear"], c["via"], c["drill"],
-                fences=core_fences(), fence_layer=core_layer(pcbnew.F_Cu), blocks=slot_boxes(), edge=e,
+                fences=core_fences(), fence_layer=core_layer(pcbnew.F_Cu), blocks=slot_boxes() + list(blocks), edge=e,
                 ignore=set(ignore),
                 discs=[((x, y), CONTACT_R) for x, y in CASE["buttons"].values()])
 
 
 
-def maze_connect(board, net, a, la, b, lb, reach=6.0):
+def maze_connect(board, net, a, la, b, lb, reach=6.0, blocks=()):
     """One connection, a -> b, by tools/maze.py on the outer layers; added locked.
     Returns the new route as [(layer, points), ...] or None."""
-    runs = maze_for(board, net, a, b, reach=reach).route(a, la, b, lb)
+    runs = maze_for(board, net, a, b, reach=reach, blocks=blocks).route(a, la, b, lb)
     if runs:
         add_route(board, net, runs)
     return runs
@@ -1738,6 +1740,51 @@ def cross_nets(board):
     print(f"crossing nets routed first: {', '.join(done) or 'none'}", flush=True)
 
 
+# Nets with a pad at the far end of the board: Freerouting leaves the long link to them open (PWR_BTN_RAW: the power button SW21 at seat 1's
+# end, the latch at seat 2's, 115 mm round the cell's hole, 2026-10-27, 8 of 8 rounds). The pad with no other pad of its net near it is joined
+# to the nearest other pad by the maze router first, as fixed wiring, the way USB D+/D- go; the router works round it. Slow, any length.
+LONG_NETS = ("PWR_BTN_RAW",)
+LONG_REACH = (40.0, 6.0)         # the maze's window round the two pads: x wide enough for a strip beside the hole
+# The nets between the core (left of the hole) and the charger group, the latch and the CC resistors (right of it) squeeze through the
+# 5 mm gap between the hole and J3 with the panel bus: 8 of 8 rounds left two to five of them open (2026-10-27). Option: the long way
+# round the seat-2 end, first, as fixed wiring (a wall down the board's middle below the hole keeps the maze out of the gap).
+# TRIED AND OFF (2026-10-27): of these seven the maze took three (PG_N, STAT_N, PWR_HOLD) round the top in 20 s each, and 20 seeds then ended with
+# 4 to 11 connections open (against 2 to 7 without): the three long runs and PWR_BTN_RAW's take the room Freerouting needs round the core.
+TOP_NETS = ()   # ("CHG_PG_N", "CHG_STAT_N", "CHG_OFF", "PWR_HOLD", "CC1_SENSE", "CC2_SENSE", "VBAT_SENSE")
+TOP_REACH = (40.0, 40.0)
+
+
+def top_wall():
+    """A wall (x 98 .. 102) from the cell hole's lower edge to the board's end: nothing crosses the middle below the hole."""
+    hole = next(c["box"] for c in CUTOUTS if c.get("name") == "cell")
+    return [(98.0, hole[3] - 1.0, 102.0, 100 + CASE["board"]["l"] / 2)]
+
+
+def long_nets(board):
+    import time
+    pads = [(p.GetNetname(), p) for fp in footprints(board) for p in pads_of(fp)]
+    done = []
+    for net, top in [(n, False) for n in LONG_NETS] + [(n, True) for n in TOP_NETS]:
+        mine = [p for n, p in pads if n.split("/")[-1] == net]
+        if len(mine) < 2:
+            continue
+        net = mine[0].GetNetname()
+        # the pad whose nearest neighbour on the net is farthest away
+        far = max(mine, key=lambda p: min(math.dist(xy(p.GetPosition()), xy(q.GetPosition())) for q in mine if q is not p))
+        near = min((q for q in mine if q is not far), key=lambda q: math.dist(xy(far.GetPosition()), xy(q.GetPosition())))
+        a, b = xy(far.GetPosition()), xy(near.GetPosition())
+        if math.dist(a, b) < 30.0:
+            continue
+        la = pcbnew.F_Cu if far.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        lb = pcbnew.F_Cu if near.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        t = time.time()
+        runs = maze_connect(board, net, a, la, b, lb, reach=TOP_REACH if top else LONG_REACH, blocks=top_wall() if top else ())
+        print(f"long net {net}{' (round the top)' if top else ''}: {'routed' if runs else 'NOT routed'} {math.dist(a, b):.0f} mm apart ({time.time() - t:.0f} s)", flush=True)
+        if runs:
+            done.append(net)
+    return done
+
+
 def prepare(board):
     """The pre-routes Freerouting is given as fixed wiring (everything before it in the run); returns the contacts."""
     hide_bom_fields(board)
@@ -1751,6 +1798,7 @@ def prepare(board):
     usb_shell_ground(board)
     fanout(board)
     cross_nets(board)
+    long_nets(board)
     return contacts
 
 
