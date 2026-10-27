@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-26
-COMMIT: 1bc504be71c233f895251d5ba36a2db7b00f618e
+COMMIT: f9e107177fd6bb50158aa45f7511b1db18f44d96
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -47,6 +47,8 @@ ok  gate      O-R5: a CASE defect moved to the order gate blocks it
 ok  structure O-R8: occurrence 3 with no 'Similar:'
 ok  structure F-R14: a live check cites a RETIRED row
 ok  structure round 2 (O): an ORDER check that no step of PLAN.md section (d) names
+ok  structure O-R11: an ORDER check named only in the plan's 'what moved where' table is not a step
+ok  structure F-R4: a JLC_FIXED entry with no evidence file does not count
 ok  structure round 2 (F): a requirement whose only check moved to a later phase
 ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
 ok  structure round 2 (F): detection rating 2 on a single 'detects' check
@@ -77,7 +79,15 @@ ok  structure round 2 (O): an approval signed by another key in the allowed-sign
 ok  structure round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it (git)
 ok  dn        round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing (git)
 ok  gate      R8: a case.scad commit on the order branch holds the case gate (git)
-71 seeded faults, 71 caught
+ok  structure F-R3: README's baseline hash rewritten from HEAD after a design.py edit (git)
+ok  structure F-R4: a JLC_FIXED entry whose evidence file is not committed does not count (git)
+ok  gate      O-R4: a case.scad commit that moves a button position fails the order gate (git)
+ok  gate_no   O-R4: a case-only commit that moves no position passes that part of R8 (git)
+ok  gate      O-R5: a check moved after Alex's signed GATE@ line fails the order gate (git)
+ok  gate      O-R12: a software signing key fails the order gate (git)
+ok  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
+ok  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
+81 seeded faults, 81 caught
 RESULT: PASS
 
 exit 0

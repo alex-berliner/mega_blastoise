@@ -35,7 +35,8 @@ Round 3's six findings add the faults that keep the new rules honest (2026-10-26
   O-R4  a case.scad commit that moves a button position fails the order gate (R8, the case's
         positions), while a case-only commit that moves no position (2ddb7fe's engraved labels)
         passes that part of R8.
-  O-R5  a check moved after Alex's signed GATE@ line fails the order gate (G1).
+  O-R5  a check moved later, or made advisory, after Alex's signed GATE@ line fails the order
+        gate (G1).
   O-R11 an ORDER check named only in the plan's 'what moved where' table is not a step.
   O-R12 a software signing key fails the order gate (K1); --accept-software-key passes it and
         says so; a line in APPROVALS.md that tries to grant the exception does not count.
@@ -680,6 +681,17 @@ def g_gate_freeze(repo, base):
     return "order"
 
 
+def g_gate_freeze_advisory(repo, base):
+    """O-R5: a check made advisory in a criterion after Alex's signed GATE@ line fails the order gate (G1): the
+    criterion gains ADVISORY:VER-33, which weakens what the gate counts."""
+    approve(os.path.join(repo, "hardware/vv"),
+            f"| A-001 | GATE@{base} | FROZEN | ORDER | the order gate state at this commit | Alex | {TODAY} |")
+    commit(repo, "freeze the gate state")
+    text_edit(os.path.join(repo, "hardware/vv"), "gates.md", "| VER-33 VER-99 VER-137 ", "| ADVISORY:VER-33 VER-99 VER-137 ")
+    commit(repo, "VER-33 advisory at the order gate")
+    return "order"
+
+
 def g_software_key(repo, base):
     """O-R12: the clone's pinned key is a plain software key, so the order gate fails K1."""
     return "order"
@@ -781,6 +793,8 @@ GIT_FAULTS = [
      "move no board position", g_case_labels, "case commit moves board positions"),
     ("O-R5: a check moved after Alex's signed GATE@ line fails the order gate", "gate",
      "moved after A-001", g_gate_freeze),
+    ("O-R5: a check made advisory after Alex's signed GATE@ line fails the order gate", "gate",
+     "G-ORD-18 gained ADVISORY:VER-33", g_gate_freeze_advisory),
     ("O-R12: a software signing key fails the order gate", "gate",
      "FAIL  K1 the pinned signing key is a hardware key", g_software_key),
     ("O-R12: --accept-software-key passes K1 and prints the choice", "gate_line",
