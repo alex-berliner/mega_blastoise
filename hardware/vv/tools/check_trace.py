@@ -84,7 +84,9 @@ Two more results at the order gate:
   G1  the gate state Alex froze with a signed 'GATE@<commit>' line in releases/APPROVALS.md
       (every check's phase, every defect's Gate, every criterion's Needs, every requirement's
       Phase and Verified-by): anything moved later than that commit without a newer signed
-      line fails here (O-R5);
+      line fails here (O-R5); until one is signed,
+  G0  (information, never a failure) every such move since README's 'Gate moves listed since'
+      commit is listed, so Alex reads them before he signs GATE@ (round 3's O-S5);
   K1  the pinned signing key is a hardware key (sk-ssh-ed25519@openssh.com or
       sk-ecdsa-sha2-nistp256@openssh.com in the allowed-signers file). A software key fails
       unless the gate is run with --accept-software-key, whose use is printed here and has to

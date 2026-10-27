@@ -106,7 +106,7 @@ committed in hardware/ref_design/datasheets with SOURCES.md). What touches this 
 | J4 PicoBlade 53261-0271 to JST SH SM02B-SRSS-TB (C160402) | design.py, pin_review/j4.json, case.scad | VER-184 PASS; DF-170 re-rated M; DF-183 and DEF-64 new (the speaker's SH plug, by hand, not bought); VER-128, VER-89, DF-118 |
 | The cell's hole rotated and grown: 54.0 x 37.0 to 37.8 x 54.8 mm, the cell along the board, 1 mm towards seat 2; the pocket 0.9 mm inside it (1.9 mm at the lead end, cell_pocket_box) | placement.py CUTOUTS, case.scad | VER-181 FAIL on the fit alone (gaps exactly met); DEF-53 and DEF-58 FIXED; DEF-62 new; DF-85, DF-04; REQ-BAT-08's fit clause (PROPOSED); cellgap, swell and th1 read the new geometry |
 | J2 to the right strip by the hole's seat-2 end (131.55, 69.7); TH1 to (119.95, 79.0); JP5, TP3 moved with the hole | placement.py ADOPTED | VER-164 FAIL (TH1 1.05 mm from the edge, 1.95 mm from the cell); DEF-37; VER-18's J2 courtyard (0.08 mm past, pads and body inside) |
-| The power latch (Q1, R16, D2, R13, R42) to seat 1's end; seat 2's Start row (Q7, D8, R62, R15, C47, R63, TP6) to end2_l; PWR_BTN_RAW pre-routed by the maze (117 mm) | placement.py, route.py | netlist unchanged (VER-01 PASS); VER-33 (the latch table, not built) and VER-179 read the new lengths when built |
+| The power latch (Q1, R16, D2, R13, R42) to seat 1's end; seat 2's Start row (Q7, D8, R62, R15, C47, R63, TP6) to end2_l; PWR_BTN_RAW pre-routed by the maze (117 mm) | placement.py, route.py | netlist unchanged (VER-01 PASS); DF-184 new (the long, 33k-loaded PWR_BTN_RAW); VER-33 (the latch table) and VER-79 detect it, VER-179 reads the new lengths when built |
 | The core moved 2.2 mm left (CORE_HOME 73.8), R28/R29, TP11-TP14, U3, JP1, C1, R41, C10 and others re-placed | placement.py | VER-142 PASS (nearest MLCC C47, 8.45 mm from H2); VER-23, VER-108, VER-158 when built |
 | The board's copper: edge clearance 0.31 mm, a 0.30 mm copper-to-NPTH rule (battler.kicad_dru, new), routed again (0 DRC errors, 0 unconnected) | build_pcb.py, battler.kicad_pro, battler.kicad_dru | VER-04 PASS (6 silk warnings read by hand: DEF-66); VER-18 PASS; DEF-56 CLOSED; DEF-60 FIXED; battler.kicad_dru added to the baseline |
 | fab.py: separate PTH and NPTH drill files; the CPL carries each footprint's pads' centre | board/tools/fab.py | VER-131 PASS, DEF-32 CLOSED; VER-176 PASS, DEF-33 FIXED (JLC's preview still the reference: O-R7); F-S3's fab.py edits came with the board pass |
@@ -437,7 +437,48 @@ the row says why not.
 
 ## (i) The gate today
 
-GATE_TODAY
+**The run after the 71737ae re-seed**, at c4fdd45 (2026-10-27); the scripted checks' evidence
+was made at 737e54e, VER-129's at its own re-run after the last tool edit and VER-188's at 42332f8: requirements 133 (130
+PROPOSED, 3 RETIRED); DFMEA rows 184 (63 H, 86 M, 35 L by action priority; DF-182, DF-183 and
+DF-184 new, DF-95 RETIRED); checks 195 (19 PASS, 8 FAIL, 51 NOT_RUN, 109 NOT_BUILT, 5 CUT, 3 RETIRED);
+defects 66 (21 OPEN, 28 FIXED, 10 CLOSED, 7 RETIRED); seeded faults 100 of 100 caught (VER-129).
+
+```
+$ python3 hardware/vv/tools/check_trace.py
+STRUCTURE: OK (4 warnings)
+  order branch: main has no design commit after 71737ae
+  design baseline: matches HEAD
+  coverage grid: 77 covered, 10 not needed, GAP 33 (0 with no check, 33 planned)
+  warnings: the pass bands of VER-67, VER-88, VER-134 and VER-139 are 1.4-2.2 x their DMM's
+  accuracy (want 4 x)
+exit 0
+
+$ python3 hardware/vv/tools/check_trace.py --gate order
+  PASS  G-ORD-15 (VER-98 advisory, DFMEA:COVERAGE), G-ORD-24 (VER-129, VER-188), R5, R6 (no
+        release yet), R7, R8
+  INFO  G-ORD-05, G-ORD-08, G-ORD-12, G-ORD-20, G-ORD-26 (advisory); G0: 4 moves since
+        b9b38a9 (VER-130 and VER-160 from ORDER to EVT, G-ORD-02 and G-ORD-03 without them);
+        RETIRED G-ORD-13; N/A G-ORD-25 (prod_board)
+  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06, G-ORD-07, G-ORD-09 to G-ORD-11, G-ORD-14, G-ORD-16
+        to G-ORD-19, G-ORD-21, G-ORD-23, G-ORD-27 (the FAILs among them: VER-164 TH1's place,
+        VER-181 the cell's pocket fit)
+  FAIL  G-ORD-22: 34 ORDER checks not passing (36 at be437f8); 19 checks pass
+  FAIL  R1 127 PROPOSED; R2 30 requirements with an ORDER check not passing;
+        R3 52 H rows neither accepted nor DONE; R4 9 OPEN defects with Gate ORDER (DEF-14,
+        29, 30, 48, 55, 61, 62, 63, 66; 15 at be437f8)
+  FAIL  R9 33 cells of classes 1-15 planned (no clearing check built or run)
+RESULT: FAIL (23 of 29 not met); 1 N/A, 6 advisory, 1 retired
+```
+
+The coverage grid's classes 1-15 by the worst status in each cell: 0 PASS, 10 FAIL, 6 NOT_RUN,
+61 NOT_BUILT, 33 planned, 10 not needed (120 cells; at be437f8 28 FAIL, 5 NOT_RUN, 44
+NOT_BUILT, 33 planned, 10 not needed). No cell passes yet because every covered cell also
+holds a check that is not built or not run. G1 and K1 print nothing: no `GATE@` line is signed
+and no key is pinned. The checks that pass: the netlist, the pin gate, ERC, DRC with parity, both
+4-ring contact footprints, inrush, holes, the drill files, the CPL, the backlight, the edges,
+the plugs, the MLCC keep-out, swelling room, two inspections (VER-104, VER-124), the stale-names
+scan and the seeded faults. The FAILs: VER-164 and VER-181 (ORDER); VER-32, VER-138 and VER-177
+(EVT, printed at the order gate as advisory); VER-39, VER-147 and VER-167 (CASE).
 
 ## (j) Past bugs and what catches them
 
@@ -516,4 +557,6 @@ RESET switches, not contacts); DF-144 names the BQ24074 as a wrong variant, "a '
 runs it. The order branch moved again while this ran (307eefd, 64ef18d): the refresh round
 tags the new commit.
 
-At 71737ae (2026-10-27), with every check re-tagged where the board spin changed it: GRID_SUMMARY
+At 71737ae (2026-10-27), with the rows the board spin touched re-read: 77 covered, 10 not
+needed, 33 planned (no cell moved between states: the spin changed results, not tags); by
+the worst status in each covered cell 0 PASS, 10 FAIL, 6 NOT_RUN, 61 NOT_BUILT (section i).
