@@ -1,4 +1,4 @@
-# Proposal: next revision (multi-game platform, SD, USB bridge, 60 fps)
+# Proposal: next revision (game launcher, SD, USB bridge, 60 fps)
 
 Status: proposal only, from the 2026-10-26 ideation chat. Nothing in `board/design.py`, the
 KiCad files, the case or the firmware has changed. Several items need a respin, so decide
@@ -16,50 +16,59 @@ revision straps, both gone).
 Pokemon may become one game of many instead of the first-class game. That raises the value of
 removable storage and a way to load teams, saves and data without reflashing.
 
-Decision (Alex, 2026-10-27): both. Some games are built into the firmware, others are game
-files, and the launcher finds game files on both the SD card and an internal flash
-filesystem.
+Decision (Alex, 2026-10-27): a binary picker. Every game, Pokemon included, is an ordinary
+RP2350 firmware binary. A small resident launcher lists the binaries it finds on the SD card
+and in internal flash, and runs the one picked. No on-device WASM or other interpreter.
 
-### Game catalog
+### How it runs a normal binary
 
-The launcher builds one list from three sources:
+The RP2350 bootrom can boot an image from a flash partition and, using QMI address
+translation, maps the partition's start to 0x10000000 at runtime (`datasheets/rp2350.txt`,
+section 5.1.19). So a binary linked the usual way, for 0x10000000, runs from any 4 kB-aligned
+partition unchanged. No position-independent code needed.
 
-1. Built-in games, compiled into the firmware (Pokemon today).
-2. Game files on an internal flash filesystem (a littlefs partition in the 2 MB; its size
-   depends on how big the firmware ends up, not checked).
-3. Game files on the SD card, under one folder (for example `/games`).
+Flash layout (2 MB internal, set by an RP2350 partition table):
 
-Rules:
+1. Launcher partition: the picker, an SD and littlefs reader, and the flash writer.
+2. Game slot partition: the binary that runs.
+3. Internal library: a littlefs area holding binaries that work without the card, plus saves.
 
-- Each game file carries a manifest with an id and a version. If the same id is in more than
-  one place, the launcher shows it once and runs the newest.
-- A game on SD is listed only while the card is in. An "install" action copies it to
-  internal flash so it works without the card.
-- Saves go next to where the game runs from, or to internal flash if the card might be
-  removed (to decide).
-- Mass storage mode (section 2) exposes the SD card only; the internal filesystem is reached
-  through the device's own UI or the USB bridge.
+Sizes depend on how big the binaries are, which has not been measured. Pokemon's size
+decides whether the library holds more than one game.
 
-### Game file format: WASM (proposed)
+Flow:
 
-A game file is a `.wasm` module plus its manifest. The firmware runs it in a WASM
-interpreter (for example `wasmi`, which supports `no_std`; fit in 520 kB of RAM not
-checked). The web build runs the same file in the browser's own WASM engine.
+1. Power on: the bootrom boots the launcher.
+2. The launcher lists binaries from SD (`/games/*.uf2`) and the internal library, shown once
+   per game (same name: newest wins). SD games appear only while the card is in.
+3. Pick a game: if it is not already in the slot, the launcher erases the slot, copies the
+   binary in and checks its hash, then reboots into the slot. The exact bootrom reboot call
+   for "boot this partition" is to be confirmed (section 5.1 of the datasheet; the
+   FLASH_UPDATE reboot used by A/B upgrades is the likely route).
+4. Exit: the game reboots normally and lands in the launcher. Optional: the launcher
+   auto-starts the last game unless a button is held at power-on.
 
-Why WASM over native code or Lua:
+File format: UF2, the RP toolchain's normal output. Its family id lets the launcher reject
+RP2040 builds. Raw `.bin` could be accepted too.
 
-- One file runs on both the device and the web build. That carries the zero-drift rule over
-  to loaded games: the device and the browser run the same game file, not two ports.
-- Sandboxed: a broken or hostile game file cannot corrupt the firmware or the flash.
-- Speed: an interpreter is much slower than native code (roughly 10 to 50 times, not
-  measured), so the host does the heavy work. Games call host functions to draw (blit, fill,
-  text), read input, play audio and read or write saves. Turn-based and simple 2D games fit;
-  fast full-screen games may need a native built-in instead.
+### What a game binary must do
 
-Alternative kept in reserve: native position-independent Cortex-M33 code installed to
-internal flash and run in place (XIP). Fast, but no sandbox and no web-build parity.
+- Be built for this board (RP2354B, the pin map). A shared board crate gives games the
+  display, buttons (74HC165 read), audio, SD and save access, and "exit to launcher".
+- Stay inside its own partition and the save area. There is no sandbox: a buggy game can
+  wreck the internal library, but not the launcher if the partition permissions protect it
+  (not checked).
+- Save through the board crate, to internal flash or SD (where saves live is still open).
 
-Host API, manifest format and RAM budget are not designed yet.
+### Notes
+
+- Flash wear: one slot erase per game switch, far under flash endurance.
+- Mass storage mode (section 2) exposes the SD card only, so binaries go onto the card from
+  a computer by drag and drop.
+- The launcher is system UI, not battle UX, so the zero-drift rule does not apply to it. The
+  web build has no picker; each game ships its own web build if it has one.
+- Precedent: community SD bootloaders for other RP2040 and RP2350 handhelds do the same
+  thing (not checked).
 
 ## 2. Storage
 
@@ -185,8 +194,8 @@ save 2 more.
 
 ## 8. Decisions needed
 
-1. Decided 2026-10-27: both, with game files found on SD and internal flash. Still open: WASM
-   as the game file format (section 1)?
+1. Decided 2026-10-27: a launcher that picks ordinary RP2350 binaries from SD and internal
+   flash (section 1). Still open: auto-start the last game, and where saves live.
 2. Respin before the 5-board JLC order for the parallel display and the SD slot, or keep SPI
    and redraw only changed regions for now?
 3. SD over SDIO 4-bit (faster, 6 pins plus card detect) or SPI mode (4 pins)? Both fit.
@@ -205,4 +214,4 @@ save 2 more.
 - That the EastRising module's 8080 mode works on the bench (set IM `011`, read the ID).
 - Chrome on Android WebUSB with this device (plug-in test above).
 
-Last updated: 2026-10-27 07:52 EDT
+Last updated: 2026-10-27 07:57 EDT
