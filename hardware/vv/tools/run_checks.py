@@ -109,6 +109,9 @@ CHECKS = {
     "VER-152": ("estimates", ["python3", CS, "estimates"], False),
     "VER-165": ("mouths", ["python3", CS, "mouths"], True),
     "VER-174": ("xy", ["python3", CS, "xy"], False),
+    "VER-144": ("heat_modes", ["python3", TH, "modes"], False),
+    "VER-193": ("heat_board", ["python3", TH, "board"], False),
+    "VER-200": ("heat_amp", ["python3", TH, "amp"], False),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
