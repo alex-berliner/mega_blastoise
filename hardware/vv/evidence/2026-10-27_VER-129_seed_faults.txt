@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-27
-COMMIT: c88aa7f504a20877e24868c6244024fd1212b179
+COMMIT: 7880d0e5b95c6ae40eb7518b98e1f8a0423a2320
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -103,24 +103,11 @@ ok  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
 ok  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
 ok  gate_no   grid R9: a gap Alex accepts in a signed GRID line leaves R9 (git)
 ok  dn        O-S1: a cell 0.1 mm too big for its pocket's fit fails VER-181 though every FR4 gap passes (git)
+ok  dn_pass   O-S1 (control): the largest cell cellgap says this hole takes passes VER-181 (git)
+ok  gate_line O-S5: a check moved later with no GATE@ line is listed by the order gate (G0) (git)
+ok  dn        VER-18: a connector's pad past the board's outline fails edge (a courtyard alone does not) (git)
+100 seeded faults, 100 caught
+RESULT: PASS
 
---- stderr
-Traceback (most recent call last):
-  File "/home/alex/Code/mega_blastoise_vv/hardware/vv/tools/seed_faults.py", line 1063, in <module>
-    sys.exit(main())
-             ^^^^^^
-  File "/home/alex/Code/mega_blastoise_vv/hardware/vv/tools/seed_faults.py", line 1045, in main
-    r = subprocess.run(cmd, capture_output=True, text=True, cwd=repo)
-        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/subprocess.py", line 548, in run
-    with Popen(*popenargs, **kwargs) as process:
-         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-  File "/usr/lib/python3.12/subprocess.py", line 1026, in __init__
-    self._execute_child(args, executable, preexec_fn, close_fds,
-  File "/usr/lib/python3.12/subprocess.py", line 1885, in _execute_child
-    self.pid = _fork_exec(
-               ^^^^^^^^^^^
-TypeError: expected str, bytes or os.PathLike object, not list
-
-exit 1
-RESULT: FAIL
+exit 0
+RESULT: PASS
