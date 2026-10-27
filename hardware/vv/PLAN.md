@@ -515,72 +515,53 @@ revisions disagreed about are decided in section (f).
 
 ## (i) The gate today
 
-**The last recorded run** was at 0c1571a (2026-10-26), whose evidence was made at 807d0e0 (the scripted checks) and 1bc504b (VER-129):
-requirements 133 (130 PROPOSED, 3 RETIRED); DFMEA rows 181 (148 live: 54 H, 68 M, 26 L; 33
-RETIRED); checks 183 (14 PASS, 11 FAIL, 51 NOT_RUN, 99 NOT_BUILT, 5 CUT, 3 RETIRED); defects
-57 (24 OPEN, 20 FIXED, 6 CLOSED, 7 RETIRED); seeded faults 71 of 71 caught (VER-129: 45 on a
-copy of the register, 26 in a scratch clone with signed commits, three of them design_numbers.py
-runs).
+**The run after round 3**, at c4b92e6 (2026-10-26); the scripted checks' evidence was made at
+fec2fc4 and VER-129's at b187fcf: requirements 133 (130 PROPOSED, 3 RETIRED); DFMEA rows 181
+(64 H, 84 M, 33 L by action priority; 33 RETIRED); checks 186 (14 PASS, 12 FAIL, 51 NOT_RUN,
+101 NOT_BUILT, 5 CUT, 3 RETIRED); defects 61 (28 OPEN, 20 FIXED, 6 CLOSED, 7 RETIRED); seeded
+faults 82 of 82 caught (VER-129).
 
 ```
 $ python3 hardware/vv/tools/check_trace.py
 STRUCTURE: OK (5 warnings)
-  approvals by Alex: 0 counted (signed), 0 pending; commit signing not set up, so none can
-  count yet; README.md pins no signing key
-  order branch: ref-design-35in has design commits after be437f8: 2ddb7fe ref_design case:
-  button labels engraved 0.3 deep on the top's inside
-  design baseline: matches HEAD
-  warnings: the order branch's case commit; the pass bands of VER-67, VER-88, VER-134 and
+  approvals by Alex: 0 counted (signed), 0 pending; README.md pins no signing key
+  order branch: ref-design-35in has design commits after be437f8: 7d35933 (route.py),
+  2ddb7fe (case.scad's engraved labels)
+  design baseline: matches HEAD (and be437f8)
+  warnings: the order branch's design commits; the pass bands of VER-67, VER-88, VER-134 and
   VER-139 are 1.4-2.2 x their DMM's accuracy (want 4 x)
 exit 0
 
 $ python3 hardware/vv/tools/check_trace.py --gate order
-  PASS  G-ORD-24 (VER-129), R5, R6 (no release yet), R7, R8 (board files)
-  INFO  G-ORD-05, G-ORD-08, G-ORD-12, G-ORD-20, G-ORD-26 (advisory, four of them moved);
-        RETIRED G-ORD-13; N/A G-ORD-25 (prod_board)
-  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06, G-ORD-07, G-ORD-09 to G-ORD-11, G-ORD-14 to G-ORD-19,
-        G-ORD-21, G-ORD-23 (the FAILs among them: VER-18 edges, VER-131 drill, VER-176 CPL,
-        VER-181 the cell's gap, VER-137 backlight, VER-138 cutoff, VER-177 VBUS)
-  FAIL  G-ORD-22: 45 ORDER checks not passing (it was 67)
-  FAIL  R1 127 PROPOSED; R2 42 requirements with an ORDER check not passing;
-        R3 53 H rows neither accepted nor DONE; R4 18 OPEN defects with Gate ORDER
+  PASS  G-ORD-15 (VER-98 advisory, DFMEA:COVERAGE), G-ORD-24 (VER-129), R5, R6 (no release
+        yet), R7
+  INFO  G-ORD-05, G-ORD-08, G-ORD-12, G-ORD-20, G-ORD-26 (advisory); RETIRED G-ORD-13;
+        N/A G-ORD-25 (prod_board)
+  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06, G-ORD-07, G-ORD-09 to G-ORD-11, G-ORD-14, G-ORD-16
+        to G-ORD-19, G-ORD-21, G-ORD-23 (the FAILs among them: VER-18 edges, VER-131 drill,
+        VER-176 CPL, VER-181 the cell's gap, VER-137 backlight)
+  FAIL  G-ORD-22: 32 ORDER checks not passing (45 before round 3, 67 before round 2); 12 pass
+  FAIL  R1 127 PROPOSED; R2 30 requirements with an ORDER check not passing;
+        R3 53 H rows neither accepted nor DONE; R4 15 OPEN defects with Gate ORDER (DEF-14,
+        29, 30, 32, 33, 39, 48, 49, 50, 53, 55, 56, 57, 60, 61)
+  FAIL  R8 7d35933 (route.py) on ref-design-35in after be437f8; case positions:
+        positions.json sha256 179f81ed... at dd54d0f and at be437f8, so 2ddb7fe moves no
+        board position
 RESULT: FAIL (22 of 27 not met); 1 N/A, 5 advisory, 1 retired
 ```
 
-**This round changed the register** (23 findings: sections (g) and (n)). Ten checks moved
-phase, three checks were added (VER-185 at EVT, VER-186 at PVT, VER-187 at DVT), two were cut
-to a by-hand pass at ORDER (VER-14, VER-23), three defects were logged (DEF-58, DEF-59,
-DEF-60), two tools changed and the trace gate grew three rules. The transcript above predates
-all of it, so its counts are stale. It has not been re-run: this session had no shell, and
-`python3 hardware/vv/tools/check_trace.py`, `python3 hardware/vv/tools/check_trace.py --gate
-order` and `python3 hardware/vv/tools/seed_faults.py` are still to be run on the committed
-tree.
+G1 and K1 print nothing yet: no `GATE@` line is signed and no key is pinned. The case gate
+fails 11 of 14, EVT 19 of 22, DVT 10 of 13, PVT 10 of 13, and prod_board's order gate 5 of 7
+(24 criteria N/A). The checks that pass: the netlist, the pin gate, ERC, DRC with parity, both
+4-ring contact footprints, inrush, holes, the MLCC keep-out, TH1's geometry, swelling room,
+two inspections (VER-104, VER-124) and the seeded faults (VER-129). VER-32 (the charge window)
+and VER-177 (the VBUS reach) FAIL and print at the order gate as advisory; they bind at
+G-EVT-04.
 
-**What the order gate does now.** It still fails, as it should: the copper, the BOM and the
-fab files are not frozen, Alex's decisions are not signed, and the H rows that only built units
-can detect are not accepted. Three gate results are new:
-
-- **G1, the gate state Alex froze.** A signed `GATE@<commit>` line freezes each check's phase,
-  each defect's Gate, each criterion's Needs and each requirement's Phase and Verified-by.
-  The newest committed line wins, and anything moved later than it fails the order gate.
-  There is no such line yet, so the register's own phases are in force.
-- **K1, the pinned signing key is a hardware key.** The order gate fails when the pinned
-  key's type in the allowed-signers file is not an sk- key, unless the gate is run with
-  `--accept-software-key`; the flag's use is printed in the gate result and has to be copied
-  into the release record's signing section. An in-repo exception line does not count.
-- **R8 now holds the case too.** A case-only commit on the order branch passes only when
-  `case/positions.json`, regenerated at that commit, has the same sha256 as the one
-  regenerated at the baseline; both hashes are printed in the gate output and go into the
-  release record.
-
-The case gate, EVT, DVT, PVT and prod_board's order gate move with the phases in (d).
-
-The case gate fails 11 of 14 (R8 among them: 2ddb7fe's engraved labels are a case.scad change
-after be437f8, to re-check with VER-113 and VER-07 before the case release), EVT 19 of 22, DVT
-10 of 13, PVT 10 of 13, and prod_board's order gate 5 of 7 (24 criteria N/A). The checks that
-pass: the netlist, the pin gate, ERC, DRC with parity, both 4-ring contact footprints, inrush,
-holes, the MLCC keep-out, TH1's geometry, swelling room (new), two inspections (VER-104,
-VER-124) and the seeded faults (VER-129).
+What the order gate holds after round 3, beyond the copper, BOM and fab checks: the BOM
+decisions through their defects (DEF-39, 48, 49, 50, 61), the hand edit through DEF-60, the
+order branch through R8 (7d35933 today), a frozen gate state through G1 once Alex signs a
+`GATE@` line, and a hardware signing key through K1 once he pins one.
 
 ## (j) Past bugs and what catches them
 
