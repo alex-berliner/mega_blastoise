@@ -1040,7 +1040,7 @@ def main():
             if isinstance(gate, tuple):
                 ok, out, rc = True, "", 0
                 runs = ([[sys.executable, os.path.join(repo, "hardware/vv/tools/design_numbers.py")] + a for a in gate[1]]
-                        if gate[0] == "dn" else [[sys.executable, "-c", gate[1]]])
+                        if gate[0] in ("dn", "dn_pass") else [[sys.executable, "-c", gate[1]]])
                 for cmd in runs:
                     r = subprocess.run(cmd, capture_output=True, text=True, cwd=repo)
                     out += r.stdout + r.stderr

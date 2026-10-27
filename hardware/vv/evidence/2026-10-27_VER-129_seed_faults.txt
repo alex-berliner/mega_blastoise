@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-27
-COMMIT: 6289d2a8ea83938e220f8ec72bc2ff6d28d33f6e
+COMMIT: c88aa7f504a20877e24868c6244024fd1212b179
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -39,6 +39,7 @@ ok  structure criterion with a bad board
 ok  structure new BOM under an old BOARD_REV
 ok  structure design baseline differs from HEAD
 ok  structure design baseline leaves out the routed board
+ok  structure O-S4: the design baseline leaves out tools/build.py (it runs the build, route, silk and fab stages)
 ok  gate      an advisory-only check made binding
 ok  structure O-R3: an inspection PASS on a design file it does not cover
 ok  structure O-R3: an inspection's evidence with no WHO or ARTEFACT
@@ -101,8 +102,25 @@ ok  gate      O-R12: a software signing key fails the order gate (git)
 ok  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
 ok  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
 ok  gate_no   grid R9: a gap Alex accepts in a signed GRID line leaves R9 (git)
-95 seeded faults, 95 caught
-RESULT: PASS
+ok  dn        O-S1: a cell 0.1 mm too big for its pocket's fit fails VER-181 though every FR4 gap passes (git)
 
-exit 0
-RESULT: PASS
+--- stderr
+Traceback (most recent call last):
+  File "/home/alex/Code/mega_blastoise_vv/hardware/vv/tools/seed_faults.py", line 1063, in <module>
+    sys.exit(main())
+             ^^^^^^
+  File "/home/alex/Code/mega_blastoise_vv/hardware/vv/tools/seed_faults.py", line 1045, in main
+    r = subprocess.run(cmd, capture_output=True, text=True, cwd=repo)
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 548, in run
+    with Popen(*popenargs, **kwargs) as process:
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/usr/lib/python3.12/subprocess.py", line 1026, in __init__
+    self._execute_child(args, executable, preexec_fn, close_fds,
+  File "/usr/lib/python3.12/subprocess.py", line 1885, in _execute_child
+    self.pid = _fork_exec(
+               ^^^^^^^^^^^
+TypeError: expected str, bytes or os.PathLike object, not list
+
+exit 1
+RESULT: FAIL
