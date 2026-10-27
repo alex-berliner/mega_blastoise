@@ -62,13 +62,57 @@ RP2040 builds. Raw `.bin` could be accepted too.
 
 ### Notes
 
-- Flash wear: one slot erase per game switch, far under flash endurance.
+- Flash wear: the slot is rewritten only when a different game is picked. NOR flash is
+  usually rated around 100,000 erases a sector (not checked for the RP2354B); at 20 switches
+  a day that is over 10 years.
 - Mass storage mode (section 2) exposes the SD card only, so binaries go onto the card from
   a computer by drag and drop.
 - The launcher is system UI, not battle UX, so the zero-drift rule does not apply to it. The
   web build has no picker; each game ships its own web build if it has one.
-- Precedent: community SD bootloaders for other RP2040 and RP2350 handhelds do the same
-  thing (not checked).
+- You cannot run code straight from SD: the RP2350 only executes in place from QSPI flash or
+  RAM, and an SD card is a block device. Copying is the standard approach.
+
+### Launcher: our own Rust version of uf2loader (decided 2026-10-27)
+
+[pelrun/uf2loader](https://github.com/pelrun/uf2loader) (GPL-3.0, C on pico-sdk, PicoCalc
+only) already does this. Alex chose to write a Rust launcher with the same features instead
+of porting it. Build it from uf2loader's documented behaviour, not by translating its source,
+so the launcher is not a derived work of GPL code.
+
+Features to match (from uf2loader's README and the ClockworkPi forum):
+
+1. Two partitions: the launcher in its own protected partition, apps in an app partition
+   they cannot see or overwrite. The app partition's size can be read through the bootrom
+   API.
+2. Apps are ordinary UF2 files in one SD folder (uf2loader uses `/pico2-apps`). No
+   relinking, no custom linker script.
+3. Auto-boot: if an app is already flashed, power-on boots it straight away; hold a button
+   at power-on to get the menu. Re-picking the flashed app does not rewrite flash.
+4. The menu's first entry is the app currently flashed, by name.
+5. App names come from each UF2's Binary Information block, falling back to the file name.
+6. RAM apps: UF2s built to run from RAM (no-flash builds) load into SRAM and run without
+   erasing the flashed app (zero wear).
+7. A button combination at power-on drops into BOOTSEL. A UF2 flashed over BOOTSEL or
+   picotool lands in the app partition automatically.
+8. Mass storage mode for the SD card over USB.
+9. If the launcher cannot start its UI, it falls back to BOOTSEL, so the device is never
+   bricked.
+
+Where ours differs from uf2loader:
+
+- The menu UI lives in the launcher partition, not on the SD card, so the launcher works with
+  no card (it lists the internal library and the flashed app).
+- Input is the 74HC165 button read and the Start and Select GPIOs, not a keyboard.
+- Display is the ILI9488 panel through the shared Rust driver.
+
+Likely Rust building blocks (versions and fit not checked): `embassy-rp` (its rp235x
+bootrom calls for flash ops, partitions and reboot), `embedded-sdmmc` for FAT on the card, a
+small UF2 parser (the format is 512-byte blocks), and the rp-rs binary-info crate for app
+names.
+
+App rule (same as uf2loader's): apps that write flash must go through the bootrom's
+`rom_flash_op` so partition protection applies. Check that `embassy-rp`'s flash driver does
+this before Pokemon saves to flash.
 
 ## 2. Storage
 
@@ -194,8 +238,8 @@ save 2 more.
 
 ## 8. Decisions needed
 
-1. Decided 2026-10-27: a launcher that picks ordinary RP2350 binaries from SD and internal
-   flash (section 1). Still open: auto-start the last game, and where saves live.
+1. Decided 2026-10-27: a Rust launcher with uf2loader's features that picks ordinary RP2350
+   binaries from SD and internal flash (section 1). Still open: where saves live.
 2. Respin before the 5-board JLC order for the parallel display and the SD slot, or keep SPI
    and redraw only changed regions for now?
 3. SD over SDIO 4-bit (faster, 6 pins plus card detect) or SPI mode (4 pins)? Both fit.
@@ -214,4 +258,4 @@ save 2 more.
 - That the EastRising module's 8080 mode works on the bench (set IM `011`, read the ID).
 - Chrome on Android WebUSB with this device (plug-in test above).
 
-Last updated: 2026-10-27 07:57 EDT
+Last updated: 2026-10-27 08:03 EDT
