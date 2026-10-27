@@ -1,0 +1,92 @@
+# VER-15 gpio
+DATE: 2026-10-27
+COMMIT: 1dbf64026213ea0d82174f4a3e33aef556f0cec4
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py gpio
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+  ok    Table 3 read for GPIO0-47 (rp2350.txt:1261-1390): 48 rows
+  ADC: '• On QFN-80, there are 8 external inputs, with an AINSEL value of 0 → 7 mapping to the ADC input on GPIO40 →' (rp2350.txt:80737): GPIO40-47 are ADC0-7
+  the whole GPIO-to-PWM table, from the datasheet, against (n >> 1) & 7 (n < 32) and 8 + ((n >> 1) & 3) (n >= 32):
+    GPIO0  PWM0 A   formula PWM0 A  net -
+    GPIO1  PWM0 B   formula PWM0 B  net -
+    GPIO2  PWM1 A   formula PWM1 A  net P2_START
+    GPIO3  PWM1 B   formula PWM1 B  net PWR_BTN_N
+    GPIO4  PWM2 A   formula PWM2 A  net P2_SELECT
+    GPIO5  PWM2 B   formula PWM2 B  net -
+    GPIO6  PWM3 A   formula PWM3 A  net -
+    GPIO7  PWM3 B   formula PWM3 B  net -
+    GPIO8  PWM4 A   formula PWM4 A  net -
+    GPIO9  PWM4 B   formula PWM4 B  net -
+    GPIO10 PWM5 A   formula PWM5 A  net -
+    GPIO11 PWM5 B   formula PWM5 B  net -
+    GPIO12 PWM6 A   formula PWM6 A  net -
+    GPIO13 PWM6 B   formula PWM6 B  net -
+    GPIO14 PWM7 A   formula PWM7 A  net -
+    GPIO15 PWM7 B   formula PWM7 B  net -
+    GPIO16 PWM0 A   formula PWM0 A  net -
+    GPIO17 PWM0 B   formula PWM0 B  net -
+    GPIO18 PWM1 A   formula PWM1 A  net -
+    GPIO19 PWM1 B   formula PWM1 B  net SR_PL
+    GPIO20 PWM2 A   formula PWM2 A  net -
+    GPIO21 PWM2 B   formula PWM2 B  net -
+    GPIO22 PWM3 A   formula PWM3 A  net -
+    GPIO23 PWM3 B   formula PWM3 B  net -
+    GPIO24 PWM4 A   formula PWM4 A  net -
+    GPIO25 PWM4 B   formula PWM4 B  net -
+    GPIO26 PWM5 A   formula PWM5 A  net -
+    GPIO27 PWM5 B   formula PWM5 B  net -
+    GPIO28 PWM6 A   formula PWM6 A  net BL_PWM
+    GPIO29 PWM6 B   formula PWM6 B  net SR_CLK_MCU
+    GPIO30 PWM7 A   formula PWM7 A  net SR_DATA
+    GPIO31 PWM7 B   formula PWM7 B  net AUDIO_PWM
+    GPIO32 PWM8 A   formula PWM8 A  net LCD_TE
+    GPIO33 PWM8 B   formula PWM8 B  net LCD_CS
+    GPIO34 PWM9 A   formula PWM9 A  net AMP_EN
+    GPIO35 PWM9 B   formula PWM9 B  net P1_SELECT
+    GPIO36 PWM10 A  formula PWM10 A  net LCD_MISO
+    GPIO37 PWM10 B  formula PWM10 B  net LCD_DC
+    GPIO38 PWM11 A  formula PWM11 A  net LCD_SCK_MCU
+    GPIO39 PWM11 B  formula PWM11 B  net LCD_MOSI_MCU
+    GPIO40 PWM8 A   formula PWM8 A  net LCD_RST
+    GPIO41 PWM8 B   formula PWM8 B  net CHG_STAT_N
+    GPIO42 PWM9 A   formula PWM9 A  net CHG_PG_N
+    GPIO43 PWM9 B   formula PWM9 B  net CHG_OFF
+    GPIO44 PWM10 A  formula PWM10 A  net PWR_HOLD
+    GPIO45 PWM10 B  formula PWM10 B  net CC2_SENSE
+    GPIO46 PWM11 A  formula PWM11 A  net CC1_SENSE
+    GPIO47 PWM11 B  formula PWM11 B  net VBAT_SENSE
+  ok    embassy-rp 0.8.0's pwm.rs agrees on 48 of 48 pins (index.crates.io-1949cf8c6b5b557f/embassy-rp-0.8.0/src/pwm.rs: PIN_28 slice 6 A, PIN_31 slice 7 B among them)
+  each net's job against the functions its pin has:
+  ok    GPIO2 P2_START: plain I/O (SIO, PIO)
+  ok    GPIO3 PWR_BTN_N: plain I/O (SIO, PIO)
+  ok    GPIO4 P2_SELECT: plain I/O (SIO, PIO)
+  ok    GPIO19 SR_PL: plain I/O (SIO, PIO)
+  ok    GPIO28 BL_PWM: a PWM output, PWM6 A
+  ok    GPIO29 SR_CLK_MCU: plain I/O (SIO, PIO)
+  ok    GPIO30 SR_DATA: plain I/O (SIO, PIO)
+  ok    GPIO31 AUDIO_PWM: a PWM output, PWM7 B
+  ok    GPIO32 LCD_TE: plain I/O (SIO, PIO)
+  ok    GPIO33 LCD_CS: needs SPI0 CSn; the pin has SPI0 CSn
+  ok    GPIO34 AMP_EN: plain I/O (SIO, PIO)
+  ok    GPIO35 P1_SELECT: plain I/O (SIO, PIO)
+  ok    GPIO36 LCD_MISO: needs SPI0 RX; the pin has SPI0 RX
+  ok    GPIO37 LCD_DC: plain I/O (SIO, PIO)
+  ok    GPIO38 LCD_SCK_MCU: needs SPI0 SCK; the pin has SPI0 SCK
+  ok    GPIO39 LCD_MOSI_MCU: needs SPI0 TX; the pin has SPI0 TX
+  ok    GPIO40 LCD_RST: plain I/O (SIO, PIO)
+  ok    GPIO41 CHG_STAT_N: plain I/O (SIO, PIO)
+  ok    GPIO42 CHG_PG_N: plain I/O (SIO, PIO)
+  ok    GPIO43 CHG_OFF: plain I/O (SIO, PIO)
+  ok    GPIO44 PWR_HOLD: plain I/O (SIO, PIO)
+  ok    GPIO45 CC2_SENSE: an ADC input, ADC5
+  ok    GPIO46 CC1_SENSE: an ADC input, ADC6
+  ok    GPIO47 VBAT_SENSE: an ADC input, ADC7
+  ok    PWM6: GPIO28 BL_PWM
+  ok    PWM7: GPIO31 AUDIO_PWM
+  ok    the panel's SPI pins all on one instance: SPI0
+0 failing
+RESULT: PASS
+
+exit 0
+RESULT: PASS
