@@ -785,3 +785,23 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-DSP-11, DF-180
 - Gate: EVT
 - Status: OPEN (no copper: three lines in pinmap.md, the SPI write and read clocks and the shift-register clock and load widths; VER-199 then passes)
+
+### DEF-77: J5's mouth faces the side wall 2 mm away: no SWD cable with the board in the tub
+- Found: VER-165 (case_checks.py mouths), built 2026-10-27, at 71737ae
+- Symptom: J5 (the SWD JST SH, rotated -90 at (67.9, 105.0)) opens towards the board's left edge: its body ends at x 65.28 and the tub's inner wall stands at 63.30, so a 6 mm SH plug and cable box crosses the wall by 4.02 mm. The plug fits only with the board out of the tub. J2's and J4's plug boxes (case.scad's j2_plug, j4_plug) are clear of parts over 1 mm and inside the walls; no pinhole is inside a boss (the nearest 6.33 mm).
+- Root cause: J5 was placed for routing with its mouth towards the nearest edge; REQ-MEC-11 asks for a clear mouth, and no check read it.
+- Why missed: VER-165 was NOT_BUILT.
+- Check added or changed: VER-165 (built; its seed makes a mouth box 8 mm deep and must fail)
+- Updated: REQ-MEC-11
+- Gate: CASE
+- Status: OPEN (proposed: accept: SWD is a bench tool, used with the board out or through J7's pogo pads on the back with the case open; at DVT turn J5 to face into the board if a debug cable in the tub is wanted)
+
+### DEF-78: Seven case ESTIMATEs and the cell's size set copper and none is measured
+- Found: VER-152 (case_checks.py estimates), built 2026-10-27, at 71737ae
+- Symptom: nudged through openscad -D, seven ESTIMATE-marked values move the board's inputs in positions.json: the panel FPC's body, tail, tip range and slack (fpc_body, fpc_tail, tip_range, fpc_slack: J3's place, fpc_zones, j3_zone), fpc_low (the height allowed under the FPC: today the tallest part there is C38 at 0.50 mm), ss_pitch (SW20-SW23's places and the ribs' cut-outs) and ss_mem (the Start/Select pieces). The cell's 52 x 36 x 4.5 sets the hole and waits for VER-37's spec sheet. None has a measurement or a spec-sheet value in hardware/vv/evidence. Eight other ESTIMATEs (the caps, the D-pad's peg, the domes' skirt, ss_plunger_gap, the FPC's neck) move nothing the board reads: they are the case gate's.
+- Root cause: the panel's FPC numbers are the old design's, scaled from the drawing's views (case.scad:47); the Start/Select strip has not been measured.
+- Why missed: VER-152 was NOT_BUILT.
+- Check added or changed: VER-152 (built; its seed adds an unmeasured copper-setting estimate and must fail)
+- Updated: DF-61
+- Gate: ORDER
+- Status: OPEN (the measurements are VER-43 and VER-136 with a real panel and calipers on a Start/Select strip; or Alex accepts for EVT that J3's whole tip range is kept clear (j3_zone) and SW20-SW23's domes sit on a 7.5 mm pitch against the faceplate's 7.85, with VER-48 as the check)

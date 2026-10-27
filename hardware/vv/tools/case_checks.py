@@ -15,6 +15,7 @@ design_numbers.scad(): case.scad's top-level assignments evaluated in Python.
 Python 3 standard library, the OpenSCAD tools/scad.py names, and pcbnew for the checks that read the board.
 """
 import json
+import math
 import os
 import re
 import subprocess
@@ -39,11 +40,13 @@ def echo(seed_defs=()):
         defs = [a for k, v in seed_defs for a in ("-D", f"{k}={v}")]
         r = subprocess.run([*scad.cmd(out), "-o", out, "-D", 'part="none"', *defs, os.path.join(CASE, "case.scad")],
                            capture_output=True, text=True)
-        if r.returncode or not os.path.exists(out):
-            print(f"BLOCKED: openscad failed: {r.stderr[-400:]}\nRESULT: BLOCKED")
-            sys.exit(2)
-        text = open(out, encoding="utf-8").read()
+        text = open(out, encoding="utf-8").read() if os.path.exists(out) else ""
     m = re.search(r'ECHO: "JSON (\{.*\})"', text)
+    if not m:
+        if seed_defs:                        # a nudged value case.scad's asserts refuse: the caller says so
+            return None, (r.stderr or "")[-300:].splitlines()
+        print(f"BLOCKED: openscad failed: {r.stderr[-400:]}\nRESULT: BLOCKED")
+        sys.exit(2)
     pos = json.loads(m.group(1).replace('\\"', '"'))
     return pos, [ln for ln in text.splitlines() if "JSON" not in ln]
 
@@ -208,7 +211,346 @@ def arch(seed=None):
     return dn.result(not row.bad)
 
 
-CHECKS = {"arch": (arch, SEED_ARCH)}
+# ---- the reference design in a temp dir, with positions.json, for the scripts that read it from case/ -----------------
+import contextlib
+import shutil
+
+
+@contextlib.contextmanager
+def ref_copy():
+    """hardware/ref_design copied into a temp dir with case/positions.json written from case.scad's echo, so placement.py
+    and case/check_fit.py run on the committed files without writing under hardware/ref_design (positions.json is
+    gitignored there). The datasheets, fab outputs, prints and pictures are left out; the 3D models are kept."""
+    with tempfile.TemporaryDirectory(prefix="vv_ref_") as tmp:
+        dst = os.path.join(tmp, "ref_design")
+        shutil.copytree(REF, dst, ignore=shutil.ignore_patterns("fab", "print", "images", "img", "fitkit", "datasheets",
+                                                                  "*.stl", "__pycache__", "last_route.ses"))
+        pos, lines = echo()
+        json.dump(pos, open(os.path.join(dst, "case", "positions.json"), "w"), indent=1)
+        yield dst, pos, lines
+
+
+def load_module(path, name):
+    import importlib.util
+    sys.path.insert(0, os.path.dirname(path))
+    spec = importlib.util.spec_from_file_location(name, path)
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+# ---- VER-06: the board inside the case (case/check_fit.py) -------------------------------------------------------------
+def fit(seed=None):
+    with ref_copy() as (dst, pos, _):
+        if seed:
+            pos["glass_limit"] = 0.5            # a ceiling under the glass lower than J3: check_fit must fail
+            json.dump(pos, open(os.path.join(dst, "case", "positions.json"), "w"), indent=1)
+        r = subprocess.run([sys.executable, os.path.join(dst, "case", "check_fit.py")], cwd=os.path.join(dst, "case"),
+                           capture_output=True, text=True)
+        print("case/check_fit.py run in a temp copy of hardware/ref_design with positions.json from case.scad's echo")
+        print(r.stdout.strip())
+        rep = os.path.join(dst, "case", "fit_report.txt")
+        if os.path.exists(rep):
+            print("--- fit_report.txt\n" + open(rep, encoding="utf-8").read().strip())
+    return 0 if r.returncode == 0 else 1
+
+
+# ---- VER-19: placement drift ------------------------------------------------------------------------------------------
+PLACE_MM, PLACE_DEG = 0.05, 0.1
+
+
+def placement(seed=None):
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    row = Rows()
+    with ref_copy() as (dst, pos, _):
+        pl = load_module(os.path.join(dst, "board", "placement.py"), "placement_vv")
+        P = dict(pl.P)
+    if seed:
+        k = next(iter(sorted(P)))
+        x, y, r, s = P[k]
+        P[k] = (x + 0.1, y, r, s)
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+    worst, bad, n = (0.0, ""), [], 0
+    for ref, (x, y, rot, side) in sorted(P.items()):
+        f = fps.get(ref)
+        if not f:
+            bad.append(f"{ref}: placed by placement.py, not on the board")
+            continue
+        n += 1
+        d = math.hypot(mm(f.GetPosition().x) - x, mm(f.GetPosition().y) - y)
+        want = rot if side == "F" else 180 - rot       # KiCad shows a flipped footprint's turn mirrored: 0 on the back reads 180
+        dr = abs((f.GetOrientationDegrees() - want + 180) % 360 - 180)
+        flip_ok = f.IsFlipped() == (side == "B")
+        if d > worst[0]:
+            worst = (d, ref)
+        if d > PLACE_MM or dr > PLACE_DEG or not flip_ok:
+            bad.append(f"{ref}: board ({mm(f.GetPosition().x):.3f}, {mm(f.GetPosition().y):.3f}, {f.GetOrientationDegrees():g} deg, "
+                       f"{'B' if f.IsFlipped() else 'F'}) against placement.py ({x:.3f}, {y:.3f}, {rot:g}, {side})")
+    unplaced = sorted(r for r in fps if r not in P and not r.startswith(("FID", "TP", "#")))
+    for t in bad[:12]:
+        row(False, t)
+    row(not bad, f"{n} parts placed by placement.py (from positions.json and its own rules) against the routed board: worst "
+        f"{worst[0]:.4f} mm ({worst[1]}); limits {PLACE_MM} mm and {PLACE_DEG} deg")
+    # the case's own positions, straight from positions.json
+    case_pts = {**{k: v for k, v in pos["buttons"].items()}, **pos["ss_buttons"],
+                **{f"H{i + 1}": p for i, p in enumerate(pos["pins"])},
+                "SW18": pos["pinholes"][0], "SW19": pos["pinholes"][1], "J5": pos["swd"], "J3": [pos["fpc_conn"]["x"], pos["fpc_conn"]["y"]]}
+    off = []
+    for ref, (x, y) in sorted(case_pts.items()):
+        f = fps[ref]
+        d = math.hypot(mm(f.GetPosition().x) - x, mm(f.GetPosition().y) - y)
+        if d > PLACE_MM:
+            off.append(f"{ref} {d:.3f} mm")
+    row(not off, f"{len(case_pts)} parts the case positions (the 20 contacts, H1-H6, the pinholes' SW18 and SW19, J5, J3) at "
+        "positions.json's spot within 0.05 mm" + (f": {off}" if off else ""))
+    j1 = fps["J1"]
+    usb_y = pos["usb"]["y"]
+    row(abs(mm(j1.GetPosition().y) - usb_y) <= PLACE_MM, f"J1 at y {mm(j1.GetPosition().y):.3f} against the USB slot's {usb_y}")
+    print(f"not placed by placement.py (the scripts route or pour them, or they are test pads): {len(unplaced)}")
+    return dn.result(not row.bad)
+
+
+# ---- VER-20: the Z stack ------------------------------------------------------------------------------------------------
+PCB_TOL = 0.16          # mm: a 1.6 mm board +-10% (JLC's standard, from memory: VER-17's page confirms)
+TAPE_TOL = 0.03         # mm: the panel tape's thickness tolerance (stand-in until VER-173 names the tape)
+MARGIN = 0.2
+
+
+def part_heights(dst):
+    """{ref: (x0, y0, x1, y1, z0, z1)} from case/check_fit.py's own STL extents, in the temp copy."""
+    cf = load_module(os.path.join(dst, "case", "check_fit.py"), "check_fit_vv")
+    import pcbnew
+    b = pcbnew.LoadBoard(cf.PCB)
+    refs = [f.GetReference() for f in b.GetFootprints() if not f.IsFlipped() and not f.GetReference().startswith(("H", "FID"))]
+    return {r: e for r, e in cf.extents(refs).items() if e}
+
+
+def rect_hit(box, rect):
+    (x0, y0), (x1, y1) = rect
+    return box[2] > min(x0, x1) and box[0] < max(x0, x1) and box[3] > min(y0, y1) and box[1] < max(y0, y1)
+
+
+def stack(seed=None):
+    e = dn.scad()
+    row = Rows()
+    with ref_copy() as (dst, pos, lines):
+        ext = part_heights(dst)
+    stk = next((ln for ln in lines if "STACK" in ln), "")
+    terms = [float(x) for x in re.findall(r"\d+(?:\.\d+)?", stk.split("=")[0])]
+    print(f"case.scad's STACK line: {stk.split(':', 1)[-1].strip()}")
+    row(abs(sum(terms) - e["case_h"]) < 0.01, f"the terms sum to {sum(terms):.2f} mm, case_h {e['case_h']:.2f}")
+    print(f"the board's top face is clamped to the top's bosses by the six screws, so the space over it is the top's own "
+          f"(print +-{dn.PRINT_TOL} mm) and the board's thickness (+-{PCB_TOL}, stand-in) moves the tub: the seam steps by up to "
+          f"{PCB_TOL} mm, inside the {e['deck_tongue_h']:.2f} mm tongue")
+    glass = pos["glass"]
+    under = [(r, x[5]) for r, x in ext.items() if rect_hit(x, glass)]
+    hmax, href = max((h, r) for r, h in under) if under else (0.0, "")
+    if seed:
+        hmax += 0.5
+    tol = [dn.PRINT_TOL, TAPE_TOL]
+    m_nom = e["glass_gap"] - hmax
+    m_wc, m_rss = m_nom - sum(tol), m_nom - math.sqrt(sum(t * t for t in tol))
+    row(m_wc >= MARGIN, f"under the glass: {e['glass_gap']} mm over the board, the tallest part {href} {hmax:.2f} mm (its 3D model): "
+        f"{m_nom:.2f} nominal, {m_wc:.2f} worst case, {m_rss:.2f} RSS (print {dn.PRINT_TOL}, tape {TAPE_TOL}) against {MARGIN}")
+    cell_free = e["glass_gap"] - e["cell_top"]
+    c_wc = cell_free - 0.4 - sum(tol)
+    row(c_wc >= 0.0, f"over a 4.5 mm cell under the panel: {cell_free:.2f} mm free, {cell_free - 0.4:.2f} after REQ-BAT-07's 0.4 mm "
+        f"of swelling, {c_wc:.2f} at worst case: the swelling room holds (VER-182 reads the slope's ceiling too)")
+    decks = pos["decks"]
+    top = echo_json(lines, "TOP") or {}
+    pockets = top.get("pockets", [])
+    p_room = top.get("pocket_limit", 0) + 0.3          # case.scad:688 cuts each pocket 0.3 over its limit, as the decks
+    room = e["z_deck_under"] - e["z_top_cu"]
+    worst = (1e9, "", 0.0, 0.0)
+    for r, x in ext.items():
+        if not any(rect_hit(x, z) for z in decks):
+            continue
+        here = p_room if any(rect_hit(x, p) for p in pockets) else room
+        if here - x[5] < worst[0]:
+            worst = (here - x[5], r, x[5], here)
+    m, dref, dmax, here = worst
+    d_wc = m - dn.PRINT_TOL
+    row(d_wc >= MARGIN, f"under the button ends: {room:.2f} mm ({p_room:.2f} in the top's pockets, case.scad's TOP line); the least "
+        f"room over a part: {dref} {dmax:.2f} mm under {here:.2f}: {m:.2f} nominal, {d_wc:.2f} worst case against {MARGIN}")
+    fz = [(x[5], r) for r, x in ext.items() if any(rect_hit(x, z) for z in pos["fpc_zones"]) and r != "J3"]
+    fmax, fref = max(fz) if fz else (0.0, "none")
+    row(fmax <= pos["fpc_low"] - MARGIN + 1e-9 or not fz,
+        f"under the folded FPC: the tallest part but J3 {fref} {fmax:.2f} mm against fpc_low {pos['fpc_low']} (an ESTIMATE, VER-152) "
+        f"less {MARGIN}")
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
+# ---- VER-174: the XY chain, pill to comb and cap to hole ------------------------------------------------------------
+JLC_REG = 0.075         # mm: copper to drilled hole registration (JLC, from memory: VER-17's page confirms)
+PILL_TOL = 0.1          # mm: the pill's place in the DS Lite silicone (moulded; stand-in until VER-51 measures it)
+PILL_LIMIT = 0.9
+
+
+def xy(seed=None):
+    e = dn.scad()
+    pos, _ = echo()
+    row = Rows()
+    float_screw = (e["hole_d"] - 2.0) / 2 + (0.5 if seed else 0.0)
+    terms = [("the comb's copper to the board's holes (JLC registration, stand-in)", JLC_REG),
+             (f"the board on its M2 screws in {e['hole_d']} mm holes", float_screw),
+             ("the top's pilots to its button walls (one print)", dn.PRINT_TOL),
+             (f"the silicone's rim in the top's walls (rim_clear)", e["rim_clear"]),
+             ("the pill in the silicone (stand-in)", PILL_TOL)]
+    for t, v in terms:
+        print(f"  +-{v:.3f} mm  {t}")
+    nom = 0.0
+    import statistics
+    for pc in pos["pieces"]:
+        pts = [p for k, p in pos["buttons"].items() if math.hypot(p[0] - pc[0], p[1] - pc[1]) < 10]
+        if pts:
+            nom = max(nom, math.hypot(statistics.mean(p[0] for p in pts) - pc[0], statistics.mean(p[1] for p in pts) - pc[1]))
+    wc = nom + sum(v for _, v in terms)
+    rss = nom + math.sqrt(sum(v * v for _, v in terms))
+    row(wc <= PILL_LIMIT, f"pill to comb: nominal {nom:.2f} mm (positions.json's pieces over their combs), worst case {wc:.3f} mm, "
+        f"RSS {rss:.3f} mm against {PILL_LIMIT} mm (REQ-BTN-06)")
+    print(f"  cap to hole: the D-pad's opening clears its cap by {e['dpad_gap']} mm a side (case.scad dpad_gap); a cap rides on its "
+          "silicone, so the same chain moves it: worst case "
+          f"{wc:.2f} mm {'inside' if wc < e['dpad_gap'] else 'PAST'} that gap")
+    row(wc < e["dpad_gap"], f"cap to hole: the chain's {wc:.2f} mm against the D-pad's {e['dpad_gap']} mm gap")
+    return dn.result(not row.bad)
+
+
+# ---- VER-152: the ESTIMATE ledger ---------------------------------------------------------------------------------------
+MEASURED = os.path.join(os.path.dirname(HERE), "evidence")
+
+
+def estimates(seed=None):
+    e = dn.scad()
+    row = Rows()
+    src = open(os.path.join(CASE, "case.scad"), encoding="utf-8").read().splitlines()
+    marked = []
+    for i, ln in enumerate(src):
+        if "ESTIMATE" not in ln or ln.lstrip().startswith("// ESTIMATE marks"):
+            continue
+        comment_only = ln.lstrip().startswith("//")
+        # a code line: its own assignments; a comment at the margin: the line under it; an indented comment line: the
+        # continuation of the trailing comment on the line above it
+        j = i if not comment_only else (i + 1 if not ln.startswith(" " * 20) else i - 1)
+        for m in re.finditer(r"\b([a-z_][a-z0-9_]*)\s*=", src[j].split("//")[0]):
+            if m.group(1) in e and m.group(1) not in marked:
+                marked.append(m.group(1))
+        if comment_only and "ESTIMATE:" in ln:     # names listed after 'ESTIMATE:' in the comment itself
+            for name in re.findall(r"\b([a-z][a-z0-9_]+)\b", ln.split("ESTIMATE:", 1)[1]):
+                if name in e and name not in marked:
+                    marked.append(name)
+    base, _ = echo()
+    moves = {}
+    refused = {}
+    for name in marked:
+        v = e[name]
+        for f in (1.1, 1.02, 0.98):                  # case.scad's asserts may refuse a 10% nudge: try 2% either way
+            if isinstance(v, (int, float)):
+                nv = v * f
+            elif isinstance(v, list) and all(isinstance(x, (int, float)) for x in v):
+                nv = [x * f for x in v]
+            else:
+                break
+            new, err = echo(((name, json.dumps(nv)),))
+            if new is not None:
+                moves[name] = sorted(k for k in base if json.dumps(base[k], sort_keys=True) != json.dumps(new.get(k), sort_keys=True))
+                break
+            refused[name] = next((ln for ln in err if "assert" in ln.lower()), err[-1] if err else "")[:120]
+    # the cell's size is VER-37's (its spec sheet), not marked in case.scad but it sets the hole: listed with them
+    measured = set()
+    for f in os.listdir(MEASURED):
+        if "_VER-152_" in f and "measure" in f:
+            measured |= set(re.findall(r"^([a-z_][a-z0-9_]*)\s*=", open(os.path.join(MEASURED, f)).read(), re.M))
+    copper = []
+    print("each ESTIMATE in case.scad, nudged by 10% through openscad -D, and the positions.json keys (the board's inputs) it moves:")
+    for name in marked:
+        ks = moves.get(name)
+        if ks is None and name in refused:
+            print(f"  {name} = {e[name]}: every nudge refused by case.scad's asserts ({refused[name]}): it is held tight by "
+                  "what it fits, so it is counted as moving the board")
+            copper.append(name)
+            continue
+        print(f"  {name} = {e[name]}: " + ("not numeric, read by hand" if ks is None else (", ".join(ks) or "moves nothing the board reads")))
+        if ks:
+            copper.append(name)
+    if seed:
+        moves["seeded_estimate"] = ["seeded"]
+        copper.append("seeded_estimate")
+    for name in copper:
+        row(name in measured, f"{name}: moves {', '.join(moves.get(name) or ['(asserts)'])} and has no measurement "
+                              f"(evidence/<date>_VER-152_measured.txt)" if name not in measured else f"{name}: measured")
+    row("cell" in measured, f"cell = {e['cell']}: sets the hole's size; from the cell's spec sheet (VER-37, BLOCKED), "
+                            "measured at EVT (VER-49)")
+    am = open(os.path.join(REF, "docs", "assembly.md"), encoding="utf-8").read()
+    sizes = re.findall(r"(\d+(?:\.\d+)?)\s*x\s*(\d+(?:\.\d+)?)\s*mm", am)
+    hole = dn.cutouts()
+    hw, hl = round(hole[2] - hole[0], 2), round(hole[3] - hole[1], 2)
+    print(f"assembly.md's sizes: {sizes or 'none'}; the cell's hole in placement.py {hw} x {hl} mm: "
+          + ("assembly.md states no hole size, nothing to disagree" if not sizes else "compare by hand"))
+    print(f"{len(row.bad)} not measured")
+    return dn.result(not row.bad)
+
+
+# ---- VER-165: connector mouths and pinholes ----------------------------------------------------------------------------
+TALL = 1.0
+
+
+def mouths(seed=None):
+    import pcbnew
+    e = dn.scad()
+    row = Rows()
+    with ref_copy() as (dst, pos, _):
+        ext = part_heights(dst)
+    b = pcbnew.LoadBoard(os.path.join(dn.BOARD, "battler.kicad_pcb"))
+    mm = pcbnew.ToMM
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+    to_k = lambda box: [[100 + box[0][0], 100 - box[1][1]], [100 + box[1][0], 100 - box[0][1]]]   # noqa: E731 case -> KiCad
+
+    def mouth_side(ref, depth):
+        """the box in front of a side-entry connector: on its mounting-pad side, away from its signal pads"""
+        f = fps[ref]
+        sig = [p for p in f.Pads() if p.GetNumber() not in ("MP", "")]
+        mp = [p for p in f.Pads() if p.GetNumber() == "MP"]
+        sx = sum(mm(p.GetPosition().x) for p in sig) / len(sig)
+        sy = sum(mm(p.GetPosition().y) for p in sig) / len(sig)
+        mx = sum(mm(p.GetPosition().x) for p in mp) / len(mp)
+        my = sum(mm(p.GetPosition().y) for p in mp) / len(mp)
+        fab = [g.GetBoundingBox() for g in f.GraphicalItems() if g.GetLayer() == pcbnew.F_Fab]
+        x0, y0 = min(mm(g.GetLeft()) for g in fab), min(mm(g.GetTop()) for g in fab)
+        x1, y1 = max(mm(g.GetRight()) for g in fab), max(mm(g.GetBottom()) for g in fab)
+        if abs(mx - sx) > abs(my - sy):
+            return [[x0 - depth, y0], [x0, y1]] if mx < sx else [[x1, y0], [x1 + depth, y1]]
+        return [[x0, y0 - depth], [x1, y0]] if my < sy else [[x0, y1], [x1, y1 + depth]]
+    boxes = {"J2": (to_k(e["j2_plug"]), "the cell's plug (case.scad j2_plug)"),
+             "J4": (to_k(e["j4_plug"]), "the speaker's SH plug (case.scad j4_plug)"),
+             "J5": (mouth_side("J5", 6.0), "a JST SH cable, 6 mm (VER-165's procedure)")}
+    if seed:
+        boxes["J4"] = (mouth_side("J2", 8.0), "seeded: J2's mouth box made 8 mm deep")
+    inner = [[100 - e["in_x"], 100 - (e["case_l"] / 2 - e["wall"])], [100 + e["in_x"], 100 + (e["case_l"] / 2 - e["wall"])]]
+    for ref, (box, what) in boxes.items():
+        (x0, y0), (x1, y1) = box
+        tall = sorted(f"{r} {x[5]:.2f} mm" for r, x in ext.items() if r != ref and x[5] > TALL and rect_hit(x, box))
+        row(not tall, f"{ref} mouth box {x0:.2f}-{x1:.2f} x {y0:.2f}-{y1:.2f} ({what}): parts over {TALL} mm in it: " + (", ".join(tall) or "none"))
+        inside_wall = inner[0][0] <= min(x0, x1) and max(x0, x1) <= inner[1][0] and inner[0][1] <= min(y0, y1) and max(y0, y1) <= inner[1][1]
+        gap = min(min(x0, x1) - inner[0][0], inner[1][0] - max(x0, x1))
+        row(inside_wall, f"{ref} mouth box inside the tub's inner wall (x {inner[0][0]:.2f}-{inner[1][0]:.2f}): "
+            + ("yes" if inside_wall else f"crosses it by {-gap:.2f} mm: a plug cannot go in with the board in the tub"))
+    print("J1 (a mated plug through the wall's opening) and J3 (the FPC's lead-in under the panel) are check_fit's (VER-06): "
+          "its USB-C and folded-FPC items")
+    bad = []
+    for p in pos["pinholes"]:
+        for i, h in enumerate(pos["pins"]):
+            d = math.hypot(p[0] - h[0], p[1] - h[1])
+            if d < pos["boss_d"] / 2 + 1.0:
+                bad.append(f"pinhole {p} {d:.2f} mm from H{i + 1}")
+    near = min(math.hypot(p[0] - h[0], p[1] - h[1]) for p in pos["pinholes"] for h in pos["pins"])
+    row(not bad, f"no pinhole inside a boss circle (boss {pos['boss_d']} mm + 1 mm): the nearest {near:.2f} mm" + (f": {bad}" if bad else ""))
+    return dn.result(not row.bad)
+
+
+CHECKS = {"arch": (arch, SEED_ARCH), "fit": (fit, True), "placement": (placement, True), "stack": (stack, True),
+          "xy": (xy, True), "estimates": (estimates, True), "mouths": (mouths, True)}
 
 
 def main():

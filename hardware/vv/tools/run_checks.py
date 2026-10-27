@@ -103,6 +103,12 @@ CHECKS = {
     "VER-21": ("ret", ["python3", LC, "ret"], True),
     "VER-108": ("usbpair", ["python3", LC, "usbpair"], True),
     "VER-199": ("timing", ["python3", CC, "timing"], True),
+    "VER-06": ("check_fit", ["python3", CS, "fit"], True),
+    "VER-19": ("placement", ["python3", CS, "placement"], True),
+    "VER-20": ("stack", ["python3", CS, "stack"], True),
+    "VER-152": ("estimates", ["python3", CS, "estimates"], False),
+    "VER-165": ("mouths", ["python3", CS, "mouths"], True),
+    "VER-174": ("xy", ["python3", CS, "xy"], False),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
