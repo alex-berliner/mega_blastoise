@@ -1,12 +1,9 @@
 //! Typed events for the physical board. Engine **log lines** and **input prompts** are converted
-//! here; strings are only for human-readable descriptions ([`BoardEvent::description`]).
+//! here; strings are only for human-readable descriptions ([`BoardEventExt::description`]).
 
 use alloc::format;
 use alloc::string::String;
 use alloc::vec::Vec;
-use core::fmt;
-
-use gen1_battle::Request;
 
 /// Borrowed view of `title|key:value|…` committed log lines from the engine.
 #[derive(Debug, Clone, Copy)]
@@ -42,128 +39,10 @@ impl<'a> ParsedBattleLogLine<'a> {
     }
 }
 
-/// Why the engine is waiting on a player (maps to lights / whose turn on the board).
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum PromptKind {
-    ChooseMove,
-    ChooseSwitch,
-    TeamPreview,
-    LearnMove,
-}
-
-/// One move slot carried in [`BoardEvent::SwitchIn`] and [`BoardEvent::MovesUpdate`].
-///
-/// Populated by the battle runner from live battle state; the OLED and move-detail
-/// screen render directly from these fields without any further battle queries.
-#[derive(Debug, Clone)]
-pub struct MoveSlot {
-    pub name: String,
-    /// Display type name, e.g. `"Electric"`.
-    pub type_name: String,
-    /// `"Physical"`, `"Special"`, or `"Status"`.
-    pub category: String,
-    /// Base power; `None` for status moves (base_power == 0).
-    pub power: Option<u32>,
-    /// Accuracy 0–100; `None` for moves that always hit.
-    pub accuracy: Option<u8>,
-    pub pp: u8,
-    pub max_pp: u8,
-}
-
-/// Something the board should represent (sound, LEDs, prompts).
-#[derive(Debug, Clone)]
-pub enum BoardEvent {
-    /// Engine `split|side:N` — marks whose private/public log pair follows (see battler
-    /// `log_private_public`).
-    Split {
-        side: String,
-    },
-    Damage {
-        mon: String,
-        health: String,
-    },
-    Heal {
-        mon: String,
-        health: String,
-    },
-    Faint {
-        mon: String,
-        /// Team slot index (0-based) populated by the battle runner; None if unavailable.
-        team_slot: Option<u8>,
-    },
-    /// A move was announced in the log (`move` / `animatemove`).
-    Move {
-        /// The Pokémon that used the move (name extracted from `mon:name,player,pos`).
-        user: Option<String>,
-        /// The player that used the move (`"p1"` / `"p2"`), extracted from the mon field.
-        player_id: Option<String>,
-        name: String,
-    },
-    /// `switch` / `drag` / `appear` — lead or bench coming in (parsed from public log row).
-    ///
-    /// `moves` is empty when produced by [`parse_log_line`]; the battle runner enriches it
-    /// with the full move list before dispatching.
-    SwitchIn {
-        /// Nickname / label (`name` field in the battler log).
-        name: String,
-        species: Option<String>,
-        player_id: Option<String>,
-        /// Team slot index (0-based) populated by the battle runner; None if unavailable.
-        team_slot: Option<u8>,
-        moves: Vec<MoveSlot>,
-        /// Active mon's Speed stat, populated by the battle runner — drives
-        /// the battle-screen sprite bob rate.
-        speed: Option<u16>,
-    },
-    SwitchOut {
-        /// Pokémon that left the field (name extracted from `mon:name,player,pos`).
-        name: String,
-    },
-    Turn {
-        n: u32,
-    },
-    BattleStart,
-    Win {
-        side: Option<String>,
-    },
-    Tie,
-    /// Waiting for input — board should cue this player before blocking on buttons/NFC/stdin.
-    Prompt {
-        player_id: String,
-        kind: PromptKind,
-    },
-    SuperEffective { mon: String },
-    Resisted { mon: String },
-    Immune { mon: String },
-    Miss { mon: String },
-    CriticalHit { mon: String },
-    /// Status condition inflicted (`status|mon:...|status:<name>`).
-    SetStatus { mon: String, status: String },
-    /// Status condition cured (`curestatus|mon:...|status:<name>`).
-    CureStatus { mon: String, status: String },
-    /// Can't move this turn (`cant|mon:...|from:<reason>`).
-    Cant { mon: String, reason: String },
-    /// Stat stage change (`boost|mon:...|stat:<name>|delta:<i8>`).
-    StatChange { mon: String, stat: String, delta: i8 },
-    /// A volatile effect began (`start|mon:...|what:<id>[|move:<name>]`) —
-    /// seeded, confusion, substitute, wrap, disable, reflect, lightscreen,
-    /// mist, focusenergy, conversion, transform, mimic, charging, bide, haze.
-    EffectStart { mon: String, what: String, detail: Option<String> },
-    /// A volatile effect ended (`end|mon:...|what:<id>`).
-    EffectEnd { mon: String, what: String },
-    /// The active mon's display identity changed in place (Transform):
-    /// `activemon|mon:...|name:<new>|speed:<spe>`. Display-only, not narrated.
-    ActiveMonUpdate { mon: String, name: String, speed: Option<u16> },
-    Fail { mon: String },
-    /// Active-mon moves refreshed — emitted after every move (PP change) and at switch-in.
-    /// Internal signal; not narrated to USB/stdout.
-    MovesUpdate {
-        player_id: String,
-        moves: Vec<MoveSlot>,
-    },
-    /// Any log line not matched by a specific variant — preserved so nothing is silently dropped.
-    Raw(String),
-}
+// The board vocabulary has one definition, in `ps_client` (the core sits
+// above it and the PS client yields these directly). What the UI does with
+// an event, its narration and pacing, stays here as [`BoardEventExt`].
+pub use ps_client::board::{BoardEvent, MoveSlot, PromptKind};
 
 /// Short trainer label for messages (`p1` → Red in the stock demo).
 /// Convert `"p1"` / `"p2"` to 1 / 2.  Any other value returns 2.
@@ -181,7 +60,7 @@ pub fn player_display_name(player_id: &str) -> &'static str {
     }
 }
 
-/// Friendly label for battler **side index** in the stock 1v1 demo (`0` / `1`).
+/// Friendly label for a protocol **side index** in the stock 1v1 demo (`0` / `1`).
 pub fn side_display_name(side: &str) -> &'static str {
     match side {
         "0" => "White",
@@ -190,38 +69,24 @@ pub fn side_display_name(side: &str) -> &'static str {
     }
 }
 
-/// Build a prompt event from an engine [`Request`] (emit **before** collecting input).
-pub fn board_prompt_event(player_id: &str, request: &Request) -> BoardEvent {
-    let kind = match request {
-        Request::Turn(_) => PromptKind::ChooseMove,
-        Request::Switch(_) => PromptKind::ChooseSwitch,
-        Request::TeamPreview(_) => PromptKind::TeamPreview,
-        Request::LearnMove(_) => PromptKind::LearnMove,
-    };
-    BoardEvent::Prompt {
-        player_id: String::from(player_id),
-        kind,
-    }
-}
-
-/// Extract the display name from a battler `mon` position field (`"name,player_id,pos"`).
+/// Extract the display name from a `mon` position field (`"name,player_id,pos"`).
 /// Returns the whole string unchanged if no comma is present (e.g. synthetic test values).
 pub fn mon_display_name(position_details: &str) -> &str {
     position_details.split(',').next().unwrap_or(position_details)
 }
 
-/// Extract the player id (`"p1"` or `"p2"`) from a battler `mon` position field.
+/// Extract the player id (`"p1"` or `"p2"`) from a `mon` position field.
 pub fn mon_player_id(mon: &str) -> Option<&str> {
     let id = mon.split(',').nth(1)?.trim();
     if id == "p1" || id == "p2" { Some(id) } else { None }
 }
 
-/// Extract the player number (1 or 2) from a battler `mon` position field.
+/// Extract the player number (1 or 2) from a `mon` position field.
 pub fn mon_player_num(mon: &str) -> Option<u8> {
     mon_player_id(mon).map(player_id_to_num)
 }
 
-/// Convert a battler status ID to its display abbreviation.
+/// Convert a protocol status ID to its display abbreviation.
 pub fn status_abbrev(s: &str) -> &str {
     match s {
         "par" => "PAR",
@@ -240,6 +105,101 @@ fn player_mon_label(mon: &str) -> String {
     let player = mon.split(',').nth(1).unwrap_or("");
     let trainer = player_display_name(player);
     format!("{trainer}'s {name}")
+}
+
+/// The trainer of a `mon` position field (`"Red"`), for team-wide lines.
+fn mon_trainer(mon: &str) -> &'static str {
+    player_display_name(mon.split(',').nth(1).unwrap_or(""))
+}
+
+/// PS `toID`: lowercase letters and digits only (`"Focus Band"` is
+/// `focusband`), how the PS client looks an effect's text up.
+fn effect_id(name: &str) -> String {
+    name.chars().filter(char::is_ascii_alphanumeric).map(|c| c.to_ascii_lowercase()).collect()
+}
+
+/// The words of an [`BoardEvent::Ability`], [`BoardEvent::ItemGained`],
+/// [`BoardEvent::ItemEnded`] or [`BoardEvent::Activate`]: Showdown's
+/// client text (`data/text/{default,moves,abilities,items}.ts`, as its
+/// `BattleTextParser` picks the template), shortened where it would not
+/// fit the 48-byte narration box.
+fn effect_line(event: &BoardEvent) -> String {
+    let name_of = |m: &Option<String>| -> String { m.as_deref().map(mon_display_name).unwrap_or("its foe").into() };
+    match event {
+        BoardEvent::Ability { mon, ability, how, other } => {
+            let label = player_mon_label(mon);
+            let other = name_of(other);
+            match (how.as_str(), effect_id(ability).as_str()) {
+                ("trace", _) => format!("{label} traced {other}'s {ability}!"),
+                ("roleplay", _) => format!("{label} copied {other}'s {ability}!"),
+                ("", "pressure") => format!("{label} is exerting its pressure!"),
+                // PS's `abilityActivation`: "[NAME's ABILITY]".
+                _ => format!("[{label}'s {ability}]"),
+            }
+        }
+        BoardEvent::ItemGained { mon, item, how, .. } => {
+            let label = player_mon_label(mon);
+            match how.as_str() {
+                "thief" | "covet" => format!("{label} stole {item}!"),
+                "recycle" => format!("{label} found one {item}!"),
+                _ => format!("{label} obtained {item}."),
+            }
+        }
+        BoardEvent::ItemEnded { mon, item, how, .. } => {
+            let label = player_mon_label(mon);
+            match how.as_str() {
+                "eat" => format!("{label} ate its {item}!"),
+                "knockoff" => format!("Knocked off {label}'s {item}!"),
+                "" => format!("{label} used its {item}!"),
+                _ => format!("{label} lost its {item}!"),
+            }
+        }
+        BoardEvent::Activate { mon, what, detail, other, n } => {
+            let label = player_mon_label(mon);
+            let other = name_of(other);
+            let mv = detail.as_deref().unwrap_or("its move");
+            let n = n.unwrap_or(0);
+            match effect_id(what).as_str() {
+                "confusion" => format!("{label} is confused!"),
+                "struggle" => format!("{label} has no moves left!"),
+                "substitute" => format!("{label}'s substitute took damage!"),
+                "protect" | "detect" => format!("{label} protected itself!"),
+                "endure" => format!("{label} endured the hit!"),
+                "focusband" => format!("{label} hung on using its Focus Band!"),
+                "quickclaw" => format!("{label}'s Quick Claw let it act first!"),
+                "leppaberry" => format!("{label} restored PP to {mv}!"),
+                "spite" => format!("{label}'s {mv} lost {n} PP!"),
+                "grudge" => format!("{label}'s {mv} lost all its PP!"),
+                "attract" => format!("{label} is in love with {other}!"),
+                "trick" => format!("{label} switched items!"),
+                "lockon" | "mindreader" => format!("{label} took aim at {other}!"),
+                "skillswap" => format!("{label} swapped Abilities!"),
+                "snatch" => format!("{label} snatched {other}'s move!"),
+                "destinybond" => format!("{label} took its attacker down with it!"),
+                "pursuit" => format!("({label} is being withdrawn...)"),
+                "beatup" => format!("{other}'s attack!"),
+                "bide" => format!("{label} is storing energy!"),
+                "mist" => format!("{label} is protected by the mist!"),
+                "uproar" => format!("{label} is making an uproar!"),
+                "brickbreak" => format!("{label} shattered the barriers!"),
+                "healbell" => "A bell chimed!".into(),
+                "aromatherapy" => "A soothing aroma wafted through the area!".into(),
+                "perishsong" => "All who heard the song will faint in 3 turns!".into(),
+                "payday" => "Coins were scattered everywhere!".into(),
+                "hitcount" if n == 1 => "Hit 1 time!".into(),
+                "hitcount" => format!("Hit {n} times!"),
+                "ohko" => "It's a one-hit KO!".into(),
+                "nothing" => "But nothing happened!".into(),
+                "unboost" => match detail {
+                    Some(stat) => format!("{label}'s {stat} was not lowered!"),
+                    None => format!("{label}'s stats were not lowered!"),
+                },
+                // PS's default `activate`: "(EFFECT activated!)".
+                _ => format!("({what} activated!)"),
+            }
+        }
+        _ => String::new(),
+    }
 }
 
 /// Parse one committed log line into a typed event, if recognized.
@@ -347,10 +307,22 @@ pub fn parse_log_line(line: &str) -> Option<BoardEvent> {
     }
 }
 
-impl BoardEvent {
+/// What the UI does with a [`BoardEvent`]: its narration, animation pacing
+/// and result-screen words. A trait because the type lives in `ps_client`;
+/// `use mega_blastoise_core::BoardEventExt` (or the crate root re-export)
+/// brings these into scope.
+pub trait BoardEventExt {
+    fn win_player_num(side: &Option<String>) -> u8;
+    fn win_messages(winner: u8) -> (&'static str, &'static str);
+    fn anim_delay_ms(&self) -> u32;
+    fn should_narrate(&self) -> bool;
+    fn description(&self) -> String;
+}
+
+impl BoardEventExt for BoardEvent {
     /// Convert `BoardEvent::Win { side }` to a 1-based player number (1 or 2),
     /// or 0 for a tie / unknown side.  Call at the `Win` arm; panics on other variants.
-    pub fn win_player_num(side: &Option<String>) -> u8 {
+    fn win_player_num(side: &Option<String>) -> u8 {
         match side.as_deref() {
             Some("0") => 1,
             Some("1") => 2,
@@ -359,8 +331,8 @@ impl BoardEvent {
     }
 
     /// Returns the two OLED win-screen messages `(p1_msg, p2_msg)` for a given winner.
-    /// `winner` is 1-based (from [`win_player_num`](Self::win_player_num)); 0 means tie.
-    pub fn win_messages(winner: u8) -> (&'static str, &'static str) {
+    /// `winner` is 1-based (from [`win_player_num`](BoardEventExt::win_player_num)); 0 means tie.
+    fn win_messages(winner: u8) -> (&'static str, &'static str) {
         match winner {
             1 => ("WINNER!", "GG!"),
             2 => ("GG!", "WINNER!"),
@@ -370,7 +342,7 @@ impl BoardEvent {
 
     /// Returns the canonical animation delay (ms) for this event, using the
     /// shared `anim::*` constants.  Returns 0 for events that need no delay.
-    pub fn anim_delay_ms(&self) -> u32 {
+    fn anim_delay_ms(&self) -> u32 {
         use crate::anim;
         match self {
             Self::Move { .. }                                  => anim::MOVE_MS,
@@ -384,7 +356,11 @@ impl BoardEvent {
             | Self::CureStatus { .. }
             | Self::StatChange { .. }
             | Self::EffectStart { .. }
-            | Self::EffectEnd { .. }                          => anim::EFFECT_MS,
+            | Self::EffectEnd { .. }
+            | Self::Ability { .. }
+            | Self::ItemGained { .. }
+            | Self::ItemEnded { .. }
+            | Self::Activate { .. }                           => anim::EFFECT_MS,
             Self::Cant { .. }                                  => anim::CANT_MS,
             Self::Miss { .. }
             | Self::Immune { .. }
@@ -397,7 +373,7 @@ impl BoardEvent {
     /// Returns `true` if this event should be forwarded to USB / log output.
     /// `Split`, `Prompt`, and `MovesUpdate` are internal engine signals that
     /// all targets suppress.
-    pub fn should_narrate(&self) -> bool {
+    fn should_narrate(&self) -> bool {
         !matches!(
             self,
             Self::Split { .. }
@@ -409,7 +385,7 @@ impl BoardEvent {
 
     /// Human-readable battle narrative for display (USB, stdout). Hardware effects code should
     /// branch on the `BoardEvent` variant directly rather than parsing this string.
-    pub fn description(&self) -> String {
+    fn description(&self) -> String {
         match self {
             BoardEvent::Split { side } => {
                 format!("[split side:{}]", side_display_name(side.as_str()))
@@ -505,6 +481,12 @@ impl BoardEvent {
                     "trapped" => format!("{label} is trapped!"),
                     "flinch" => format!("{label} flinched!"),
                     "recharge" => format!("{label} must recharge!"),
+                    "love" => format!("{label} is immobilized by love!"),
+                    "truant" => format!("{label} is loafing around!"),
+                    "focuspunch" => format!("{label} lost its focus!"),
+                    "imprison" => format!("{label} can't use its sealed move!"),
+                    "taunt" => format!("{label} can't act after the taunt!"),
+                    "nopp" => format!("{label} has no PP left!"),
                     _ => format!("{label} can't move!"),
                 }
             }
@@ -542,19 +524,92 @@ impl BoardEvent {
                     "mimic" => format!("{label} mimicked {mv}!"),
                     "charging" => format!("{label} is charging {mv}!"),
                     "bide" => format!("{label} is storing energy!"),
-                    "haze" => "All stat changes were eliminated!".into(),
-                    other => format!("{label}: {other}"),
+                    "haze" | "Haze" => "All stat changes were eliminated!".into(),
+                    // The Gen 3 runner's words and PS's effect names, with
+                    // Showdown's client text (`data/text/moves.ts` `start`).
+                    "Substitute" => format!("{label} put up a substitute!"),
+                    "Leech Seed" => format!("{label} was seeded!"),
+                    "Focus Energy" => format!("{label} is getting pumped!"),
+                    "Reflect" => format!("{label} put up Reflect!"),
+                    "Light Screen" => format!("{label} put up Light Screen!"),
+                    "Mist" => format!("{label} became shrouded in mist!"),
+                    "Safeguard" => format!("{}'s team is cloaked in a veil!", mon_trainer(mon)),
+                    "Spikes" => format!("Spikes were scattered around {}'s team!", mon_trainer(mon)),
+                    "bind" => format!("{label} was wrapped!"),
+                    "charge" => format!("{label} is charging up!"),
+                    "drowsy" => format!("{label} grew drowsy!"),
+                    "trapped" => format!("{label} can no longer escape!"),
+                    "Protect" => format!("{label} protected itself!"),
+                    "Endure" => format!("{label} braced itself!"),
+                    "Focus Punch" => format!("{label} is tightening its focus!"),
+                    "Magic Coat" => format!("{label} put up a Magic Coat!"),
+                    "Snatch" => format!("{label} waits for a move to snatch!"),
+                    "Destiny Bond" => format!("{label} wants to take its foe down!"),
+                    "Grudge" => format!("{label} bears a grudge!"),
+                    "Encore" => format!("{label} must do an encore!"),
+                    "Taunt" => format!("{label} fell for the taunt!"),
+                    "Torment" => format!("{label} was subjected to torment!"),
+                    "Uproar" => format!("{label} caused an uproar!"),
+                    "Charge" => format!("{label} began charging power!"),
+                    "Foresight" | "Odor Sleuth" => format!("{label} was identified!"),
+                    "Imprison" => format!("{label} sealed the foe's moves!"),
+                    "Curse" => format!("{label} was put under a curse!"),
+                    "Future Sight" => format!("{label} foresaw an attack!"),
+                    "Doom Desire" => format!("{label} chose Doom Desire!"),
+                    "Attract" => format!("{label} fell in love!"),
+                    "Ingrain" => format!("{label} planted its roots!"),
+                    "Nightmare" => format!("{label} began having a nightmare!"),
+                    "Flash Fire" => format!("{label}'s Fire moves grew stronger!"),
+                    "rain" => "It started to rain!".into(),
+                    "harsh sunlight" => "The sunlight turned harsh!".into(),
+                    "sandstorm" => "A sandstorm kicked up!".into(),
+                    "hail" => "It started to hail!".into(),
+                    other => {
+                        if let Some(n) = other.strip_prefix("perish") {
+                            format!("{label}'s perish count fell to {n}!")
+                        } else if let Some(n) = other.strip_prefix("stockpile") {
+                            format!("{label} stockpiled {n}!")
+                        } else {
+                            format!("{label}: {other}")
+                        }
+                    }
                 }
             }
             BoardEvent::EffectEnd { mon, what } => {
                 let label = player_mon_label(mon);
+                let trainer = mon_trainer(mon);
                 match what.as_str() {
-                    "substitute" => format!("{label}'s substitute broke!"),
-                    "disable" => format!("{label} is no longer disabled!"),
+                    "substitute" | "Substitute" => format!("{label}'s substitute broke!"),
+                    "disable" | "Disable" => format!("{label} is no longer disabled!"),
                     "bide" => format!("{label} unleashed its energy!"),
+                    // Showdown's client text (`data/text/moves.ts` `end`).
+                    "confusion" => format!("{label} snapped out of confusion!"),
+                    "seeded" | "Leech Seed" => format!("{label} was freed from Leech Seed!"),
+                    "wrap" | "bind" => format!("{label} was freed from the trap!"),
+                    "Encore" => format!("{label}'s encore ended!"),
+                    "Taunt" => format!("{label} shook off the taunt!"),
+                    "Torment" => format!("{label} is no longer tormented!"),
+                    "Uproar" => format!("{label} calmed down."),
+                    "Attract" => format!("{label} got over its infatuation!"),
+                    "Future Sight" => format!("Future Sight struck {label}!"),
+                    "Doom Desire" => format!("Doom Desire struck {label}!"),
+                    "stockpile" => format!("{label}'s stockpile wore off!"),
+                    "Spikes" => format!("The spikes around {trainer}'s team are gone!"),
+                    "reflect" | "Reflect" => format!("{trainer}'s Reflect wore off!"),
+                    "lightscreen" | "Light Screen" => format!("{trainer}'s Light Screen wore off!"),
+                    "mist" | "Mist" => format!("{trainer}'s mist faded!"),
+                    "Safeguard" => format!("{trainer}'s Safeguard wore off!"),
+                    "rain" => "The rain stopped.".into(),
+                    "harsh sunlight" => "The harsh sunlight faded.".into(),
+                    "sandstorm" => "The sandstorm subsided.".into(),
+                    "hail" => "The hail stopped.".into(),
                     other => format!("{label}'s {other} wore off!"),
                 }
             }
+            BoardEvent::Ability { .. }
+            | BoardEvent::ItemGained { .. }
+            | BoardEvent::ItemEnded { .. }
+            | BoardEvent::Activate { .. } => effect_line(self),
             BoardEvent::Fail { mon } => {
                 if mon.is_empty() {
                     "The move failed!".into()
@@ -578,8 +633,88 @@ impl BoardEvent {
     }
 }
 
-impl fmt::Display for BoardEvent {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        f.write_str(&self.description())
+
+#[cfg(test)]
+mod tests {
+    //! The words the board says for the lines the PS client added (UX-2):
+    //! Showdown's client text, as `description` gives it and both seats'
+    //! narration box shows it.
+
+    use super::*;
+    use alloc::string::ToString;
+    use alloc::vec;
+    use alloc::vec::Vec;
+
+    fn s(x: &str) -> String {
+        x.to_string()
+    }
+
+    fn act(mon: &str, what: &str, detail: Option<&str>, other: Option<&str>, n: Option<i16>) -> BoardEvent {
+        BoardEvent::Activate { mon: s(mon), what: s(what), detail: detail.map(s), other: other.map(s), n }
+    }
+
+    #[test]
+    fn item_ability_and_activate_lines_read_as_showdown_says_them() {
+        let gold = "Golduck,p2,0";
+        let gard = "Gardevoir,p1,0";
+        let cases: Vec<(BoardEvent, &str)> = vec![
+            (BoardEvent::Ability { mon: s(gold), ability: s("Intimidate"), how: s(""), other: None }, "[Red's Golduck's Intimidate]"),
+            (BoardEvent::Ability { mon: s(gold), ability: s("Pressure"), how: s(""), other: None }, "Red's Golduck is exerting its pressure!"),
+            (BoardEvent::Ability { mon: s(gold), ability: s("Water Absorb"), how: s("activate"), other: None }, "[Red's Golduck's Water Absorb]"),
+            (BoardEvent::Ability { mon: s(gard), ability: s("Levitate"), how: s("trace"), other: Some(s(gold)) }, "White's Gardevoir traced Golduck's Levitate!"),
+            (BoardEvent::Ability { mon: s(gard), ability: s("Cloud Nine"), how: s("roleplay"), other: Some(s(gold)) }, "White's Gardevoir copied Golduck's Cloud Nine!"),
+            (BoardEvent::ItemGained { mon: s(gard), item: s("Choice Band"), how: s("trick"), other: None }, "White's Gardevoir obtained Choice Band."),
+            (BoardEvent::ItemGained { mon: s(gard), item: s("Leftovers"), how: s("thief"), other: Some(s(gold)) }, "White's Gardevoir stole Leftovers!"),
+            (BoardEvent::ItemGained { mon: s(gard), item: s("Leppa Berry"), how: s("recycle"), other: None }, "White's Gardevoir found one Leppa Berry!"),
+            (BoardEvent::ItemEnded { mon: s(gard), item: s("Salac Berry"), how: s("eat"), other: None }, "White's Gardevoir ate its Salac Berry!"),
+            (BoardEvent::ItemEnded { mon: s(gard), item: s("Leftovers"), how: s("knockoff"), other: Some(s(gold)) }, "Knocked off White's Gardevoir's Leftovers!"),
+            (BoardEvent::ItemEnded { mon: s(gard), item: s("White Herb"), how: s(""), other: None }, "White's Gardevoir used its White Herb!"),
+            (act(gard, "confusion", None, None, None), "White's Gardevoir is confused!"),
+            (act(gold, "Protect", None, None, None), "Red's Golduck protected itself!"),
+            (act(gold, "Substitute", None, None, None), "Red's Golduck's substitute took damage!"),
+            (act(gold, "Focus Band", None, None, None), "Red's Golduck hung on using its Focus Band!"),
+            (act(gold, "Spite", Some("Psychic"), None, Some(4)), "Red's Golduck's Psychic lost 4 PP!"),
+            (act(gold, "Leppa Berry", Some("Psychic"), None, None), "Red's Golduck restored PP to Psychic!"),
+            (act(gard, "Attract", None, Some(gold), None), "White's Gardevoir is in love with Golduck!"),
+            (act(gard, "Lock-On", None, Some(gold), None), "White's Gardevoir took aim at Golduck!"),
+            (act(gard, "Beat Up", None, Some("Snorlax,p1,0"), None), "Snorlax's attack!"),
+            (act("", "Perish Song", None, None, None), "All who heard the song will faint in 3 turns!"),
+            (act("", "Heal Bell", None, None, None), "A bell chimed!"),
+            (act(gold, "hitcount", None, None, Some(3)), "Hit 3 times!"),
+            (act(gold, "Uproar", Some("upkeep"), None, None), "Red's Golduck is making an uproar!"),
+            (act(gold, "unboost", Some("Attack"), None, None), "Red's Golduck's Attack was not lowered!"),
+            (act(gold, "Mystery", None, None, None), "(Mystery activated!)"),
+        ];
+        for (event, want) in cases {
+            assert_eq!(event.description(), want, "{event:?}");
+            assert!(want.len() <= 48, "{want:?} does not fit the narration box");
+            assert!(event.should_narrate() && event.anim_delay_ms() > 0, "{event:?}");
+        }
+    }
+
+    /// Both engines' effect words read as sentences, not `"label: word"`;
+    /// the weather words have no mon, and read without one.
+    #[test]
+    fn shared_effect_words_read_as_sentences() {
+        let start = |mon: &str, what: &str| BoardEvent::EffectStart { mon: s(mon), what: s(what), detail: None };
+        let end = |mon: &str, what: &str| BoardEvent::EffectEnd { mon: s(mon), what: s(what) };
+        let cases: Vec<(BoardEvent, &str)> = vec![
+            (start("", "rain"), "It started to rain!"),
+            (end("", "harsh sunlight"), "The harsh sunlight faded."),
+            (start("Golduck,p2,0", "Spikes"), "Spikes were scattered around Red's team!"),
+            (start("Golduck,p2,0", "drowsy"), "Red's Golduck grew drowsy!"),
+            (start("Golduck,p2,0", "perish2"), "Red's Golduck's perish count fell to 2!"),
+            (start("Golduck,p2,0", "Encore"), "Red's Golduck must do an encore!"),
+            (start("Golduck,p2,0", "Protect"), "Red's Golduck protected itself!"),
+            (end("Golduck,p2,0", "confusion"), "Red's Golduck snapped out of confusion!"),
+            (end("Golduck,p2,0", "Leech Seed"), "Red's Golduck was freed from Leech Seed!"),
+            (
+                BoardEvent::Cant { mon: s("Slaking,p1,0"), reason: s("truant") },
+                "White's Slaking is loafing around!",
+            ),
+        ];
+        for (event, want) in cases {
+            assert_eq!(event.description(), want, "{event:?}");
+        }
     }
 }

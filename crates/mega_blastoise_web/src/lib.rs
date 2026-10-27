@@ -19,7 +19,7 @@ use wasm_bindgen_futures::spawn_local;
 
 use mega_blastoise_core::device_runner::{DeviceEvent, DeviceInputChannel, DevicePort, DeviceRunner};
 use mega_blastoise_core::device_session::{Button, DeviceSession};
-use mega_blastoise_core::{FlashDataStore, OledController, PadEvent, Screen, BATTLE_HELP};
+use mega_blastoise_core::{OledController, PadEvent, Screen, BATTLE_HELP};
 
 // ── Shared input channel ─────────────────────────────────────────────────────
 
@@ -222,7 +222,6 @@ impl DevicePort for WebPort {
     fn battery(&self) -> mega_blastoise_core::display_color::Battery {
         battery_param()
     }
-
 }
 
 // ── Entry point ──────────────────────────────────────────────────────────────
@@ -234,8 +233,7 @@ pub fn start() {
     spawn_local(async {
         let port = WebPort;
         let runner = DeviceRunner::new(&port, &INPUT);
-        let data = FlashDataStore::new();
-        runner.run(&data).await
+        runner.run().await
     });
 }
 

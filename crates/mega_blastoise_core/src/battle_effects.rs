@@ -37,7 +37,7 @@ impl BoardEffects for NoopBoardEffects {
 
 /// Single FIFO queue for board effects (log-derived + injected prompts / scripted tests).
 ///
-/// The battler often emits `split|side:N`, then a **private** log row, then a **public** row with
+/// The protocol often emits `split|side:N`, then a **private** log row, then a **public** row with
 /// the same title (`switch`, `damage`, …). Each `split` becomes a [`BoardEvent::Split`]; the
 /// private row is still skipped so each moment yields one gameplay cue from the public row.
 #[derive(Debug)]

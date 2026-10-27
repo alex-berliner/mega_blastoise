@@ -124,53 +124,32 @@ fn type_color(name: &str) -> Rgb565 {
 }
 
 /// The fifteen types Gen 1 actually uses, in chart order.
-const GEN1_TYPES: [gen1_battle::Type; 15] = [
-    gen1_battle::Type::Normal,
-    gen1_battle::Type::Fire,
-    gen1_battle::Type::Water,
-    gen1_battle::Type::Electric,
-    gen1_battle::Type::Grass,
-    gen1_battle::Type::Ice,
-    gen1_battle::Type::Fighting,
-    gen1_battle::Type::Poison,
-    gen1_battle::Type::Ground,
-    gen1_battle::Type::Flying,
-    gen1_battle::Type::Psychic,
-    gen1_battle::Type::Bug,
-    gen1_battle::Type::Rock,
-    gen1_battle::Type::Ghost,
-    gen1_battle::Type::Dragon,
-];
+const GEN1_TYPES: [ps_dex::Type; 15] = {
+    use ps_dex::Type::*;
+    [
+        Normal, Fire, Water, Electric, Grass, Ice, Fighting, Poison, Ground, Flying, Psychic,
+        Bug, Rock, Ghost, Dragon,
+    ]
+};
 
-/// The engine's [`gen1_battle::Type`] for a display name or abbreviation —
-/// the inverse of [`crate::display::type_abbr`], so a move's printed type can
-/// be looked up in the chart.
-fn type_from_name(name: &str) -> Option<gen1_battle::Type> {
+/// The [`ps_dex::Type`] for a display name or abbreviation: the inverse of
+/// [`crate::display::type_abbr`], so a move's printed type can be looked up
+/// in the chart.
+fn type_from_name(name: &str) -> Option<ps_dex::Type> {
     GEN1_TYPES
         .iter()
         .copied()
-        .find(|t| crate::display::type_abbr(*t) == name || type_display_name(*t) == name)
+        .find(|t| crate::display::type_abbr(*t) == name || t.name() == name)
 }
 
-fn type_display_name(t: gen1_battle::Type) -> &'static str {
-    use gen1_battle::Type::*;
-    match t {
-        Normal => "Normal",
-        Fire => "Fire",
-        Water => "Water",
-        Electric => "Electric",
-        Grass => "Grass",
-        Ice => "Ice",
-        Fighting => "Fighting",
-        Poison => "Poison",
-        Ground => "Ground",
-        Flying => "Flying",
-        Psychic => "Psychic",
-        Bug => "Bug",
-        Rock => "Rock",
-        Ghost => "Ghost",
-        Dragon => "Dragon",
-        _ => "",
+/// Gen 1's type effectiveness ×10 (0, 5, 10 or 20), from the Gen 1 dex's
+/// chart (PS's `damageTaken` codes: 1 weak, 2 resists, 3 immune).
+fn gen1_effectiveness(attacker: ps_dex::Type, defender: ps_dex::Type) -> u8 {
+    match ps_dex::GEN1.typechart.code(attacker, defender) {
+        1 => 20,
+        2 => 5,
+        3 => 0,
+        _ => 10,
     }
 }
 
@@ -1081,11 +1060,28 @@ pub fn render_locked<D>(d: &mut D, chosen: Option<&str>, ctx: &HalfCtx<'_>)
 where
     D: DrawTarget<Color = Rgb565>,
 {
-    play_frame(d, ctx.seat);
-    battle_field(d, ctx, true);
     // A committed seat's one remaining move, said out loud: without this the
     // waiting screen reads as "nothing you can do now".
-    hint(d, "B TAKE IT BACK");
+    locked_screen(d, chosen, "B TAKE IT BACK", ctx);
+}
+
+/// This player's move was forced (Recharge, a lock such as Thrash, a last
+/// mon that can only Fight) and is already in: the locked screen, naming
+/// the move, with no take-back hint, because there is nothing to take back.
+pub fn render_forced<D>(d: &mut D, forced: Option<&str>, ctx: &HalfCtx<'_>)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    locked_screen(d, forced, "MOVE IS FORCED", ctx);
+}
+
+fn locked_screen<D>(d: &mut D, chosen: Option<&str>, hint_text: &str, ctx: &HalfCtx<'_>)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    play_frame(d, ctx.seat);
+    battle_field(d, ctx, true);
+    hint(d, hint_text);
     // Same field, and the bottom third becomes the narration box instead of
     // the move menu — which is exactly what the games do between choices.
     draw_message_box(d, LEFT, MENU_Y, CONTENT_W, 36);
@@ -1238,6 +1234,28 @@ where
     legend(d, &["A REMATCH", "? BATTLE LOG"]);
 }
 
+/// Draw end screen. Same legend as the result screen; both last mons'
+/// sprites flank the DRAW! title the way the result screen flanks its own
+/// sprite. Same panel for both seats, decided in core.
+pub fn render_draw<D>(d: &mut D, ctx: &HalfCtx<'_>)
+where
+    D: DrawTarget<Color = Rgb565>,
+{
+    play_frame(d, ctx.seat);
+    text_aa_center_font(d, "DRAW!", CX, TOP + 8, &FONT_8X13, C_INK, C_BG);
+    // Both mons as front sprites, the recap owns the screen, so they both
+    // get the bigger 88-px box rather than floating thin in the half.
+    if let Some(spr) = mon_sprite_color(ctx.own_name) {
+        // Own on the seat-side (closest to the seat reading it).
+        draw_sprite_fit(d, spr, LEFT - 4, TOP + 34, 88, 88, false, true);
+    }
+    if let Some(spr) = mon_sprite_color(ctx.foe_name) {
+        // Foe on the rival-side.
+        draw_sprite_fit(d, spr, RIGHT - 84, TOP + 34, 88, 88, false, true);
+    }
+    legend(d, &["A REMATCH", "? BATTLE LOG"]);
+}
+
 /// Full description for the cursor's move — what `?` opens.
 pub fn render_move_info<D>(d: &mut D, mv: &MoveSlot, desc: &str, seat: u8)
 where
@@ -1282,7 +1300,7 @@ where
             text_aa_font(d, label, LEFT, y + 2, &FONT_5X8, C_DIM, C_BG);
             let mut x = LEFT + 20;
             for def in GEN1_TYPES {
-                if gen1_battle::type_effectiveness(t, def) != *mult {
+                if gen1_effectiveness(t, def) != *mult {
                     continue;
                 }
                 let abbr = crate::display::type_abbr(def);
@@ -1733,6 +1751,7 @@ mod frame_tests {
 
         check("render_choice", |f| render_choice(f, &moves, &c));
         check("render_locked", |f| render_locked(f, Some("Sleep Powder"), &c));
+        check("render_forced", |f| render_forced(f, Some("Recharge"), &c));
         check("render_party", |f| render_party(f, &party, &c, false));
         check("render_stats", |f| render_stats(f, &party[0], 1));
         // render_playback is deliberately absent: the shared scene has no
@@ -1740,6 +1759,7 @@ mod frame_tests {
         // two. Its constraint is the mon band, not the border.
         check("render_lobby", |f| render_lobby(f, false, false, 1));
         check("render_result", |f| render_result(f, "WINNER!", &c));
+        check("render_draw", |f| render_draw(f, &c));
         check("render_invalid", |f| render_invalid(f, InvalidReason::NoPp, 1));
         check("render_move_info", |f| {
             render_move_info(

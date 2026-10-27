@@ -79,7 +79,11 @@ impl HostButtonSource {
 impl ButtonSource for HostButtonSource {
     fn on_prompt(&mut self, player_id: &str, slot: &SlotOptions) {
         self.slots[(player_id == "p2") as usize] = Some(slot.clone());
-        print!("\n{}", slot.prompt_text);
+        if slot.prompt_text.is_empty() {
+            print!("\n{}", host_prompt(player_id, slot));
+        } else {
+            print!("\n{}", slot.prompt_text);
+        }
     }
 
     async fn wait_action(&mut self, player_id: &str, n_moves: usize) -> PlayerAction {
@@ -96,16 +100,25 @@ impl ButtonSource for HostButtonSource {
         // until a legal action comes up, so this always converges (e.g. when the
         // pre-fed slot is out of PP). Blocking on a closed stdin would hit
         // read_stdin_line's exit(0) and silently kill the test harness.
+        //
+        // Only the party slots `party_ok` allows are cycled: like the device's
+        // switch list, a fainted mon is never offered (a runner that takes
+        // the press at face value, as the PS runner does, would send the
+        // engine a choice it refuses).
         if !io::stdin().is_terminal() {
-            let party = self.slot(player_id).map(|s| s.party.len().max(1)).unwrap_or(6);
-            let i = self.auto_cycle % (n_moves + party);
+            let party: Vec<usize> = match self.slot(player_id) {
+                Some(s) => (0..s.party.len().max(1).min(6)).filter(|&i| s.party_ok[i]).collect(),
+                None => (0..6).collect(),
+            };
+            let i = self.auto_cycle % (n_moves + party.len()).max(1);
             self.auto_cycle += 1;
             let action = if i < n_moves {
                 println!("[BTN] auto move slot {}", i + 1);
                 PlayerAction::Move(i)
             } else {
-                println!("[BTN] auto party slot {}", i - n_moves + 1);
-                PlayerAction::Switch(i - n_moves)
+                let idx = party[i - n_moves];
+                println!("[BTN] auto party slot {}", idx + 1);
+                PlayerAction::Switch(idx)
             };
             return action;
         }
@@ -121,7 +134,8 @@ impl ButtonSource for HostButtonSource {
             }
             if let Some(rest) = trimmed.strip_prefix('s') {
                 if let Ok(n) = rest.parse::<usize>() {
-                    if n >= 1 {
+                    let ok = |i: usize| self.slot(player_id).map_or(true, |s| s.party_ok.get(i).copied().unwrap_or(false));
+                    if n >= 1 && ok(n - 1) {
                         return PlayerAction::Switch(n - 1);
                     }
                 }
@@ -220,4 +234,24 @@ async fn stdin_number(prompt: &str, min: usize, max: usize) -> usize {
         }
         eprintln!("Enter a number from {min} to {max}.");
     }
+}
+
+/// The console prompt for a seat whose runner leaves `prompt_text` empty
+/// (the PS runner does): the active mon's moves and the party, numbered as
+/// the stdin grammar takes them (`1`-`4` a move, `s1`-`s6` a party slot).
+fn host_prompt(player_id: &str, slot: &SlotOptions) -> String {
+    let mut out = format!("{}:\n", player_display_name(player_id));
+    if let Some(active) = slot.party.iter().find(|m| m.active) {
+        if !slot.forced_switch {
+            for (i, (name, pp, max_pp)) in active.moves.iter().enumerate().take(slot.n_moves) {
+                let mark = if slot.usable.get(i).copied().unwrap_or(false) { "" } else { " (unusable)" };
+                out.push_str(&format!("  {}. {name} {pp}/{max_pp}{mark}\n", i + 1));
+            }
+        }
+    }
+    for (i, m) in slot.party.iter().enumerate() {
+        let state = if m.active { " (active)" } else if m.hp == 0 { " (fainted)" } else { "" };
+        out.push_str(&format!("  s{}. {} {}/{}{state}\n", i + 1, m.name, m.hp, m.max_hp));
+    }
+    out
 }

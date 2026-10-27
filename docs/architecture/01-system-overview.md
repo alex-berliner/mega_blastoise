@@ -19,12 +19,15 @@ One battle/event model should drive all runtimes. Platform-specific code should 
 
 ## End-to-End Battle Lifecycle
 
-1. Build a `PublicCoreBattle` with `FlashDataStore`.
-2. Load teams and call `battle.start()`.
-3. Enter `run_battle`.
-4. Parse engine logs into typed `BoardEvent`.
-5. Emit prompt events for pending requests.
-6. Read player choice through `BattleInput`.
-7. Submit choice to battler and continue until `battle.ended()`.
+1. Draw two teams (`randbat::draw_two_ps_teams`) and a `runner::ps::BattleSetup`.
+2. Enter `runner::ps::run_battle` over a `Transport` (`LocalTransport` on the device).
+3. Send `>start` and both `>player` commands to `ps_sim`.
+4. Read the PS protocol back through `ps_client` into typed `BoardEvent`s.
+5. Distil each `|request|` into `SlotOptions` and put the prompts on the `InputBus`.
+6. Read each player's choice back from the bus (the `ChoiceCollector` decides it).
+7. Send it as `>p1` / `>p2` and continue until the server says the battle ended.
+
+(Both generations run the same loop, on the PS engine: the legacy Gen 1
+and Gen 3 engines are gone.)
 
 Continue with [Core Battle Engine Flow](./02-core-battle-flow.md).

@@ -1,0 +1,84 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Exploded Views</title>
+<meta name="description" content="Every distinct layout of the Mega Blastoise handheld, each in its own exploded 3D view, newest first.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Atkinson+Hyperlegible:wght@400;700&family=JetBrains+Mono:wght@400&display=swap">
+<style>
+/* The hub's look (site/index.html): a masthead, then one column of cards, here with a thumbnail each */
+:root {
+  --bg: #eef3f6; --card: #ffffff; --fg: #142029; --muted: #5a6a75; --rule: #d3dde3;
+  --shell: #2a6fb0; --shell-deep: #1d4f80; --accent: #e08a2c; --focus: #e08a2c;
+  --display: "Bricolage Grotesque", "Segoe UI", system-ui, sans-serif;
+  --body: "Atkinson Hyperlegible", system-ui, sans-serif;
+  --mono: "JetBrains Mono", ui-monospace, monospace;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0e151b; --card: #16212a; --fg: #e4ecf1; --muted: #93a4ae; --rule: #263540;
+          --shell: #4d93d6; --shell-deep: #8cbdf0; --accent: #f0a04b; --focus: #f0a04b; color-scheme: dark; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--fg); font: 17px/1.55 var(--body);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px));
+  padding-block: 40px 56px; }
+main { max-width: 760px; margin: 0 auto; display: grid; gap: 32px; }
+header { display: grid; gap: 10px; }
+.kicker { font: 400 0.78rem var(--mono); letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+.kicker a { color: inherit; }
+h1 { font: 800 clamp(2.2rem, 6.5vw, 3.2rem)/1 var(--display); margin: 0; color: var(--shell-deep); letter-spacing: -0.01em; }
+.lede { margin: 0; color: var(--muted); max-width: 58ch; }
+ol.cards { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+a.card { display: grid; grid-template-columns: 160px 1fr; grid-template-rows: auto auto 1fr; gap: 4px 16px; align-items: start; text-decoration: none; color: inherit;
+  background: var(--card); border: 1px solid var(--rule); border-radius: 10px; padding: 12px; }
+a.card:hover { border-color: var(--shell); }
+a.card:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.thumb { grid-row: 1 / span 3; width: 160px; aspect-ratio: 4 / 3; border-radius: 6px; background: #dfe6ea; display: block; height: auto; object-fit: cover; }
+.meta { font: 400 0.78rem var(--mono); color: var(--muted); display: flex; flex-wrap: wrap; gap: 4px 12px; }
+.title { font: 600 1.05rem var(--display); color: var(--fg); }
+.desc { color: var(--muted); font-size: 0.95rem; min-width: 0; }
+.go { color: var(--accent); }
+footer { color: var(--muted); font-size: 0.9rem; }
+footer a { color: var(--shell-deep); }
+@media (max-width: 520px) {
+  a.card { grid-template-columns: 1fr; }
+  .thumb { grid-row: auto; width: 100%; }
+}
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <span class="kicker"><a href="../">Mega Blastoise</a> · hardware</span>
+    <h1>Exploded views</h1>
+    <p class="lede">Every distinct layout of the handheld so far, newest first: each one the last 3D view built for it, kept as it was. Turn them, take them apart, compare.</p>
+  </header>
+
+  <ol class="cards" id="list" aria-label="Layouts, newest first"></ol>
+  <noscript><p>This list needs JavaScript; the views themselves are under <code>/views/&lt;date&gt;-&lt;name&gt;/</code>, and <a href="../assembly/">the current design</a> is at /assembly/.</p></noscript>
+
+  <footer>The current design is always at <a href="../assembly/">/assembly/</a>. Source, schematics and build notes: <a href="https://github.com/alex-berliner/mega_blastoise">github.com/alex-berliner/mega_blastoise</a></footer>
+</main>
+<script>
+// One entry per line in views.json (newest first); scripts/site_views.py publishes each at <slug>/.
+(async () => {
+  const list = document.getElementById("list");
+  let views = [];
+  try { views = await (await fetch("views.json", { cache: "no-cache" })).json(); }
+  catch (e) { list.textContent = "Couldn't load the list of views."; return; }
+  views.sort((a, b) => b.date.localeCompare(a.date));   // stable: same-day entries keep the file's order
+  const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" })[c]);
+  list.innerHTML = views.map(v => `
+    <li><a class="card" href="${esc(v.slug)}/">
+      <img class="thumb" src="thumbs/${esc(v.slug)}.png" alt="" width="320" height="240" loading="lazy" onerror="this.style.visibility='hidden'">
+      <span class="meta"><span>${esc(v.date)}</span><span>${esc(v.branch)} @ ${esc(v.sha.slice(0, 7))}</span></span>
+      <span class="title">${esc(v.name)} <span class="go">&rarr;</span></span>
+      <span class="desc">${esc(v.desc)}</span>
+    </a></li>`).join("");
+})();
+</script>
+</body>
+</html>

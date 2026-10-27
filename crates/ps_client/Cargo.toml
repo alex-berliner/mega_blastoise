@@ -1,0 +1,21 @@
+[package]
+name = "ps_client"
+version = "0.1.0"
+edition = "2021"
+description = "Pokemon Showdown protocol client: builds its battle view only from Msg updates and feeds choice_collect unchanged. no_std + alloc."
+
+[features]
+default = []
+defmt = ["dep:defmt"]
+
+[dependencies]
+ps_protocol = { path = "../ps_protocol", default-features = false }
+ps_dex = { path = "../ps_dex", default-features = false }
+defmt = { version = "1.0", optional = true }
+
+[dev-dependencies]
+# The replay corpus the client reads (crates/ps_harness/replays, /root/replay-cache).
+serde_json = "1.0"
+# The fixture tests decode P1-4's recorded PS logs with the text codec.
+ps_protocol = { path = "../ps_protocol", features = ["text"] }
+flate2 = "1"

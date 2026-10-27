@@ -1,4 +1,4 @@
-/// Parsed HP state from a battler health string (`"current/max"` or bare `"current"`).
+/// Parsed HP state from a protocol health string (`"current/max"` or bare `"current"`).
 #[derive(Clone, Copy)]
 pub struct HpBarState {
     pub current: u16,

@@ -1,0 +1,848 @@
+# BoardEvent stream of gen3.log.gz battle index=48: each protocol line that
+# yields events, then its events. `|request|...` is a request's prompt events.
+|start
+    BattleStart
+|switch|p1a: Noctowl|Noctowl, L93, F|337/337
+    SwitchIn p1 name=Noctowl species=Some("Noctowl") slot=Some(0) speed=None moves=[]
+|switch|p2a: Sharpedo|Sharpedo, L85, M|257/257
+    SwitchIn p2 name=Sharpedo species=Some("Sharpedo") slot=Some(0) speed=None moves=[]
+|turn|1
+    Turn { n: 1 }
+|request|...
+    ActiveMonUpdate { mon: "Noctowl,p1,0", name: "Noctowl", speed: Some(183) }
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 32/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    ActiveMonUpdate { mon: "Sharpedo,p2,0", name: "Sharpedo", speed: Some(210) }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 24/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Noctowl
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 23/24; Hydro Pump Water Special 120/80 8/8]
+|-damage|p1a: Noctowl|215/337
+    Damage { mon: "Noctowl,p1,0", health: "215/337" }
+|move|p1a: Noctowl|Whirlwind|p2a: Sharpedo
+    Move { user: Some("Noctowl"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 31/32]
+|drag|p2a: Arbok|Arbok, L85, M|241/241
+    SwitchIn p2 name=Arbok species=Some("Arbok") slot=Some(4) speed=Some(185) moves=[Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 16/16; Sleep Talk Normal Status -/- 16/16]
+|-ability|p2a: Arbok|Intimidate|boost
+    Ability { mon: "Arbok,p2,0", ability: "Intimidate", how: "", other: None }
+|-unboost|p1a: Noctowl|atk|1
+    StatChange { mon: "Noctowl,p1,0", stat: "Attack", delta: -1 }
+|-heal|p1a: Noctowl|236/337|[from] item: Leftovers
+    Heal { mon: "Noctowl,p1,0", health: "236/337" }
+|turn|2
+    Turn { n: 2 }
+|request|...
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 16/16; Whirlwind Normal Status -/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 16/16; Sleep Talk Normal Status -/- 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Arbok|Sludge Bomb|p1a: Noctowl
+    Move { user: Some("Arbok"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 16/16]
+|-damage|p1a: Noctowl|118/337
+    Damage { mon: "Noctowl,p1,0", health: "118/337" }
+|-status|p1a: Noctowl|psn
+    SetStatus { mon: "Noctowl,p1,0", status: "psn" }
+|move|p1a: Noctowl|Toxic|p2a: Arbok
+    Move { user: Some("Noctowl"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 31/32]
+|-immune|p2a: Arbok
+    Immune { mon: "Arbok,p2,0" }
+|-heal|p1a: Noctowl|139/337 psn|[from] item: Leftovers
+    Heal { mon: "Noctowl,p1,0", health: "139/337" }
+|-damage|p1a: Noctowl|97/337 psn|[from] psn
+    Damage { mon: "Noctowl,p1,0", health: "97/337" }
+|turn|3
+    Turn { n: 3 }
+|request|...
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 31/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Arbok|Sleep Talk|p2a: Arbok
+    Move { user: Some("Arbok"), player_id: Some("p2"), name: "Sleep Talk" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 15/16]
+|move|p1a: Noctowl|Whirlwind|p2a: Arbok
+    Move { user: Some("Noctowl"), player_id: Some("p1"), name: "Whirlwind" }
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 30/32]
+|drag|p2a: Sharpedo|Sharpedo, L85, M|257/257
+    SwitchIn p2 name=Sharpedo species=Some("Sharpedo") slot=Some(0) speed=Some(210) moves=[Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 23/24; Hydro Pump Water Special 120/80 8/8]
+|-heal|p1a: Noctowl|118/337 psn|[from] item: Leftovers
+    Heal { mon: "Noctowl,p1,0", health: "118/337" }
+|-damage|p1a: Noctowl|76/337 psn|[from] psn
+    Damage { mon: "Noctowl,p1,0", health: "76/337" }
+|turn|4
+    Turn { n: 4 }
+|request|...
+    MovesUpdate p1 [Hypnosis Psychic Status -/60 32/32; Return Normal Physical 102/100 32/32; Toxic Poison Status -/85 15/16; Whirlwind Normal Status -/100 30/32]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 23/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Noctowl
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 22/24; Hydro Pump Water Special 120/80 8/8]
+|-damage|p1a: Noctowl|0 fnt
+    Damage { mon: "Noctowl,p1,0", health: "0/337" }
+|faint|p1a: Noctowl
+    Faint { mon: "Noctowl,p1,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Tangela|Tangela, L95, M|277/277
+    SwitchIn p1 name=Tangela species=Some("Tangela") slot=Some(4) speed=Some(167) moves=[Sleep Powder Grass Status -/75 24/24; Solar Beam Grass Special 120/100 16/16; Hidden Power Fire Fire Special 70/100 24/24; Sunny Day Fire Status -/- 8/8]
+|turn|5
+    Turn { n: 5 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Solar Beam Grass Special 120/100 16/16; Hidden Power Fire Special 70/100 24/24; Sunny Day Fire Status -/- 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 22/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Tangela
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 21/24; Hydro Pump Water Special 120/80 8/8]
+|-supereffective|p1a: Tangela
+    SuperEffective { mon: "Tangela,p1,0" }
+|-damage|p1a: Tangela|146/277
+    Damage { mon: "Tangela,p1,0", health: "146/277" }
+|move|p1a: Tangela|Hidden Power|p2a: Sharpedo
+    Move { user: Some("Tangela"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Solar Beam Grass Special 120/100 16/16; Hidden Power Fire Special 70/100 23/24; Sunny Day Fire Status -/- 8/8]
+|-resisted|p2a: Sharpedo
+    Resisted { mon: "Sharpedo,p2,0" }
+|-damage|p2a: Sharpedo|207/257
+    Damage { mon: "Sharpedo,p2,0", health: "207/257" }
+|-heal|p1a: Tangela|163/277|[from] item: Leftovers
+    Heal { mon: "Tangela,p1,0", health: "163/277" }
+|turn|6
+    Turn { n: 6 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Solar Beam Grass Special 120/100 16/16; Hidden Power Fire Special 70/100 23/24; Sunny Day Fire Status -/- 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 21/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Tangela
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 20/24; Hydro Pump Water Special 120/80 8/8]
+|-supereffective|p1a: Tangela
+    SuperEffective { mon: "Tangela,p1,0" }
+|-damage|p1a: Tangela|35/277
+    Damage { mon: "Tangela,p1,0", health: "35/277" }
+|move|p1a: Tangela|Solar Beam||[still]
+    Move { user: Some("Tangela"), player_id: Some("p1"), name: "Solar Beam" }
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Solar Beam Grass Special 120/100 15/16; Hidden Power Fire Special 70/100 23/24; Sunny Day Fire Status -/- 8/8]
+|-prepare|p1a: Tangela|Solar Beam
+    EffectStart { mon: "Tangela,p1,0", what: "charging", detail: Some("Solar Beam") }
+|-heal|p1a: Tangela|52/277|[from] item: Leftovers
+    Heal { mon: "Tangela,p1,0", health: "52/277" }
+|turn|7
+    Turn { n: 7 }
+|request|...
+    MovesUpdate p1 [Sleep Powder Grass Status -/75 24/24; Solar Beam Grass Special 120/100 15/16; Hidden Power Fire Special 70/100 23/24; Sunny Day Fire Status -/- 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 20/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Tangela
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 19/24; Hydro Pump Water Special 120/80 8/8]
+|-supereffective|p1a: Tangela
+    SuperEffective { mon: "Tangela,p1,0" }
+|-damage|p1a: Tangela|0 fnt
+    Damage { mon: "Tangela,p1,0", health: "0/277" }
+|faint|p1a: Tangela
+    Faint { mon: "Tangela,p1,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Ampharos|Ampharos, L82, F|282/282
+    SwitchIn p1 name=Ampharos species=Some("Ampharos") slot=Some(3) speed=Some(137) moves=[Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Ice Special 70/100 24/24; Heal Bell Normal Status -/- 8/8; Fire Punch Fire Special 75/100 24/24]
+|turn|8
+    Turn { n: 8 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24; Heal Bell Normal Status -/- 8/8; Fire Punch Fire Special 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 19/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Ampharos
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 18/24; Hydro Pump Water Special 120/80 8/8]
+|-resisted|p1a: Ampharos
+    Resisted { mon: "Ampharos,p1,0" }
+|-damage|p1a: Ampharos|231/282
+    Damage { mon: "Ampharos,p1,0", health: "231/282" }
+|move|p1a: Ampharos|Hidden Power|p2a: Sharpedo
+    Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 8/8; Fire Punch Fire Special 75/100 24/24]
+|-resisted|p2a: Sharpedo
+    Resisted { mon: "Sharpedo,p2,0" }
+|-damage|p2a: Sharpedo|159/257
+    Damage { mon: "Sharpedo,p2,0", health: "159/257" }
+|-heal|p1a: Ampharos|248/282|[from] item: Leftovers
+    Heal { mon: "Ampharos,p1,0", health: "248/282" }
+|turn|9
+    Turn { n: 9 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 8/8; Fire Punch Fire Special 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 18/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Ampharos
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 17/24; Hydro Pump Water Special 120/80 8/8]
+|-resisted|p1a: Ampharos
+    Resisted { mon: "Ampharos,p1,0" }
+|-damage|p1a: Ampharos|200/282
+    Damage { mon: "Ampharos,p1,0", health: "200/282" }
+|move|p1a: Ampharos|Heal Bell|p1a: Ampharos
+    Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Heal Bell" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 7/8; Fire Punch Fire Special 75/100 24/24]
+|-activate|p1a: Ampharos|move: Heal Bell
+    Activate { mon: "Ampharos,p1,0", what: "Heal Bell", detail: None, other: None, n: None }
+|-heal|p1a: Ampharos|217/282|[from] item: Leftovers
+    Heal { mon: "Ampharos,p1,0", health: "217/282" }
+|turn|10
+    Turn { n: 10 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 7/8; Fire Punch Fire Special 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 17/24; Hydro Pump Water Special 120/80 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Sharpedo|Hidden Power|p1a: Ampharos
+    Move { user: Some("Sharpedo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Double-Edge Normal Physical 120/100 24/24; Hidden Power Flying Physical 70/100 16/24; Hydro Pump Water Special 120/80 8/8]
+|-resisted|p1a: Ampharos
+    Resisted { mon: "Ampharos,p1,0" }
+|-damage|p1a: Ampharos|166/282
+    Damage { mon: "Ampharos,p1,0", health: "166/282" }
+|move|p1a: Ampharos|Thunderbolt|p2a: Sharpedo
+    Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 7/8; Fire Punch Fire Special 75/100 24/24]
+|-supereffective|p2a: Sharpedo
+    SuperEffective { mon: "Sharpedo,p2,0" }
+|-crit|p2a: Sharpedo
+    CriticalHit { mon: "Sharpedo,p2,0" }
+|-damage|p2a: Sharpedo|0 fnt
+    Damage { mon: "Sharpedo,p2,0", health: "0/257" }
+|faint|p2a: Sharpedo
+    Faint { mon: "Sharpedo,p2,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Kyogre|Kyogre, L67|245/245
+    SwitchIn p2 name=Kyogre species=Some("Kyogre") slot=Some(1) speed=Some(160) moves=[Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+|-weather|RainDance|[from] ability: Drizzle|[of] p2a: Kyogre
+    Ability { mon: "Kyogre,p2,0", ability: "Drizzle", how: "activate", other: None }
+    EffectStart { mon: "", what: "rain", detail: None }
+|-heal|p1a: Ampharos|183/282|[from] item: Leftovers
+    Heal { mon: "Ampharos,p1,0", health: "183/282" }
+|turn|11
+    Turn { n: 11 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 7/8; Fire Punch Fire Special 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Kyogre|Ice Beam|p1a: Ampharos
+    Move { user: Some("Kyogre"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 15/16]
+|-damage|p1a: Ampharos|123/282
+    Damage { mon: "Ampharos,p1,0", health: "123/282" }
+|move|p1a: Ampharos|Heal Bell|p1a: Ampharos
+    Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Heal Bell" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 6/8; Fire Punch Fire Special 75/100 24/24]
+|-activate|p1a: Ampharos|move: Heal Bell
+    Activate { mon: "Ampharos,p1,0", what: "Heal Bell", detail: None, other: None, n: None }
+|-heal|p1a: Ampharos|140/282|[from] item: Leftovers
+    Heal { mon: "Ampharos,p1,0", health: "140/282" }
+|turn|12
+    Turn { n: 12 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 6/8; Fire Punch Fire Special 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 24/24; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Kyogre|Surf|p1a: Ampharos
+    Move { user: Some("Kyogre"), player_id: Some("p2"), name: "Surf" }
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 23/24; Ice Beam Ice Special 95/100 15/16]
+|-damage|p1a: Ampharos|6/282
+    Damage { mon: "Ampharos,p1,0", health: "6/282" }
+|move|p1a: Ampharos|Thunderbolt|p2a: Kyogre
+    Move { user: Some("Ampharos"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 22/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 6/8; Fire Punch Fire Special 75/100 24/24]
+|-supereffective|p2a: Kyogre
+    SuperEffective { mon: "Kyogre,p2,0" }
+|-damage|p2a: Kyogre|39/245
+    Damage { mon: "Kyogre,p2,0", health: "39/245" }
+|-heal|p2a: Kyogre|54/245|[from] item: Leftovers
+    Heal { mon: "Kyogre,p2,0", health: "54/245" }
+|-heal|p1a: Ampharos|23/282|[from] item: Leftovers
+    Heal { mon: "Ampharos,p1,0", health: "23/282" }
+|turn|13
+    Turn { n: 13 }
+|request|...
+    MovesUpdate p1 [Thunderbolt Electric Special 95/100 22/24; Hidden Power Ice Special 70/100 23/24; Heal Bell Normal Status -/- 6/8; Fire Punch Fire Special 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 23/24; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Kyogre|Surf|p1a: Ampharos
+    Move { user: Some("Kyogre"), player_id: Some("p2"), name: "Surf" }
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 22/24; Ice Beam Ice Special 95/100 15/16]
+|-damage|p1a: Ampharos|0 fnt
+    Damage { mon: "Ampharos,p1,0", health: "0/282" }
+|faint|p1a: Ampharos
+    Faint { mon: "Ampharos,p1,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Magneton|Magneton, L85|224/224
+    SwitchIn p1 name=Magneton species=Some("Magneton") slot=Some(5) speed=Some(168) moves=[Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 24/24; Rest Psychic Status -/- 16/16; Hidden Power Ice Ice Special 70/100 24/24]
+|-heal|p2a: Kyogre|69/245|[from] item: Leftovers
+    Heal { mon: "Kyogre,p2,0", health: "69/245" }
+|turn|14
+    Turn { n: 14 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 24/24; Rest Psychic Status -/- 16/16; Hidden Power Ice Special 70/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 16/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 22/24; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Hidden Power|p2a: Kyogre
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 24/24; Rest Psychic Status -/- 16/16; Hidden Power Ice Special 70/100 23/24]
+|-resisted|p2a: Kyogre
+    Resisted { mon: "Kyogre,p2,0" }
+|-damage|p2a: Kyogre|41/245
+    Damage { mon: "Kyogre,p2,0", health: "41/245" }
+|move|p2a: Kyogre|Sleep Talk|p2a: Kyogre
+    Move { user: Some("Kyogre"), player_id: Some("p2"), name: "Sleep Talk" }
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 15/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 22/24; Ice Beam Ice Special 95/100 15/16]
+|-heal|p2a: Kyogre|56/245|[from] item: Leftovers
+    Heal { mon: "Kyogre,p2,0", health: "56/245" }
+|turn|15
+    Turn { n: 15 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 24/24; Rest Psychic Status -/- 16/16; Hidden Power Ice Special 70/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Sleep Talk Normal Status -/- 15/16; Rest Psychic Status -/- 16/16; Surf Water Special 95/100 22/24; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Thunderbolt|p2a: Kyogre
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 16/16; Hidden Power Ice Special 70/100 23/24]
+|-supereffective|p2a: Kyogre
+    SuperEffective { mon: "Kyogre,p2,0" }
+|-damage|p2a: Kyogre|0 fnt
+    Damage { mon: "Kyogre,p2,0", health: "0/245" }
+|faint|p2a: Kyogre
+    Faint { mon: "Kyogre,p2,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Ursaring|Ursaring, L81, F|278/278
+    SwitchIn p2 name=Ursaring species=Some("Ursaring") slot=Some(5) speed=Some(136) moves=[Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 32/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Ghost Physical 70/100 24/24]
+|turn|16
+    Turn { n: 16 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 16/16; Hidden Power Ice Special 70/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 32/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Rest|p1a: Magneton
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Rest" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 23/24]
+|-fail|p1a: Magneton|heal
+    Fail { mon: "Magneton,p1,0" }
+|move|p2a: Ursaring|Facade|p1a: Magneton
+    Move { user: Some("Ursaring"), player_id: Some("p2"), name: "Facade" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 31/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+|-resisted|p1a: Magneton
+    Resisted { mon: "Magneton,p1,0" }
+|-damage|p1a: Magneton|166/224
+    Damage { mon: "Magneton,p1,0", health: "166/224" }
+|-heal|p1a: Magneton|180/224|[from] item: Leftovers
+    Heal { mon: "Magneton,p1,0", health: "180/224" }
+|turn|17
+    Turn { n: 17 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 31/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Hidden Power|p2a: Ursaring
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 22/24]
+|-damage|p2a: Ursaring|200/278
+    Damage { mon: "Ursaring,p2,0", health: "200/278" }
+|move|p2a: Ursaring|Facade|p1a: Magneton
+    Move { user: Some("Ursaring"), player_id: Some("p2"), name: "Facade" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 30/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+|-resisted|p1a: Magneton
+    Resisted { mon: "Magneton,p1,0" }
+|-damage|p1a: Magneton|124/224
+    Damage { mon: "Magneton,p1,0", health: "124/224" }
+|-heal|p1a: Magneton|138/224|[from] item: Leftovers
+    Heal { mon: "Magneton,p1,0", health: "138/224" }
+|turn|18
+    Turn { n: 18 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 30/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Sleep Talk|p1a: Magneton
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Sleep Talk" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 22/24]
+|move|p2a: Ursaring|Facade|p1a: Magneton
+    Move { user: Some("Ursaring"), player_id: Some("p2"), name: "Facade" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 29/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+|-resisted|p1a: Magneton
+    Resisted { mon: "Magneton,p1,0" }
+|-damage|p1a: Magneton|74/224
+    Damage { mon: "Magneton,p1,0", health: "74/224" }
+|-heal|p1a: Magneton|88/224|[from] item: Leftovers
+    Heal { mon: "Magneton,p1,0", health: "88/224" }
+|turn|19
+    Turn { n: 19 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 29/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Hidden Power|p2a: Ursaring
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 21/24]
+|-damage|p2a: Ursaring|131/278
+    Damage { mon: "Ursaring,p2,0", health: "131/278" }
+|move|p2a: Ursaring|Facade|p1a: Magneton
+    Move { user: Some("Ursaring"), player_id: Some("p2"), name: "Facade" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 28/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+|-resisted|p1a: Magneton
+    Resisted { mon: "Magneton,p1,0" }
+|-damage|p1a: Magneton|28/224
+    Damage { mon: "Magneton,p1,0", health: "28/224" }
+|-heal|p1a: Magneton|42/224|[from] item: Leftovers
+    Heal { mon: "Magneton,p1,0", health: "42/224" }
+|turn|20
+    Turn { n: 20 }
+|request|...
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 21/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 28/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Magneton|Hidden Power|p2a: Ursaring
+    Move { user: Some("Magneton"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Sleep Talk Normal Status -/- 15/16; Thunderbolt Electric Special 95/100 23/24; Rest Psychic Status -/- 15/16; Hidden Power Ice Special 70/100 20/24]
+|-damage|p2a: Ursaring|57/278
+    Damage { mon: "Ursaring,p2,0", health: "57/278" }
+|move|p2a: Ursaring|Facade|p1a: Magneton
+    Move { user: Some("Ursaring"), player_id: Some("p2"), name: "Facade" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 27/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+|-resisted|p1a: Magneton
+    Resisted { mon: "Magneton,p1,0" }
+|-damage|p1a: Magneton|0 fnt
+    Damage { mon: "Magneton,p1,0", health: "0/224" }
+|faint|p1a: Magneton
+    Faint { mon: "Magneton,p1,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Glalie|Glalie, L82, M|265/265
+    SwitchIn p1 name=Glalie species=Some("Glalie") slot=Some(2) speed=Some(178) moves=[Earthquake Ground Physical 100/100 16/16; Spikes Ground Status -/- 32/32; Ice Beam Ice Special 95/100 16/16; Toxic Poison Status -/85 16/16]
+|turn|21
+    Turn { n: 21 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Spikes Ground Status -/- 32/32; Ice Beam Ice Special 95/100 16/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 27/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Glalie|Spikes|p2a: Ursaring
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 16/16; Toxic Poison Status -/85 16/16]
+|-sidestart|p2: Player 2|Spikes
+    EffectStart { mon: "Ursaring,p2,0", what: "Spikes", detail: None }
+|move|p2a: Ursaring|Facade|p1a: Glalie
+    Move { user: Some("Ursaring"), player_id: Some("p2"), name: "Facade" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 26/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+|-damage|p1a: Glalie|124/265
+    Damage { mon: "Glalie,p1,0", health: "124/265" }
+|-heal|p1a: Glalie|140/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "140/265" }
+|turn|22
+    Turn { n: 22 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 16/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Facade Normal Physical 70/100 26/32; Return Normal Physical 102/100 32/32; Hidden Power Ghost Physical 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Glalie|Ice Beam|p2a: Ursaring
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+|-damage|p2a: Ursaring|0 fnt
+    Damage { mon: "Ursaring,p2,0", health: "0/278" }
+|faint|p2a: Ursaring
+    Faint { mon: "Ursaring,p2,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Swalot|Swalot, L87, M|316/316
+    SwitchIn p2 name=Swalot species=Some("Swalot") slot=Some(3) speed=Some(145) moves=[Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16; Yawn Normal Status -/- 16/16; Pain Split Normal Status -/- 32/32]
+|-damage|p2a: Swalot|277/316|[from] Spikes
+    Damage { mon: "Swalot,p2,0", health: "277/316" }
+|-heal|p1a: Glalie|156/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "156/265" }
+|-heal|p2a: Swalot|296/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "296/316" }
+|turn|23
+    Turn { n: 23 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 16/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16; Yawn Normal Status -/- 16/16; Pain Split Normal Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Glalie|Earthquake|p2a: Swalot
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Earthquake" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 15/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+|-supereffective|p2a: Swalot
+    SuperEffective { mon: "Swalot,p2,0" }
+|-damage|p2a: Swalot|176/316
+    Damage { mon: "Swalot,p2,0", health: "176/316" }
+|move|p2a: Swalot|Yawn|p1a: Glalie
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Yawn" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 32/32]
+|-start|p1a: Glalie|move: Yawn|[of] p2a: Swalot
+    EffectStart { mon: "Glalie,p1,0", what: "drowsy", detail: None }
+|-heal|p1a: Glalie|172/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "172/265" }
+|-heal|p2a: Swalot|195/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "195/316" }
+|turn|24
+    Turn { n: 24 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 15/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 16/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Glalie|Earthquake|p2a: Swalot
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Earthquake" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+|-supereffective|p2a: Swalot
+    SuperEffective { mon: "Swalot,p2,0" }
+|-damage|p2a: Swalot|79/316
+    Damage { mon: "Swalot,p2,0", health: "79/316" }
+|move|p2a: Swalot|Sludge Bomb|p1a: Glalie
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 15/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 32/32]
+|-damage|p1a: Glalie|78/265
+    Damage { mon: "Glalie,p1,0", health: "78/265" }
+|-heal|p1a: Glalie|94/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "94/265" }
+|-status|p1a: Glalie|slp
+    SetStatus { mon: "Glalie,p1,0", status: "slp" }
+|-heal|p2a: Swalot|98/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "98/316" }
+|turn|25
+    Turn { n: 25 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 15/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|cant|p1a: Glalie|slp
+    Cant { mon: "Glalie,p1,0", reason: "slp" }
+|move|p2a: Swalot|Sludge Bomb|p1a: Glalie
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Sludge Bomb" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 32/32]
+|-damage|p1a: Glalie|2/265 slp
+    Damage { mon: "Glalie,p1,0", health: "2/265" }
+|-heal|p1a: Glalie|18/265 slp|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "18/265" }
+|-heal|p2a: Swalot|117/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "117/316" }
+|turn|26
+    Turn { n: 26 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 32/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|cant|p1a: Glalie|slp
+    Cant { mon: "Glalie,p1,0", reason: "slp" }
+|move|p2a: Swalot|Pain Split|p1a: Glalie
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Pain Split" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 31/32]
+|-sethp|p1a: Glalie|67/265 slp|[from] move: Pain Split|[silent]
+    Heal { mon: "Glalie,p1,0", health: "67/265" }
+|-sethp|p2a: Swalot|67/316|[from] move: Pain Split
+    Damage { mon: "Swalot,p2,0", health: "67/316" }
+|-heal|p1a: Glalie|83/265 slp|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "83/265" }
+|-heal|p2a: Swalot|86/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "86/316" }
+|turn|27
+    Turn { n: 27 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 15/16; Pain Split Normal Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|cant|p1a: Glalie|slp
+    Cant { mon: "Glalie,p1,0", reason: "slp" }
+|move|p2a: Swalot|Yawn||[still]
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Yawn" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 14/16; Pain Split Normal Status -/- 31/32]
+|-fail|p2a: Swalot
+    Fail { mon: "Swalot,p2,0" }
+|-heal|p1a: Glalie|99/265 slp|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "99/265" }
+|-heal|p2a: Swalot|105/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "105/316" }
+|turn|28
+    Turn { n: 28 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 15/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 16/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 14/16; Pain Split Normal Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|-curestatus|p1a: Glalie|slp|[msg]
+    CureStatus { mon: "Glalie,p1,0", status: "slp" }
+|move|p1a: Glalie|Ice Beam|p2a: Swalot
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 14/16; Toxic Poison Status -/85 16/16]
+|-damage|p2a: Swalot|25/316
+    Damage { mon: "Swalot,p2,0", health: "25/316" }
+|move|p2a: Swalot|Ice Beam|p1a: Glalie
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 15/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 14/16; Pain Split Normal Status -/- 31/32]
+|-resisted|p1a: Glalie
+    Resisted { mon: "Glalie,p1,0" }
+|-damage|p1a: Glalie|65/265
+    Damage { mon: "Glalie,p1,0", health: "65/265" }
+|-heal|p1a: Glalie|81/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "81/265" }
+|-heal|p2a: Swalot|44/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "44/316" }
+|turn|29
+    Turn { n: 29 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 31/32; Ice Beam Ice Special 95/100 14/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 15/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 14/16; Pain Split Normal Status -/- 31/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Glalie|Spikes|p2a: Swalot
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 30/32; Ice Beam Ice Special 95/100 14/16; Toxic Poison Status -/85 16/16]
+|-sidestart|p2: Player 2|Spikes
+    EffectStart { mon: "Swalot,p2,0", what: "Spikes", detail: None }
+|move|p2a: Swalot|Pain Split|p1a: Glalie
+    Move { user: Some("Swalot"), player_id: Some("p2"), name: "Pain Split" }
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 15/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 14/16; Pain Split Normal Status -/- 30/32]
+|-sethp|p1a: Glalie|62/265|[from] move: Pain Split|[silent]
+    Damage { mon: "Glalie,p1,0", health: "62/265" }
+|-sethp|p2a: Swalot|62/316|[from] move: Pain Split
+    Heal { mon: "Swalot,p2,0", health: "62/316" }
+|-heal|p1a: Glalie|78/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "78/265" }
+|-heal|p2a: Swalot|81/316|[from] item: Leftovers
+    Heal { mon: "Swalot,p2,0", health: "81/316" }
+|turn|30
+    Turn { n: 30 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 30/32; Ice Beam Ice Special 95/100 14/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Ice Beam Ice Special 95/100 15/16; Sludge Bomb Poison Physical 90/100 14/16; Yawn Normal Status -/- 14/16; Pain Split Normal Status -/- 30/32]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Glalie|Ice Beam|p2a: Swalot
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Ice Beam" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 30/32; Ice Beam Ice Special 95/100 13/16; Toxic Poison Status -/85 16/16]
+|-damage|p2a: Swalot|0 fnt
+    Damage { mon: "Swalot,p2,0", health: "0/316" }
+|faint|p2a: Swalot
+    Faint { mon: "Swalot,p2,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Delcatty|Delcatty, L96, M|290/290
+    SwitchIn p2 name=Delcatty species=Some("Delcatty") slot=Some(2) speed=Some(189) moves=[Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 16/16; Double-Edge Normal Physical 120/100 24/24; Protect Normal Status -/- 16/16]
+|-damage|p2a: Delcatty|242/290|[from] Spikes
+    Damage { mon: "Delcatty,p2,0", health: "242/290" }
+|-heal|p2a: Delcatty|260/290|[from] item: Leftovers
+    Heal { mon: "Delcatty,p2,0", health: "260/290" }
+|-heal|p1a: Glalie|94/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "94/265" }
+|turn|31
+    Turn { n: 31 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 30/32; Ice Beam Ice Special 95/100 13/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 16/16; Double-Edge Normal Physical 120/100 24/24; Protect Normal Status -/- 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Delcatty|Wish|p2a: Delcatty
+    Move { user: Some("Delcatty"), player_id: Some("p2"), name: "Wish" }
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 24/24; Protect Normal Status -/- 16/16]
+|move|p1a: Glalie|Spikes|p2a: Delcatty
+    Move { user: Some("Glalie"), player_id: Some("p1"), name: "Spikes" }
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 29/32; Ice Beam Ice Special 95/100 13/16; Toxic Poison Status -/85 16/16]
+|-sidestart|p2: Player 2|Spikes
+    EffectStart { mon: "Delcatty,p2,0", what: "Spikes", detail: None }
+|-heal|p2a: Delcatty|278/290|[from] item: Leftovers
+    Heal { mon: "Delcatty,p2,0", health: "278/290" }
+|-heal|p1a: Glalie|110/265|[from] item: Leftovers
+    Heal { mon: "Glalie,p1,0", health: "110/265" }
+|turn|32
+    Turn { n: 32 }
+|request|...
+    MovesUpdate p1 [Earthquake Ground Physical 100/100 14/16; Spikes Ground Status -/- 29/32; Ice Beam Ice Special 95/100 13/16; Toxic Poison Status -/85 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 24/24; Protect Normal Status -/- 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Delcatty|Double-Edge|p1a: Glalie
+    Move { user: Some("Delcatty"), player_id: Some("p2"), name: "Double-Edge" }
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 23/24; Protect Normal Status -/- 16/16]
+|-damage|p1a: Glalie|0 fnt
+    Damage { mon: "Glalie,p1,0", health: "0/265" }
+|-damage|p2a: Delcatty|242/290|[from] Recoil
+    Damage { mon: "Delcatty,p2,0", health: "242/290" }
+|faint|p1a: Glalie
+    Faint { mon: "Glalie,p1,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Marowak|Marowak, L83, M|235/235
+    SwitchIn p1 name=Marowak species=Some("Marowak") slot=Some(1) speed=Some(122) moves=[Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 24/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 16/16]
+|-heal|p2a: Delcatty|290/290|[from] move: Wish|[wisher] Delcatty
+    Heal { mon: "Delcatty,p2,0", health: "290/290" }
+|turn|33
+    Turn { n: 33 }
+|request|...
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 24/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 23/24; Protect Normal Status -/- 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Delcatty|Double-Edge|p1a: Marowak
+    Move { user: Some("Delcatty"), player_id: Some("p2"), name: "Double-Edge" }
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 22/24; Protect Normal Status -/- 16/16]
+|-damage|p1a: Marowak|129/235
+    Damage { mon: "Marowak,p1,0", health: "129/235" }
+|-damage|p2a: Delcatty|255/290|[from] Recoil
+    Damage { mon: "Delcatty,p2,0", health: "255/290" }
+|move|p1a: Marowak|Earthquake|p2a: Delcatty
+    Move { user: Some("Marowak"), player_id: Some("p1"), name: "Earthquake" }
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 24/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 15/16]
+|-damage|p2a: Delcatty|53/290
+    Damage { mon: "Delcatty,p2,0", health: "53/290" }
+|-heal|p2a: Delcatty|71/290|[from] item: Leftovers
+    Heal { mon: "Delcatty,p2,0", health: "71/290" }
+|turn|34
+    Turn { n: 34 }
+|request|...
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 24/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 22/24; Protect Normal Status -/- 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Delcatty|Protect|p2a: Delcatty
+    Move { user: Some("Delcatty"), player_id: Some("p2"), name: "Protect" }
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 22/24; Protect Normal Status -/- 15/16]
+|-singleturn|p2a: Delcatty|Protect
+    EffectStart { mon: "Delcatty,p2,0", what: "Protect", detail: None }
+|move|p1a: Marowak|Double-Edge|p2a: Delcatty
+    Move { user: Some("Marowak"), player_id: Some("p1"), name: "Double-Edge" }
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 15/16]
+|-activate|p2a: Delcatty|Protect
+    Activate { mon: "Delcatty,p2,0", what: "Protect", detail: None, other: None, n: None }
+|-heal|p2a: Delcatty|89/290|[from] item: Leftovers
+    Heal { mon: "Delcatty,p2,0", health: "89/290" }
+|turn|35
+    Turn { n: 35 }
+|request|...
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 32/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 22/24; Protect Normal Status -/- 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Delcatty|Thunder Wave|p1a: Marowak
+    Move { user: Some("Delcatty"), player_id: Some("p2"), name: "Thunder Wave" }
+    MovesUpdate p2 [Thunder Wave Electric Status -/100 31/32; Wish Normal Status -/- 15/16; Double-Edge Normal Physical 120/100 22/24; Protect Normal Status -/- 15/16]
+|-immune|p1a: Marowak
+    Immune { mon: "Marowak,p1,0" }
+|move|p1a: Marowak|Earthquake|p2a: Delcatty
+    Move { user: Some("Marowak"), player_id: Some("p1"), name: "Earthquake" }
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 14/16]
+|-damage|p2a: Delcatty|0 fnt
+    Damage { mon: "Delcatty,p2,0", health: "0/290" }
+|faint|p2a: Delcatty
+    Faint { mon: "Delcatty,p2,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Arbok|Arbok, L85, M|241/241
+    SwitchIn p2 name=Arbok species=Some("Arbok") slot=Some(4) speed=Some(185) moves=[Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 15/16]
+|-damage|p2a: Arbok|181/241|[from] Spikes
+    Damage { mon: "Arbok,p2,0", health: "181/241" }
+|-ability|p2a: Arbok|Intimidate|boost
+    Ability { mon: "Arbok,p2,0", ability: "Intimidate", how: "", other: None }
+|-unboost|p1a: Marowak|atk|1
+    StatChange { mon: "Marowak,p1,0", stat: "Attack", delta: -1 }
+|-heal|p2a: Arbok|196/241|[from] item: Leftovers
+    Heal { mon: "Arbok,p2,0", health: "196/241" }
+|turn|36
+    Turn { n: 36 }
+|request|...
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 48/48; Earthquake Ground Physical 100/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 16/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Arbok|Rest|p2a: Arbok
+    Move { user: Some("Arbok"), player_id: Some("p2"), name: "Rest" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 15/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 15/16]
+|-status|p2a: Arbok|slp|[from] move: Rest
+    SetStatus { mon: "Arbok,p2,0", status: "slp" }
+|-heal|p2a: Arbok|241/241 slp|[silent]
+    Heal { mon: "Arbok,p2,0", health: "241/241" }
+|move|p1a: Marowak|Swords Dance|p1a: Marowak
+    Move { user: Some("Marowak"), player_id: Some("p1"), name: "Swords Dance" }
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 47/48; Earthquake Ground Physical 100/100 14/16]
+|-boost|p1a: Marowak|atk|2
+    StatChange { mon: "Marowak,p1,0", stat: "Attack", delta: 2 }
+|turn|37
+    Turn { n: 37 }
+|request|...
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 23/24; Swords Dance Normal Status -/- 47/48; Earthquake Ground Physical 100/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Rest Psychic Status -/- 15/16; Sludge Bomb Poison Physical 90/100 15/16; Sleep Talk Normal Status -/- 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|cant|p2a: Arbok|slp
+    Cant { mon: "Arbok,p2,0", reason: "slp" }
+|move|p1a: Marowak|Double-Edge|p2a: Arbok
+    Move { user: Some("Marowak"), player_id: Some("p1"), name: "Double-Edge" }
+    MovesUpdate p1 [Rock Slide Rock Physical 75/90 16/16; Double-Edge Normal Physical 120/100 22/24; Swords Dance Normal Status -/- 47/48; Earthquake Ground Physical 100/100 14/16]
+|-damage|p2a: Arbok|0 fnt
+    Damage { mon: "Arbok,p2,0", health: "0/241" }
+|faint|p2a: Arbok
+    Faint { mon: "Arbok,p2,0", team_slot: Some(4) }
+|win|Player 1
+    Win { side: Some("0") }

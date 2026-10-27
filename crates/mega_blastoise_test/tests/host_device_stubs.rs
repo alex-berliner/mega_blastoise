@@ -3,11 +3,12 @@
 //!
 //! These cover the firmware abstractions that the interactive binary couldn't reach.
 
-use gen1_battle::TeamData;
 use embassy_futures::select::{select, Either};
+use mega_blastoise_core::choice_collect::SlotOptions;
+use mega_blastoise_core::runner::ps::{run_battle, BattleSetup};
+use mega_blastoise_core::transport::LocalTransport;
 use mega_blastoise_core::{
-    demo_battle_options, demo_engine_opts, demo_team_blue, demo_team_red, run_battle,
-    ActivePrompt, BoardEffects, BoardEvent, BoardEventQueue, FlashDataStore, InputBus, InputSource,
+    draw_two_ps_teams, ActivePrompt, BoardEffects, BoardEvent, InputBus, InputSource,
 };
 use mega_blastoise_test::{
     host_battle_controller::HostBattleController,
@@ -103,80 +104,41 @@ fn effects_suppresses_split_and_prompt_events() {
 
 // ── HostBattleController — full automated battle ──────────────────────────────
 
-fn make_battle(data: &FlashDataStore) -> gen1_battle::PublicCoreBattle<'_> {
-    let mut battle =
-        gen1_battle::PublicCoreBattle::new(demo_battle_options(), data, demo_engine_opts())
-            .expect("battle init");
-    battle
-        .update_team("p1", TeamData { members: demo_team_red(), ..Default::default() })
-        .expect("p1 team");
-    battle
-        .update_team("p2", TeamData { members: demo_team_blue(), ..Default::default() })
-        .expect("p2 team");
-    battle.start().expect("battle start");
-    battle
+/// A 4v4 Gen 1 random battle on the PS engine, from a fixed seed (12345), so
+/// the battle always follows the same path.
+fn setup() -> BattleSetup {
+    BattleSetup::local(1, 12345, draw_two_ps_teams(&ps_dex::GEN1, 12345, 4))
+}
+
+/// Plays `setup()` to its end with move slot 1 pre-fed for every turn
+/// (prompt-less automated runs cycle every slot once the queue is empty, and
+/// switch requests auto-pick the first available bench). Returns whether the
+/// battle ended.
+fn play_prefed(effects: &mut HostBattleEffects<'_>, bus: &InputBus) -> bool {
+    let setup = setup();
+    let mut transport = LocalTransport::new();
+    let mut controller = HostBattleController::new();
+    for _ in 0..40 {
+        controller.buttons_mut().queue_move(1);
+    }
+    pollster::block_on(run_battle(&mut transport, &setup, bus, controller.run(bus), effects));
+    transport.battle().is_some_and(|b| b.ended)
 }
 
 #[test]
 fn battle_completes_with_prefed_button_moves() {
-    let data = FlashDataStore::new();
-    let mut battle = make_battle(&data);
     let bus = InputBus::new();
-
-    let mut controller = HostBattleController::new();
-    // Pre-feed enough move presses for both players for a full 4v4 singles battle.
-    // Seed is fixed (12345) so the battle always follows the same path.
-    // Slot 1 = Earthquake or Ice Beam for every mon — damaging, so the battle ends quickly.
-    // Switch requests fall back to auto-pick (first available bench) when the queue is empty.
-    for _ in 0..40 {
-        controller.buttons_mut().queue_move(1);
-    }
-
     let mut effects = HostBattleEffects::new(None);
-    let mut queue = BoardEventQueue::new();
-
-    pollster::block_on(run_battle(
-        &mut battle,
-        &data,
-        &bus,
-        controller.run(&bus),
-        &mut queue,
-        &mut effects,
-        |_| {},
-    ));
-
-    assert!(battle.ended(), "battle should have ended");
+    assert!(play_prefed(&mut effects, &bus), "battle should have ended");
 }
 
 #[test]
 fn battle_completes_with_log_channel_active() {
     // Same as above but routes events through bus.log, exercising the full
     // HostBattleEffects → bus.log → HostBattleController drain path.
-    let data = FlashDataStore::new();
-    let mut battle = make_battle(&data);
     let bus = InputBus::new();
-
-    let mut controller = HostBattleController::new();
-    // Slot 1 = Earthquake or Ice Beam for every mon — damaging, so the battle ends quickly.
-    // Switch requests fall back to auto-pick (first available bench) when the queue is empty.
-    for _ in 0..40 {
-        controller.buttons_mut().queue_move(1);
-    }
-
     let mut effects = HostBattleEffects::new(Some(&bus));
-    let mut queue = BoardEventQueue::new();
-
-    pollster::block_on(run_battle(
-        &mut battle,
-        &data,
-        &bus,
-        controller.run(&bus),
-        &mut queue,
-        &mut effects,
-        |_| {},
-    ));
-
-    assert!(battle.ended());
+    assert!(play_prefed(&mut effects, &bus));
 }
 
 // ── Button-press unit test ────────────────────────────────────────────────────
@@ -184,32 +146,21 @@ fn battle_completes_with_log_channel_active() {
 /// Verifies that a pre-fed button press resolves a move choice immediately —
 /// no stdin, no blocking — and produces the correct choice string.
 ///
-/// Approach: run the controller alongside a "driver" future that injects a real
-/// `ActivePrompt` (built from the first request the battle engine generates) then
-/// collects the choice from `bus.choices`.  `select` drops the controller as soon
-/// as the driver completes, so the test doesn't hang on the controller's infinite loop.
+/// Approach: run the controller alongside a "driver" future that injects an
+/// `ActivePrompt` (a turn with four usable moves) then collects the choice
+/// from `bus.choices`.  `select` drops the controller as soon as the driver
+/// completes, so the test doesn't hang on the controller's infinite loop.
 #[test]
 fn button_press_sends_move_choice_without_stdin() {
-    let data = FlashDataStore::new();
-    let mut battle = make_battle(&data);
-
-    // Grab the first real Turn request so the prompt has a genuine move list,
-    // distilled exactly as the runner distils it before sending.
-    let (player_id, request) = battle
-        .active_requests()
-        .next()
-        .map(|(pid, req)| (pid.to_string(), req.clone()))
-        .expect("battle should have an active request after start");
-    let player_data = battle.player_data(&player_id).ok();
-    let slot = mega_blastoise_core::runner::gen1::slot_options_from_request(
-        &player_id,
-        &request,
-        player_data.as_ref(),
-    );
+    let player_id = String::from("p1");
+    let mut slot = SlotOptions::blank(1, player_id.clone());
+    slot.active_slot = Some(0);
+    slot.n_moves = 4;
+    slot.usable = [true; 4];
 
     let bus = InputBus::new();
     let mut controller = HostBattleController::new();
-    // Queue slot 1 (0-based) — the second move in the list (Earthquake / Ice Beam).
+    // Queue slot 1 (0-based): the second move in the list.
     controller.buttons_mut().queue_move(1);
 
     let choice = pollster::block_on(async {

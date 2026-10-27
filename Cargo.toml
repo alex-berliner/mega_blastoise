@@ -1,30 +1,17 @@
 [workspace]
 resolver = "2"
 members = [
-    "crates/battle_types",
-    "crates/gen1_battle",
-    "crates/gen3_battle",
     "crates/mega_blastoise_core",
     "crates/mega_blastoise_fw",
     "crates/mega_blastoise_test",
+    "crates/ps_client",
+    "crates/ps_dex",
+    "crates/ps_harness",
+    "crates/ps_protocol",
+    "crates/ps_sim",
 ]
-exclude = ["battler", "crates/mega_blastoise_web", "firmware/bringup/esp32_reset", "firmware/bringup/rp2350_blink"]
+exclude = ["crates/mega_blastoise_web", "firmware/bringup/esp32_reset", "firmware/bringup/rp2350_blink"]
 default-members = [
     "crates/mega_blastoise_core",
     "crates/mega_blastoise_test",
 ]
-
-[patch.crates-io]
-once_cell = { path = "patches/once_cell" }
-
-[profile.dev]
-opt-level = "z"
-lto = true
-debug = 2
-codegen-units = 1
-
-[profile.release]
-opt-level = "z"
-lto = true
-debug = 2
-codegen-units = 1

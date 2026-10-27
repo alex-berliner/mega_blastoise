@@ -1,0 +1,570 @@
+# BoardEvent stream of gen3.log.gz battle index=8: each protocol line that
+# yields events, then its events. `|request|...` is a request's prompt events.
+|start
+    BattleStart
+|switch|p1a: Shiftry|Shiftry, L91, M|312/312
+    SwitchIn p1 name=Shiftry species=Some("Shiftry") slot=Some(0) speed=None moves=[]
+|switch|p2a: Armaldo|Armaldo, L83, M|260/260
+    SwitchIn p2 name=Armaldo species=Some("Armaldo") slot=Some(0) speed=None moves=[]
+|turn|1
+    Turn { n: 1 }
+|request|...
+    ActiveMonUpdate { mon: "Shiftry,p1,0", name: "Shiftry", speed: Some(197) }
+    MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Shadow Ball Ghost Physical 80/100 24/24; Swords Dance Normal Status -/- 48/48; Brick Break Fighting Physical 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    ActiveMonUpdate { mon: "Armaldo,p2,0", name: "Armaldo", speed: Some(122) }
+    MovesUpdate p2 [Swords Dance Normal Status -/- 48/48; Hidden Power Bug Physical 70/100 24/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Shiftry|Swords Dance|p1a: Shiftry
+    Move { user: Some("Shiftry"), player_id: Some("p1"), name: "Swords Dance" }
+    MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Shadow Ball Ghost Physical 80/100 24/24; Swords Dance Normal Status -/- 47/48; Brick Break Fighting Physical 75/100 24/24]
+|-boost|p1a: Shiftry|atk|2
+    StatChange { mon: "Shiftry,p1,0", stat: "Attack", delta: 2 }
+|move|p2a: Armaldo|Swords Dance|p2a: Armaldo
+    Move { user: Some("Armaldo"), player_id: Some("p2"), name: "Swords Dance" }
+    MovesUpdate p2 [Swords Dance Normal Status -/- 47/48; Hidden Power Bug Physical 70/100 24/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16]
+|-boost|p2a: Armaldo|atk|2
+    StatChange { mon: "Armaldo,p2,0", stat: "Attack", delta: 2 }
+|turn|2
+    Turn { n: 2 }
+|request|...
+    MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Shadow Ball Ghost Physical 80/100 24/24; Swords Dance Normal Status -/- 47/48; Brick Break Fighting Physical 75/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Swords Dance Normal Status -/- 47/48; Hidden Power Bug Physical 70/100 24/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Shiftry|Brick Break|p2a: Armaldo
+    Move { user: Some("Shiftry"), player_id: Some("p1"), name: "Brick Break" }
+    MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Shadow Ball Ghost Physical 80/100 24/24; Swords Dance Normal Status -/- 47/48; Brick Break Fighting Physical 75/100 23/24]
+|-damage|p2a: Armaldo|136/260
+    Damage { mon: "Armaldo,p2,0", health: "136/260" }
+|move|p2a: Armaldo|Earthquake|p1a: Shiftry
+    Move { user: Some("Armaldo"), player_id: Some("p2"), name: "Earthquake" }
+    MovesUpdate p2 [Swords Dance Normal Status -/- 47/48; Hidden Power Bug Physical 70/100 24/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 15/16]
+|-resisted|p1a: Shiftry
+    Resisted { mon: "Shiftry,p1,0" }
+|-damage|p1a: Shiftry|206/312
+    Damage { mon: "Shiftry,p1,0", health: "206/312" }
+|-heal|p2a: Armaldo|152/260|[from] item: Leftovers
+    Heal { mon: "Armaldo,p2,0", health: "152/260" }
+|turn|3
+    Turn { n: 3 }
+|request|...
+    MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Shadow Ball Ghost Physical 80/100 24/24; Swords Dance Normal Status -/- 47/48; Brick Break Fighting Physical 75/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Swords Dance Normal Status -/- 47/48; Hidden Power Bug Physical 70/100 24/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Shiftry|Shadow Ball|p2a: Armaldo
+    Move { user: Some("Shiftry"), player_id: Some("p1"), name: "Shadow Ball" }
+    MovesUpdate p1 [Explosion Normal Physical 250/100 8/8; Shadow Ball Ghost Physical 80/100 23/24; Swords Dance Normal Status -/- 47/48; Brick Break Fighting Physical 75/100 23/24]
+|-damage|p2a: Armaldo|38/260
+    Damage { mon: "Armaldo,p2,0", health: "38/260" }
+|move|p2a: Armaldo|Hidden Power|p1a: Shiftry
+    Move { user: Some("Armaldo"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Swords Dance Normal Status -/- 47/48; Hidden Power Bug Physical 70/100 23/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 15/16]
+|-supereffective|p1a: Shiftry
+    SuperEffective { mon: "Shiftry,p1,0" }
+|-damage|p1a: Shiftry|0 fnt
+    Damage { mon: "Shiftry,p1,0", health: "0/312" }
+|faint|p1a: Shiftry
+    Faint { mon: "Shiftry,p1,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Pikachu|Pikachu, L87, M|203/203
+    SwitchIn p1 name=Pikachu species=Some("Pikachu") slot=Some(4) speed=Some(206) moves=[Surf Water Special 95/100 24/24; Hidden Power Ice Ice Special 70/100 24/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 24/24]
+|-heal|p2a: Armaldo|54/260|[from] item: Leftovers
+    Heal { mon: "Armaldo,p2,0", health: "54/260" }
+|turn|4
+    Turn { n: 4 }
+|request|...
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 24/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Swords Dance Normal Status -/- 47/48; Hidden Power Bug Physical 70/100 23/24; Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pikachu|Thunderbolt|p2a: Armaldo
+    Move { user: Some("Pikachu"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24]
+|-damage|p2a: Armaldo|0 fnt
+    Damage { mon: "Armaldo,p2,0", health: "0/260" }
+|faint|p2a: Armaldo
+    Faint { mon: "Armaldo,p2,0", team_slot: Some(0) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Groudon|Groudon, L69|252/252
+    SwitchIn p2 name=Groudon species=Some("Groudon") slot=Some(3) speed=Some(165) moves=[Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 32/32; Overheat Fire Special 140/90 8/8]
+|-weather|SunnyDay|[from] ability: Drought|[of] p2a: Groudon
+    Ability { mon: "Groudon,p2,0", ability: "Drought", how: "activate", other: None }
+    EffectStart { mon: "", what: "harsh sunlight", detail: None }
+|turn|5
+    Turn { n: 5 }
+|request|...
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 23/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 32/32; Overheat Fire Special 140/90 8/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pikachu|Thunderbolt|p2a: Groudon
+    Move { user: Some("Pikachu"), player_id: Some("p1"), name: "Thunderbolt" }
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 22/24]
+|-immune|p2a: Groudon
+    Immune { mon: "Groudon,p2,0" }
+|move|p2a: Groudon|Overheat|p1a: Pikachu
+    Move { user: Some("Groudon"), player_id: Some("p2"), name: "Overheat" }
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 32/32; Overheat Fire Special 140/90 7/8]
+|-damage|p1a: Pikachu|42/203
+    Damage { mon: "Pikachu,p1,0", health: "42/203" }
+|-unboost|p2a: Groudon|spa|2
+    StatChange { mon: "Groudon,p2,0", stat: "Sp. Atk", delta: -2 }
+|turn|6
+    Turn { n: 6 }
+|request|...
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 32/32; Overheat Fire Special 140/90 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Pikachu|Hidden Power|p2a: Groudon
+    Move { user: Some("Pikachu"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 22/24]
+|-supereffective|p2a: Groudon
+    SuperEffective { mon: "Groudon,p2,0" }
+|-damage|p2a: Groudon|99/252
+    Damage { mon: "Groudon,p2,0", health: "99/252" }
+|move|p2a: Groudon|Thunder Wave|p1a: Pikachu
+    Move { user: Some("Groudon"), player_id: Some("p2"), name: "Thunder Wave" }
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 31/32; Overheat Fire Special 140/90 7/8]
+|-status|p1a: Pikachu|par
+    SetStatus { mon: "Pikachu,p1,0", status: "par" }
+|-heal|p2a: Groudon|114/252|[from] item: Leftovers
+    Heal { mon: "Groudon,p2,0", health: "114/252" }
+|turn|7
+    Turn { n: 7 }
+|request|...
+    MovesUpdate p1 [Surf Water Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 31/32; Overheat Fire Special 140/90 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Groudon|Thunder Wave|p1a: Pikachu
+    Move { user: Some("Groudon"), player_id: Some("p2"), name: "Thunder Wave" }
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 30/32; Overheat Fire Special 140/90 7/8]
+|-fail|p1a: Pikachu|par
+    Fail { mon: "Pikachu,p1,0" }
+|move|p1a: Pikachu|Surf|p2a: Groudon
+    Move { user: Some("Pikachu"), player_id: Some("p1"), name: "Surf" }
+    MovesUpdate p1 [Surf Water Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 22/24]
+|-supereffective|p2a: Groudon
+    SuperEffective { mon: "Groudon,p2,0" }
+|-damage|p2a: Groudon|9/252
+    Damage { mon: "Groudon,p2,0", health: "9/252" }
+|-heal|p2a: Groudon|24/252|[from] item: Leftovers
+    Heal { mon: "Groudon,p2,0", health: "24/252" }
+|turn|8
+    Turn { n: 8 }
+|request|...
+    MovesUpdate p1 [Surf Water Special 95/100 23/24; Hidden Power Ice Special 70/100 23/24; Substitute Normal Status -/- 16/16; Thunderbolt Electric Special 95/100 22/24]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 16/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 30/32; Overheat Fire Special 140/90 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Groudon|Rock Slide|p1a: Pikachu
+    Move { user: Some("Groudon"), player_id: Some("p2"), name: "Rock Slide" }
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 15/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 30/32; Overheat Fire Special 140/90 7/8]
+|-damage|p1a: Pikachu|0 fnt
+    Damage { mon: "Pikachu,p1,0", health: "0/203" }
+|faint|p1a: Pikachu
+    Faint { mon: "Pikachu,p1,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Ariados|Ariados, L98, F|296/296
+    SwitchIn p1 name=Ariados species=Some("Ariados") slot=Some(1) speed=Some(134) moves=[Hidden Power Ground Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+|-heal|p2a: Groudon|39/252|[from] item: Leftovers
+    Heal { mon: "Groudon,p2,0", health: "39/252" }
+|turn|9
+    Turn { n: 9 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 24/24; Sludge Bomb Poison Physical 90/100 16/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 15/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 30/32; Overheat Fire Special 140/90 7/8]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Groudon|Rock Slide|p1a: Ariados
+    Move { user: Some("Groudon"), player_id: Some("p2"), name: "Rock Slide" }
+    MovesUpdate p2 [Rock Slide Rock Physical 75/90 14/16; Earthquake Ground Physical 100/100 16/16; Thunder Wave Electric Status -/100 30/32; Overheat Fire Special 140/90 7/8]
+|-supereffective|p1a: Ariados
+    SuperEffective { mon: "Ariados,p1,0" }
+|-damage|p1a: Ariados|182/296
+    Damage { mon: "Ariados,p1,0", health: "182/296" }
+|move|p1a: Ariados|Sludge Bomb|p2a: Groudon
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+|-resisted|p2a: Groudon
+    Resisted { mon: "Groudon,p2,0" }
+|-damage|p2a: Groudon|0 fnt
+    Damage { mon: "Groudon,p2,0", health: "0/252" }
+|faint|p2a: Groudon
+    Faint { mon: "Groudon,p2,0", team_slot: Some(3) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Metagross|Metagross, L73|237/237
+    SwitchIn p2 name=Metagross species=Some("Metagross") slot=Some(4) speed=Some(145) moves=[Earthquake Ground Physical 100/100 16/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 48/48]
+|-heal|p1a: Ariados|200/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "200/296" }
+|turn|10
+    Turn { n: 10 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 24/24; Sludge Bomb Poison Physical 90/100 15/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 48/48]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Metagross|Agility|p2a: Metagross
+    Move { user: Some("Metagross"), player_id: Some("p2"), name: "Agility" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 47/48]
+|-boost|p2a: Metagross|spe|2
+    StatChange { mon: "Metagross,p2,0", stat: "Speed", delta: 2 }
+|move|p1a: Ariados|Sludge Bomb|p2a: Metagross
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-immune|p2a: Metagross
+    Immune { mon: "Metagross,p2,0" }
+|-heal|p1a: Ariados|218/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "218/296" }
+|turn|11
+    Turn { n: 11 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 24/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 16/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 47/48]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Metagross|Earthquake|p1a: Ariados
+    Move { user: Some("Metagross"), player_id: Some("p2"), name: "Earthquake" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 47/48]
+|-damage|p1a: Ariados|139/296
+    Damage { mon: "Ariados,p1,0", health: "139/296" }
+|move|p1a: Ariados|Signal Beam|p2a: Metagross
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Signal Beam" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 23/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-damage|p2a: Metagross|151/237
+    Damage { mon: "Metagross,p2,0", health: "151/237" }
+|-heal|p2a: Metagross|165/237|[from] item: Leftovers
+    Heal { mon: "Metagross,p2,0", health: "165/237" }
+|-heal|p1a: Ariados|157/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "157/296" }
+|turn|12
+    Turn { n: 12 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 24/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 23/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 47/48]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Metagross|Agility|p2a: Metagross
+    Move { user: Some("Metagross"), player_id: Some("p2"), name: "Agility" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 46/48]
+|-boost|p2a: Metagross|spe|2
+    StatChange { mon: "Metagross,p2,0", stat: "Speed", delta: 2 }
+|move|p1a: Ariados|Hidden Power|p2a: Metagross
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 23/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-supereffective|p2a: Metagross
+    SuperEffective { mon: "Metagross,p2,0" }
+|-damage|p2a: Metagross|52/237
+    Damage { mon: "Metagross,p2,0", health: "52/237" }
+|-heal|p2a: Metagross|66/237|[from] item: Leftovers
+    Heal { mon: "Metagross,p2,0", health: "66/237" }
+|-heal|p1a: Ariados|175/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "175/296" }
+|turn|13
+    Turn { n: 13 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 23/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 15/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 46/48]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Metagross|Earthquake|p1a: Ariados
+    Move { user: Some("Metagross"), player_id: Some("p2"), name: "Earthquake" }
+    MovesUpdate p2 [Earthquake Ground Physical 100/100 14/16; Explosion Normal Physical 250/100 8/8; Meteor Mash Steel Physical 100/85 16/16; Agility Psychic Status -/- 46/48]
+|-damage|p1a: Ariados|101/296
+    Damage { mon: "Ariados,p1,0", health: "101/296" }
+|move|p1a: Ariados|Signal Beam|p2a: Metagross
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Signal Beam" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 22/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-damage|p2a: Metagross|0 fnt
+    Damage { mon: "Metagross,p2,0", health: "0/237" }
+|faint|p2a: Metagross
+    Faint { mon: "Metagross,p2,0", team_slot: Some(4) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Pelipper|Pelipper, L88, F|249/249
+    SwitchIn p2 name=Pelipper species=Some("Pelipper") slot=Some(2) speed=Some(165) moves=[Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 16/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24]
+|-heal|p1a: Ariados|119/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "119/296" }
+|turn|14
+    Turn { n: 14 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 48/48; Signal Beam Bug Physical 75/100 22/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 16/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Pelipper|Sleep Talk|p2a: Pelipper
+    Move { user: Some("Pelipper"), player_id: Some("p2"), name: "Sleep Talk" }
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 15/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24]
+|move|p1a: Ariados|Agility|p1a: Ariados
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Agility" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 47/48; Signal Beam Bug Physical 75/100 22/24; Sludge Bomb Poison Physical 90/100 14/16]
+|-boost|p1a: Ariados|spe|2
+    StatChange { mon: "Ariados,p1,0", stat: "Speed", delta: 2 }
+|-heal|p1a: Ariados|137/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "137/296" }
+|turn|15
+    Turn { n: 15 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 47/48; Signal Beam Bug Physical 75/100 22/24; Sludge Bomb Poison Physical 90/100 14/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 15/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ariados|Sludge Bomb|p2a: Pelipper
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 47/48; Signal Beam Bug Physical 75/100 22/24; Sludge Bomb Poison Physical 90/100 13/16]
+|-damage|p2a: Pelipper|147/249
+    Damage { mon: "Pelipper,p2,0", health: "147/249" }
+|-status|p2a: Pelipper|psn
+    SetStatus { mon: "Pelipper,p2,0", status: "psn" }
+|move|p2a: Pelipper|Sleep Talk|p2a: Pelipper
+    Move { user: Some("Pelipper"), player_id: Some("p2"), name: "Sleep Talk" }
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 14/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24]
+|-heal|p1a: Ariados|155/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "155/296" }
+|-heal|p2a: Pelipper|162/249 psn|[from] item: Leftovers
+    Heal { mon: "Pelipper,p2,0", health: "162/249" }
+|-damage|p2a: Pelipper|131/249 psn|[from] psn
+    Damage { mon: "Pelipper,p2,0", health: "131/249" }
+|turn|16
+    Turn { n: 16 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 47/48; Signal Beam Bug Physical 75/100 22/24; Sludge Bomb Poison Physical 90/100 13/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 14/16; Ice Beam Ice Special 95/100 16/16; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ariados|Signal Beam|p2a: Pelipper
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Signal Beam" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 47/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 13/16]
+|-resisted|p2a: Pelipper
+    Resisted { mon: "Pelipper,p2,0" }
+|-damage|p2a: Pelipper|89/249 psn
+    Damage { mon: "Pelipper,p2,0", health: "89/249" }
+|move|p2a: Pelipper|Ice Beam|p1a: Ariados
+    Move { user: Some("Pelipper"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 14/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24]
+|-damage|p1a: Ariados|78/296
+    Damage { mon: "Ariados,p1,0", health: "78/296" }
+|-heal|p1a: Ariados|96/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "96/296" }
+|-heal|p2a: Pelipper|104/249 psn|[from] item: Leftovers
+    Heal { mon: "Pelipper,p2,0", health: "104/249" }
+|-damage|p2a: Pelipper|73/249 psn|[from] psn
+    Damage { mon: "Pelipper,p2,0", health: "73/249" }
+|turn|17
+    Turn { n: 17 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 47/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 13/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 14/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ariados|Agility|p1a: Ariados
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Agility" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 13/16]
+|-boost|p1a: Ariados|spe|2
+    StatChange { mon: "Ariados,p1,0", stat: "Speed", delta: 2 }
+|move|p2a: Pelipper|Sleep Talk|p2a: Pelipper
+    Move { user: Some("Pelipper"), player_id: Some("p2"), name: "Sleep Talk" }
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 13/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24]
+|-heal|p1a: Ariados|114/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "114/296" }
+|-heal|p2a: Pelipper|88/249 psn|[from] item: Leftovers
+    Heal { mon: "Pelipper,p2,0", health: "88/249" }
+|-damage|p2a: Pelipper|57/249 psn|[from] psn
+    Damage { mon: "Pelipper,p2,0", health: "57/249" }
+|turn|18
+    Turn { n: 18 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 13/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Rest Psychic Status -/- 16/16; Sleep Talk Normal Status -/- 13/16; Ice Beam Ice Special 95/100 15/16; Surf Water Special 95/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ariados|Sludge Bomb|p2a: Pelipper
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 12/16]
+|-damage|p2a: Pelipper|0 fnt
+    Damage { mon: "Pelipper,p2,0", health: "0/249" }
+|faint|p2a: Pelipper
+    Faint { mon: "Pelipper,p2,0", team_slot: Some(2) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Dewgong|Dewgong, L87, M|298/298
+    SwitchIn p2 name=Dewgong species=Some("Dewgong") slot=Some(5) speed=Some(172) moves=[Protect Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 16/16]
+|-heal|p1a: Ariados|132/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "132/296" }
+|turn|19
+    Turn { n: 19 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 12/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 16/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ariados|Sludge Bomb|p2a: Dewgong
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Sludge Bomb" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-damage|p2a: Dewgong|163/298
+    Damage { mon: "Dewgong,p2,0", health: "163/298" }
+|-status|p2a: Dewgong|psn
+    SetStatus { mon: "Dewgong,p2,0", status: "psn" }
+|move|p2a: Dewgong|Ice Beam|p1a: Ariados
+    Move { user: Some("Dewgong"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 15/16]
+|-damage|p1a: Ariados|36/296
+    Damage { mon: "Ariados,p1,0", health: "36/296" }
+|-heal|p1a: Ariados|54/296|[from] item: Leftovers
+    Heal { mon: "Ariados,p1,0", health: "54/296" }
+|-heal|p2a: Dewgong|181/298 psn|[from] item: Leftovers
+    Heal { mon: "Dewgong,p2,0", health: "181/298" }
+|-damage|p2a: Dewgong|144/298 psn|[from] psn
+    Damage { mon: "Dewgong,p2,0", health: "144/298" }
+|turn|20
+    Turn { n: 20 }
+|request|...
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 23/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 11/16]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 15/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p1a: Ariados|Hidden Power|p2a: Dewgong
+    Move { user: Some("Ariados"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Hidden Power Ground Physical 70/100 22/24; Agility Psychic Status -/- 46/48; Signal Beam Bug Physical 75/100 21/24; Sludge Bomb Poison Physical 90/100 11/16]
+|-damage|p2a: Dewgong|75/298 psn
+    Damage { mon: "Dewgong,p2,0", health: "75/298" }
+|move|p2a: Dewgong|Ice Beam|p1a: Ariados
+    Move { user: Some("Dewgong"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 14/16]
+|-damage|p1a: Ariados|0 fnt
+    Damage { mon: "Ariados,p1,0", health: "0/296" }
+|faint|p1a: Ariados
+    Faint { mon: "Ariados,p1,0", team_slot: Some(1) }
+|request|...
+    Prompt { player_id: "p1", kind: ChooseSwitch }
+|switch|p1a: Shedinja|Shedinja|1/1
+    SwitchIn p1 name=Shedinja species=Some("Shedinja") slot=Some(5) speed=Some(136) moves=[Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Fighting Physical 70/100 24/24; Toxic Poison Status -/85 16/16; Silver Wind Bug Physical 60/100 8/8]
+|-heal|p2a: Dewgong|93/298 psn|[from] item: Leftovers
+    Heal { mon: "Dewgong,p2,0", health: "93/298" }
+|-damage|p2a: Dewgong|56/298 psn|[from] psn
+    Damage { mon: "Dewgong,p2,0", health: "56/298" }
+|turn|21
+    Turn { n: 21 }
+|request|...
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 24/24; Toxic Poison Status -/85 16/16; Silver Wind Bug Physical 60/100 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Dewgong|Surf|p1a: Shedinja
+    Move { user: Some("Dewgong"), player_id: Some("p2"), name: "Surf" }
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 23/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 14/16]
+|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+    Ability { mon: "Shedinja,p1,0", ability: "Wonder Guard", how: "activate", other: None }
+    Immune { mon: "Shedinja,p1,0" }
+|move|p1a: Shedinja|Toxic|p2a: Dewgong|[miss]
+    Move { user: Some("Shedinja"), player_id: Some("p1"), name: "Toxic" }
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 24/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+|-miss|p1a: Shedinja|p2a: Dewgong
+    Miss { mon: "Dewgong,p2,0" }
+|-heal|p2a: Dewgong|74/298 psn|[from] item: Leftovers
+    Heal { mon: "Dewgong,p2,0", health: "74/298" }
+|-damage|p2a: Dewgong|37/298 psn|[from] psn
+    Damage { mon: "Dewgong,p2,0", health: "37/298" }
+|turn|22
+    Turn { n: 22 }
+|request|...
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 24/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 23/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 14/16]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Dewgong|Ice Beam|p1a: Shedinja
+    Move { user: Some("Dewgong"), player_id: Some("p2"), name: "Ice Beam" }
+    MovesUpdate p2 [Protect Normal Status -/- 16/16; Surf Water Special 95/100 23/24; Toxic Poison Status -/85 16/16; Ice Beam Ice Special 95/100 13/16]
+|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+    Ability { mon: "Shedinja,p1,0", ability: "Wonder Guard", how: "activate", other: None }
+    Immune { mon: "Shedinja,p1,0" }
+|move|p1a: Shedinja|Hidden Power|p2a: Dewgong
+    Move { user: Some("Shedinja"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 23/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+|-supereffective|p2a: Dewgong
+    SuperEffective { mon: "Dewgong,p2,0" }
+|-damage|p2a: Dewgong|0 fnt
+    Damage { mon: "Dewgong,p2,0", health: "0/298" }
+|faint|p2a: Dewgong
+    Faint { mon: "Dewgong,p2,0", team_slot: Some(5) }
+|request|...
+    Prompt { player_id: "p2", kind: ChooseSwitch }
+|switch|p2a: Raichu|Raichu, L83, M|232/232
+    SwitchIn p2 name=Raichu species=Some("Raichu") slot=Some(1) speed=Some(214) moves=[Substitute Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Ice Special 70/100 24/24]
+|turn|23
+    Turn { n: 23 }
+|request|...
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 23/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Substitute Normal Status -/- 16/16; Surf Water Special 95/100 24/24; Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Raichu|Surf|p1a: Shedinja
+    Move { user: Some("Raichu"), player_id: Some("p2"), name: "Surf" }
+    MovesUpdate p2 [Substitute Normal Status -/- 16/16; Surf Water Special 95/100 23/24; Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24]
+|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+    Ability { mon: "Shedinja,p1,0", ability: "Wonder Guard", how: "activate", other: None }
+    Immune { mon: "Shedinja,p1,0" }
+|move|p1a: Shedinja|Hidden Power|p2a: Raichu
+    Move { user: Some("Shedinja"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 22/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+|-crit|p2a: Raichu
+    CriticalHit { mon: "Raichu,p2,0" }
+|-damage|p2a: Raichu|57/232
+    Damage { mon: "Raichu,p2,0", health: "57/232" }
+|-enditem|p2a: Raichu|Petaya Berry|[eat]
+    ItemEnded { mon: "Raichu,p2,0", item: "Petaya Berry", how: "eat", other: None }
+|-boost|p2a: Raichu|spa|1|[from] item: Petaya Berry
+    StatChange { mon: "Raichu,p2,0", stat: "Sp. Atk", delta: 1 }
+|turn|24
+    Turn { n: 24 }
+|request|...
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 22/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+    Prompt { player_id: "p1", kind: ChooseMove }
+|request|...
+    MovesUpdate p2 [Substitute Normal Status -/- 16/16; Surf Water Special 95/100 23/24; Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 24/24]
+    Prompt { player_id: "p2", kind: ChooseMove }
+|move|p2a: Raichu|Hidden Power|p1a: Shedinja
+    Move { user: Some("Raichu"), player_id: Some("p2"), name: "Hidden Power" }
+    MovesUpdate p2 [Substitute Normal Status -/- 16/16; Surf Water Special 95/100 23/24; Thunderbolt Electric Special 95/100 24/24; Hidden Power Ice Special 70/100 23/24]
+|-immune|p1a: Shedinja|[from] ability: Wonder Guard
+    Ability { mon: "Shedinja,p1,0", ability: "Wonder Guard", how: "activate", other: None }
+    Immune { mon: "Shedinja,p1,0" }
+|move|p1a: Shedinja|Hidden Power|p2a: Raichu
+    Move { user: Some("Shedinja"), player_id: Some("p1"), name: "Hidden Power" }
+    MovesUpdate p1 [Shadow Ball Ghost Physical 80/100 24/24; Hidden Power Fighting Physical 70/100 21/24; Toxic Poison Status -/85 15/16; Silver Wind Bug Physical 60/100 8/8]
+|-damage|p2a: Raichu|0 fnt
+    Damage { mon: "Raichu,p2,0", health: "0/232" }
+|faint|p2a: Raichu
+    Faint { mon: "Raichu,p2,0", team_slot: Some(1) }
+|win|Player 1
+    Win { side: Some("0") }

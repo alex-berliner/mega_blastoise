@@ -4,7 +4,7 @@ This page documents the primary contracts connecting core and platform code.
 
 ## `BoardEvent` Contract
 
-[`BoardEvent`](../../crates/mega_blastoise_core/src/board_event.rs) is the typed event model parsed from battler logs and injected prompts.
+[`BoardEvent`](../../crates/mega_blastoise_core/src/board_event.rs) is the typed event model the runners produce from the PS protocol (through `ps_client`), plus injected prompts.
 
 Examples:
 
@@ -28,7 +28,7 @@ Platform code implements:
 
 - `async fn read_choice(&mut self, player_id: &str, request: &Request) -> String`
 
-Returned strings must match battler command syntax (`move N`, `switch N`, etc.).
+Returned strings use the shared choice grammar (`move N`, `switch N`, etc.), which each runner translates for its engine.
 
 ## Event Queue Semantics
 

@@ -19,8 +19,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          submodules: recursive
 
       - name: Install Rust
         uses: dtolnay/rust-toolchain@stable
@@ -80,6 +78,19 @@ jobs:
           else
             echo "::warning::no ref-design-cell-on-board branch: its assembly view is not published"
           fi
+          # The current shell (the cell in the board), from branch ref-design-cellcut, until it
+          # reaches main: published the same way, at /assembly-cellcut/
+          if git fetch --depth=1 origin ref-design-cellcut; then
+            mkdir -p _site/assembly-cellcut "$RUNNER_TEMP/cellcut"
+            git archive FETCH_HEAD hardware/ref_design/viewer/site | tar -x -C "$RUNNER_TEMP/cellcut"
+            cp -r "$RUNNER_TEMP"/cellcut/hardware/ref_design/viewer/site/. _site/assembly-cellcut/
+          else
+            echo "::warning::no ref-design-cellcut branch: its assembly view is not published"
+          fi
+          # Every distinct layout's last assembly view, listed in site/views/views.json (one
+          # line each), at /views/<slug>/. Each commit is fetched by SHA (or its viewer/* tag,
+          # for commits on no pushed branch); one that can't be fetched only warns.
+          python3 scripts/site_views.py _site || echo "::warning::scripts/site_views.py failed: the exploded views are not all published"
           # the battery-under-board variant became the reference: its old address forwards
           mkdir -p _site/assembly-battery-bottom
           printf '<!doctype html><meta charset="utf-8"><meta http-equiv="refresh" content="0; url=../assembly/"><a href="../assembly/">Moved to /assembly/</a>\n' > _site/assembly-battery-bottom/index.html

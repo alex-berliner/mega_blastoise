@@ -1,0 +1,343 @@
+{
+ "order": [
+  "Bug",
+  "Fire",
+  "Ghost",
+  "Ice",
+  "Poison",
+  "Psychic",
+  "Electric",
+  "Grass",
+  "Dragon",
+  "Fighting",
+  "Flying",
+  "Ground",
+  "Normal",
+  "Rock",
+  "Water"
+ ],
+ "types": [
+  {
+   "name": "Bug",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 1,
+    "Ghost": 0,
+    "Ice": 0,
+    "Poison": 1,
+    "Psychic": 0,
+    "Electric": 0,
+    "Grass": 2,
+    "Dragon": 0,
+    "Fighting": 2,
+    "Flying": 1,
+    "Ground": 2,
+    "Normal": 0,
+    "Rock": 1,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Fire",
+   "damageTaken": {
+    "Bug": 2,
+    "Fire": 2,
+    "Ghost": 0,
+    "Ice": 0,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 0,
+    "Grass": 2,
+    "Dragon": 0,
+    "Fighting": 0,
+    "Flying": 0,
+    "Ground": 1,
+    "Normal": 0,
+    "Rock": 1,
+    "Water": 1
+   },
+   "special": {}
+  },
+  {
+   "name": "Ghost",
+   "damageTaken": {
+    "Bug": 2,
+    "Fire": 0,
+    "Ghost": 1,
+    "Ice": 0,
+    "Poison": 2,
+    "Psychic": 0,
+    "Electric": 0,
+    "Grass": 0,
+    "Dragon": 0,
+    "Fighting": 3,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 3,
+    "Rock": 0,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Ice",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 1,
+    "Ghost": 0,
+    "Ice": 2,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 0,
+    "Grass": 0,
+    "Dragon": 0,
+    "Fighting": 1,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 1,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Poison",
+   "damageTaken": {
+    "Bug": 1,
+    "Fire": 0,
+    "Ghost": 0,
+    "Ice": 0,
+    "Poison": 2,
+    "Psychic": 1,
+    "Electric": 0,
+    "Grass": 2,
+    "Dragon": 0,
+    "Fighting": 2,
+    "Flying": 0,
+    "Ground": 1,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 0
+   },
+   "special": {
+    "psn": 3,
+    "tox": 3
+   }
+  },
+  {
+   "name": "Psychic",
+   "damageTaken": {
+    "Bug": 1,
+    "Fire": 0,
+    "Ghost": 3,
+    "Ice": 0,
+    "Poison": 0,
+    "Psychic": 2,
+    "Electric": 0,
+    "Grass": 0,
+    "Dragon": 0,
+    "Fighting": 2,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Electric",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 0,
+    "Ghost": 0,
+    "Ice": 0,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 2,
+    "Grass": 0,
+    "Dragon": 0,
+    "Fighting": 0,
+    "Flying": 2,
+    "Ground": 1,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Grass",
+   "damageTaken": {
+    "Bug": 1,
+    "Fire": 1,
+    "Ghost": 0,
+    "Ice": 1,
+    "Poison": 1,
+    "Psychic": 0,
+    "Electric": 2,
+    "Grass": 2,
+    "Dragon": 0,
+    "Fighting": 0,
+    "Flying": 1,
+    "Ground": 2,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 2
+   },
+   "special": {}
+  },
+  {
+   "name": "Dragon",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 2,
+    "Ghost": 0,
+    "Ice": 1,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 2,
+    "Grass": 2,
+    "Dragon": 1,
+    "Fighting": 0,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 2
+   },
+   "special": {}
+  },
+  {
+   "name": "Fighting",
+   "damageTaken": {
+    "Bug": 2,
+    "Fire": 0,
+    "Ghost": 0,
+    "Ice": 0,
+    "Poison": 0,
+    "Psychic": 1,
+    "Electric": 0,
+    "Grass": 0,
+    "Dragon": 0,
+    "Fighting": 0,
+    "Flying": 1,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 2,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Flying",
+   "damageTaken": {
+    "Bug": 2,
+    "Fire": 0,
+    "Ghost": 0,
+    "Ice": 1,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 1,
+    "Grass": 2,
+    "Dragon": 0,
+    "Fighting": 2,
+    "Flying": 0,
+    "Ground": 3,
+    "Normal": 0,
+    "Rock": 1,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Ground",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 0,
+    "Ghost": 0,
+    "Ice": 1,
+    "Poison": 2,
+    "Psychic": 0,
+    "Electric": 3,
+    "Grass": 1,
+    "Dragon": 0,
+    "Fighting": 0,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 2,
+    "Water": 1
+   },
+   "special": {
+    "sandstorm": 3
+   }
+  },
+  {
+   "name": "Normal",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 0,
+    "Ghost": 3,
+    "Ice": 0,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 0,
+    "Grass": 0,
+    "Dragon": 0,
+    "Fighting": 1,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 0
+   },
+   "special": {}
+  },
+  {
+   "name": "Rock",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 2,
+    "Ghost": 0,
+    "Ice": 0,
+    "Poison": 2,
+    "Psychic": 0,
+    "Electric": 0,
+    "Grass": 1,
+    "Dragon": 0,
+    "Fighting": 1,
+    "Flying": 2,
+    "Ground": 1,
+    "Normal": 2,
+    "Rock": 0,
+    "Water": 1
+   },
+   "special": {
+    "sandstorm": 3
+   }
+  },
+  {
+   "name": "Water",
+   "damageTaken": {
+    "Bug": 0,
+    "Fire": 2,
+    "Ghost": 0,
+    "Ice": 2,
+    "Poison": 0,
+    "Psychic": 0,
+    "Electric": 1,
+    "Grass": 1,
+    "Dragon": 0,
+    "Fighting": 0,
+    "Flying": 0,
+    "Ground": 0,
+    "Normal": 0,
+    "Rock": 0,
+    "Water": 2
+   },
+   "special": {}
+  }
+ ]
+}
