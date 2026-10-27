@@ -90,12 +90,13 @@ def mesh_min(m):
         if r.returncode or "ERROR" in r.stderr:
             sys.exit(r.stderr[-1500:])
         outer = trimesh.load(stl)
-    region = lambda p: (p[:, 2] > 4.5) & ((np.abs(p[:, 0]) > 34) | (np.abs(p[:, 1]) > CASE_L / 2 - 6.3))
+    region = lambda p, z0=4.5: (p[:, 2] > z0) & ((np.abs(p[:, 0]) > 34) | (np.abs(p[:, 1]) > CASE_L / 2 - 6.3))
     op = trimesh.sample.sample_surface(outer, 4000000, seed=1)[0]
-    op = op[region(op)]
+    opw = op[region(op, 4.2)]            # the outside's samples that decide which of the top's samples lie on it: a little below the
+    op = op[region(op)]                  # region's floor, or a sample of the outside at the floor's edge counted as an inner surface (0.458 at the corner, 2026-10-27)
     tp = trimesh.sample.sample_surface(m, 4000000, seed=2)[0]
     tp = tp[region(tp)]
-    inner = tp[cKDTree(op).query(tp)[0] >= 0.2]          # not on the outside
+    inner = tp[cKDTree(opw).query(tp)[0] >= 0.2]         # not on the outside
     usb = (op[:, 0] > 36) & (op[:, 1] > -6) & (op[:, 1] < 10)
     o = op[(op[:, 2] > 4.95) & ((np.abs(op[:, 0]) > CASE_W / 2 - 2.75) | (np.abs(op[:, 1]) > CASE_L / 2 - 2.75)) & ~usb]
     d = cKDTree(inner).query(o)[0]

@@ -218,8 +218,9 @@ spk_seat = floor_t - spk_pocket_floor;                  // the speaker's seat, z
 // the board sits this high over the tub's floor, on ribs: a worst-case cell in its hole, its top
 // cell_top over the board, its bottom in the floor's pocket (0.7: the case is 9.55 at the screen)
 board_lift = cell[2] - cell_top - pcb_t - cell_pocket;
-glass_gap = 2.4;          // panel back above the board: J3 (2.0 mm) under the panel keeps 0.4 mm against
-                          // the connector's and a printed top's tolerances (Alex, 2026-09-26)
+glass_gap = 3.5;          // panel back above the board: 3.5 since the ESP32-S3 board (2026-10-27, Alex: "raising the glass seems fine"; was 2.4): the
+                          // WROOM-1U (3.2 tall) lies under the glass at the left of J3, glass_limit 3.3 leaves 0.1. J3 (2.0 mm) now has 1.5 mm under the
+                          // panel (it had 0.4 against the connector's and a printed top's tolerances, Alex, 2026-09-26)
 // The panel's top sits in a pocket in the top piece's underside, under a skin face_t thick over its
 // black border, so the screen face is only face_t above the glass instead of top_t (2026-10-19)
 face_t = 0.8;
@@ -1185,7 +1186,8 @@ module end_cuts(sy) {
 // (its base is cut flat at the deck's level, the slope's foot at the cut): the section is carried out over the side
 // round unchanged (each slice of the step is the ends' side section lifted by the profile's height), so the same
 // curve shows in the side view and the step runs straight out and is cut by the case's side at both heights
-uni_ds_r = 8.0;  uni_ds_angle = 36;                      // the DS Lite's slope: its arc's radius, and its angle at the edge
+uni_ds_r = 8.0;  uni_ds_angle = 54;                      // the DS Lite's slope: its arc's radius, and its angle at the edge (36 on the DS Lite; 54 since the glass went up
+                                                         // 1.1 mm: the slope's run (step / tan(angle / 2)) stays 5.8 so the clusters' walls stay put; 53.6 to 54.9 pass the asserts)
 uni_ds_h = uni_ds_r * (1 - cos(uni_ds_angle));           // 1.528 (measured 1.523)
 uni_k = step_d / uni_ds_h;                               // the scale to ours (1.21)
 uni_r = uni_ds_r * uni_k;                                // the arc's radius here (9.69)
@@ -1254,7 +1256,8 @@ module uni_limit() {
 // offset: the same arcs' centres, radius face_r - uni_skin, lifted with the slope as the outside is. The limit is a
 // slab of those sections: the band's, the slope's two sides, and the ends' beyond the foot. It reaches down
 // past the seam so it cuts nothing but the inside's top
-uni_in_r = face_r - uni_skin - 0.01;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs)
+uni_in_r = face_r - uni_skin - 0.16;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs; another 0.15 since the slope went to 54 degrees
+                                       // (2026-10-27): where the steeper slope meets the side round the wall was 0.586 (needs 0.62), now 0.66; the outside is untouched)
 function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
   concat([[-x, zb]],
          [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + uni_in_r * sin(a)), cz + uni_in_r * cos(a)]],
