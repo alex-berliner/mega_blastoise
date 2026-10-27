@@ -71,7 +71,9 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_hole = [[-18.9, -7.8], [18.9, 47.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
+cell_dy = 0;                                            // the hole's shift towards seat 2 (+y; the placement search's "hole"); 0 as built: 1 passes every assert here and gave one clean board (2026-10-27) that failed check_fit on 6 moved parts, 2 mm and more put the cell's top into the ends' ceiling
+j2_dy = 0;                                              // J2, its plug and its frame notch follow the hole this far: +1 puts J2's plug 2.4 from H1's boss (3.1 needed), more than 0.3 puts J2 over 22 from the hole's corner
+cell_hole = [[-18.9, -7.8 + cell_dy], [18.9, 47.0 + cell_dy]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
@@ -407,10 +409,10 @@ debug_h = 2.9;
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), in the right strip beside the hole's lead (seat-2) end, its mouth towards
 // +y: the mated plug stands 4 mm out along the strip (placement.py), the cell's leads come out of the hole's top end and
 // run to it (0.15 in from 31.7: its mount pads keep 0.3 from the edge; its courtyard is 0.125 past it, the glass frame keeps the rest, V&V DEF-56)
-j2_pos = [31.55, 30.0];  j2_h = 3.4;
+j2_pos = [31.55, 30.0 + j2_dy];  j2_h = 3.4;
 // the panel frame's notches where a tall connector (3.4, over the frame's limit) lies beside the glass: [side, y0, y1]
-frame_notches = [[1, -15.3, -5.1], [1, 26.9, 37.1]];
-j2_plug = [[27.95, 32.6], [35.4, 36.6]];               // the mated plug's outline, corners
+frame_notches = [[1, -15.3, -5.1], [1, 26.9 + j2_dy, 37.1 + j2_dy]];
+j2_plug = [[27.95, 32.6 + j2_dy], [35.4, 36.6 + j2_dy]];               // the mated plug's outline, corners
 // the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
 // backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
 // U9 (1.2)
@@ -907,7 +909,7 @@ module rib_free2d() for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[
 // their length: the left one under J5, where a cable is pushed in (until 2026-10-24 also under the debug
 // switches, which left the strip, and J6, which went); the right one under TH1 and J1's end (the power latch
 // left it on 2026-10-24), with one across it at y 14. The floor's grid and its ring round the board's edge cross them
-th1_y = 20.0;                                           // TH1 (placement.py), at the cell hole's right edge
+th1_y = 20.0 + cell_dy;                                 // TH1 (placement.py), at the cell hole's right edge
 strip_ribs = [[[-31.2 - 0.6, cell_hole[0][1]], [-31.2 + 0.6, cell_hole[1][1]]],
               [[29.6 - 0.6, cell_hole[0][1]], [29.6 + 0.6, cell_hole[1][1]]],
               [[cell_hole[1][0], th1_y - 0.6], [board_w / 2, th1_y + 0.6]]];

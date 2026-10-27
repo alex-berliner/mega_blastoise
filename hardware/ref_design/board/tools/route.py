@@ -1538,6 +1538,36 @@ def drop_via_conflicts(board):
     return gone
 
 
+def gnd_rescue(board, rounds=2):
+    """A GND pad the pours don't reach (2026-10-27: C12.2 and C21.2 under U4, in some seeds: no room for a via beside them): the maze router
+    takes a short F.Cu stub from it to the nearest GND via within 8 mm, which stands in the pour. Returns the pads it joined."""
+    done = []
+    for _ in range(rounds):
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        items = item_by_uuid(board)
+        vias = [xy(t.GetPosition()) for t in board.GetTracks() if t.GetClass() == "PCB_VIA" and t.GetNetname() == "GND"]
+        todo = []
+        for u in drc_unconnected(board):
+            if not any("[GND]" in i["description"] for i in u["items"]):
+                continue
+            for i in u["items"]:
+                it = items.get(i.get("uuid"))
+                if isinstance(it, pcbnew.PAD) and it.GetNetname() == "GND" and it not in todo:
+                    todo.append(it)
+        if not todo:
+            break
+        for pad in todo:
+            p = xy(pad.GetPosition())
+            layer = pcbnew.F_Cu if pad.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+            for v in sorted(vias, key=lambda v: math.dist(v, p)):
+                if math.dist(v, p) > 8.0:
+                    break
+                if maze_connect(board, "GND", p, layer, v, pcbnew.F_Cu, reach=4.0):
+                    done.append(f"{pad.GetParentFootprint().GetReference()}.{pad.GetNumber()}")
+                    break
+    return done
+
+
 def finish():
     """--finish: the routed, saved board again: stubs, open connections and repairs only,
     without routing it all again (the pours stay; the maze router looks past them)."""
@@ -1548,6 +1578,7 @@ def finish():
     print("loose router copper removed:", prune_dangling(board))
     print("vias too close to another net's pad removed:", drop_via_conflicts(board))
     repair(board)
+    print("GND pads joined to a via by a stub:", gnd_rescue(board))
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)
@@ -1900,6 +1931,7 @@ def main():
     print("stitching vias in the strips beside the cell's hole:", strip_stitch(board))
     print("vias too close to another net's pad removed:", drop_via_conflicts(board))
     repair(board)
+    print("GND pads joined to a via by a stub:", gnd_rescue(board))
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)

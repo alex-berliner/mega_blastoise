@@ -61,6 +61,8 @@ GROUPS = {
     "j4": dict(kind="packed", refs=["J4"], zones=["low_r", "rs_bot", "gap", "end1_r", "mid_low"], turns=[0, 90, 180, 270]),
     # grey parts the core may need the room of: JP2 (VSYS to the panel's LED_A), C10; evicted to the nearest legal spot when something lands on them
     "misc": dict(kind="packed", refs=["JP2", "C10"], zones=["gap", "mid_low", "low_l", "low_r", "rs_bot", "end1_r"], turns=[0, 90]),
+    # the seat-2 Start's row above the hole (Q7, D8 and the parts on PWR_EN): a hole shifted towards seat 2 lands on it
+    "row2": dict(kind="packed", refs=["C47", "Q7", "R62", "D8", "R15", "TP6", "R63"], zones=BANDS + STRIPS, turns=[0, 180]),
     "spi_r": dict(kind="packed", refs=["R28", "R29"], zones=["mid_low", "low_l", "gap"], turns=[0, 90]),
     "c2930": dict(kind="packed", refs=["C29", "C30"], zones=["gap", "mid_low", "low_l", "low_r"], turns=[0, 90]),
     # the cell's connector J2 (at the hole's lead end), its thermistor TH1 (against the cell) and the VBAT jumper/test pad: in a strip

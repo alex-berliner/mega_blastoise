@@ -245,7 +245,9 @@ class Ctx:
     def load_extents(self, cache_dir):
         path = os.path.join(cache_dir, "extents.json")
         if os.path.exists(path):
-            return json.load(open(path))
+            cached = json.load(open(path))
+            if set(self.movable) <= set(cached):        # a group added since the cache was made has no extents: its case rules would go unchecked
+                return cached
         import check_fit
         check_fit.PCB = self.pcb
         refs = sorted(self.movable)
@@ -327,7 +329,7 @@ class Ctx:
         if min(sp[2], h[2]) - max(sp[0], h[0]) > -1.0 and min(sp[3], h[3]) - max(sp[1], h[1]) > -1.0:
             bad.append("speaker hole within 1 mm of the cell hole")
         sk = (sp[0] - 0.5, sp[1] - 0.5, sp[2] + 0.5, sp[3] + 0.5)         # the rule area: the hole's outline plus the speaker's grow
-        for r in list(self.fixed_refs()) + sorted(self.movable):
+        for r in (list(self.fixed_refs()) + sorted(self.movable)) if self.spk != self.spk_home else ():
             c = self.court(r)
             if not self.fp[r].IsFlipped() and min(c[2], sk[2]) - max(c[0], sk[0]) > 0.01 and min(c[3], sk[3]) - max(c[1], sk[1]) > 0.01:
                 bad.append(f"{r} in the speaker's keep-out")
@@ -804,7 +806,7 @@ class Planner:
             out[r] = [round(found[0], 3), round(found[1], 3), (p[2] + turn) % 360, p[3]]
         return out
 
-    ORDER = ("audio", "j4", "cellconn", "core", "charger", "vsense", "latch", "ldo", "j5", "boot", "misc", "spi_r", "c2930")
+    ORDER = ("audio", "j4", "cellconn", "core", "charger", "vsense", "latch", "row2", "ldo", "j5", "boot", "misc", "spi_r", "c2930")
 
     def realize(self, assign):
         """assign: {group: [zone, turn]}; "hole": [dx, dy] (case frame), "usb": dy, "speaker": [dx, dy, zone, turn] (KiCad frame; the
@@ -879,7 +881,12 @@ class Planner:
             if x is None:
                 continue
             sp, ho = ctx.spk, ctx.hole
-            cut = [(sp[0] - 0.5, sp[1] - 0.5, sp[2] + 0.5, sp[3] + 0.5), ho] if not fl else []
+            cut = []
+            if not fl:           # a home part is legal against the cutouts where they are at home; only a moved cutout can land on it
+                if sp != ctx.spk_home:
+                    cut.append((sp[0] - 0.5, sp[1] - 0.5, sp[2] + 0.5, sp[3] + 0.5))
+                if ho != ctx.cell_home:
+                    cut.append(ho)
             if not any(min(hb[2], o[2]) - max(hb[0], o[0]) > 0.01 and min(hb[3], o[3]) - max(hb[1], o[1]) > 0.01 for o in taken[fl] + cut):
                 taken[fl].append(hb)         # nothing landed on it: it stays (home is legal by construction)
                 continue
@@ -902,6 +909,37 @@ def ctx_court_home(ctx, r):
     b = g["court"]
     mx, my = x / 1e6, y / 1e6
     return (b[0] + mx, b[1] + my, b[2] + mx, b[3] + my)
+
+
+def holescan(work, dys, jobs, keep=8):
+    """The cell hole shifted towards seat 2 by each dy (case frame, mm): the latch parts and the seat-2 Start's row it lands on are
+    placed again (every zone for each of the two groups), the rest at home; the best `keep` per shift, written to DIR/hole_candidates.json."""
+    pl = Planner(work)
+    pz = pl.pz
+    cand = []
+    for dy in dys:
+        for lo in options(pz, "latch"):
+            for ro in options(pz, "row2"):
+                a = {"hole": [0, dy]}
+                if lo:
+                    a["latch"] = lo
+                if ro:
+                    a["row2"] = ro
+                cand.append(a)
+    out = []
+    with _pool(work, jobs) as pool:
+        res = []
+        for i, r in enumerate(pool.imap_unordered(_eval_assign, cand, chunksize=4)):
+            res.append(r)
+            if (i + 1) % 200 == 0 or i + 1 == len(cand):
+                print(f"holescan: {i + 1}/{len(cand)} done, {sum(1 for x in res if x['valid'])} valid", flush=True)
+    for dy in dys:
+        v = sorted([r for r in res if r["valid"] and r["assign"]["hole"][1] == dy], key=lambda r: r["score"])[:keep]
+        print(f"dy {dy}: {sum(1 for r in res if r['assign']['hole'][1] == dy and r['valid'])} valid; best", [round(r["score"], 1) for r in v[:4]],
+              "chan/left/right/top of the best", [(r["chan"], r["left"], r["right"], r["top"]) for r in v[:1]])
+        for r in v:
+            out.append(dict(assign=r["assign"], picks=r["state"], score=r["score"], chan=r["chan"], left=r["left"], right=r["right"], top=r["top"], len=r["len"], tag=f"hole dy {dy}"))
+    json.dump(out, open(os.path.join(work, "hole_candidates.json"), "w"))
 
 
 def stage_base(dest, placement_picks=None):
@@ -1299,7 +1337,8 @@ def route(args):
     run = args["run"]
     top = prefilter(top, args.get("pre_jobs", 8))
     sync_hosts(hosts, run)
-    jobs = [(f"{args.get('prefix', '')}c{args['skip'] + i:03d}s{s}", c, s) for i, c in enumerate(top) for s in range(args["seeds"])]
+    jobs = [(f"{args.get('prefix', '')}c{args['skip'] + i:03d}s{s}", c, s) for i, c in enumerate(top)
+            for s in range(args.get("seed0", 0), args.get("seed0", 0) + args["seeds"])]
     res_dir = os.path.join(work, "routed")
     os.makedirs(res_dir, exist_ok=True)
     state = {"i": 0}
@@ -1442,12 +1481,14 @@ def main():
         print(json.dumps(pl.evaluate(json.loads(pos[0]) if pos else {})))
     elif cmd == "stage1":
         stage1(work, int(opt.get("keep", 60)), int(opt.get("jobs", 16)), int(opt.get("width", 40)))
+    elif cmd == "holescan":
+        holescan(work, [float(x) for x in opt.get("dys", "1,2,3").split(",")], int(opt.get("jobs", 15)), int(opt.get("keep", 8)))
     elif cmd == "stage2":
         stage2(work, int(opt.get("top", 40)), int(opt.get("rounds", 250)), int(opt.get("jobs", 16)), int(opt.get("seed", 1000)), int(opt.get("skip", 0)), opt.get("outfile", "candidates.json"), opt.get("infile", "assign.json"))
     elif cmd == "route":
         route(dict(dir=pos[0], hosts=opt.get("hosts", "il:8"), top=int(opt.get("top", 40)), seeds=int(opt.get("seeds", 1)),
                    skip=int(opt.get("skip", 0)), run=opt.get("run", time.strftime("%m%d%H%M")), file=opt.get("file", "candidates.json"),
-                   prefix=opt.get("prefix", "")))
+                   prefix=opt.get("prefix", ""), seed0=int(opt.get("seed0", 0))))
     elif cmd == "preflight":
         d = os.path.join(tempfile.gettempdir(), "mbpre_" + str(os.getpid()))
         stage_base(d, json.loads(pos[0]) if pos else {})
@@ -1459,7 +1500,7 @@ def main():
     elif cmd == "measure":
         measure(pos[0])
     elif cmd == "stop":
-        stop(dict(hosts=opt.get("hosts", "il:1,desktop-ubuntu:1,xps13:1")))
+        stop(dict(hosts=opt.get("hosts", "il:1,xps13:1")))
     elif cmd == "collect":
         collect(pos[0])
     elif cmd == "report":
