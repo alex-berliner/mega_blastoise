@@ -725,3 +725,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-94
 - Gate: ORDER
 - Status: OPEN (a BOM change if the pads allow: a 10 uF 0402 (or a K-tolerance 4.7 uF) for C24, and a 4.7 uF K-tolerance part for C25; or Alex accepts Raspberry Pi's choice with VER-84's ripple measurement as the check)
+
+### DEF-71: Three firmware rules the RP2350's errata need are not in pinmap.md
+- Found: VER-16 (analysis/errata_rp2350.md) and VER-196 (paper_checks.py ampstate), 2026-10-27, at 71737ae
+- Symptom: on an A2 part, E9 can hold AMP_EN near 2.2 V behind R37's 100k if firmware leaves the pin an input with its input buffer on, which turns Q3 on and the amplifier with it; a watchdog reset resets the pads only when PSM WDSEL includes RESETS (all 0 at reset, rp2350.txt:36739-36791), which the SDK's watchdog_enable() sets; E16 can corrupt OTP reads on A2 if OTP is used. pinmap.md's Power control section names none of these.
+- Root cause: the errata table (VER-16) was not written, so their firmware consequences were never collected.
+- Why missed: VER-16 was NOT_BUILT; VER-196 had not run.
+- Check added or changed: VER-16, VER-196 (both now name the rules); VER-39's doc sweep reads pinmap.md for them
+- Updated: DF-94, REQ-PWR-09
+- Gate: EVT
+- Status: OPEN (three lines in pinmap.md's Power control: AMP_EN driven low before sleep and never left an input; keep the SDK's watchdog_enable() (PSM WDSEL with RESETS); write no OTP and keep secure boot off. No copper)

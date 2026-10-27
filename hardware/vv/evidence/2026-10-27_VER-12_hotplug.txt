@@ -1,0 +1,14 @@
+# VER-12 hotplug
+DATE: 2026-10-27
+COMMIT: 2ba2308049863c9087b9bbca74e7b5200dbbedfa
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py hotplug
+a 5.25 V source stepped onto a 2 m cable (loop 0.13-0.85 ohm, 1-2 uH: stand-ins) into R41 2.2 ohm and C1 10u at 30-100% of nominal (DC bias, VER-30)
+worst VBUS at U2's IN 5.50 V (cable 0.13 ohm, 2 uH, C1 3.0 uF, R41 2.18 ohm) against OVP's minimum 6.4 V less 0.2 V = 6.2 V (bq24074.txt:699)
+EN1 at that peak 3.11 V through R43 220k and the 285k pull-down (bq24074.txt:512), limit 6.7 V (7 V absolute, bq24074.txt:598)
+PWR_EN at most 3.76 V (R14/R15 with D3's drop taken as 0, C47 1u only slows it), limit 5.5 V (U3's EN 6 V absolute, rt9013.pdf p3)
+RESULT: PASS
+
+exit 0
+RESULT: PASS
