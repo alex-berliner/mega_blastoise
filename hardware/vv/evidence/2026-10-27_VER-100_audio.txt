@@ -1,0 +1,15 @@
+# VER-100 audio
+DATE: 2026-10-27
+COMMIT: 7884d43b6bb27bda3138308ee19cd6ae46530276
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py audio
+parts: R32 1k 1%, C37 4.7n 10%, R33 1k 1%, C38 4.7n 10%, C39 220n 10%, R34 20k 1%, R35 20k 1% (C tolerances from the MPNs' letter: K 10%, M 20%)
+nominal: gain at 1 kHz 5.2 dB over the PWM's swing (2 x Rf/Ri, u7.json pin 4); -3 dB at 32.7 Hz and 13.9 kHz; the carrier at 585.9 kHz (clk_sys 150 MHz / 256) 48.8 dB down
+every corner (2^7 tolerance corners x the pad's 0-170 ohm): high -3 dB at least 11.3 kHz (limit 10), low corner at most 36.7 Hz (limit 50), carrier at least 46.8 dB down (limit 40)
+C37 and C38 are X7R (0402B472K, 50 V): DC bias at the PWM's 1.65 V mean lowers them (VER-30); the carrier stays 40 dB down while they keep 66% of their -10% value
+not in this check: the FM8002A's own bandwidth and PSRR (fm8002a.pdf not on disk)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

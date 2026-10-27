@@ -1,0 +1,32 @@
+# VER-103 shelf
+DATE: 2026-10-27
+COMMIT: 7884d43b6bb27bda3138308ee19cd6ae46530276
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py shelf
+off, no USB, cell in: VSYS is live through U2's battery FET; 3V3, +1V1 and the panel are off
+-- 25 C, VBAT 4.2 V
+  U2 sleep current into BAT                      6.5 uA  6.5 uA max at TJ 85 C (bq24074.txt:714): used at 25 and 45 C
+  U3 shut down                                   1.5 uA  1.5 uA max at 25 C (rt9013.pdf p3)
+  R17 into U10's unpowered input                 7.9 uA  VBAT_DIV held at 0.50 V by U10's input clamp (stand-in 0.5 V: MCP6001 not on disk)
+  U7 shut down on VSYS                           8.4 uA  FM8002A 4.2 uA typical (u7.json p3, not on disk): 2 x typical, stand-in
+  Q3 off (R36 from VSYS)                         1.0 uA  2N7002 IDSS, stand-in
+  Q5, Q6 off (the backlight LEDs from VSYS)      2.0 uA  AO3400A IDSS, stand-in
+  board total 27.3 uA (REQ-PWR-07: 30 uA at 25 C, 60 uA at 45 C): within
+  nominal: board 25.8 uA at 3.5 V + PCM 3 uA + self-discharge 1% a month = 28.0 mAh a month; 70 mAh from 3.50 V to the UVP: 2.5 months from the cutoff (limit 2), 24.1 months from full (limit 24)
+  worst: board 25.8 uA at 3.5 V + PCM 6 uA + self-discharge 3% a month = 44.2 mAh a month; 35 mAh from 3.50 V to the UVP: 0.8 months from the cutoff (limit 2), 15.5 months from full (limit 24)
+-- 45 C, VBAT 4.2 V
+  U2 sleep current into BAT                      6.5 uA  6.5 uA max at TJ 85 C (bq24074.txt:714): used at 25 and 45 C
+  U3 shut down                                   3.0 uA  1.5 uA max at 25 C (rt9013.pdf p3); doubled at 45 C (stand-in)
+  R17 into U10's unpowered input                 7.9 uA  VBAT_DIV held at 0.50 V by U10's input clamp (stand-in 0.5 V: MCP6001 not on disk)
+  U7 shut down on VSYS                          16.8 uA  FM8002A 4.2 uA typical (u7.json p3, not on disk): 2 x typical, stand-in
+  Q3 off (R36 from VSYS)                         2.0 uA  2N7002 IDSS, stand-in
+  Q5, Q6 off (the backlight LEDs from VSYS)      4.0 uA  AO3400A IDSS, stand-in
+  board total 40.2 uA (REQ-PWR-07: 30 uA at 25 C, 60 uA at 45 C): within
+  nominal: board 38.7 uA at 3.5 V + PCM 3 uA + self-discharge 2% a month = 44.4 mAh a month; 70 mAh from 3.50 V to the UVP: 1.6 months from the cutoff (limit 2), 15.4 months from full (limit 24)
+  worst: board 38.7 uA at 3.5 V + PCM 6 uA + self-discharge 6% a month = 74.6 mAh a month; 35 mAh from 3.50 V to the UVP: 0.5 months from the cutoff (limit 2), 9.3 months from full (limit 24)
+stand-ins: capacity 700 mAh (REQ-PRD-03.R), 5-10% of it between 3.50 V and the UVP, a DW01-class PCM's 3-6 uA and 1-3% a month of self-discharge (REQ-BAT-10), all until VER-37 reads the cell; the 45 C period is Alex's to set (REQ-BAT-10), so 45 C is printed and counted only at the worst case from the cutoff
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

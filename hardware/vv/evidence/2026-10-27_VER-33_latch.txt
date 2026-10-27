@@ -1,0 +1,22 @@
+# VER-33 latch
+DATE: 2026-10-27
+COMMIT: 7884d43b6bb27bda3138308ee19cd6ae46530276
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py latch
+U3 RT9013 EN: VIH 1.6 V, VIL 0.6 V, IEN 1 uA max (rt9013.pdf p4); Q1/Q7 2N7002 VGS(th) 1.0-2.5 V (q1.json p2, not on disk)
+Schottky VF max 240 mV at 0.1 mA, 80 mV a decade (d2.json p3, d3.json p2); for the off cases VF is taken as 0, the worst there
+seat 1 (SW21): 1 kohm in series at VSYS 3.42 V: Q1's gate 3.287 V (+0.787 V over its 2.5 V maximum threshold), EN 3.087 V (+1.487 V over VIH): on
+seat 1 (SW21): 1 Mohm across the dome at 4.2 V: RAW 0.103 V, EN at most 0.103 V (VIL 0.6); Q1's gate 0.103 V against its 1.0 V minimum threshold: off
+  bands: sure on (EN and Q1 both) up to 9.1 kohm at VSYS 3.42 V; Q1 may read a ghost press under 80 kohm of leakage at 4.2 V; EN may turn on under 150 kohm; sure off above 150 kohm (1 Mohm is above it)
+seat 2 (SW23): 1 kohm in series at VSYS 3.42 V: Q7's gate 3.287 V (+0.787 V over its 2.5 V maximum threshold), EN 3.087 V (+1.487 V over VIH): on
+seat 2 (SW23): 1 Mohm across the dome at 4.2 V: RAW 0.103 V, EN at most 0.103 V (VIL 0.6); Q7's gate 0.103 V against its 1.0 V minimum threshold: off
+  bands: sure on (EN and Q7 both) up to 9.1 kohm at VSYS 3.42 V; Q7 may read a ghost press under 80 kohm of leakage at 4.2 V; EN may turn on under 150 kohm; sure off above 150 kohm (1 Mohm is above it)
+after RESET or a crash with E9 (A2 stepping): R42 4.7k against E9's 8.2 kohm (rp2350.txt:102915): PWR_HOLD pulled low, EN 0 V
+held by firmware (PWR_HOLD at the GPIO's 2.62 V VOH minimum, rp2350.txt:101144): EN 2.427 V (+0.827 V over VIH); GPIO44 sources 0.56 mA into R42
+USB at 4.75 V: PWR_EN 3.04 V through R14 47k and D3 (turns the device on: True)
+USB at 5.25 V: PWR_EN 3.38 V through R14 47k and D3 (turns the device on: True)
+RESULT: PASS
+
+exit 0
+RESULT: PASS
