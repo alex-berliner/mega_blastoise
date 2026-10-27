@@ -438,7 +438,7 @@ the row says why not.
 ## (i) The gate today
 
 **The run after the 71737ae re-seed**, at c4fdd45 (2026-10-27); the scripted checks' evidence
-was made at 737e54e, VER-129's at its own re-run after the last tool edit and VER-188's at 42332f8: requirements 133 (130
+was made at 737e54e, VER-129's at 449dcb9 (after the last tool edit) and VER-188's at 42332f8: requirements 133 (130
 PROPOSED, 3 RETIRED); DFMEA rows 184 (63 H, 86 M, 35 L by action priority; DF-182, DF-183 and
 DF-184 new, DF-95 RETIRED); checks 195 (19 PASS, 8 FAIL, 51 NOT_RUN, 109 NOT_BUILT, 5 CUT, 3 RETIRED);
 defects 66 (21 OPEN, 28 FIXED, 10 CLOSED, 7 RETIRED); seeded faults 100 of 100 caught (VER-129).
