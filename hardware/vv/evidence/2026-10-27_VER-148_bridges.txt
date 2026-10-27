@@ -1,0 +1,38 @@
+# VER-148 bridges
+DATE: 2026-10-27
+COMMIT: bef5c19c4045b5a7c6f359fc91044a6b4556e77f
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py bridges
+204 pad pairs on 167 net pairs closer than 0.35 mm (pcbnew's own shapes, per copper layer)
+  ok    dangerous +1V1 - +3V3 (U4.65-U4.64 0.170, U4.50-U4.51 0.170): DF-72: DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD
+  ok    dangerous +1V1 - CHG_STAT_N (U4.51-U4.52 0.170): DF-72: DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD
+  ok    dangerous +1V1 - SWCLK (U4.32-U4.33 0.170): DF-72: DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD
+  ok    dangerous +1V1 - USB_DM_MCU (U4.66-U4.65 0.170): DF-72: DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD
+  ok    dangerous +1V1 - XOUT (U4.31-U4.32 0.170): DF-72: DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD
+  ok    dangerous +3V3 - GND (U9.16-U9.15 0.250, U8.16-U8.15 0.250): DF-162: 3V3 shorted at a 74HC165 (CLK INH to VCC): U3 in current limit
+  ok    dangerous +3V3 - VREG_LX (U4.64-U4.63 0.170): DF-72: the core regulator's switch node or analogue supply shorted
+  ok    dangerous CC2 - VBUS (J1.A9-J1.B5 0.250, J1.B4-J1.B5 0.250): DF-51: VBUS on a CC pin: GPIO45/46 over their limit through 10k (VER-195)
+  ok    dangerous CHG_ISET - CHG_TEMP (U2.1-U2.16 0.299): DF-146: ISET's 2.5 V on TS holds it inside the charge window whatever the cell's temperature
+  ok    dangerous CHG_ISET - GND (U2.16-U2.17 0.210, U2.16-U2.15 0.250): DF-06: RISET shorted: the charge current unset
+  ok    dangerous CHG_OFF - VBAT (U2.3-U2.4 0.250): DF-149: a U2 neighbour pair putting the cell or VSYS on a GPIO (over IOVDD + 0.5 V, and it back-powers 3V3 when off)
+  ok    dangerous CHG_STAT_N - VSYS (U2.9-U2.10 0.250): DF-149: a U2 neighbour pair putting the cell or VSYS on a GPIO (over IOVDD + 0.5 V, and it back-powers 3V3 when off)
+  ok    dangerous GND - LCD_3V3 (J3.8-J3.9 0.200): DF-59: the panel's supply shorted at J3: U3 in current limit through JP4
+  ok    dangerous GND - NC:U2.14 (U2.17-U2.14 0.210, U2.15-U2.14 0.250): DF-152: U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them
+  ok    dangerous GND - VBAT (U2.2-U2.17 0.210, U2.3-U2.17 0.210): DF-148: the cell shorted at U2 (BAT to the exposed pad)
+  ok    dangerous GND - VBUS (U2.17-U2.13 0.210, J1.A1-J1.A4 0.200, J1.A1-J1.B9 0.200, J1.A4-J1.B12 0.200, J1.A9-J1.A12 0.200, J1.A9-J1.B1 0.200, J1.A12-J1.B4 0.200, J1.B1-J1.B4 0.200, J1.B9-J1.B12 0.200): DF-51: VBUS shorted at J1's row (DF-51) or U2's IN to its pad (DF-149): the source's limit is the only stop
+  ok    dangerous GND - VREG_AVDD (U4.62-U4.61 0.170): DF-72: the core regulator's switch node or analogue supply shorted
+  ok    dangerous GND - VREG_LX (U4.63-U4.62 0.170): DF-72: the core regulator's switch node or analogue supply shorted
+  ok    dangerous GND - VSYS (U2.17-U2.10 0.210, U2.17-U2.11 0.210): DF-149: VSYS shorted to U2's pad: the cell through U2's battery FET, no fuse (DF-172)
+  ok    dangerous NC:U2.14 - VBUS (U2.14-U2.13 0.250): DF-152: U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them
+net pairs by class: benign 48, dangerous 20, self-test 99
+0 failing
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS
