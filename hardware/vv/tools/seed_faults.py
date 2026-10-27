@@ -294,9 +294,10 @@ FAULTS = [
      "3 case no check",
      lambda d: (drop_line(d, "grid_reasons.csv", "3,case,"),
                 csv_edit(d, "verification.csv", "VER-70", classes="3", subsystems="case"))),
-    # 6 since 2026-10-27: VER-13 (an analysis that ran, FAIL) clears class 15 for power and cell; VER-193 alone
-    # holds buttons, case, mcu and usb_debug, so counting a NOT_RUN analysis would drop the count to 2
-    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 6",
+    # 5 since the class 2-15 round (2026-10-27): VER-13 and VER-144 (analyses that ran) clear class 15 for power, cell and
+    # display; VER-200 (BLOCKED, not run) holds audio; VER-193 alone clears buttons, case, mcu and usb_debug, so its NOT_RUN
+    # gives 4 + 1, and counting a NOT_RUN analysis would drop the count to 1
+    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 5",
      lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN")),
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
