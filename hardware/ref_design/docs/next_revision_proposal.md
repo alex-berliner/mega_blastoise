@@ -33,8 +33,14 @@ Flash layout (2 MB internal, set by an RP2350 partition table):
 2. Game slot partition: the binary that runs.
 3. Internal library: a littlefs area holding binaries that work without the card, plus saves.
 
-Sizes depend on how big the binaries are, which has not been measured. Pokemon's size
-decides whether the library holds more than one game.
+Measured 2026-10-27 (current firmware, `cargo build --release`, Pico 2 build, `rust-size`):
+Pokemon is 1,367,472 bytes of flash (text 226,100, rodata 1,140,936, the rest under 500)
+and uses 418,744 bytes of RAM (data plus bss) of 520 kB. On the RP2354B's 2,097,152 bytes
+that leaves about 713 kB for the launcher, the internal library and saves, and less once
+the slot gets growth room. So the internal library holds saves and small games only; game
+binaries live on SD. Pokemon cannot be a RAM app. If more internal space is wanted: an
+RP2350B with an external 16 MB QSPI flash instead of the RP2354B (price not checked), or
+move Pokemon's large data tables out of flash.
 
 Flow:
 
@@ -258,4 +264,4 @@ save 2 more.
 - That the EastRising module's 8080 mode works on the bench (set IM `011`, read the ID).
 - Chrome on Android WebUSB with this device (plug-in test above).
 
-Last updated: 2026-10-27 08:03 EDT
+Last updated: 2026-10-27 08:06 EDT
