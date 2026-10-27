@@ -27,33 +27,33 @@ $fn = 72;
 
 // ---------------- bought parts ----------------
 // EastRising ER-TFT035IPS-6 (ILI9488, 320 x 480 IPS, "No Touch"): the 3.5 in panel, back since 2026-10-26 (it was the 2.4 in
-// ER-TFT024IPS-3 from 2026-10-21; the case was 23.5 mm shorter). Its numbers are the old 3.5 in design's (5d0ef99^), from the
-// datasheet's outline drawing as the old reviewer read it (the datasheet is behind Cloudflare and the Wayback copy was down on
-// 2026-10-26, so none of it is re-checked here): ESTIMATE until a real panel and calipers say
-panel_w = 54.50;  panel_l = 83.00;  panel_t = 2.45;     // outline with the FPC folded; the drawing's side view says
-                                                        // 2.35 +-0.1 (its table 2.3): the thickest
+// ER-TFT024IPS-3 from 2026-10-21). Its numbers are the datasheet's outline drawing (datasheets/er-tft035ips-6.pdf page 6, REV 1.0,
+// drawn 2022-12-20): outline 54.56 x 82.84 +-0.2, thickness 2.15 +-0.15 (its table says 2.1), visual area 49.96 x 74.44, active
+// area 48.96 x 73.44, border 2.8 +-0.3 at the sides and 2.22 +-0.3 at the end away from the FPC, neck 4.47. Panel in hand: calipers
+panel_w = 54.56;  panel_l = 82.84;  panel_t = 2.45;     // outline with the FPC folded; the drawing's thickest is 2.30 (2.15 + 0.15): the case keeps 0.15 over it (the glass's flatness)
+                                                        // and the tall parts' 0.3 mm margin under the band (J2 at 3.4 tall has 0.40 with it, 0.25 without)
 tape_t = 0.15;                                          // double-sided tape between the top piece's skin and the panel
 panel_fit = 0.8;   // the top piece's locating frame is this much larger: the panel is +-0.2, FDM openings print small
 frame_wall = 1.1;  frame_h = 1.0;                       // that frame's walls, hanging from the top piece
-aa_w = 48.96;     aa_l = 73.44;                         // active area (the old design's; ESTIMATE for this exact part)
-aa_to_top = 2.5;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
-aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.28 mm towards seat 2
+aa_w = 48.96;     aa_l = 73.44;                         // active area (the drawing's)
+aa_to_top = 2.22;  aa_to_fpc = panel_l - aa_l - aa_to_top;   // active area to the glass edges (centred across)
+aa_off = (aa_to_fpc - aa_to_top) / 2;                   // active area sits 2.48 mm towards seat 2
 window_margin = 1.0;                                    // bezel opening past the active area: covers the panel's float
                                                         // in its frame, its active-area tolerance and a printed
                                                         // opening's error; at most 0.5 mm of the panel's black border shows
 // Its FPC leaves the seat-1 edge, folds under the panel and plugs into a 50-pin ZIF connector (J3, Hirose FH12-50S, bottom
-// contact). Seen from above, x from the panel's centre, lengths along the FPC from that edge: a 4.59 mm neck (35.6 wide,
+// contact). Seen from above, x from the panel's centre, lengths along the FPC from that edge: a 4.47 mm neck (the drawing) (35.6 wide,
 // centre +3.6) wraps the edge, then a 14.41 mm body (47.9 wide, centre +2.5) lies under the panel, then an 11.7 mm tail (25.5
 // wide, centred) ends in the 3.5 mm contact strip. ESTIMATE (the old design's, scaled from the drawing's views, not dimensioned)
-fpc_neck = [3.6, 35.6, 4.59];   fpc_body = [2.5, 47.9, 14.41];   fpc_tail = [0, 25.5, 11.7];
+fpc_neck = [3.6, 35.6, 4.47];   fpc_body = [2.5, 47.9, 14.41];   fpc_tail = [0, 25.5, 11.7];
 fpc_x = fpc_tail[0];  fpc_w = fpc_neck[1];              // J3 and the tail are centred; the fold passes through the frame as wide as the neck
 fpc_l = fpc_body[2] + fpc_tail[2];
 // Folded, the tip lands somewhere in tip_range in from the seat-1 glass edge (the fold isn't drawn: the old design's 26.11, 1.2
 // either way). J3 isn't fixed until a real panel is measured, so the board keeps the whole range clear
 tip_range = [fpc_l - 1.2, fpc_l + 1.2];                 // ESTIMATE
 tip_in = (tip_range[0] + tip_range[1]) / 2;
-fpc_low = 1.05;                                         // parts this tall (over the board) may lie under the FPC's body: it lies on the glass's back
-fpc_neck_keep = 5.1;                                    // nothing this far in from the glass edge: the neck wraps it (ESTIMATE, the old drawing's 4.59)
+fpc_low = 1.05;                                         // ESTIMATE (not on the drawing; measure on a real panel): parts this tall (over the board) may lie under the FPC's body: it lies on the glass's back
+fpc_neck_keep = 4.97;                                   // nothing this far in from the glass edge: the neck wraps it (the drawing's 4.47 neck + 0.5)
 fpc_slack = 1.0;                                        // the connector 1 mm short of the tail's tip: a
                                                         // long FPC bows, a short one can't reach (ESTIMATE)
 conn_rear = 1.2;  conn_front = 4.4;                     // FH12 footprint origin to its back and to its mouth
@@ -71,11 +71,14 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_hole = [[-27.0, 6.0], [27.0, 43.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
+cell_hole = [[-18.9, -11.8], [18.9, 43.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
-cell_pocket_fit = 0.25;                                 // the pocket inside the hole's outline, each side
+cell_fit_side = 0.9;  cell_fit_push = 0.9;  cell_fit_lead = 1.9;   // the pocket inside the hole's outline: each long side and the pushed (seat-1) end 0.9,
+                                                        // the lead (seat-2) end 1.9, so the pocket's wall is the stop and the worst-case 52 x 36 cell
+                                                        // passes the tolerance stack (V&V design_numbers.py cellgap, DEF-58); the pocket is the cell's size
+cell_pocket_box = [[cell_hole[0][0] + cell_fit_side, cell_hole[0][1] + cell_fit_push], [cell_hole[1][0] - cell_fit_side, cell_hole[1][1] - cell_fit_lead]];
 // The speaker (Alex, 2026-10-22): INGHAi's GSPK151035PN, a 15 x 10 mm racetrack 3.5 mm thick with
 // its adhesive front foam ring, whose 35 mm leads end in a 1.25 mm 2-pin plug for J4. Since the 3.5 in panel
 // (2026-10-26) it lies in a hole in the board like the cell, its back on a pocket in the tub's floor, face up: beside the
@@ -93,12 +96,12 @@ grille_in = 1.5;                                        // the grille stays this
                                                         // the rim round it is solid, for its front ring to seal on
 grille_slot = [1.0, 1.4];                               // the grille's slots along the racetrack: width, pitch
 grille_x = [28.6, 34.0];                                // and in x between these: outside the panel's pocket, on the ear's flat top
-// J4 (the speaker's plug, PicoBlade like J2, 3.4 tall) in the right strip, its mouth along the strip towards the speaker: a
+// J4 (the speaker's plug, a JST SH 2-pin since V&V round 3: the cell's PicoBlade plug cannot enter it; it was PicoBlade, 3.4 tall) in the right strip, its mouth along the strip towards the speaker: a
 // PicoBlade is 7.65 across and 5.2 deep, and its mated plug stands 4 mm out from the mouth. With the mouth towards the
 // glass (the old layout) the pair would be 9.2 long across a strip that is 8.5 wide beside the glass
-j4_body = [[27.775, -10.8], [35.425, -5.6]];               // its model's box (centre 31.8, -7.1: CELLCUT_FOR_CASE.md)
-j4_plug = [[28.3, -14.8], [34.9, -10.8]];                // the mated plug's (about), towards the speaker
-j4_h = 3.4;
+j4_body = [[28.4, -10.9], [34.8, -4.8]];                 // its footprint's box (JST SH SM02B-SRSS-TB since V&V round 3, 5.9 x 6.6 with the tabs)
+j4_plug = [[29.0, -14.8], [34.2, -10.9]];                // the mated SH plug's (about), towards the speaker
+j4_h = 3.0;                                              // the SH model is 2.96 tall
 
 abxy_pitch = 15.0;  dpad_pitch = 14.0;                  // DS Lite (gerbers)
 piece_d = 26;                                           // the layout's envelope for a silicone piece (Alex's pads,
@@ -404,10 +407,10 @@ debug_h = 2.9;
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
 // bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
 // the hole's corner (placement.py), its leads down beside the cell's left end
-j2_pos = [-31.7, 2.56];  j2_h = 3.4;
+j2_pos = [31.7, 30.0];  j2_h = 3.4;
 // the panel frame's notches where a tall connector (3.4, over the frame's limit) lies beside the glass: [side, y0, y1]
-frame_notches = [[1, -15.3, -5.1], [-1, -0.5, 9.7]];
-j2_plug = [[-35.4, 5.2], [-28.0, 9.2]];               // the mated plug's outline, corners
+frame_notches = [[1, -15.3, -5.1], [1, 26.9, 37.1]];
+j2_plug = [[27.9, 32.6], [35.5, 36.6]];               // the mated plug's outline, corners
 // the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
 // backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
 // U9 (1.2)
@@ -423,7 +426,7 @@ assert(cluster_spacing / 2 + piece_d / 2 <= board_w / 2, "silicone piece hangs o
 assert(glass_side >= 9.7, "no room for the tall connectors beside the glass");
 // the cell in its hole: on the board, under the panel and the ends, and its pocket in the floor
 assert(cell_hole[0][0] >= -board_w / 2 + 7 && cell_hole[1][0] <= board_w / 2 - 7, "the strips beside the cell's hole are too narrow");
-assert(cell_hole[1][0] - cell_hole[0][0] >= cell[0] + 1.0 && cell_hole[1][1] - cell_hole[0][1] >= cell[1] + 1.0,
+assert(cell_hole[1][0] - cell_hole[0][0] >= cell[1] + 1.0 && cell_hole[1][1] - cell_hole[0][1] >= cell[0] + 1.0,
        "a worst-case cell doesn't fit its hole");
 // (the fit kit's tuning slices render other silicone heights, which move the ends' face: tune skips the
 // checks of the ends against the cell and the screws)
@@ -467,8 +470,9 @@ assert(usb_zc - usb_hole[1] / 2 - z_seam >= 0.8 && usb_zc - usb_step - 0.1 >= us
        "the tub's USB-C tab under the opening is too thin");
 assert(usb_front - (case_w / 2 - wall / 2) > 0 && z_seam < z_top_cu, "the USB-C notch isn't needed: drop the tab");
 // J2 (under the left ear) and J5 (under the slope and the deck's pocket): x, y over the board's top, their model's boxes
-assert(j2_plug[0][0] >= -board_w / 2 && j2_plug[1][0] <= -(panel_w + panel_fit) / 2 - 0.15, "J2's plug isn't beside the glass");
-assert(j2_plug[0][1] >= j2_pos[1] + 2.6 - 0.5 && abs(j2_plug[1][0] - cell_hole[0][0]) <= 1.0, "J2's plug isn't at the hole's corner");
+assert(j2_plug[1][0] <= board_w / 2 - 0.5 && j2_plug[0][0] >= (panel_w + panel_fit) / 2 + 0.15, "J2's plug isn't beside the glass");
+assert(j2_plug[0][1] >= j2_pos[1] + 2.6 - 0.5 && norm([j2_pos[0] - cell_hole[1][0], j2_pos[1] - cell_hole[1][1]]) <= 20, "J2 isn't near the hole's lead end");
+for (s = side_pins) assert(rect_dist(s, j2_plug) >= boss_d / 2 + 0.6 && rect_dist(s, [j2_pos - [3.9, 2.7], j2_pos + [3.9, 2.7]]) >= boss_d / 2 + 0.6, "a side boss runs into J2 or its plug");
 // the debug switches (2026-10-24) in the left bezel below H4: their guides over them, the two side by side, clear
 // of J5, J2's plug, the cell's hole and the panel's frame (H4 and the other screws' bosses: below the side screws'
 // asserts). Along the left wall (the key at y -21, the grip ribs, the band's end): in the joints' asserts
@@ -902,7 +906,7 @@ module rib_free2d() for (r = rib_free) translate([r[0], r[1]]) square([r[2] - r[
 // their length: the left one under J5, where a cable is pushed in (until 2026-10-24 also under the debug
 // switches, which left the strip, and J6, which went); the right one under TH1 and J1's end (the power latch
 // left it on 2026-10-24), with one across it at y 14. The floor's grid and its ring round the board's edge cross them
-th1_y = 21.0;                                           // TH1 (placement.py), at the cell hole's right edge
+th1_y = 20.0;                                           // TH1 (placement.py), at the cell hole's right edge
 strip_ribs = [[[-31.2 - 0.6, cell_hole[0][1]], [-31.2 + 0.6, cell_hole[1][1]]],
               [[29.6 - 0.6, cell_hole[0][1]], [29.6 + 0.6, cell_hole[1][1]]],
               [[cell_hole[1][0], th1_y - 0.6], [board_w / 2, th1_y + 0.6]]];
@@ -924,8 +928,10 @@ module grille2d() offset(r = grille_slot[0] / 2, $fn = 24) intersection() {
   at(spk_pos) for (i = [-3:3]) translate([i * grille_slot[1], 0]) square([0.002, 2 * spk[1]], center = true);
 }
 // the cell's outline in its hole, pushed to the hole's right end and centred along it (size: worst or nominal)
-cell_x1 = cell_hole[1][0] - cell_pocket_fit;            // its right end, against the pocket's wall
-module cell2d(size) translate([cell_x1 - size[0], (cell_hole[0][1] + cell_hole[1][1] - size[1]) / 2]) square([size[0], size[1]]);
+cell_x1 = cell_pocket_box[1][0];                                   // its right side, against the pocket's wall (TH1 reads it there)
+// the cell lies along the board since 2026-10-27 (Alex: "rotate it"): its long side along y, pushed to the hole's seat-1 end, its leads out of the seat-2 end
+// (the hole's extra 1.0 there) to J2 in the right strip
+module cell2d(size) translate([cell_x1 - size[1], cell_pocket_box[0][1]]) square([size[1], size[0]]);
 
 // ---- the tub (the back): printed back down, as exported ----
 // its outside: the back rolls into the walls (in 0.1 mm layers up the round), up to the seam
@@ -1009,9 +1015,9 @@ module tub() difference() {
   // screws: a counterbore for the head from below, then clearance up through the boss
   for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
   // the cell's pocket in the floor, inside its hole's outline
-  translate([0, 0, floor_t - cell_pocket]) linear_extrude(cell_pocket + 0.01) cell_hole2d(-cell_pocket_fit);
+  translate([0, 0, floor_t - cell_pocket]) linear_extrude(cell_pocket + 0.01) corners2d(cell_pocket_box, cell_hole_r - 0.5, 0);
   // and the speaker's, inside its hole's outline (the speaker lies on it, face up)
-  translate([0, 0, spk_seat]) linear_extrude(spk_pocket_floor + 0.01) spk2d(spk_keep - cell_pocket_fit);
+  translate([0, 0, spk_seat]) linear_extrude(spk_pocket_floor + 0.01) spk2d(spk_keep - 0.25);
   // USB-C: the opening's lower half, in the tab; over the tab the tongue stops either side of the
   // top's skirt, which comes down to the opening's centre there (usb_fit along the wall)
   usb_opening();

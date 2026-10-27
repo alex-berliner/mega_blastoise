@@ -53,7 +53,7 @@ CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(73.0, 57.0, 127.0, 94.0), r=1.0),     # 54.0 x 37.0 (case y 6 .. 43)
+    dict(name="cell", box=(81.1, 57.0, 118.9, 111.8), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -11.8 .. 43): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
@@ -77,7 +77,7 @@ SPEAKER = dict(at=(129.7, 124.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x
 # cross is below. The decouplers on its long sides would land on the side screw, J2 or the folded
 # FPC: they are placed by hand below, as close to their pins as that allows.
 CORE_SIDE = "F"
-CORE_AT = (76.0, 114.0)
+CORE_AT = (75.0, 114.0)
 CORE_Y = CORE_AT[1]
 CORE_ESCAPES = True         # Raspberry Pi's pin escapes (False: straight stubs, build_pcb.straight_escapes)
 CORE_ROT = 0                 # the reference as drawn: GPIO4-19 face the left bezel, GPIO33-47 J3
@@ -134,12 +134,12 @@ at("FID3", -34.0, 72.5)
 
 # ---- display: J3 where the folded FPC reaches (case.scad conn_in), its mouth towards seat 1 ----------------
 put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
-at("C29", -10.6, -11.6, 90)                  # panel VCI/VDDI, over J3's 3V3 pins
-at("C30", -9.4, -11.6, 90)
+at("C29", -10.6, -12.4, 90)                  # panel VCI/VDDI, over J3's 3V3 pins
+at("C30", -9.4, -12.4, 90)
 at("JP4", -10.0, -24.0, 0)                   # 3V3 -> panel: flat, under the tail
-at("R28", -20.6, 0.3, 90)                    # SPI source terminations, by the core's panel pins
-at("R29", -25.4, 0.3, 90)
-at("JP2", 17.3, -13.0, 0)                    # VSYS to LED_A (J3 pin 50): flat, by J3's right end
+at("R28", -21.6, 0.3, 90)                    # SPI source terminations, by the core's panel pins
+at("R29", -26.4, 0.3, 90)
+at("JP2", 26.9, -13.0, 0)                    # VSYS to LED_A (J3 pin 50): flat, by J3's right end
 
 # ---- backlight current sinks: the ends' spine (U6, 1.7 tall in its pocket) and the row under the slope above it
 at("U6", -3.2, -55.0, 90)
@@ -182,8 +182,8 @@ USB_TAB = CASE["usb"]["tab"]
 usb_x = CASE["usb"]["front_x"] - 3.65       # footprint front is 3.65 ahead of its origin
 put("J1", usb_x, USB_Y, 90)
 at("U1", 24.5, 1.5, 0)
-at("C1", 20.0, 3.8, 0)
-at("R41", 20.0, 1.6, 0)
+at("C1", 20.8, 4.6, 0)
+at("R41", 20.8, 6.2, 0)
 at("R1", 29.0, 8.0, 0)                       # CC resistors above J1, beside the hole's strip
 at("R2", 31.2, 8.0, 0)
 at("R3", 29.0, 9.2, 0)
@@ -192,45 +192,47 @@ at("C42", 25.0, -45.5, 0)                    # CC1/CC2 spares, DNP
 at("C43", 30.5, -45.5, 0)
 
 # ---- the cell: J2 at the hole's seat-1 corner (mouth into it), the charger, the load sharing
-at("J2", -31.7, 2.56, 180)
-at("JP5", -25.0, 3.5, 0)                     # cell -> VBAT
-at("U2", 21.5, -3.5, 0)                      # BQ24073: its thermal pad spreads into the GND pours
-at("C3", 16.8, 0.5, 90)                      # VBAT
-at("C2", 16.8, -2.6, 90)                     # VSYS
-at("R17", 14.8, -5.0, 90)                    # battery sense
-at("R18", 14.8, -7.2, 90)
-at("C8", 14.8, -9.4, 90)
-at("R5", 17.5, -9.6, 90)                     # PROG
-at("R9", 18.8, -9.6, 90)
-at("R10", 20.1, -9.6, 90)
-at("R43", 21.4, -9.6, 90)
-at("R44", 22.7, -9.6, 90)
-at("R64", 24.0, -9.6, 90)                    # ILIM
-at("TP7", 24.6, -6.3, 0)                     # CHG_TEMP
-at("TH1", 27.8, 21.0, 90)                    # the cell's temperature, at the hole's right edge
+at("J2", 31.7, 30.0, 180)
+at("JP5", 24.0, 29.0, 0)                     # cell -> VBAT
+at("U2", 25.0, 13.0, 0)                      # BQ24073: its thermal pad spreads into the GND pours
+at("C3", 20.4, 16.6, 90)                      # VBAT
+at("C2", 20.4, 13.5, 90)                     # VSYS
+at("R17", 20.4, 10.5, 90)                    # battery sense
+at("R18", 20.4, 8.3, 90)
+at("C8", 23.4, 8.4, 90)
+at("U10", 25.0, 5.4, 0)                      # VBAT_SENSE buffer (V&V DEC-07), its decoupling beside it
+at("C54", 28.2, 5.2, 90)
+at("R5", 21.8, 21.5, 90)                     # PROG
+at("R9", 23.0, 21.5, 90)
+at("R10", 24.2, 21.5, 90)
+at("R43", 25.4, 21.5, 90)
+at("R44", 26.6, 21.5, 90)
+at("R64", 27.8, 21.5, 90)                    # ILIM
+at("TP7", 26.6, 17.8, 0)                     # CHG_TEMP
+at("TH1", 19.7, 20.0, 90)                    # the cell's temperature, at the hole's right edge
 
 # ---- 3V3 LDO in the left strip (1.5 tall, under the slope)
-at("U3", -31.4, -21.5, 90)
-at("C5", -34.0, -26.0, 90)
-at("C6", -31.8, -26.0, 90)
-at("C7", -29.6, -26.0, 90)
-at("JP1", -24.5, -36.5, 0)
+at("U3", -30.0, 9.0, 90)
+at("C5", -34.0, 14.0, 90)
+at("C6", -31.8, 14.0, 90)
+at("C7", -29.6, 14.0, 90)
+at("JP1", -24.0, 9.0, 0)
 
 # ---- the core's loose parts: the reference's (R23, C13, C14 ...) moved with it by (-1.8, +5.5) from the old board
 for ref, (ox, oy, rot) in {"R23": (-28.8, -14.9, 90), "C13": (-20.0, -5.2, 90), "C23": (-19.4, -7.9, 90), "C18": (-22.4, -5.2, 90),
                            "C14": (-28.8, -17.0, 90), "C15": (-13.3, -32.2, 90), "C17": (-12.1, -32.2, 90), "C22": (-13.3, -34.4, 90),
                            "C16": (-28.8, -21.6, 270), "C20": (-28.8, -19.3, 90), "C19": (-26.4, -26.8, 90), "R65": (-17.4, -32.7, 90)}.items():
-    at(ref, ox - 1.8, oy + 5.5, rot)
-at("C10", 16.0, -19.5, 90)
+    at(ref, ox - 2.8, oy + 5.5, rot)
+at("C10", 24.4, -12.4, 90)
 
 # ---- test pads on the back
 for i in range(5):
     at(f"TP{i + 1}", -8.0 + 4.0 * i, 51.5, 0, "B")      # between seat 2's clusters
-at("TP3", -10.6, 0.5, 0, "B")                # VBAT: on the back by JP5 and the cell's path
+at("TP3", 26.0, 25.0, 0, "B")                # VBAT: on the back by JP5 and the cell's path
 at("J7", 0.0, -48.5, 0, "B")                 # SWD pogo pads on the back, under the row
 put("TP9", *core_pt(0.8, 7.22), 0, "B" if CORE_SIDE == "F" else "F")    # +1V1: on the core's own +1V1 via
 for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, under J3's rear
-    at(ref, -7.8 + 2.54 * i, -11.0, 0, "B")
+    at(ref, -7.8 + 2.54 * i, -12.8, 0, "B")
 
 # ---- audio: the amplifier under the glass right of J3, J4 in the strip (mouth towards the speaker), the filter in the rows below
 at("U7", 21.0, -20.0, 90)                    # FM8002A
