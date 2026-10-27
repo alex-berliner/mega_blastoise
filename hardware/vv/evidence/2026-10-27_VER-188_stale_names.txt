@@ -1,0 +1,12 @@
+# VER-188 stale_names
+DATE: 2026-10-27
+COMMIT: a8e2c6ceface7d436492d3a4adf22fa25094dbf2
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/stale_names.py
+baseline be437f8: 38 refs, 44 nets and 17 part-number stems left design.py on its history
+0 live rows name a part, part number or net the baseline does not have
+RESULT: PASS
+
+exit 0
+RESULT: PASS
