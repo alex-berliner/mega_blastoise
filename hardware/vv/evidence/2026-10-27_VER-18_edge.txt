@@ -1,33 +1,34 @@
 # VER-18 edge
 DATE: 2026-10-27
-COMMIT: c1c61f0ad8dbca47fc07c30a68d29171673ff8da
+COMMIT: 737e54e58378ca57e9ff9ec23d84e4843b382092
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/design_numbers.py edge
-routed edges: 3 contours (outline, 11.0 x 16.0 mm hole, 54.0 x 37.0 mm hole); copper within about 1 mm of one: 54 features
-  0.198 mm  GND pour on F.Cu at (133.98, 118.24), to the 11.0 x 16.0 mm hole
-  0.198 mm  GND pour on B.Cu at (133.29, 131.43), to the 11.0 x 16.0 mm hole
-  0.199 mm  GND pour on B.Cu at (126.34, 94.15), to the 54.0 x 37.0 mm hole
-  0.199 mm  GND pour on F.Cu at (126.34, 94.15), to the 54.0 x 37.0 mm hole
-  0.275 mm  pad J2.MP at (64.08, 95.69), to the outline
-  0.375 mm  pad J4.MP at (135.82, 109.95), to the outline
-  0.399 mm  GND pour on F.Cu at (65.69, 26.08), to the outline
-  0.399 mm  GND pour on B.Cu at (65.69, 26.08), to the outline
-  0.454 mm  pad J1.SH at (136.75, 102.75), to the outline
-  0.474 mm  track +3V3 at (72.38, 92.95), to the 54.0 x 37.0 mm hole
-  0.480 mm  pad TH1.1 at (127.48, 79.64), to the 54.0 x 37.0 mm hole
-  0.480 mm  pad TH1.2 at (127.48, 78.62), to the 54.0 x 37.0 mm hole
-copper closer than 0.30 mm to a routed edge (REQ-FAB-03): 5: GND pour on F.Cu 0.198 mm (11.0 x 16.0 mm hole); GND pour on B.Cu 0.198 mm (11.0 x 16.0 mm hole); GND pour on B.Cu 0.199 mm (54.0 x 37.0 mm hole); GND pour on F.Cu 0.199 mm (54.0 x 37.0 mm hole); pad J2.MP 0.275 mm (outline)
-courtyards past the outline or into a hole (J1 by design excepted): J2 0.22 mm past the outline, J4 0.12 mm past the outline
-silkscreen texts not wholly on the board (off its edge or in a hole): 'RST' (F.Silkscreen, at -32.0, -31.6); 'BOOT' (F.Silkscreen, at -31.0, -32.5); 'SPEAKER' (F.Silkscreen, at 129.7, 123.5); '15x10 8R' (F.Silkscreen, at 129.7, 125.5); '2 LAYERS  1.6 MM  ENIG' (B.Silkscreen, at 100.0, 63.2); 'TWO-PLAYER HANDHELD  REF-A' (B.Silkscreen, at 100.0, 57.6); 'REV 1' (B.Silkscreen, at 100.0, 60.6)
+routed edges: 3 contours (outline, 11.0 x 16.0 mm hole, 37.8 x 54.8 mm hole); copper within about 1 mm of one: 52 features
+  0.308 mm  GND pour on B.Cu at (133.35, 131.52), to the 11.0 x 16.0 mm hole
+  0.308 mm  GND pour on F.Cu at (133.35, 131.52), to the 11.0 x 16.0 mm hole
+  0.308 mm  GND pour on B.Cu at (118.52, 51.85), to the 37.8 x 54.8 mm hole
+  0.308 mm  GND pour on F.Cu at (118.28, 51.74), to the 37.8 x 54.8 mm hole
+  0.318 mm  pad Q7.1 at (80.78, 56.05), to the 37.8 x 54.8 mm hole
+  0.318 mm  pad Q7.2 at (80.78, 54.15), to the 37.8 x 54.8 mm hole
+  0.350 mm  pad TH1.1 at (119.25, 80.17), to the 37.8 x 54.8 mm hole
+  0.350 mm  pad TH1.2 at (119.25, 78.35), to the 37.8 x 54.8 mm hole
+  0.399 mm  GND pour on F.Cu at (65.69, 26.16), to the outline
+  0.399 mm  GND pour on B.Cu at (65.69, 26.16), to the outline
+  0.400 mm  track USB_DM at (82.15, 107.30), to the 37.8 x 54.8 mm hole
+  0.400 mm  track USB_DP at (82.15, 107.30), to the 37.8 x 54.8 mm hole
+copper closer than 0.30 mm to a routed edge (REQ-FAB-03): 0
+courtyards past the outline or into a hole (J1 by design excepted; printed, not failed): J2 0.08 mm past the outline
+pads or part bodies past the outline or into a hole (J1 by design excepted): none
+silkscreen texts not wholly on the board (off its edge or in a hole): none
 narrowest FR4 web: 1.00 mm between the 11.0 x 16.0 mm hole and the outline at (135.2, 127.0)
 narrowest FR4 web: 1.00 mm between the outline and the 11.0 x 16.0 mm hole at (136.2, 122.0)
-RESULT: FAIL
+RESULT: PASS
 
 --- stderr
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 
-exit 1
-RESULT: FAIL
+exit 0
+RESULT: PASS

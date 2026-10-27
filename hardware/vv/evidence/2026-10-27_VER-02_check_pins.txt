@@ -1,0 +1,14 @@
+# VER-02 check_pins
+DATE: 2026-10-27
+COMMIT: 737e54e58378ca57e9ff9ec23d84e4843b382092
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/ref_design/board/tools/check_pins.py
+  waived: U4 pin 58: ISSUE: VBAT_SENSE is U10's output (a unity buffer of VBAT/2, R17/R18 470k/470k, 1.5-2.1 V for a Li-ion cell), powered from +3V3. GPIO47_ADC7 is a standard (non-FT) pad: abs max VPIN = IOVDD+0.5 V (Table 1680 p.1335), and 6.1.5 (p.401) says voltages above IOVDD cause leakage through the ESD diodes. With the device off U10 is unpowered, so its output is near 0 V; its input sits at VBAT/2 behind 235 kOhm (a few uA into the op-amp's own ESD diodes, inside its input clamp rating). The pad's 1 uA leakage now flows from the op-amp, not through the divider. Clear IE and the reset pull-down before sampling.  WAIVED: accepted: U10 (MCP6001, V&V DEC-07) isolates the pad from the divider; off, the divider drives only the unpowered op-amp input through 235k (a few uA). design_review.md, Off state
+  waived: C42: DNP / not in JLC BOM: no part chosen; pick a rating >= net max if ever fitted  WAIVED: unfitted spare footprint (1206): choose a part rated above the net if one is ever fitted
+  waived: C43: DNP / not in JLC BOM: no part chosen; pick a rating >= net max if ever fitted  WAIVED: unfitted spare footprint (1206): choose a part rated above the net if one is ever fitted
+38 parts, 327 reviewed pins, 101 passives; 3 waived
+RESULT: PASS
+
+exit 0
+RESULT: PASS

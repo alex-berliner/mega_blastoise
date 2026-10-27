@@ -1,19 +1,19 @@
 # VER-164 th1
 DATE: 2026-10-27
-COMMIT: c1c61f0ad8dbca47fc07c30a68d29171673ff8da
+COMMIT: 737e54e58378ca57e9ff9ec23d84e4843b382092
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/design_numbers.py th1
-cell hole x 73.0-127.0, y 57.0-94.0; worst-case cell 52 x 36; TH1 at (127.80, 79.00) on the board, 0.80 mm right of the hole's right edge (the case pushes the cell there)
-TH1 within the cell's span along the edge: True
-back-side footprints (11): J7 TP1 TP11 TP12 TP13 TP14 TP2 TP3 TP4 TP5 TP9; the nearest pad 5.50 mm from the hole (TP3)
+cell hole x 81.1-118.9, y 52.0-106.8 (its long side along y); worst-case cell 52 x 36; TH1 (10k B4460) at (119.95, 79.00) on the board, 1.05 mm right of the hole's right edge, 1.95 mm from the pocket's right wall (the nearest a cell's face can be)
+TH1 within the cell's span along the edge (y 55.9-105.9, 2 mm in from each end): True
+back-side footprints (11): J7 TP1 TP11 TP12 TP13 TP14 TP2 TP3 TP4 TP5 TP9; the nearest pad 3.50 mm from the hole (TP1)
 back-side pads within 1 mm of the hole: none
-RESULT: PASS
+RESULT: FAIL
 
 --- stderr
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 
-exit 0
-RESULT: PASS
+exit 1
+RESULT: FAIL
