@@ -71,7 +71,7 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_hole = [[-18.9, -11.8], [18.9, 43.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
+cell_hole = [[-18.9, -7.8], [18.9, 47.0]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
@@ -404,13 +404,13 @@ pin_guide_d = 3.0;  pin_guide_z = 2.4;                  // the guides round the 
 // tub off), as the plug stands past the board's edge; no slot in the wall. J6 (UART) went on 2026-10-24
 swd_pos = [-32.1, -5.0];
 debug_h = 2.9;
-// J2, the cell's plug (PicoBlade 53261, 3.4 tall), at the cell hole's seat-1 corner in the left
-// bezel, its mouth into the hole's corner: the mated plug stands 3 mm out over the left strip and
-// the hole's corner (placement.py), its leads down beside the cell's left end
-j2_pos = [31.7, 30.0];  j2_h = 3.4;
+// J2, the cell's plug (PicoBlade 53261, 3.4 tall), in the right strip beside the hole's lead (seat-2) end, its mouth towards
+// +y: the mated plug stands 4 mm out along the strip (placement.py), the cell's leads come out of the hole's top end and
+// run to it (0.1 in from 31.7 so its mount pads keep 0.3 from the board's edge, V&V DEF-56)
+j2_pos = [31.6, 30.0];  j2_h = 3.4;
 // the panel frame's notches where a tall connector (3.4, over the frame's limit) lies beside the glass: [side, y0, y1]
 frame_notches = [[1, -15.3, -5.1], [1, 26.9, 37.1]];
-j2_plug = [[27.9, 32.6], [35.5, 36.6]];               // the mated plug's outline, corners
+j2_plug = [[27.85, 32.6], [35.45, 36.6]];               // the mated plug's outline, corners
 // the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
 // backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
 // U9 (1.2)
@@ -432,6 +432,7 @@ assert(cell_hole[1][0] - cell_hole[0][0] >= cell[1] + 1.0 && cell_hole[1][1] - c
 // checks of the ends against the cell and the screws)
 tune = false;
 assert(tune || cell_top <= glass_gap - 0.4 && cell_top <= z_deck_under - z_top_cu - 0.3 + 1e-6, "the cell's top runs into the panel or the ends");
+assert(tune || uni_ceil_box([[cell_hole[0][0], max(cell_hole[0][1], (panel_l + panel_fit) / 2)], cell_hole[1]]) - z_top_cu >= cell_top + 0.3, "the cell's top runs into the slope or the ends beyond the glass");
 assert(cell[2] - cell_top >= pcb_t + 0.5, "the cell doesn't reach through the board to the floor");
 assert(floor_t - cell_pocket >= 0.8, "the floor under the cell is too thin");
 assert(board_lift >= 0.7 - 1e-6, "the board rests on ribs too low to print");
@@ -471,7 +472,7 @@ assert(usb_zc - usb_hole[1] / 2 - z_seam >= 0.8 && usb_zc - usb_step - 0.1 >= us
 assert(usb_front - (case_w / 2 - wall / 2) > 0 && z_seam < z_top_cu, "the USB-C notch isn't needed: drop the tab");
 // J2 (under the left ear) and J5 (under the slope and the deck's pocket): x, y over the board's top, their model's boxes
 assert(j2_plug[1][0] <= board_w / 2 - 0.5 && j2_plug[0][0] >= (panel_w + panel_fit) / 2 + 0.15, "J2's plug isn't beside the glass");
-assert(j2_plug[0][1] >= j2_pos[1] + 2.6 - 0.5 && norm([j2_pos[0] - cell_hole[1][0], j2_pos[1] - cell_hole[1][1]]) <= 20, "J2 isn't near the hole's lead end");
+assert(j2_plug[0][1] >= j2_pos[1] + 2.6 - 0.5 && norm([j2_pos[0] - cell_hole[1][0], j2_pos[1] - cell_hole[1][1]]) <= 22, "J2 isn't near the hole's lead end");
 for (s = side_pins) assert(rect_dist(s, j2_plug) >= boss_d / 2 + 0.6 && rect_dist(s, [j2_pos - [3.9, 2.7], j2_pos + [3.9, 2.7]]) >= boss_d / 2 + 0.6, "a side boss runs into J2 or its plug");
 // the debug switches (2026-10-24) in the left bezel below H4: their guides over them, the two side by side, clear
 // of J5, J2's plug, the cell's hole and the panel's frame (H4 and the other screws' bosses: below the side screws'

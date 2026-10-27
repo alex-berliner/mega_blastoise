@@ -53,7 +53,7 @@ CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(81.1, 57.0, 118.9, 111.8), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -11.8 .. 43): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
+    dict(name="cell", box=(81.1, 53.0, 118.9, 107.8), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
@@ -77,7 +77,7 @@ SPEAKER = dict(at=(129.7, 124.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x
 # cross is below. The decouplers on its long sides would land on the side screw, J2 or the folded
 # FPC: they are placed by hand below, as close to their pins as that allows.
 CORE_SIDE = "F"
-CORE_AT = (75.0, 114.0)
+CORE_AT = (73.8, 114.0)
 CORE_Y = CORE_AT[1]
 CORE_ESCAPES = True         # Raspberry Pi's pin escapes (False: straight stubs, build_pcb.straight_escapes)
 CORE_ROT = 0                 # the reference as drawn: GPIO4-19 face the left bezel, GPIO33-47 J3
@@ -134,11 +134,11 @@ at("FID3", -34.0, 72.5)
 
 # ---- display: J3 where the folded FPC reaches (case.scad conn_in), its mouth towards seat 1 ----------------
 put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
-at("C29", -10.6, -12.4, 90)                  # panel VCI/VDDI, over J3's 3V3 pins
-at("C30", -9.4, -12.4, 90)
+at("C29", -10.6, -13.0, 90)                  # panel VCI/VDDI, over J3's 3V3 pins
+at("C30", -9.4, -13.0, 90)
 at("JP4", -10.0, -24.0, 0)                   # 3V3 -> panel: flat, under the tail
-at("R28", -21.6, 0.3, 90)                    # SPI source terminations, by the core's panel pins
-at("R29", -26.4, 0.3, 90)
+at("R28", -18.6, -16.0, 90)                    # SPI source terminations, by the core's panel pins
+at("R29", -17.0, -16.0, 90)
 at("JP2", 26.9, -13.0, 0)                    # VSYS to LED_A (J3 pin 50): flat, by J3's right end
 
 # ---- backlight current sinks: the ends' spine (U6, 1.7 tall in its pocket) and the row under the slope above it
@@ -192,7 +192,7 @@ at("C42", 25.0, -45.5, 0)                    # CC1/CC2 spares, DNP
 at("C43", 30.5, -45.5, 0)
 
 # ---- the cell: J2 at the hole's seat-1 corner (mouth into it), the charger, the load sharing
-at("J2", 31.7, 30.0, 180)
+at("J2", 31.6, 30.0, 180)
 at("JP5", 24.0, 29.0, 0)                     # cell -> VBAT
 at("U2", 25.0, 13.0, 0)                      # BQ24073: its thermal pad spreads into the GND pours
 at("C3", 20.4, 16.6, 90)                      # VBAT
@@ -209,7 +209,7 @@ at("R43", 25.4, 21.5, 90)
 at("R44", 26.6, 21.5, 90)
 at("R64", 27.8, 21.5, 90)                    # ILIM
 at("TP7", 26.6, 17.8, 0)                     # CHG_TEMP
-at("TH1", 19.7, 20.0, 90)                    # the cell's temperature, at the hole's right edge
+at("TH1", 19.95, 20.0, 90)                    # the cell's temperature, at the hole's right edge
 
 # ---- 3V3 LDO in the left strip (1.5 tall, under the slope)
 at("U3", -30.0, 9.0, 90)
@@ -222,7 +222,7 @@ at("JP1", -24.0, 9.0, 0)
 for ref, (ox, oy, rot) in {"R23": (-28.8, -14.9, 90), "C13": (-20.0, -5.2, 90), "C23": (-19.4, -7.9, 90), "C18": (-22.4, -5.2, 90),
                            "C14": (-28.8, -17.0, 90), "C15": (-13.3, -32.2, 90), "C17": (-12.1, -32.2, 90), "C22": (-13.3, -34.4, 90),
                            "C16": (-28.8, -21.6, 270), "C20": (-28.8, -19.3, 90), "C19": (-26.4, -26.8, 90), "R65": (-17.4, -32.7, 90)}.items():
-    at(ref, ox - 2.8, oy + 5.5, rot)
+    at(ref, ox - 4.0, oy + 5.5, rot)
 at("C10", 24.4, -12.4, 90)
 
 # ---- test pads on the back
@@ -259,15 +259,15 @@ at("U9", 0.0, 55.0, 90)
 at("RN3", -5.8, 51.5, 90)
 at("RN4", -5.8, 55.0, 90)
 at("C53", 5.5, 51.5, 0)
-at("Q1", -9.5, 46.0, 0)
-at("R16", -6.4, 45.0, 90)
-at("Q7", 5.9, 46.0, 0)
-at("D8", 10.0, 46.0, 0)
-at("R62", 13.0, 45.0, 90)
-at("R63", 14.2, 45.0, 90)
-at("R15", 15.4, 45.0, 90)
-at("C47", 16.6, 45.0, 90)
-at("TP6", 18.4, 45.0, 0)
+at("Q1", -7.6, 48.6, 0)
+at("R16", -4.0, 48.6, 90)
+at("Q7", 4.5, 49.0, 0)
+at("D8", 8.3, 49.0, 0)
+at("R62", 10.9, 48.6, 90)
+at("R63", 12.1, 48.6, 90)
+at("R15", 13.3, 48.6, 90)
+at("C47", 14.5, 48.6, 90)
+at("TP6", -13.5, 48.6, 0)
 at("D2", 29.5, 45.8, 0)                      # the latch's other half: right end of the row
 at("D3", 22.0, 45.0, 180)
 at("R13", 24.5, 45.0, 90)

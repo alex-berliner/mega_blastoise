@@ -3,12 +3,12 @@
 	(generator "pcbnew")
 	(generator_version "10.0")
 	(layer "F.Cu")
-	(descr "Contact under a 4.0 mm round metal snap dome (HYP 600-415S-260): 1.6 mm centre pad, 3.4-4.6 mm ring, 0.5 mm vent. The dome is hand-placed, not a placed part.")
+	(descr "Contact under a 4.0 mm round metal snap dome (HYP 600-415S-260): 1.2 mm centre pad, 3.4-4.6 mm ring, 0.5 mm vent. The dome is hand-placed, not a placed part.")
 	(tags "metal dome snap dome tact contact")
 	(property "Reference" "SW**"
 		(at 0 -3.2 0)
 		(layer "F.Fab")
-		(uuid "cfa46ddf-7679-4bc1-9b81-61f669743fe4")
+		(uuid "c21b36d8-1c7a-483b-b29c-921cf271f974")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -19,7 +19,7 @@
 	(property "Value" "Dome_4mm_Round"
 		(at 0 3.2 0)
 		(layer "F.Fab")
-		(uuid "aad56aa9-c84f-46eb-b588-8443b0982148")
+		(uuid "b30fc4fb-f41f-4503-a6e6-cc7c1ec81877")
 		(effects
 			(font
 				(size 0.8 0.8)
@@ -31,7 +31,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "aa7f2ef0-4e4b-4de8-b213-7b6dec7e81da")
+		(uuid "c957f776-a4ce-443a-a39d-96710530968a")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -42,7 +42,7 @@
 		(at 0 0 0)
 		(layer "F.Fab")
 		(hide yes)
-		(uuid "fa3430bd-1160-40b9-82f1-79dd46cb9e0b")
+		(uuid "13cb23e0-99ad-4dcb-9b93-346cd48948b0")
 		(effects
 			(font
 				(size 1.27 1.27)
@@ -60,7 +60,7 @@
 		)
 		(fill yes)
 		(layer "F.Mask")
-		(uuid "2b900b55-b780-4d24-a212-ef35189cc342")
+		(uuid "848ad3db-6353-4774-8aa4-21b99c1f1342")
 	)
 	(fp_circle
 		(center 0 0)
@@ -71,7 +71,7 @@
 		)
 		(fill no)
 		(layer "F.CrtYd")
-		(uuid "626bfe65-9ab1-49fe-b00a-31f034a09a0d")
+		(uuid "ba36bfde-c756-4d7b-99fb-870f4d781bcf")
 	)
 	(fp_circle
 		(center 0 0)
@@ -82,20 +82,20 @@
 		)
 		(fill no)
 		(layer "F.Fab")
-		(uuid "f65316ec-246f-496d-bc1c-f251b7f77ec8")
+		(uuid "34f40f9e-3666-4aba-84b2-81b841df0990")
 	)
 	(pad "" np_thru_hole circle
-		(at 0 1.25)
+		(at 0 1.15)
 		(size 0.5 0.5)
 		(drill 0.5)
 		(layers "*.Cu" "*.Mask")
-		(uuid "8475572d-df85-4af7-a236-877f106d3515")
+		(uuid "d5a3e632-9edf-44a5-be13-1fbdcdd28e9b")
 	)
 	(pad "1" smd circle
 		(at 0 0)
-		(size 1.6 1.6)
+		(size 1.2 1.2)
 		(layers "F.Cu" "F.Mask")
-		(uuid "79848a69-834b-478a-ac3b-2335333e50de")
+		(uuid "5d9f4747-067c-49d0-927f-8138b970b4e9")
 	)
 	(pad "2" smd custom
 		(at 2 0)
@@ -113,7 +113,7 @@
 				(fill no)
 			)
 		)
-		(uuid "9f0dcb8f-0153-46db-96a4-db7a712fc24d")
+		(uuid "21f8e24d-de73-4afe-b125-af7eb09f8fc9")
 	)
 	(embedded_fonts no)
 )

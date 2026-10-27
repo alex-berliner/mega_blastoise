@@ -50,8 +50,9 @@ def gerbers():
         os.remove(os.path.join(g, f))
     run("pcb", "export", "gerbers", "--layers", LAYERS, "--subtract-soldermask", "--use-drill-file-origin",
         "-o", g + "/", PCB)
+    # plated and unplated holes in files of their own (JLC wants them apart: V&V DEF-32, O-14): <name>-PTH.drl and -NPTH.drl
     run("pcb", "export", "drill", "--format", "excellon", "--drill-origin", "absolute", "--excellon-units", "mm",
-        "--generate-map", "--map-format", "gerberx2", "-o", g + "/", PCB)
+        "--excellon-separate-th", "--generate-map", "--map-format", "gerberx2", "-o", g + "/", PCB)
     z = os.path.join(OUT, "battler_gerbers.zip")
     with zipfile.ZipFile(z, "w", zipfile.ZIP_DEFLATED) as zf:
         for f in sorted(os.listdir(g)):
@@ -74,8 +75,15 @@ def bom_cpl():
         groups[lcsc].append((ref, fpname, fp.GetValue()))
         pos = fp.GetPosition()
         side = "Bottom" if fp.IsFlipped() else "Top"
+        # JLC places a part by its centre (Mid X, Mid Y), which for its library footprints is the middle of the pads, not
+        # KiCad's origin (a connector's pin 1, a USB-C's mouth: V&V DEF-33 found J1 1.50 mm, J2 and J4 0.95 mm off). So the
+        # row carries the middle of the pads' bounding box (the origin where the footprint is symmetric: every chip part).
+        # CONFIRM in JLC's placement preview (J1 to J5 above all): JLC's own origin for a few parts differs from this
+        xs = [pcbnew.ToMM(p.GetPosition().x) for p in fp.Pads()]
+        ys = [pcbnew.ToMM(p.GetPosition().y) for p in fp.Pads()]
+        cx, cy = ((min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2) if xs else (pcbnew.ToMM(pos.x), pcbnew.ToMM(pos.y))
         # JLC: Y up, origin anywhere; mirror Y so the CPL matches the gerbers' orientation
-        rows.append([ref, f"{pcbnew.ToMM(pos.x):.3f}mm", f"{-pcbnew.ToMM(pos.y):.3f}mm", side,
+        rows.append([ref, f"{cx:.3f}mm", f"{-cy:.3f}mm", side,
                      f"{fp.GetOrientationDegrees() % 360:.1f}"])
     key = lambda r: (r[0].rstrip("0123456789"), int("0" + "".join(c for c in r[0] if c.isdigit())))
     with open(os.path.join(OUT, "battler_bom_jlc.csv"), "w", newline="") as f:

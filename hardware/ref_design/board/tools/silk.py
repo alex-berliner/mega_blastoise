@@ -131,9 +131,15 @@ def main():
     # and build, on the back between seat 2's clusters (the core took the middle of the back)
     import design
     back = pcbnew.B_SilkS
-    text("TWO-PLAYER HANDHELD  REF-A", 100, 57.6, back, h=1.2)
-    text(f"REV {design.BOARD_REV}", 100, 60.6, back, h=2.0)
-    text("2 LAYERS  1.6 MM  ENIG", 100, 63.2, back)
+    # (since 2026-10-27 the cell's hole runs the whole middle: the name goes on the back at seat 2's end, on the first spot where
+    # all three lines clear every pad, via and hole)
+    for y0 in (44.0, 40.0, 36.0, 47.0, 33.0, 52.0):
+        lines = [("TWO-PLAYER HANDHELD  REF-A", y0, 1.2, 12.5), (f"REV {design.BOARD_REV}", y0 + 3.0, 2.0, 5.0), ("2 LAYERS  1.6 MM  ENIG", y0 + 5.6, 0.8, 8.5)]
+        boxes = [(100 - w, y - h / 2 - 0.1, 100 + w, y + h / 2 + 0.1) for _, y, h, w in lines]
+        if all(not any(overlap(b, o) for o in obstacles[back]) for b in boxes):
+            break
+    for s_, y, h, _ in lines:
+        text(s_, 100, y, back, h=h)
     # test pads (back, between seat 2's clusters), one name under each
     for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
         tp = board.FindFootprintByReference(f"TP{i + 1}")
@@ -161,11 +167,11 @@ def main():
         jb = box(board.FindFootprintByReference(ref))
         text(name, (jb[0] + jb[2]) / 2 - 0.6, (jb[1] + jb[3]) / 2)     # on its body: right of it is the hole
     # the speaker, hand-fitted on the top (build_pcb.py draws its outline): its name inside it
-    (sx, sy) = SPEAKER["at"]
-    text("SPEAKER", sx, sy - 1.0)
-    text("15x10 8R", sx, sy + 1.0)
-    text("BOOT", PINHOLES[0][0], PINHOLES[0][1] - 2.3, h=0.8)   # above the upper one, below the lower one
-    text("RST", PINHOLES[1][0] - 1.0, PINHOLES[1][1] + 2.3, h=0.8)
+    # (the speaker's hole takes no text since 2026-10-27: nothing is printed in a hole)
+    # the pinholes' names (placement.PINHOLES is in the case frame, y up: KiCad's x + 100, 100 - y)
+    px = [(100 + x, 100 - y) for x, y in PINHOLES]
+    text("BOOT", px[0][0] + 0.0, px[0][1] - 2.3, h=0.8)   # above the upper one, below the lower one
+    text("RST", px[1][0] - 1.0, px[1][1] + 2.3, h=0.8)
     if clashes:
         print("labels over pads or other text:", clashes)
     pcbnew.SaveBoard(PCB, board)

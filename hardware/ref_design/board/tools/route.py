@@ -48,6 +48,7 @@ import glob
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -284,8 +285,8 @@ def contact_stubs(board):
 
 def dome_stubs(board):
     """A metal-dome contact's centre pad sits inside its ring pad: its only way out is a via
-    in the 0.9 mm gap between them (r 0.8 to 1.7), which the router won't place. Each dome
-    gets one at r 1.25 opposite the vent (0.2 mm from both pads) and a stub to it."""
+    in the 1.1 mm gap between them (r 0.6 to 1.7), which the router won't place. Each dome
+    gets one at r 1.15 opposite the vent (centred in the gap) and a stub to it."""
     n = 0
     for fp in footprints(board):
         if not str(fp.GetFPID().GetLibItemName()).startswith("Dome_"):
@@ -295,7 +296,7 @@ def dome_stubs(board):
         cx, cy = xy(centre.GetPosition())
         vx, vy = xy(vent.GetPosition())
         d = math.hypot(vx - cx, vy - cy)
-        v = (cx - (vx - cx) * 1.25 / d, cy - (vy - cy) * 1.25 / d)
+        v = (cx - (vx - cx) * 1.15 / d, cy - (vy - cy) * 1.15 / d)
         add_track(board, (cx, cy), v, centre.GetNet(), 0.2)
         add_via(board, v, centre.GetNet())
         n += 1
@@ -666,7 +667,7 @@ def slot_boxes():
     return [tuple(c["box"]) for c in CUTOUTS]
 
 
-MAX_RIPPED = 6            # connections the maze pass may take other nets' copper up for
+MAX_RIPPED = 12           # connections the maze pass may take other nets' copper up for
 
 
 def maze_for(board, net, a, b, reach=6.0, ignore=()):
@@ -907,7 +908,19 @@ def fiducial_keepouts(board):
     return out
 
 
-def dsn_for_router(text, contacts, fences, circles=()):
+def npth_keepouts(board):
+    """Every non-plated hole keeps copper 0.30 mm off (battler.kicad_dru; Freerouting doesn't read that rule): a keep-out disc
+    on both layers, 0.30 + half a track + 0.05 past the drill."""
+    out = []
+    for fp in footprints(board):
+        for p in fp.Pads():
+            if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH:
+                d = pcbnew.ToMM(max(p.GetDrillSize().x, p.GetDrillSize().y))
+                out.append(xy(p.GetPosition()) + (d / 2 + 0.30 + 0.1 + 0.05,))
+    return out
+
+
+def dsn_for_router(text, contacts, fences, circles=(), npth=()):
     """Adjust the router's copy of the board (never the board):
     - membrane contacts: KiCad exports each comb as one polygon that also covers the
       gaps between the combs, so a contact's two pads overlap and the router gives up
@@ -928,7 +941,7 @@ def dsn_for_router(text, contacts, fences, circles=()):
         xs, ys = v[0::2], v[1::2]
         cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
         hx, hy = (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2
-        d = 120.0                                  # um, the DSN's unit
+        d = 220.0                                  # um, the DSN's unit (0.12 for the 0.2 rule; 0.22 since the 0.30 copper-to-edge rule, 2026-10-27)
         pts = [f"{cx + (x - cx) * (hx - d) / hx:.1f} {cy + (y - cy) * (hy - d) / hy:.1f}" for x, y in zip(xs, ys)]
         return m.group(1) + "  ".join(pts) + ")"
     text = re.sub(r"(\(boundary\s*\(path pcb 0\s+)([-0-9.\s]+)\)", shrink, text, count=1)
@@ -951,6 +964,8 @@ def dsn_for_router(text, contacts, fences, circles=()):
     extra = "".join(f'\n    (keepout "" (circle F.Cu 5800 {x * 1000:.0f} {-y * 1000:.0f}))' for _, x, y in contacts)
     extra += "".join(f'\n    (keepout "" (circle F.Cu {2 * r * 1000:.0f} {x * 1000:.0f} {-y * 1000:.0f}))'
                      for x, y, r in circles)
+    extra += "".join(f'\n    (keepout "" (circle {layer} {2 * r * 1000:.0f} {x * 1000:.0f} {-y * 1000:.0f}))'
+                     for x, y, r in npth for layer in ("F.Cu", "B.Cu"))
     fence_layer = "B.Cu" if core_layer(pcbnew.F_Cu) == pcbnew.B_Cu else "F.Cu"
     for x0, y0, x1, y1 in fences:
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(x0, y0, x1, y1))
@@ -958,7 +973,7 @@ def dsn_for_router(text, contacts, fences, circles=()):
     # the cutouts: the router's copy of the outline doesn't keep its tracks 0.2 mm off
     # their rounded corners, so each gets a keep-out on both layers
     for sx0, sy0, sx1, sy1 in slot_boxes():
-        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.3, sy0 - 0.3, sx1 + 0.3, sy1 + 0.3))
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.4, sy0 - 0.4, sx1 + 0.4, sy1 + 0.4))
         for layer in ("F.Cu", "B.Cu"):
             extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
@@ -1086,7 +1101,7 @@ def run_freerouting(board, passes, contacts):
         dsn, ses = os.path.join(tmp, "b.dsn"), os.path.join(tmp, "b.ses")
         if not pcbnew.ExportSpecctraDSN(board, dsn):
             sys.exit("DSN export failed")
-        text = dsn_for_router(open(dsn).read(), contacts, core_fences(), fiducial_keepouts(board))
+        text = dsn_for_router(open(dsn).read(), contacts, core_fences(), fiducial_keepouts(board), npth_keepouts(board))
         if SEED:
             text = dsn_shuffled(text, SEED)
         open(dsn, "w").write(text)
@@ -1215,6 +1230,7 @@ def drc_report(board):
     scratch = os.path.join(SCRATCH, "_repair.kicad_pcb")
     pro = os.path.join(SCRATCH, "_repair.kicad_pro")
     open(pro, "w").write(open(os.path.join(BOARD_DIR, "battler.kicad_pro")).read())
+    shutil.copy(os.path.join(BOARD_DIR, "battler.kicad_dru"), pro.replace(".kicad_pro", ".kicad_dru"))
     pcbnew.SaveBoard(scratch, board)
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "d.json")
@@ -1588,7 +1604,7 @@ def finish_trial(src, work):
     import shutil
     d = os.path.join(work, "finish_" + os.path.basename(os.path.dirname(src)))
     os.makedirs(d, exist_ok=True)
-    for f in ("battler.kicad_pcb", "battler.kicad_pro"):
+    for f in ("battler.kicad_pcb", "battler.kicad_pro", "battler.kicad_dru"):
         shutil.copy(os.path.join(os.path.dirname(src), f), d)
     r = subprocess.run([sys.executable, os.path.abspath(__file__), "--finish", f"--board={os.path.join(d, 'battler.kicad_pcb')}"],
                        cwd=d, capture_output=True, text=True)
@@ -1622,7 +1638,7 @@ def attempts(passes, n, argv, tries=None, seed=0, exhaustive=False):
         k = launched
         d = os.path.join(work, f"attempt{k}")
         os.makedirs(d)
-        for f in ("battler.kicad_pcb", "battler.kicad_pro"):       # the board in its project (its rules)
+        for f in ("battler.kicad_pcb", "battler.kicad_pro", "battler.kicad_dru"):       # the board in its project (its rules)
             shutil.copy(os.path.join(BOARD_DIR, f), d)
         log = open(os.path.join(d, "route.log"), "w")
         procs[k] = subprocess.Popen([sys.executable, os.path.abspath(__file__), str(passes), *argv,
@@ -1742,6 +1758,7 @@ def preflight():
     with tempfile.TemporaryDirectory() as tmp:
         scratch = os.path.join(tmp, "pre.kicad_pcb")
         open(os.path.join(tmp, "pre.kicad_pro"), "w").write(open(os.path.join(BOARD_DIR, "battler.kicad_pro")).read())
+        shutil.copy(os.path.join(BOARD_DIR, "battler.kicad_dru"), os.path.join(tmp, "pre.kicad_dru"))
         pcbnew.SaveBoard(scratch, board)
         report = drc_errors(scratch)
     if report is None:

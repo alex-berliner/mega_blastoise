@@ -10,6 +10,15 @@ wall: the screws moved; the USB-C moved down its wall and, with the speaker, bac
 position. `case.scad` doesn't know any of this yet; nothing in the case was changed.
 The board's side is `board/placement.py` (`CUTOUTS`, `SIDE_SCREWS`, `USB_Y`).
 
+## Turned 90 degrees (2026-10-27, Alex: "Rotate it"): this section wins over the one below
+
+The cell lies along the board: hole 37.8 x 54.8 (r 1), case x -18.9 .. 18.9, y -11.8 .. 43.0 (board KiCad x 81.1 .. 118.9, y 57 .. 111.8; placement.py `CUTOUTS`), centred across. Its pocket in the
+tub's floor is 0.9 inside it at both long sides and at the seat-1 end, 1.9 inside at the lead (seat-2) end (`cell_pocket_box`): the pocket is the worst-case 52 x 36 cell, and the walls pass the tolerance stack
+(V&V `design_numbers.py cellgap`, DEF-58). The cell is pushed to the right side and the seat-1 end; its leads leave at the seat-2 end to **J2 at (31.6, 30.0)** in the right strip (mouth +y, plug box x 27.85 .. 35.45,
+y 32.6 .. 36.6). **TH1 at (19.95, 20.0)**, 1.05 from the hole's right edge (centre; its pads keep the 0.30 mm copper-to-edge rule). Strips beside the hole: 17.3 mm each. Moved for it: the charger group
+(U2, C2, C3, R5 .. R64, R17/R18/C8, JP5, TP7) and J2 to the right strip, U10 and C54 (the VBAT_SENSE buffer, 3.0 mm SOT-23-5) beside U1, JP2 to (26.9, -13.0), C29/C30 to y -13.0, U3/C5-C7/JP1 into the left strip,
+the core 1.2 mm left (U4 at -26.2, -14.0). J4 is a JST SH 2-pin (SM02B-SRSS-TB, 2.96 tall) at (31.6, -8.2): its box x 28.4 .. 34.8, its mated plug y -14.8 .. -10.9. Panel numbers are the datasheet drawing's (page 6).
+
 ## Re-placed for the 3.5 in panel (2026-10-26): this section wins over every number below
 
 Board 72.4 x 151.64 (case 77.4 x 156.64 x 9.6). Case frame (x right, y up towards seat 2), heights over the board's top copper.

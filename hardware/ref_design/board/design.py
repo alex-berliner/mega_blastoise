@@ -505,7 +505,7 @@ for k, rn in enumerate(("RN1", "RN2", "RN3", "RN4")):
          "C2028", "4D02WGJ0473TCE", "UNI-ROYAL")   # 47k pull-ups: margin for the membrane pill's contact resistance (V&V DEC-24)
 # Start and Select under each seat's DS Lite Start/Select membrane, between the clusters near the
 # case's end: metal snap domes (2026-10-21, row 4: HYP 600-415S-260, 4.0 mm, hand-placed under
-# Kapton dots), a 1.6 mm centre pad and a 3.4-4.6 mm ring. On the power contacts the ring is VSYS,
+# Kapton dots), a 1.2 mm centre pad (1.6 before the 0.30 mm hole rule) and a 3.4-4.6 mm ring. On the power contacts the ring is VSYS,
 # so the dome screens the signal pad
 SMALL = "battler:Dome_4mm_Round"
 part("SW20", S, "Switch:SW_Push", "P1 SELECT", SMALL, {"1": "P1_SELECT", "2": "GND"}, bom=False)

@@ -35,6 +35,12 @@ from placement import CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CO
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 REF = os.path.join(os.path.dirname(BOARD_DIR), "..", "..", "..", "tmp")  # replaced below
+DRU = '''(version 1)
+# copper keeps 0.30 mm from every non-plated hole (V&V REQ-FAB-03, DEF-56); JLCPCB's own minimum is 0.2 (NPTH to track)
+(rule "copper to NPTH"
+  (constraint hole_clearance (min 0.3mm))
+  (condition "A.Pad_Type == 'NPTH, mechanical'"))
+'''
 REF_PCB = os.environ.get("RP2350B_REF", "")
 SYSFP = "/usr/share/kicad/footprints"
 LIBS = {"battler": os.path.join(BOARD_DIR, "lib", "battler.pretty")}
@@ -111,8 +117,14 @@ def setup(board):
     ds.m_ViasMinSize = mm(0.45)
     ds.m_ViasMinAnnularWidth = mm(0.1)
     ds.m_MinThroughDrill = mm(MIN_DRILL)
+    # copper keeps 0.30 mm from the board's edge and its cutouts (the cell's, the speaker's: min_copper_edge_clearance) and from
+    # every NPTH (battler.kicad_dru below), the V&V's REQ-FAB-03 (DEF-56). JLCPCB's published minimum (jlcpcb.com/capabilities/
+    # pcb-capabilities, read 2026-10-27) is 0.2 from routed edges and slots and 0.2 NPTH to track; a via's drill keeps the 0.2
+    # via-hole-to-track minimum (not 0.3: Freerouting doesn't model hole clearance and 0.3 made 199 errors on ordinary vias)
     ds.m_HoleClearance = mm(0.2)
-    ds.m_CopperEdgeClearance = mm(0.2)       # JLCPCB routed-edge minimum
+    ds.m_CopperEdgeClearance = mm(0.3)
+    with open(os.path.join(BOARD_DIR, "battler.kicad_dru"), "w") as f:
+        f.write(DRU)
     ds.m_MinResolvedSpokes = 1               # small pads in the pours may have one thermal spoke
     # like Raspberry Pi's board: no mask expansion, so 0.4 mm pitch pads keep their webs
     ds.m_SolderMaskExpansion = 0

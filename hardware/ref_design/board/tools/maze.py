@@ -23,6 +23,8 @@ import math
 import pcbnew
 
 GRID = 0.05
+HOLE_RULE = 0.30         # copper to NPTH (battler.kicad_dru)
+EDGE_EXTRA = 0.15        # the cut-outs' blocks grow this much more: 0.15 clearance becomes the 0.30 copper-to-edge rule
 MARGIN = 0.04            # a straight line between two free cell centres can pass this much closer
 CONVEX_PADS = (pcbnew.PAD_SHAPE_RECTANGLE, pcbnew.PAD_SHAPE_ROUNDRECT, pcbnew.PAD_SHAPE_CIRCLE, pcbnew.PAD_SHAPE_OVAL,
                pcbnew.PAD_SHAPE_TRAPEZOID, pcbnew.PAD_SHAPE_CHAMFERED_RECT)
@@ -80,6 +82,8 @@ class Maze:
                     continue
                 # a pad may ask for more than the net class (fiducials: 0.6 mm)
                 extra = max(0.0, to_mm(p.GetLocalClearance() or 0) - clear)
+                if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH:
+                    extra = max(extra, HOLE_RULE - clear)         # copper keeps 0.30 from a non-plated hole (battler.kicad_dru)
                 self._item(p, grow_t + extra, grow_v + extra)
         for t in board.GetTracks():
             if t.GetClass() == "PCB_VIA":
@@ -107,7 +111,8 @@ class Maze:
         for f in fences:                         # route.py's fences: the core's top layer (and so no vias)
             self._rect(f, self.track[fl], grow_t)
             self._rect(f, self.via, grow_v)
-        for r in blocks:                         # cut-outs: every layer
+        for r in blocks:                         # cut-outs: every layer; copper keeps 0.30 from their edge (min_copper_edge_clearance)
+            r = (r[0] - EDGE_EXTRA, r[1] - EDGE_EXTRA, r[2] + EDGE_EXTRA, r[3] + EDGE_EXTRA)
             for l in self.layers:
                 self._rect(r, self.track[l], grow_t)
             self._rect(r, self.via, grow_v)
