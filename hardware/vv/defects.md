@@ -571,7 +571,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: REQ-FAB-05 asks for 'JLCJLCJLCJLC' on the back silk so JLC prints its number there; it is not in the design (still absent at 71737ae: `grep -c JLCJLC` on battler.kicad_pcb and silk.py gives 0 and 0), so JLC places it anywhere (DF-125: on a comb). Since 40281b8 silk.py moves the board's name and BOARD_REV text out of the cell's hole onto clear spots (DEF-57 CLOSED); the marker was not added with them.
 - Root cause: REQ-FAB-05 was written as if the marker existed.
 - Why missed: no check read the silk for it.
-- Check added or changed: VER-132 (k) (the marker on B.Silkscreen, or JLC's paid removal option in the release record; not built).
+- Check added or changed: VER-132 (k) (the marker on B.Silkscreen, or JLC's paid removal option in the release record; built 2026-10-27, FAIL at 71737ae: absent among the 20 back-silk texts).
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
 - Status: OPEN (PLAN.md decision DEC-28)
@@ -755,3 +755,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-101, DF-51
 - Gate: EVT
 - Status: OPEN (for DEC-17 with DEF-50: proposed, accept for EVT, since a data line at VBUS is outside USB 2.0 and any fix needs copper; at DVT, R3 and R4 to 100k or more with a clamp at the pads, R1 and R2 in 0603 (100 mW), and a series element or a crowbar on the data lines only if REQ-PWR-17's accepted value asks for it)
+
+### DEF-74: The F.Cu GND pour comes 2.875 mm from every comb's centre, inside REQ-BTN-04's 2.9 mm
+- Found: VER-132 (layout_checks.py fab, item (b)), built 2026-10-27, at 71737ae
+- Symptom: on all 16 membrane contacts (SW1-SW16) the top-side GND pour's nearest edge is 2.875 mm from the contact's centre (measured on pcbnew's filled zone), 0.025 mm inside the 2.9 mm REQ-BTN-04 keeps clear of everything but the contact's own stubs. No via, no foreign track and no paste or silk is inside; the 4.8 mm mask openings are whole. The pour is flat copper under mask, outside the 3.5 mm pill's 1.75 mm radius, so the pill is not lifted (the reason for the 2.9 mm was a tented via).
+- Root cause: the pour's clearance round the comb's pads gives 2.875 mm; nothing in build_pcb.py states the 2.9 mm as a keep-out.
+- Why missed: VER-132 was NOT_BUILT; VER-162 checks the contacts' own copper, not the pour round them.
+- Check added or changed: VER-132 (built; its seed puts paste in SW7's circle and must fail)
+- Updated: REQ-BTN-04
+- Gate: ORDER
+- Status: OPEN (copper. Proposed: Alex restates REQ-BTN-04 as no via within 2.9 mm and no other copper within 2.85 mm (the pour is flat), or a rule area of 2.9 mm round each comb in build_pcb.py with a re-pour, no re-route)

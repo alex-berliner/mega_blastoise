@@ -192,7 +192,353 @@ def bridges(seed=None):
     return dn.result(not row.bad)
 
 
-CHECKS = {"bridges": (bridges, SEED_BRIDGES)}
+# ---- VER-132: the fab files' content -----------------------------------------------------------------------------
+LAYER_FILES = ["F_Cu.gtl", "B_Cu.gbl", "F_Mask.gts", "B_Mask.gbs", "F_Paste.gtp", "B_Paste.gbp", "F_Silkscreen.gto",
+               "B_Silkscreen.gbo", "Edge_Cuts.gm1"]
+COMB_D, KEEP_R, MIN_HOLE, EDGE_CU = 4.8, 2.9, 0.30, 0.30
+MARKER = "JLCJLCJLCJLC"
+
+
+def gerber(path):
+    """(apertures {D: (shape, [mm])}, flashes [(x, y, D)], draws [(x0, y0, x1, y1, D, centre)], regions [[(x, y)]]) in
+    KiCad's coordinates (Y down: the gerber's Y negated), for KiCad's RS-274X X2 output (%FSLAX46Y46*%, %MOMM*%). Only
+    dark objects are kept: --subtract-soldermask plots the mask openings onto the silk layers in clear polarity (%LPC*%).
+    An arc keeps its centre (from I and J); a full circle starts and ends at the same point."""
+    txt = open(path, encoding="utf-8", errors="replace").read()
+    m = re.search(r"%FSLAX(\d)(\d)Y\d\d\*%", txt)
+    scale = 10 ** int(m.group(2)) if m else 10 ** 6
+    aps = {}
+    for a in re.finditer(r"%ADD(\d+)([A-Za-z_]+),?([^*]*)\*%", txt):
+        nums = []
+        for v in re.split(r"[X,]", a.group(3)):
+            try:
+                nums.append(float(v))
+            except ValueError:
+                pass
+        aps[int(a.group(1))] = (a.group(2), nums)
+    x = y = 0.0
+    ap, inreg, cur, dark = None, False, [], True
+    fl, dr, rg = [], [], []
+    for line in re.split(r"[\n\r]+", txt):
+        line = line.strip()
+        if line.startswith("%LPC"):
+            dark = False
+            continue
+        if line.startswith("%LPD"):
+            dark = True
+            continue
+        if line.startswith("G36"):
+            inreg, cur = True, []
+            continue
+        if line.startswith("G37"):
+            if len(cur) > 2 and dark:
+                rg.append(cur)
+            inreg, cur = False, []
+            continue
+        d = re.match(r"^(?:G\d+)?D(\d+)\*$", line)
+        if d and int(d.group(1)) >= 10:
+            ap = int(d.group(1))
+            continue
+        c = re.match(r"^(?:G0?[123])?(?:X(-?\d+))?(?:Y(-?\d+))?(?:I(-?\d+))?(?:J(-?\d+))?D0?([123])\*$", line)
+        if not c:
+            continue
+        px, py = x, y
+        if c.group(1) is not None:
+            x = int(c.group(1)) / scale
+        if c.group(2) is not None:
+            y = -int(c.group(2)) / scale
+        op = c.group(5)
+        arc = None
+        if c.group(3) is not None or c.group(4) is not None:
+            arc = (px + int(c.group(3) or 0) / scale, py - int(c.group(4) or 0) / scale)
+        if inreg:
+            if op == "2":
+                if len(cur) > 2 and dark:
+                    rg.append(cur)
+                cur = [(x, y)]
+            else:
+                cur.append((x, y))
+        elif op == "1" and dark:
+            dr.append((px, py, x, y, ap, arc))
+        elif op == "3" and dark:
+            fl.append((x, y, ap))
+    return aps, fl, dr, rg
+
+
+def stroke_dist(px, py, d, aps):
+    """the distance from a point to a dark draw's inked edge (negative inside it); a full-circle arc is a ring"""
+    x0, y0, x1, y1, a, arc = d
+    w = (aps.get(a, ("C", [0.1]))[1] or [0.1])[0]
+    if arc and math.hypot(x1 - x0, y1 - y0) < 1e-6:
+        r = math.hypot(x0 - arc[0], y0 - arc[1])
+        return abs(math.hypot(px - arc[0], py - arc[1]) - r) - w / 2
+    return seg_dist(px, py, x0, y0, x1, y1) - w / 2
+
+
+def excellon(path):
+    """[(x, y, diameter)] in KiCad's coordinates (Y negated), slots by their start point."""
+    tools, cur, out = {}, None, []
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        t = re.match(r"^T(\d+)C([\d.]+)", line)
+        if t:
+            tools[int(t.group(1))] = float(t.group(2))
+            continue
+        t = re.match(r"^T(\d+)$", line)
+        if t:
+            cur = int(t.group(1))
+            continue
+        c = re.match(r"^X(-?[\d.]+)Y(-?[\d.]+)(?:G85X(-?[\d.]+)Y(-?[\d.]+))?", line)
+        if c and cur in tools:
+            x, y = float(c.group(1)), -float(c.group(2))
+            if c.group(3):                      # a routed slot: its middle is the pad's centre
+                x, y = (x + float(c.group(3))) / 2, (y - float(c.group(4))) / 2
+            out.append((x, y, tools[cur]))
+    return tools, out
+
+
+def seg_dist(px, py, x0, y0, x1, y1):
+    dx, dy = x1 - x0, y1 - y0
+    L = dx * dx + dy * dy
+    u = 0 if L == 0 else max(0.0, min(1.0, ((px - x0) * dx + (py - y0) * dy) / L))
+    return math.hypot(x0 + u * dx - px, y0 + u * dy - py)
+
+
+def inside(pt, poly):
+    x, y = pt
+    n, hit = len(poly), False
+    for i in range(n):
+        x0, y0 = poly[i]
+        x1, y1 = poly[(i + 1) % n]
+        if (y0 > y) != (y1 > y) and x < x0 + (y - y0) * (x1 - x0) / (y1 - y0):
+            hit = not hit
+    return hit
+
+
+def quiet(fn, *a):
+    import contextlib
+    import io
+    buf = io.StringIO()
+    with contextlib.redirect_stdout(buf):
+        rc = fn(*a)
+    out = buf.getvalue().strip().splitlines()
+    return rc, out
+
+
+SEED_FAB = "paste"           # a paste flash in memory at SW7's centre: (b) must fail
+
+
+def fab(seed=None):
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    row = Rows()
+    f = dn.fab_module()
+    files = f.gerbers()
+    n_lines, n_rows, skipped = f.bom_cpl()
+    g = os.path.join(f.OUT, "gerbers")
+    print(f"fab.py's own export into {f.OUT}: {len(files)} files; BOM {n_lines} lines, CPL {n_rows} rows")
+    # (a) Excellon tools
+    pth_t, pth = excellon(os.path.join(g, "battler-PTH.drl"))
+    npth_t, npth = excellon(os.path.join(g, "battler-NPTH.drl"))
+    small = sorted(d for d in list(pth_t.values()) + list(npth_t.values()) if d < MIN_HOLE - 1e-6)
+    row(not small, f"(a) every Excellon tool >= {MIN_HOLE} mm: PTH {sorted(pth_t.values())}, NPTH {sorted(npth_t.values())}"
+        + (f"; under: {small}" if small else ""))
+    # (b) the contacts in the gerbers
+    fps = {fp.GetReference(): fp for fp in b.GetFootprints()}
+    contacts = [r for r in fps if re.fullmatch(r"SW(\d+)", r) and (int(r[2:]) <= 16 or 20 <= int(r[2:]) <= 23)]
+    paste = gerber(os.path.join(g, "battler-F_Paste.gtp"))
+    silk = gerber(os.path.join(g, "battler-F_Silkscreen.gto"))
+    mask = gerber(os.path.join(g, "battler-F_Mask.gts"))
+    if seed == "paste":
+        c = fps["SW7"].GetPosition()
+        paste[1].append((mm(c.x), mm(c.y), next(iter(paste[0]))))
+    bad_p, bad_s, bad_m, mask_d = [], [], [], {}
+    for r in sorted(contacts, key=lambda s: int(s[2:])):
+        cx, cy = mm(fps[r].GetPosition().x), mm(fps[r].GetPosition().y)
+        R = COMB_D / 2
+        if any(math.hypot(x - cx, y - cy) < R for x, y, _ in paste[1]) or \
+                any(any(math.hypot(x - cx, y - cy) < R for x, y in poly) for poly in paste[3]):
+            bad_p.append(r)
+        if any(stroke_dist(cx, cy, d, silk[0]) < R for d in silk[2]):
+            bad_s.append(r)
+        # the mask opening: a filled circle (a full-circle arc whose stroke reaches its centre) or a circular flash at the
+        # centre, or a region round it
+        best = 0.0
+        halves = 0
+        for d in mask[2]:
+            x0, y0, x1, y1, a, arc = d
+            if arc and math.hypot(arc[0] - cx, arc[1] - cy) < 0.05:     # KiCad plots a filled circle as two half arcs
+                w = (mask[0].get(a, ("C", [0.1]))[1] or [0.1])[0]
+                rad = math.hypot(x0 - arc[0], y0 - arc[1])
+                if rad <= w / 2 + 1e-6:
+                    halves += 1 if math.hypot(x1 - x0, y1 - y0) > 1e-6 else 2
+                    if halves >= 2:
+                        best = max(best, 2 * rad + w)
+        for x, y, a in mask[1]:
+            shp, prm = mask[0].get(a, ("", []))
+            if shp == "C" and prm and math.hypot(x - cx, y - cy) < 0.05:
+                best = max(best, prm[0])
+        for poly in mask[3]:
+            if inside((cx, cy), poly):
+                rr = min(seg_dist(cx, cy, *poly[i], *poly[(i + 1) % len(poly)]) for i in range(len(poly)))
+                best = max(best, 2 * rr)
+        mask_d[r] = best
+        if best < COMB_D - 0.01 and int(r[2:]) <= 16:
+            bad_m.append(f"{r} {best:.2f}")
+    row(not bad_p, f"(b) no F.Paste inside any of the {len(contacts)} contacts' {COMB_D} mm circles" + (f": {bad_p}" if bad_p else ""))
+    row(not bad_s, f"(b) no F.Silkscreen inside them" + (f": {bad_s}" if bad_s else ""))
+    row(not bad_m, f"(b) the 16 combs' F.Mask openings >= {COMB_D} mm: smallest {min(mask_d[r] for r in mask_d if int(r[2:]) <= 16):.2f} mm"
+        + (f"; under: {bad_m}" if bad_m else "")
+        + f"; the four domes' (SW20-SW23, 4 mm domes, VER-178's) {', '.join(f'{mask_d[r]:.2f}' for r in ('SW20', 'SW21', 'SW22', 'SW23'))} mm")
+    # (b) keep-out: no via, pour or foreign track within 2.9 mm of a comb's centre on F.Cu (pcbnew)
+    keep = []
+    for r in sorted((s for s in contacts if int(s[2:]) <= 16), key=lambda s: int(s[2:])):
+        c = fps[r].GetPosition()
+        own = {p.GetNetname() for p in fps[r].Pads()}
+        for t in b.GetTracks():
+            via = t.GetClass() == "PCB_VIA"
+            w = mm(t.GetWidth(pcb.F_Cu) if via else t.GetWidth())
+            d = mm(int(seg_dist(c.x, c.y, t.GetStart().x, t.GetStart().y, t.GetEnd().x, t.GetEnd().y))) - w / 2
+            if d < KEEP_R:
+                if via:
+                    keep.append(f"{r}: a via on {t.GetNetname()} at {d + w / 2:.2f} mm")
+                elif t.IsOnLayer(pcb.F_Cu) and t.GetNetname() not in own:
+                    keep.append(f"{r}: a {t.GetNetname()} track at {d:.2f} mm")
+        for z in b.Zones():
+            if not z.IsOnLayer(pcb.F_Cu) or z.GetIsRuleArea():
+                continue
+            fill = z.GetFilledPolysList(pcb.F_Cu)
+            if fill.OutlineCount() and fill.Collide(pcb.VECTOR2I(c.x, c.y), pcb.FromMM(KEEP_R)):
+                lo, hi = 0, pcb.FromMM(KEEP_R)       # the pour's nearest edge, by bisection on pcbnew's test
+                for _ in range(24):
+                    mid = (lo + hi) // 2
+                    if fill.Collide(pcb.VECTOR2I(c.x, c.y), mid):
+                        hi = mid
+                    else:
+                        lo = mid + 1
+                keep.append(f"{r}: the {z.GetNetname()} pour on F.Cu at {mm(hi):.3f} mm")
+    row(not keep, f"(b) no via, pour or other track within {KEEP_R} mm of the 16 combs' centres on F.Cu (vias on any layer)"
+        + (f": {'; '.join(keep[:8])}{' ...' if len(keep) > 8 else ''}" if keep else ""))
+    # (c) copper under every CPL centroid
+    import csv as _csv
+    cpl = list(_csv.DictReader(open(os.path.join(f.OUT, "battler_cpl_jlc.csv"), encoding="utf-8")))
+    off = []
+    for rr in cpl:
+        fp = fps[rr["Designator"]]
+        x, y = float(rr["Mid X"][:-2]), -float(rr["Mid Y"][:-2])
+        xs = [mm(p.GetPosition().x) for p in fp.Pads()]
+        ys = [mm(p.GetPosition().y) for p in fp.Pads()]
+        box = b2 = None
+        bb = [(mm(p.GetBoundingBox().GetLeft()), mm(p.GetBoundingBox().GetTop()), mm(p.GetBoundingBox().GetRight()),
+               mm(p.GetBoundingBox().GetBottom())) for p in fp.Pads()]
+        if not (min(q[0] for q in bb) <= x <= max(q[2] for q in bb) and min(q[1] for q in bb) <= y <= max(q[3] for q in bb)):
+            off.append(rr["Designator"])
+    row(not off, f"(c) every one of the {len(cpl)} CPL centroids inside its part's pads (on its side's copper)" + (f": {off}" if off else ""))
+    # (d) counts against design.py
+    parts, _ = dn.design()
+    want_rows = sorted(r for r, p in parts.items() if p["bom"] and p["lcsc"])
+    want_lines = len({p["lcsc"] for p in parts.values() if p["bom"] and p["lcsc"]})
+    row(n_rows == len(want_rows) and n_lines == want_lines,
+        f"(d) BOM {n_lines} lines and CPL {n_rows} rows against design.py's {want_lines} part numbers on {len(want_rows)} parts")
+    # (e) copper to the routed edges, (g) silk on the board: design_numbers.py edge (VER-18) on the same board
+    rc, out = quiet(dn.edge, b)
+    row(rc == 0, f"(e, g) copper 0.30 mm from every routed edge but J1's pads, every silk text on the board: design_numbers.py "
+        f"edge says {out[-1] if out else '?'}")
+    # (f) nothing on B.Paste
+    bp = gerber(os.path.join(g, "battler-B_Paste.gbp"))
+    row(not (bp[1] or bp[2] or bp[3]), f"(f) B.Paste empty: {len(bp[1])} flashes, {len(bp[2])} draws, {len(bp[3])} regions")
+    # (g) the files and the outline
+    need = [f"battler-{x}" for x in LAYER_FILES] + ["battler-PTH.drl", "battler-NPTH.drl", "battler-job.gbrjob"]
+    miss = [x for x in need if x not in files]
+    row(not miss, f"(g) all 9 layers, both drill files and the job file: " + (f"missing {miss}" if miss else "present"))
+    poly = pcb.SHAPE_POLY_SET()
+    closed = b.GetBoardPolygonOutlines(poly, False)
+    holes = poly.HoleCount(0) if poly.OutlineCount() else 0
+    row(closed and poly.OutlineCount() == 1 and holes == 2,
+        f"(g) Edge.Cuts closed: {poly.OutlineCount()} outline with {holes} holes (the cell's and the speaker's)")
+    # (h) one origin for all exports; every hole on a pad or via centre
+    pcbtext = open(os.path.join(dn.BOARD, "battler.kicad_pcb"), encoding="utf-8").read()
+    aux = re.search(r"\(aux_axis_origin ([-\d.]+) ([-\d.]+)\)", pcbtext)
+    row(not aux or (float(aux.group(1)) == 0 and float(aux.group(2)) == 0),
+        f"(h) no auxiliary origin in the board (gerbers use the drill-file origin, the drill files the absolute one): "
+        + (f"aux_axis_origin {aux.group(1)}, {aux.group(2)}" if aux else "none set, so both are (0, 0)"))
+    centres = [(mm(p.GetPosition().x), mm(p.GetPosition().y)) for fp in b.GetFootprints() for p in fp.Pads()]
+    centres += [(mm(t.GetPosition().x), mm(t.GetPosition().y)) for t in b.GetTracks() if t.GetClass() == "PCB_VIA"]
+    grid = {}
+    for x, y in centres:
+        grid.setdefault((round(x, 1), round(y, 1)), []).append((x, y))
+
+    def near(x, y):
+        for dx in (-0.1, 0, 0.1):
+            for dy in (-0.1, 0, 0.1):
+                for qx, qy in grid.get((round(x + dx, 1), round(y + dy, 1)), []):
+                    if math.hypot(qx - x, qy - y) <= 0.01:
+                        return True
+        return False
+    stray = [(x, y, d) for x, y, d in pth + npth if not near(x, y)]
+    slots = sum(1 for ln in open(os.path.join(g, "battler-PTH.drl"), encoding="utf-8") if "G85" in ln or ln.startswith("G00"))
+    row(not stray, f"(h) every one of {len(pth) + len(npth)} Excellon holes on a pad or via centre within 0.01 mm"
+        + (f": {len(stray)} not, e.g. {stray[:3]}" if stray else ""))
+    # (i) the drill files, (j) the CPL: VER-131's and VER-176's checks on the same exports
+    rc, out = quiet(dn.drill)
+    row(rc == 0, f"(i) the drill files as VER-131: design_numbers.py drill says {out[-1] if out else '?'}")
+    rc, out = quiet(dn.cpl)
+    row(rc == 0, f"(j) the CPL as VER-176: design_numbers.py cpl says {out[-1] if out else '?'}")
+    # (k) JLC's order-number marker
+    texts = [t.GetText() for t in b.GetDrawings() if t.GetClass() in ("PCB_TEXT", "PCB_TEXTBOX") and t.GetLayer() == pcb.B_SilkS]
+    texts += [t.GetText() for fp in b.GetFootprints() for t in fp.GraphicalItems()
+              if t.GetClass() in ("PCB_TEXT", "PCB_FIELD") and t.GetLayer() == pcb.B_SilkS]
+    row(any(MARKER in t for t in texts), f"(k) '{MARKER}' on B.Silkscreen (REQ-FAB-05): " +
+        ("present" if any(MARKER in t for t in texts) else f"absent ({len(texts)} back-silk texts: DEF-55); or the release "
+                                                          "record names JLC's paid removal option"))
+    import hashlib
+    for name in ("battler_gerbers.zip", "battler_bom_jlc.csv", "battler_cpl_jlc.csv"):
+        p = os.path.join(f.OUT, name)
+        print(f"  sha256 {hashlib.sha256(open(p, 'rb').read()).hexdigest()}  {name} (into the release record; the zip's "
+              "dates differ run to run)")
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
+# ---- VER-17: the board against JLC's dated 2-layer capability page --------------------------------------------------
+JLC_PAGE = os.path.join(VV, "analysis", "jlc_capabilities.md")   # the page copied with its date: 'name: value mm' lines
+
+
+def jlc(seed=None):
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    tracks = [t for t in b.GetTracks() if t.GetClass() == "PCB_TRACK"]
+    vias = [t for t in b.GetTracks() if t.GetClass() == "PCB_VIA"]
+    pth = [p for fp in b.GetFootprints() for p in fp.Pads() if p.GetAttribute() == pcb.PAD_ATTRIB_PTH]
+    have = {
+        "track width": min(mm(t.GetWidth()) for t in tracks),
+        "via drill": min(mm(v.GetDrillValue()) for v in vias),
+        "via annular ring": min((mm(v.GetWidth(pcb.F_Cu)) - mm(v.GetDrillValue())) / 2 for v in vias),
+        "PTH annular ring": min((min(mm(p.GetSize(pcb.F_Cu).x), mm(p.GetSize(pcb.F_Cu).y)) - mm(p.GetDrillSize().x)) / 2
+                                for p in pth if p.GetDrillSize().x == p.GetDrillSize().y),
+    }
+    narrow = sorted({round(mm(t.GetWidth()), 3) for t in tracks})[:3]
+    print("the board's minima (pcbnew): " + ", ".join(f"{k} {v:.3f} mm" for k, v in have.items())
+          + f"; the narrowest track widths {narrow}; spacing is VER-04's DRC against battler.kicad_pro's rules")
+    if not os.path.exists(JLC_PAGE):
+        print("BLOCKED: JLC's 2-layer capability page (https://jlcpcb.com/capabilities/pcb-capabilities) is not saved with its "
+              f"date in {os.path.relpath(JLC_PAGE, dn.ROOT)}; the numbers to compare above wait for it\nRESULT: BLOCKED")
+        return 2
+    rules = {}
+    for ln in open(JLC_PAGE, encoding="utf-8"):
+        m = re.match(r"^-?\s*([a-zA-Z ]+):\s*([\d.]+)\s*mm", ln.strip())
+        if m:
+            rules[m.group(1).strip().lower()] = float(m.group(2))
+    row = Rows()
+    for k, v in have.items():
+        if k in rules:
+            row(v >= rules[k] - 1e-6, f"{k}: {v:.3f} mm against JLC's {rules[k]} mm")
+        else:
+            row(False, f"{k}: not on the saved page")
+    return dn.result(not row.bad)
+
+
+CHECKS = {"bridges": (bridges, SEED_BRIDGES), "fab": (fab, SEED_FAB), "jlc": (jlc, None)}
 
 
 def main():

@@ -98,6 +98,8 @@ CHECKS = {
     "VER-31": ("ratings", ["python3", CC, "ratings"], False),
     "VER-195": ("usbfault", ["python3", CC, "usbfault"], False),
     "VER-148": ("bridges", ["python3", LC, "bridges"], True),
+    "VER-132": ("fab", ["python3", LC, "fab"], True),
+    "VER-17": ("jlc", ["python3", LC, "jlc"], True),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
