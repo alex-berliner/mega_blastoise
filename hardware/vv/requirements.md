@@ -10,11 +10,12 @@ first, and a status.
 `hardware/ref_design/docs/validation_plan.md` (archived), the datasheet reviews in
 `hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1, revised
 them the same day from the two-model review, re-seeded them on 2026-10-25 for 684a609, and
-re-seeded them again on 2026-10-26 for the board being ordered, be437f8 (branch
-ref-design-35in: the BQ24073 charger, RT9013 LDO, the 3.5 in ER-TFT035IPS-6 panel (ILI9488)
-with R61 3.9k, 74HC165s in the button ends, metal domes for Start and Select, the cell in a
-hole under the glass's seat-2 half, the speaker sunk in a hole, a 72.4 x 151.64 mm board in a
-one-piece top). A requirement whose subject left
+re-seeded them on 2026-10-26 for be437f8, and on 2026-10-27 for the board being ordered,
+71737ae (main; the board spin 40281b8: the BQ24073 charger, RT9013 LDO, the 3.5 in ER-TFT035IPS-6
+panel (ILI9488) with R61 3.74k, TH1 a 10k B4460 0805, U10 buffering VBAT/2, 74HC165s in the button
+ends with 47k pull-ups, metal domes for Start and Select, the cell along the board in a 37.8 x
+54.8 mm hole under the glass's seat-2 half, J4 a JST SH header, the speaker sunk in a hole, a
+72.4 x 151.64 mm board in a one-piece top). A requirement whose subject left
 the design is RETIRED with the commit that removed it; it keeps its ID. None is binding until
 Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md): APPROVED, REJECTED, or
 DEFERRED with a reason. A Status here that has no matching line he committed there is a
@@ -278,7 +279,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
-- Notes: with TH1 (B3950 10k 1%) charging runs from 3.5 C to 47.2 C at nominal values, 1.8 C to 51.0 C at SLUS810N's limits (the hot trip 3.46 kohm: V_HOT 0.270 V over I_TS 78 uA) and 1.4 C to 51.5 C at the worst corner with TH1's own 1% (`design_numbers.py tempwin`, VER-32). The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more (B 5032 with TH1 exactly nominal); its cold edge is then 6.5 C. B4250 gives 49.5 C and B4350 48.9 C at the worst corner (O-R3). No series or parallel resistor fixes both edges (a parallel one that brings the hot edge to 45 C drags the cold edge to -11.6 C). PLAN.md decision DEC-05: a BOM-only TH1 with a higher B if JLC stocks one, or accept the hot edge against the cell's datasheet (DF-147).
+- Notes: at 71737ae TH1 is a 10k B4460 0805 (TCTR0805F10K0F4460T, C525375), the highest B among the 10k NTCs JLC stocks: charging runs from 5.8 C to 44.5 C at nominal values, 4.3 C to 47.8 C at SLUS810N's limits (the hot trip 3.46 kohm: V_HOT 0.270 V over I_TS 78 uA) and 3.9 C to 48.2 C at the worst corner with TH1's own 1% R25 and B (`design_numbers.py tempwin`, VER-32; the B tolerance is the design comment's until the TCTR0805's datasheet is on disk). Was: B3950, 1.4 C to 51.5 C at be437f8. The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more (B 5032 with TH1 exactly nominal); its cold edge is then 6.5 C; no stocked 10k part has it. No series or parallel resistor fixes both edges. PLAN.md decision DEC-05: accept the 48.2 C hot edge for EVT against the cell's datasheet (DF-147), or restate this requirement to the cell's own range if VER-37 shows it runs to 50 C.
 
 ### REQ-BAT-04: Cell temperature during charge
 - Level: subsystem
@@ -339,14 +340,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BAT-08: Nothing hard against the pouch
 - Level: subsystem
 - Board: ref_design
-- Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances, and no back-side copper within 1 mm of the hole.
-- Rationale: a pierced pouch shorts internally and can burn.
-- Source: validation_plan #27; placement.py CUTOUTS (the hole 54.0 x 37.0 mm); case.scad cell.
+- Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances; the tub's pocket at least 0.1 mm a side larger than a worst-case cell after the print's tolerance (0.4 mm in each direction); and no back-side copper within 1 mm of the hole.
+- Rationale: a pierced pouch shorts internally and can burn; a pouch pressed into a pocket too small for it is stressed the same way (round 3's O-S1, 2026-10-27: the fit clause, a PROPOSED number).
+- Source: validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
 - Method: A, I
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Not met on any side at be437f8: the tub's pocket sits 0.25 mm inside the hole's outline on every side (case.scad cell_pocket_fit), so a worst-case 52 x 36 cell against any wall of it is 0.25 mm from the routed edge, -0.15 mm after tolerances, and its lead end 1.35 mm (VER-181 FAIL). An unpushed cell rests against the pocket's left wall, so its lead end has only the pocket's fit (0.25 mm, -0.15 mm after tolerances) against the 1.5 mm this requirement asks for: assembly.md step 5's tape is the only thing that holds the cell pushed (O-R8). Widening one end cannot help while the pocket follows the hole. What passes (design_numbers.py cellgap): the pocket 0.9 mm inside the hole and a cell of at most 51.2 x 35.2 mm (case and cell spec), or a 54.8 x 37.8 mm hole (copper), or a printed stop at the pocket's left end (case-side). PLAN.md decision DEC-27 before the order, with DEC-25.
+- Notes: at 71737ae the gaps are met exactly and the fit is not (VER-181 FAIL): the hole is 37.8 x 54.8 mm with the cell along the board, the pocket 0.9 mm inside it on the long sides and the seat-1 end and 1.9 mm at the lead end, so a worst-case cell is 0.50 mm from the edge (1.50 mm at its lead end) after tolerances wherever it lies, and the pocket's walls are the stop (no tape); but the pocket is 52.0 x 36.0 mm, the worst-case cell's own size, with 0.00 mm spare against the fit clause's 0.40. What passes (design_numbers.py cellgap): a cell of at most 51.6 x 35.6 mm with its PCM by its spec sheet (no copper), or a 55.2 x 38.2 mm hole (copper). Was: at be437f8 the pocket sat 0.25 mm inside a 54.0 x 37.0 mm hole, -0.15 mm after tolerances. PLAN.md decision DEC-27 before the order, with DEC-25.
 
 
 ### REQ-BAT-09: Charge path single faults
@@ -393,7 +394,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-138, VER-139, VER-67
 - Phase: EVT
 - Status: PROPOSED
-- Notes: the phase moved to EVT with VER-138 (F-R2(b)): at ORDER Alex records DEC-07, "470k/470k for EVT, no copper reference, firmware calibration at 25 C", and the copper route (a voltage reference, a lower divider or a buffer) waits for VER-139's drift on unit 1. If the drift over the case's temperature range is more than the window, the divider changes at DVT. The dropout case (3.521 V at the worst corner, VER-138) needs a firmware rule either way.
+- Notes: since 71737ae U10 (MCP6001) buffers VBAT_DIV onto GPIO47, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift (VER-138; the MCP6001's datasheet is not on disk, VER-34), against +-0.470 V through 235 kohm at be437f8. Two terms remain and bind at EVT: the CV calibration (a cutoff at a true 3.465-3.535 V) and the dropout case (3.521 V at the worst corner, the cutoff never fires there); REQ-TST-06's bench calibration at 3.50 V and a firmware rule for the dropout case answer them (DEC-07). Was: 470k/470k straight into GPIO47 for EVT, a buffer at DVT if VER-139's drift needed it.
 
 ### REQ-BAT-13: Charge timeout
 - Level: subsystem
@@ -526,7 +527,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V.
-- Rationale: designed under 20 uA at 25 C (the 940k divider 4.5 uA, U2 from BAT, U7's shutdown on the live VSYS, U3 off); leakage rises with temperature (O-51).
+- Rationale: designed under 20 uA at 25 C (R17 into U10's unpowered input about 7.9 uA at a 4.2 V cell since 71737ae, an estimate until VER-34 reads the MCP6001's input limits; U2 from BAT, U7's shutdown on the live VSYS, U3 off; Was: the 940k divider's 4.5 uA); leakage rises with temperature (O-51).
 - Source: bringup.md step 5.1; the 45 C number is Claude's estimate (O-51).
 - Method: T
 - Verified by: VER-65, VER-146
@@ -611,7 +612,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-31, VER-36
 - Phase: EVT
 - Status: PROPOSED
-- Notes: the phase moved to EVT with VER-36 (F-R2(d): check_pins' tooling changes no copper); the two findings that set the BOM, exception (2) and the second 4.7 uF on +1V1, are answered by hand before the order (DEF-61, through VER-34 and VER-23). Named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (pin_review/u4.json pin 58, waived there by the design session; DF-95), unless Alex takes R18 = 56k (PLAN.md decision DEC-07); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
+- Notes: the phase moved to EVT with VER-36 (F-R2(d): check_pins' tooling changes no copper); the two findings that set the BOM, exception (2) and the second 4.7 uF on +1V1, are answered by hand before the order (DEF-61, through VER-34 and VER-23). Named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (Was: pin_review/u4.json pin 58, waived there by the design session; since 71737ae GPIO47 sees U10's output, 0 V when off, and the condition sits on U10's input instead: DF-182, the waiver rewritten in u4.json for it and still the design session's, DEC-29); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
 
 ### REQ-PWR-15: 3V3 budget
 - Level: subsystem
@@ -628,13 +629,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: A source putting 6-20 V on VBUS (a broken charger, a PD source stuck high) shall over-stress no part: the lowest VBUS that takes a part over its absolute maximum shall be 20 V or more, or the value Alex accepts.
-- Rationale: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 6.9 V and EN1 through R43 takes U2's EN1 (7 V) over at 9.5 V (VER-177).
+- Rationale: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 9.1 V and EN1 through R43 takes U2's EN1 (7 V) over at 12.4 V (VER-177, with R14 47k and R43 220k since 71737ae; Was: 6.9 V and 9.5 V with 10k and 100k).
 - Source: pin_review/u2.json, u3.json; Claude's analysis (O's sign-off objection on the cell path, DF-101).
 - Method: A, T
 - Verified by: VER-177, VER-97
 - Phase: EVT
 - Status: PROPOSED
-- Notes: PLAN.md decision DEC-17: R14 47k and R43 220k (BOM only) raise it to about 9.1 V; 20 V needs a clamp (copper); or accept for EVT. The decision is made before the order, because DEF-50 keeps Gate ORDER and closes on it; the check (VER-177) binds at G-EVT-04, so an acceptance for EVT does not leave a failing ORDER check behind (O-R9; F-R2(f) wanted VER-177 at ORDER, but DEF-50's Gate already holds the BOM decision there).
+- Notes: DEC-17's BOM half is in design.py at 71737ae (R14 47k, R43 220k: 9.1 V, DEF-50 FIXED); 20 V needs a clamp (copper); proposed: Alex accepts 9.1 V for EVT as this statement's value. The decision is made before the order, because DEF-50 keeps Gate ORDER and closes on it; the check (VER-177) binds at G-EVT-04, so an acceptance for EVT does not leave a failing ORDER check behind (O-R9; F-R2(f) wanted VER-177 at ORDER, but DEF-50's Gate already holds the BOM decision there).
 
 ## Subsystem: core (MCU)
 
@@ -814,8 +815,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-05: Backlight current
 - Level: subsystem
 - Board: ref_design
-- Statement: At the firmware's highest duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance (3V3 +2%, R60/R61 1%, U6 offset 4.5 mV, R52/R53 -1%) for VSYS 3.5-4.5 V; at nominal parts and 100% duty they draw 113 mA +-5% (56 mA a cathode pin, the two pins within 5% of each other).
-- Rationale: the panel's 120 mA (6 x 20 mA); the worst case at 100% is 122.4 mA (VER-137), so the firmware caps the duty at 97% or R61 becomes 3.74k (DEC-31).
+- Statement: At the firmware's highest duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance (3V3 +2%, R60/R61 1%, U6 offset 4.5 mV, R52/R53 -1%) for VSYS 3.5-4.5 V; at nominal parts and 100% duty they draw 108 mA +-5% (54 mA a cathode pin, the two pins within 5% of each other).
+- Rationale: the panel's 120 mA (6 x 20 mA); with R61 3.74k (71737ae, DEC-31) the worst case at 100% is 117.7 mA (VER-137). Was: 122.4 mA with R61 3.9k at be437f8.
 - Source: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
 - Method: T, A
 - Verified by: VER-62, VER-137, VER-05
@@ -973,8 +974,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BTN-01: Contact closes
 - Level: subsystem
 - Board: both
-- Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 3.3 kohm of pill resistance (ref_design: through the 74HC165 against its 10k pull-up).
-- Rationale: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 10k pull-up a pill reads pressed only under about 3.7 kohm (the RP2350's 50k internal pull-up allowed 10 kohm): DF-164, PLAN.md decision DEC-24.
+- Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 15 kohm of pill resistance (ref_design: through the 74HC165 against its 47k pull-up).
+- Rationale: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 47k (+-5%) pull-up (RN1-RN4 since 71737ae, DEC-24) a pill reads pressed under about 17 kohm (the RP2350's 50k internal pull-up allowed 10 kohm; Was: 3.7 kohm with 10k at be437f8): DF-164.
 - Source: validation_plan gate item 5, #42, #137; TI SN74HC165 VIL.
 - Method: T
 - Verified by: VER-45, VER-56
@@ -1174,7 +1175,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-11: Connector access
 - Level: subsystem
 - Board: ref_design
-- Statement: Every connector's mouth (J1 with a mated plug, J2's plug and wires, J3's FPC lead-in, J4 with the speaker's plug and its 35 mm leads, J5 with a JST SH cable) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and no pinhole shall fall inside a boss.
+- Statement: Every connector's mouth (J1 with a mated plug, J2's plug and wires, J3's FPC lead-in, J4 with the speaker's JST SH plug and its 35 mm leads, J5 with a JST SH cable) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and no pinhole shall fall inside a boss.
 - Rationale: the pinholes once met a side screw (2f43660), the USB-C opening was fixed twice, and a UART connector once faced J5's back (DEF-20; Was: J6).
 - Source: Claude's review (F-28).
 - Method: A
@@ -1211,7 +1212,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: During a full charge in the closed case, TH1's reading shall stay within 5 C of the cell's hotter point (its centre or its end facing TH1).
-- Rationale: TH1 sits on the board 0.80 mm outside the cell hole's right edge, facing the cell's end across the FR4 edge and an air gap (DF-04); the window in REQ-BAT-03 is only as good as this.
+- Rationale: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-04); the window in REQ-BAT-03 is only as good as this.
 - Source: placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
 - Method: T, A
 - Verified by: VER-87, VER-164
@@ -1221,7 +1222,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-THM-03: No pause at room temperature
 - Level: subsystem
 - Board: ref_design
-- Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (TS stays at 0.49 V or above, TH1 under 35 C: B3950 at 75 uA).
+- Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (TS stays at 0.46 V or above, TH1 under 35 C: B4460 at 75 uA).
 - Rationale: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
 - Source: bringup.md step 5.4.
 - Method: T
@@ -1299,7 +1300,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-17, VER-18, VER-28
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: not met at be437f8 by the copper to the edge: GND pours 0.20 mm from the cell's and the speaker's holes and J2's mounting pad 0.275 mm from the left edge (VER-18 FAIL, DEF-56; the board's own rule is 0.2 mm). PLAN.md decision DEC-32.
+- Notes: the copper to the edge is met at 71737ae: 0.308 mm at the closest, KiCad's edge clearance 0.31 mm and a 0.30 mm copper-to-NPTH rule (battler.kicad_dru), VER-18 PASS; at be437f8 GND pours sat 0.20 mm from both holes (DEF-56). The dated page itself (VER-17) and the vias' 0.10 mm ring are still open.
 
 ### REQ-FAB-04: Holes
 - Level: board
@@ -1322,7 +1323,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-42, VER-28
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: At be437f8 the marker is in neither battler.kicad_pcb nor silk.py (O-R19), so JLC would place its number anywhere (DF-125); and the board's name and BOARD_REV text, where the marker was to go, sit inside the cell's hole (DEF-57). PLAN.md decision DEC-28: both into a clear patch in silk.py (a design change and a new baseline), or JLC's paid 'remove order number' option with this statement restated. VER-132 (k) checks it.
+- Notes: at 71737ae silk.py places the board's name, BOARD_REV and the build line on clear spots on the back (VER-18: every text on the board), but the marker is still in neither battler.kicad_pcb nor silk.py (O-R19), so JLC would place its number anywhere (DF-125, DEF-55). PLAN.md decision DEC-28: the marker in silk.py (a design change and a new baseline), or JLC's paid 'remove order number' option with this statement restated. VER-132 (k) checks it.
 
 
 ### REQ-FAB-06: Part identity

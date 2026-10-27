@@ -17,14 +17,14 @@ part change in design.py makes the evidence stale through the row's part: covers
                       bom.md's screw length against case.scad's
   mlcc       VER-142  MLCCs against the case's screw bosses (pcbnew)
   th1        VER-164  TH1 against the cell's hole; bare copper facing the cell (pcbnew)
-  cellgap    VER-181  a worst-case cell to the routed FR4 edge on every side, after tolerances
+  cellgap    VER-181  a worst-case cell to the routed FR4 edge on every side, after tolerances, and its fit in the pocket
   cpl        VER-176  the CPL fab.py writes against each footprint's pads' centre (pcbnew)
   drill      VER-131  the drill files fab.py writes: plated and unplated apart, every hole placed
   vbus       VER-177  the lowest VBUS that over-stresses a part (a faulty source)
   bom        VER-167  every contact class has its bought parts in docs/bom.md
   holes      VER-114  every drilled hole 0.30 mm or larger (pcbnew)
   swell      VER-182  free height above a worst-case cell, under whatever lies over its pocket
-  edge       VER-18   copper to every routed edge, part courtyards inside the outline (pcbnew)
+  edge       VER-18   copper to every routed edge, pads and part bodies inside the outline (pcbnew)
   plugs      VER-184  J2 (the cell) and J4 (the speaker) keyed apart, and how far apart they sit
   tempwin    VER-32   the charge window TH1 gives against U2's TS thresholds, from SLUS810N
 
@@ -79,8 +79,20 @@ VBAT_REG = (4.16, 4.23)      # V: SLUS810N's VBAT(REG) for the '73 (bq24074.txt:
 V_HOT = (0.270, 0.330)       # V: SLUS810N's TS hot threshold, VTS falling (bq24074.txt:824)
 V_COLD = (2.0, 2.2)          # V: SLUS810N's TS cold threshold, VTS rising (bq24074.txt:826)
 I_TS, I_TS_TOL = 75e-6, 0.04 # A: TS bias current 72-78 uA (SLUS810N's INTC, bq24074.txt:823): 75 uA +-3 uA
-TH1_B, TH1_R25, TH1_TOL = 3950.0, 10e3, 0.01   # design.py TH1: 10k B3950 1% (SDNT1005X103F3950FTF)
-TH1_B_TOL = 0.01             # TH1's B tolerance (the part number's second F: 1%)
+# TH1's R25 and B are read from design.py's value ('10k B4460'; th1_spec below), so a TH1 change moves every number
+# here.  Its tolerances are not in design.py: 1% on R25 and 1% on B, as design.py's comment and the part numbers
+# say (TCTR0805F10K0F4460T at 71737ae; SDNT1005X103F3950FTF before).  The TCTR0805's datasheet is not on disk
+# (LCSC C525375): VER-34 holds the B tolerance BLOCKED until it is (2026-10-27).
+TH1_TOL = 0.01               # TH1's R25 tolerance
+TH1_B_TOL = 0.01             # TH1's B tolerance (to confirm on the TCTR0805 datasheet, VER-34)
+# The VBAT sense buffer (U10, MCP6001T-I/OT since 71737ae).  Its datasheet is not on disk (pin_review/u10.json:
+# LCSC's download gave an HTML page): the listing quotes 1 pA bias, 4.5 mV offset and 2 uV/C drift, all typical
+# or unqualified.  These stand-ins are deliberately pessimistic until VER-34 reads the datasheet:
+OPAMP_IB_MAX = 1e-9          # A: input bias over temperature, 1000 x the listing's 1 pA
+OPAMP_ROUT = 100.0           # ohm: closed-loop output resistance at DC, a pessimistic figure for a unity buffer
+OPAMP_VOS_BUF = 0.0045       # V: input offset (listing), constant, so the gain calibration takes most of it
+OPAMP_DRIFT = 5e-6           # V/C: offset drift, 2.5 x the listing's 2 uV/C
+CLAMP_V = 0.5                # V: an unpowered CMOS input's protection diode to its VDD at a few uA (an estimate)
 # The per-unit CV screen's load (VER-134, VER-145): a resistor alone cannot do it (cvload), so the
 # load is a resistor in parallel with a shunt branch that conducts only above a set voltage: a TL431
 # (cathode-to-anode set to 3.5 V by 10k over 24.9k, 1%) in series with 22 ohm.  A low-voltage zener
@@ -118,6 +130,16 @@ def design():
     return {p["ref"]: p for p in ns["PARTS"]}, ns
 
 
+def th1_spec():
+    """(R25 in ohm, B, mpn) from design.py's TH1, whose value reads '<R25> B<beta>' (e.g. '10k B4460')."""
+    parts, _ = design()
+    p = parts["TH1"]
+    m = re.search(r"\bB(\d+)\b", p["value"])
+    if not m:
+        sys.exit(f"design_numbers: TH1's value {p['value']!r} names no B")
+    return ohms(p["value"]), float(m.group(1)), p["mpn"]
+
+
 def ohms(v):
     v = v.split()[0]
     m = re.fullmatch(r"([\d.]+)([kM]?)", v)
@@ -131,7 +153,10 @@ def farads(v):
 
 def scad():
     """Top-level 'name = expression;' assignments of case.scad, evaluated in order where Python can."""
-    env = {"min": min, "max": max, "abs": abs}
+    rad = math.radians                    # OpenSCAD's trigonometry is in degrees (the one-piece top's slope)
+    env = {"min": min, "max": max, "abs": abs, "sqrt": math.sqrt, "sin": lambda a: math.sin(rad(a)),
+           "cos": lambda a: math.cos(rad(a)), "asin": lambda x: math.degrees(math.asin(x)),
+           "acos": lambda x: math.degrees(math.acos(x))}
     for line in open(os.path.join(REF, "case", "case.scad")):
         for stmt in line.split("//")[0].split(";")[:-1]:
             m = re.fullmatch(r"\s*([a-z_][a-z0-9_]*)\s*=\s*(.+?)\s*", stmt)
@@ -249,7 +274,8 @@ def cutoff():
     vd_typ = float(m.group(1)) / 1e3 * I_3V3_AT_CUTOFF / 0.5
     print(f"U3 {parts['U3']['value']}: dropout {drop}; at {I_3V3_AT_CUTOFF * 1e3:.0f} mA about {vd_typ * 1e3:.0f} mV "
           f"typical, {vd_max * 1e3:.0f} mV maximum (scaled with the current)")
-    print(f"R17/R18 {parts['R17']['value']}/{parts['R18']['value']}: the ADC reads VBAT/2 against 3V3 itself")
+    print(f"R17/R18 {parts['R17']['value']}/{parts['R18']['value']}: the ADC reads VBAT/2 against 3V3 itself "
+          "(the buffer, if any, below)")
     print("calibration (pinmap.md): the gain is set at charge-done, taking the cell as 4.20 V; "
           f"the charger's CV is 4.20 V +-{CV_TOL:.0%}")
     ok = True
@@ -264,16 +290,44 @@ def cutoff():
         print(f"{label}: 3V3 {vreg:.3f} V, dropout {vd * 1e3:.0f} mV, CV {4.2 * cv:.3f} V: lowest reading in dropout "
               f"{knee:.3f} V: {'fires' if fires else 'never reaches 3.50: the cutoff never fires'}")
         ok &= fires
-    # O-R15: GPIO47's pad leakage through the divider's Thevenin source; it changes with temperature,
-    # so a one-point gain calibration does not remove it
+    # O-R15: GPIO47's pad leakage through whatever drives the pin; it changes with temperature, so a one-point
+    # gain calibration does not remove it.  Since 71737ae a unity buffer (U10) sits between the divider's node and
+    # the pin: the pad's leakage then flows from the op-amp's output, and the op-amp's own bias current flows
+    # through the divider instead (DEF-40, DEC-07)
     r17, r18 = ohms(parts["R17"]["value"]), ohms(parts["R18"]["value"])
     rth = r17 * r18 / (r17 + r18)
     gain = (r17 + r18) / r18                             # VBAT per volt at the pin
-    band = I_LEAK * rth * gain                           # the pin's error, scaled back to VBAT
-    fit = 0.05 / 2 / (rth * gain)
-    print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (the RP2350's IIN maximum, rp2350.txt:101199, quoted by VER-34) "
-          f"through {rth / 1e3:.0f} kohm moves VBAT's reading +-{band:.3f} V; REQ-BAT-12's 50 mV window allows "
-          f"+-{fit * 1e9:.0f} nA of leakage that changes with temperature, before any other error")
+    node = parts["R17"]["pins"]["2"]                     # the divider's node (R17: VBAT to it)
+    buf = sorted(r for r, p in parts.items() if r.startswith("U") and node in p["pins"].values()
+                 and "VBAT_SENSE" in p["pins"].values()) if node != "VBAT_SENSE" else []
+    if not buf:
+        band = I_LEAK * rth * gain                       # the pin's error, scaled back to VBAT
+        fit = 0.05 / 2 / (rth * gain)
+        print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (the RP2350's IIN maximum, rp2350.txt:101199, quoted by VER-34) "
+              f"through {rth / 1e3:.0f} kohm moves VBAT's reading +-{band:.3f} V; REQ-BAT-12's 50 mV window allows "
+              f"+-{fit * 1e9:.0f} nA of leakage that changes with temperature, before any other error")
+    else:
+        u = parts[buf[0]]
+        pad = I_LEAK * OPAMP_ROUT * gain
+        bias = OPAMP_IB_MAX * rth * gain
+        drift = OPAMP_DRIFT * 20 * gain                  # 25 C to 45 C
+        band = pad + bias + drift
+        # the offset is constant: the gain set at charge-done (4.20 V) takes it in, leaving this much at 3.50 V
+        resid = 4.2 * (1.75 + OPAMP_VOS_BUF) / (2.1 + OPAMP_VOS_BUF) - 3.5
+        print(f"{buf[0]} ({u['value']}, {u['mpn']}) buffers {node} onto VBAT_SENSE: the pad's +-{I_LEAK * 1e6:g} uA "
+              f"(rp2350.txt:101199) through its output ({OPAMP_ROUT:g} ohm, pessimistic) moves VBAT's reading "
+              f"+-{pad * 1e3:.2f} mV; its bias ({OPAMP_IB_MAX * 1e9:g} nA, a stand-in 1000 x the listing's 1 pA) "
+              f"through {rth / 1e3:.0f} kohm +-{bias * 1e3:.2f} mV; its drift ({OPAMP_DRIFT * 1e6:g} uV/C over 20 C) "
+              f"+-{drift * 1e3:.2f} mV: +-{band * 1e3:.2f} mV in all that changes with temperature (was +-"
+              f"{I_LEAK * rth * gain:.3f} V unbuffered)")
+        print(f"  its {OPAMP_VOS_BUF * 1e3:g} mV offset is constant: after the gain calibration at 4.20 V it leaves "
+              f"{resid * 1e3:+.1f} mV at 3.50 V (inside the CV term above); the MCP6001's datasheet is not on disk "
+              "(pin_review/u10.json), so these numbers wait for VER-34")
+        # off (3V3 down), the buffer is unpowered and its input clamps the divider's node about CLAMP_V over 0 V
+        i_off = (4.2 - CLAMP_V) / r17
+        print(f"  off: {buf[0]} unpowered, its input's protection diode holds {node} near {CLAMP_V:g} V, so R17 draws "
+              f"{i_off * 1e6:.1f} uA from a 4.2 V cell (was {4.2 / (r17 + r18) * 1e6:.1f} uA) and "
+              f"{(i_off - CLAMP_V / r18) * 1e6:.1f} uA flows into the unpowered +3V3 rail (REQ-PWR-07, VER-65, VER-159)")
     ok &= 2 * band <= 0.05
     return result(ok)
 
@@ -353,13 +407,24 @@ def th1(b=None):
     e = scad()
     fps = {f.GetReference(): f for f in b.GetFootprints()}
     tx, ty = mm(fps["TH1"].GetPosition().x), mm(fps["TH1"].GetPosition().y)
-    gap = (x1 - x0 - e["cell"][0]) / 2, (y1 - y0 - e["cell"][1]) / 2
+    # the cell's span along the hole's right edge (KiCad y = 100 - case y): the pocket's, less what a nominal cell
+    # leaves at the end away from the one it is pushed to; with the cell along x (before 71737ae) the old rule
+    p = pocket(e)
+    if p["along_y"]:
+        nom_short = (p["y1"] - p["y0"]) - e["cell_nom"][0]
+        lo, hi = 100 - p["y1"] + nom_short, 100 - p["y0"]
+        cell_face = 100 + p["x1"]
+    else:
+        gap_y = (y1 - y0 - e["cell"][1]) / 2
+        lo, hi = y0 + gap_y, y1 - gap_y
+        cell_face = 100 + p["x1"]
     to_edge = tx - x1
-    print(f"cell hole x {x0}-{x1}, y {y0}-{y1}; worst-case cell {e['cell'][0]} x {e['cell'][1]}; "
-          f"TH1 at ({tx:.2f}, {ty:.2f}) on the board, {to_edge:.2f} mm right of the hole's right edge (the case pushes "
-          "the cell there)")
-    in_span = y0 + gap[1] + 2 <= ty <= y1 - gap[1] - 2
-    print(f"TH1 within the cell's span along the edge: {in_span}")
+    print(f"cell hole x {x0}-{x1}, y {y0}-{y1} (its long side along {'y' if p['along_y'] else 'x'}); worst-case cell "
+          f"{e['cell'][0]} x {e['cell'][1]}; TH1 ({fps['TH1'].GetValue()}) at ({tx:.2f}, {ty:.2f}) on the board, "
+          f"{to_edge:.2f} mm right of the hole's right edge, {tx - cell_face:.2f} mm from the pocket's right wall "
+          "(the nearest a cell's face can be)")
+    in_span = lo + 2 <= ty <= hi - 2
+    print(f"TH1 within the cell's span along the edge (y {lo:.1f}-{hi:.1f}, 2 mm in from each end): {in_span}")
     flipped = sorted(r for r, f in fps.items() if f.IsFlipped())
     near = []
     for r in flipped:
@@ -375,50 +440,73 @@ def th1(b=None):
     return result(0 <= to_edge <= 1.0 and in_span and not facing)
 
 
-def cellgap():
-    """O-R7 and round 2's objections: the gap from a worst-case cell to the routed FR4 edge on every face it can
-    rest against (the tub's pocket wall on each side; assembly.md step 5 pushes it to the right wall), after the
-    fab and print tolerances (REQ-BAT-08). The pocket sits cell_pocket_fit inside the hole all round, so the gap
-    at the pushed end and the long sides is that fit whatever the hole's size: widening one end alone fixes
-    nothing (seeded in VER-129). It also prints what would pass."""
-    e = scad()
+POCKET_CLEAR = 0.1   # mm a side: the cell's free fit in its printed pocket, beyond PRINT_TOL (round 3's O-S1; PROPOSED in
+                     # REQ-BAT-08): a pocket printed PRINT_TOL small must still take a cell at its spec maximum unpressed
+
+
+def pocket(e):
+    """The tub's pocket for the cell, in the case frame: its box, its inset from the hole on each face, which way the
+    cell's long side runs, and which face its leads leave.  Since 71737ae case.scad draws the pocket as cell_pocket_box
+    (the cell along y, pushed to the seat-1 end, its leads out of the seat-2 end, cell_fit_side/push/lead); before, it
+    was cell_pocket_fit inside the hole all round, the cell along x with its leads at the left end."""
     (hx0, hy0), (hx1, hy1) = e["cell_hole"]
-    fit = e["cell_pocket_fit"]
+    if "cell_pocket_box" in e:
+        (px0, py0), (px1, py1) = e["cell_pocket_box"]
+    else:
+        f = e["cell_pocket_fit"]
+        px0, py0, px1, py1 = hx0 + f, hy0 + f, hx1 - f, hy1 - f
+    along_y = (hy1 - hy0) > (hx1 - hx0)
+    inset = {"left": px0 - hx0, "right": hx1 - px1, "seat-1 end": py0 - hy0, "seat-2 end": hy1 - py1}
+    lead = "seat-2 end" if along_y else "left"
+    return dict(x0=px0, y0=py0, x1=px1, y1=py1, along_y=along_y, inset=inset, lead=lead,
+                length=(py1 - py0) if along_y else (px1 - px0), width=(px1 - px0) if along_y else (py1 - py0),
+                hole=((hy1 - hy0) if along_y else (hx1 - hx0), (hx1 - hx0) if along_y else (hy1 - hy0)))
+
+
+def cellgap():
+    """O-R7, round 2's and round 3's objections: the gap from a worst-case cell to the routed FR4 edge on every face
+    (REQ-BAT-08), after the fab and print tolerances, and the cell's fit in its printed pocket (O-S1).  The cell lies
+    in the tub's pocket, so the gap at each face is at least the pocket's inset there, wherever the cell rests: the
+    pocket's walls are the stop (DEF-58), and no tape holds it.  Widening the hole alone fixes nothing while the
+    pocket follows it (seeded in VER-129).  The fit: the pocket, printed PRINT_TOL small on each side, must still
+    exceed a cell at its spec maximum by POCKET_CLEAR a side, or the pouch is pressed in (O-S1).  It prints what
+    would pass."""
+    e = scad()
+    p = pocket(e)
     tol = ROUTE_TOL + PRINT_TOL + SCREW_FLOAT
-    hl, hw = hx1 - hx0, hy1 - hy0
-    print(f"board hole {hl:.1f} x {hw:.1f} mm; the tub's pocket {fit:g} mm inside it each side "
-          f"(case.scad cell_pocket_fit); tolerances: routing {ROUTE_TOL:g}, print {PRINT_TOL:g}, the board's float "
-          f"on its screws {SCREW_FLOAT:g} mm ({tol:.2f} mm in all)")
+    hl, hw = p["hole"]
+    print(f"board hole {hl:.1f} x {hw:.1f} mm (the cell's long side along {'y' if p['along_y'] else 'x'}); the tub's "
+          f"pocket {p['length']:.2f} x {p['width']:.2f} mm, inside the hole by "
+          + ", ".join(f"{v:.2f} at the {k}" for k, v in p["inset"].items())
+          + f" (its leads leave the {p['lead']}); tolerances: routing {ROUTE_TOL:g}, print {PRINT_TOL:g}, the board's "
+          f"float on its screws {SCREW_FLOAT:g} mm ({tol:.2f} mm in all)")
     ok = True
+    fit_need = 2 * (PRINT_TOL + POCKET_CLEAR)
     for label, (cl, cw, _) in (("worst-case", e["cell"]), ("nominal", e["cell_nom"])):
-        if cw > hw - 2 * fit + 1e-9 or cl > hl - 2 * fit + 1e-9:
-            print(f"  {label} cell {cl:g} x {cw:g} does not fit the pocket")
-            ok = False
-            continue
-        sides = {"right end (pushed, at TH1)": fit,
-                 "left end (its leads, J2), the cell pushed right": hl - fit - cl,
-                 "left end (its leads, J2), the cell NOT pushed (against the pocket's left wall)": fit,
-                 "each long side (at worst against the pocket's wall)": fit}
-        for side, nom in sides.items():
-            need = 1.5 if "left" in side else 0.5
+        for side, nom in p["inset"].items():
+            need = 1.5 if side == p["lead"] else 0.5
             worst = nom - tol
             good = worst >= need - 1e-9
             ok &= good
-            print(f"  {label} cell {cl:g} x {cw:g}, {side}: {nom:.2f} mm nominal, {worst:.2f} mm after tolerances "
-                  f"(REQ-BAT-08: {need:g}): {'ok' if good else 'too close'}")
-    f_need = 0.5 + tol
+            print(f"  {label} cell {cl:g} x {cw:g}, {side}{' (its leads)' if side == p['lead'] else ''}: at least "
+                  f"{nom:.2f} mm nominal, {worst:.2f} mm after tolerances (REQ-BAT-08: {need:g}): "
+                  f"{'ok' if good else 'too close'}")
+        for axis, room, size in (("length", p["length"], cl), ("width", p["width"], cw)):
+            spare = room - size
+            good = spare >= fit_need - 1e-9
+            ok &= good
+            print(f"  {label} cell {cl:g} x {cw:g} in the pocket's {axis}: {spare:.2f} mm spare against "
+                  f"{fit_need:.2f} (the print {PRINT_TOL:g} and a {POCKET_CLEAR:g} mm fit, each side): "
+                  f"{'fits' if good else 'pressed or does not go in'}")
+    f_need, l_need = 0.5 + tol, 1.5 + tol
     cl, cw = e["cell"][0], e["cell"][1]
-    print("the pushed cell is held there by assembly.md step 5's tape; an unpushed cell rests against the "
-          "pocket's left wall, so its lead end has only the pocket's fit (O-R8: a printed stop at the pocket's "
-          "left end is the case-side option)")
-    l_need = 1.5 + tol
-    print(f"what passes: the pocket {f_need:.2f} mm inside the hole at the right end and on both long sides, and "
-          f"{l_need:.2f} mm inside it at the lead end, so the pocket itself holds every cell off the lead end (that "
-          f"wall is the printed stop DEF-58 asks for, and no tape is needed); then")
-    print(f"  with this hole ({hl:.1f} x {hw:.1f}): a cell of at most {hl - f_need - l_need:.2f} x "
-          f"{hw - 2 * f_need:.2f} mm (its spec sheet, VER-37, and incoming inspection, VER-49)")
-    print(f"  with the worst-case {cl:g} x {cw:g} cell: a hole of at least {cl + f_need + l_need:.2f} x "
-          f"{cw + 2 * f_need:.2f} mm (+{cl + f_need + l_need - hl:.2f} in x, +{cw + 2 * f_need - hw:.2f} in y: copper)")
+    print(f"what passes: the pocket {f_need:.2f} mm inside the hole on every face but the lead end, {l_need:.2f} mm "
+          f"there (the walls are the stop), and {fit_need:.2f} mm longer and wider than the cell; then")
+    print(f"  with this hole ({hl:.1f} x {hw:.1f}): a cell of at most {hl - f_need - l_need - fit_need:.2f} x "
+          f"{hw - 2 * f_need - fit_need:.2f} mm (its spec sheet, VER-37, and incoming inspection, VER-49)")
+    need_l, need_w = cl + f_need + l_need + fit_need, cw + 2 * f_need + fit_need
+    print(f"  with the worst-case {cl:g} x {cw:g} cell: a hole of at least {need_l:.2f} x {need_w:.2f} mm "
+          f"(+{need_l - hl:.2f} along the cell, +{need_w - hw:.2f} across it: copper)")
     return result(ok)
 
 
@@ -622,15 +710,16 @@ def swell():
     """The free height above a worst-case cell, under whatever lies over the tub's pocket (case.scad): the
     panel's back, the panel frame's walls, the ends' underside past the band, the band's underside elsewhere."""
     e = scad()
-    need = ["cell", "cell_top", "cell_hole", "cell_pocket_fit", "panel_w", "panel_l", "panel_fit", "frame_wall",
+    need = ["cell", "cell_top", "cell_hole", "panel_w", "panel_l", "panel_fit", "frame_wall",
             "frame_h", "glass_gap", "z_ceil", "z_top_cu", "z_deck_under", "joint_y", "joint_w"]
-    miss = [n for n in need if n not in e]
+    miss = [n for n in need if n not in e] + ([] if "cell_pocket_box" in e or "cell_pocket_fit" in e
+                                               else ["cell_pocket_box"])
     if miss:
         print("case.scad: could not read " + " ".join(miss))
         return result(False)
-    cell_t, top, f = e["cell"][2], e["cell_top"], e["cell_pocket_fit"]
-    (hx0, hy0), (hx1, hy1) = e["cell_hole"]
-    px0, px1, py0, py1 = hx0 + f, hx1 - f, hy0 + f, hy1 - f           # the pocket: where the cell can be
+    cell_t, top = e["cell"][2], e["cell_top"]
+    pk = pocket(e)
+    px0, px1, py0, py1 = pk["x0"], pk["x1"], pk["y0"], pk["y1"]           # the pocket: where the cell can be
     pw, pl = (e["panel_w"]) / 2, (e["panel_l"]) / 2
     fw, fl = (e["panel_w"] + e["panel_fit"]) / 2 + e["frame_wall"], (e["panel_l"] + e["panel_fit"]) / 2 + e["frame_wall"]
     ends = e["joint_y"] - e["joint_w"]
@@ -638,10 +727,35 @@ def swell():
     def over(x0, x1, y0, y1):
         return x0 < px1 and x1 > px0 and y0 < py1 and y1 > py0
     regions = [("the panel's back", (-pw, pw, -pl, pl), e["glass_gap"]),
-               ("the panel frame's walls", (-fw, fw, -fl, fl), e["z_ceil"] - e["frame_h"] - e["z_top_cu"]),
-               ("the ends' underside (past the band)", (-99, 99, ends, 99), e["z_deck_under"] - e["z_top_cu"]),
-               ("the ends' underside (seat 1's)", (-99, 99, -99, -ends), e["z_deck_under"] - e["z_top_cu"]),
-               ("the band's underside", (-99, 99, -ends, ends), e["z_ceil"] - e["z_top_cu"])]
+               ("the panel frame's walls", (-fw, fw, -fl, fl), e["z_ceil"] - e["frame_h"] - e["z_top_cu"])]
+    if "uni_foot" in e and "uni_lim_phi" in e:
+        # the one-piece top (since be437f8): case.scad's own uni_ceil(), z_deck_under from uni_foot out and the slope's
+        # inside (uni_lim) between the band and the foot; joint_y - joint_w is the old decks' line and is not used
+        # (it put the ends' 1.9 mm ceiling over the cell's seat-2 end, where the slope stands 3.4 mm over the board)
+        def uni_lim(y):
+            d, rs = e["uni_foot"] - abs(y), e["uni_r"] + e["uni_skin"]
+            s = d / rs
+            if d <= 0:
+                return e["deck_face"] - e["uni_skin"]
+            if s >= math.sin(math.radians(e["uni_lim_phi"])):
+                return e["case_h"] - e["uni_skin"]
+            return e["deck_face"] + e["uni_r"] - rs * math.sqrt(1 - s * s)
+        foot = e["uni_foot"]
+        for sy, name in ((1, "seat 2's"), (-1, "seat 1's")):
+            y0, y1 = sorted((sy * fl, sy * foot))
+            ys = [y0 + (y1 - y0) * k / 40 for k in range(41)]
+            ys = [y for y in ys if py0 <= y <= py1]
+            h = min((min(e["z_ceil"], uni_lim(y)) for y in ys), default=e["z_ceil"]) - e["z_top_cu"]
+            regions.append((f"the slope's inside past the panel's frame ({name} side, uni_ceil)",
+                            (-99, 99, y0, y1), h))
+            regions.append((f"the ends' underside from the slope's foot out ({name}, |y| >= {foot:.2f})",
+                            (-99, 99, foot, 99) if sy > 0 else (-99, 99, -99, -foot),
+                            e["z_deck_under"] - e["z_top_cu"]))
+        regions.append(("the band's underside", (-99, 99, -fl, fl), e["z_ceil"] - e["z_top_cu"]))
+    else:
+        regions += [("the ends' underside (past the band)", (-99, 99, ends, 99), e["z_deck_under"] - e["z_top_cu"]),
+                    ("the ends' underside (seat 1's)", (-99, 99, -99, -ends), e["z_deck_under"] - e["z_top_cu"]),
+                    ("the band's underside", (-99, 99, -ends, ends), e["z_ceil"] - e["z_top_cu"])]
     print(f"worst-case cell {cell_t} mm, its top {top} mm over the board; its pocket x {px0:.2f} to {px1:.2f}, "
           f"y {py0:.2f} to {py1:.2f} (case frame)")
     free = None
@@ -660,12 +774,13 @@ COPPER_EDGE = 0.30   # mm: REQ-FAB-03's copper to a routed edge (JLC's figure, t
 EDGE_ALLOWED = {"J1"}   # parts whose body stands past the outline by design: the USB-C receptacle's face on its tab
 
 
-def edge():
+def edge(b=None):
     """VER-18: every copper feature (pours, tracks, vias, pads) at least COPPER_EDGE from every routed edge (the
-    outline, the cell's hole, the speaker's hole), every courtyard inside the outline (J1 by design excepted),
-    every silkscreen text wholly on the board, and the narrowest FR4 web between two routed edges, printed. The
-    edges are the board polygon pcbnew builds from Edge.Cuts (arcs as chords)."""
-    pcbnew, b = board()
+    outline, the cell's hole, the speaker's hole), every pad and part body inside the outline (J1 by design
+    excepted; a courtyard past it is printed), every silkscreen text wholly on the board, and the narrowest FR4
+    web between two routed edges, printed. The edges are the board polygon pcbnew builds from Edge.Cuts (arcs as
+    chords).  b: a pcbnew board already loaded (seed_faults.py moves a part in memory, writing no KiCad file)."""
+    pcbnew, b = board() if b is None else (__import__("pcbnew"), b)
     mm = pcbnew.ToMM
     outl = pcbnew.SHAPE_POLY_SET()
     b.GetBoardPolygonOutlines(outl, False)
@@ -739,7 +854,7 @@ def edge():
         for p in densify([a, c], closed=False) + [c]:
             d, ci = near(p)
             note(f"{'via' if t.GetClass() == 'PCB_VIA' else 'track'} {t.GetNetname()}", None if d is None else d - half, p, ci)
-    courtyard_out = []
+    courtyard_out, body_out = [], []
     for f in b.GetFootprints():
         ref = f.GetReference()
         for p in f.Pads():
@@ -768,6 +883,21 @@ def edge():
                             worst = (d or 9.0, contours[ci][0] if ci is not None else "outline")
         if worst:
             courtyard_out.append(f"{ref} {worst[0]:.2f} mm past the {worst[1]}")
+            # a courtyard is the body plus KiCad's assembly margin: what may not cross the outline is a pad or the
+            # body itself (its F.Fab or B.Fab outline), 2026-10-27
+            pts = []
+            for p in f.Pads():
+                bb = p.GetBoundingBox()
+                pts += [(bb.GetLeft(), bb.GetTop()), (bb.GetRight(), bb.GetBottom()), (bb.GetLeft(), bb.GetBottom()),
+                        (bb.GetRight(), bb.GetTop())]
+            for g in f.GraphicalItems():
+                if g.GetLayer() in (pcbnew.F_Fab, pcbnew.B_Fab):
+                    bb = g.GetBoundingBox()
+                    pts += [(bb.GetLeft(), bb.GetTop()), (bb.GetRight(), bb.GetBottom()), (bb.GetLeft(), bb.GetBottom()),
+                            (bb.GetRight(), bb.GetTop())]
+            out = [q for q in pts if not outl.Contains(pcbnew.VECTOR2I(int(q[0]), int(q[1])))]
+            if out:
+                body_out.append(f"{ref} (a pad or its body past the outline)")
     # board texts on the silkscreens (the name, BOARD_REV, test-pad names): a corner of one off the board or
     # inside a hole is not printed
     lost_text = []
@@ -788,8 +918,10 @@ def edge():
         print(f"  {d:.3f} mm  {w} at ({p[0]:.2f}, {p[1]:.2f}), to the {c}")
     print(f"copper closer than {COPPER_EDGE:.2f} mm to a routed edge (REQ-FAB-03): {len(bad)}"
           + (": " + "; ".join(f"{w} {d:.3f} mm ({c})" for d, w, p, c in bad) if bad else ""))
-    print("courtyards past the outline or into a hole (J1 by design excepted): "
+    print("courtyards past the outline or into a hole (J1 by design excepted; printed, not failed): "
           + (", ".join(sorted(set(courtyard_out))) or "none"))
+    print("pads or part bodies past the outline or into a hole (J1 by design excepted): "
+          + (", ".join(sorted(set(body_out))) or "none"))
     print("silkscreen texts not wholly on the board (off its edge or in a hole): " + ("; ".join(lost_text) or "none"))
     webs = []
     for ci, (name, pts) in enumerate(contours):
@@ -802,7 +934,7 @@ def edge():
             webs.append((best[0], name, best[2], best[1]))
     for d, a, c, p in sorted(webs)[:3]:
         print(f"narrowest FR4 web: {d:.2f} mm between the {a} and the {c} at ({p[0]:.1f}, {p[1]:.1f})")
-    return result(not bad and not courtyard_out and not lost_text)
+    return result(not bad and not body_out and not lost_text)
 
 
 def plugs():
@@ -829,20 +961,21 @@ def plugs():
     return result(not same)
 
 
-def ntc(t_c, r25=TH1_R25, beta=TH1_B):
+def ntc(t_c, r25, beta):
     return r25 * math.exp(beta * (1 / (t_c + 273.15) - 1 / 298.15))
 
 
 def tsband():
     """The TS voltage a good unit shows at the measured ambient: I_TS into TH1, with I_TS's tolerance, TH1's 1%
     R25 and B, and the ambient reading +-2 C (the meter and the board's own warmth)."""
+    TH1_R25, TH1_B, mpn = th1_spec()
     amb = [float(a) for a in sys.argv[2:]] or [18.0, 20.0, 22.0, 25.0, 28.0]
     print(f"TS = I_TS x TH1: I_TS {I_TS * 1e6:g} uA +-{I_TS_TOL:.0%} (SLUS810N's INTC, 72-78 uA), TH1 {TH1_R25 / 1e3:g}k "
-          f"B{TH1_B:g} +-{TH1_TOL:.0%}, the ambient +-2 C")
+          f"B{TH1_B:g} +-{TH1_TOL:.0%} ({mpn}, design.py), the ambient +-2 C")
     for t in amb:
         lo = I_TS * (1 - I_TS_TOL) * ntc(t + 2, TH1_R25 * (1 - TH1_TOL), TH1_B * (1 + TH1_TOL))
         hi = I_TS * (1 + I_TS_TOL) * ntc(t - 2, TH1_R25 * (1 + TH1_TOL), TH1_B * (1 - TH1_TOL))
-        print(f"  ambient {t:.1f} C: TS {lo:.3f}-{hi:.3f} V (nominal {I_TS * ntc(t):.3f} V)")
+        print(f"  ambient {t:.1f} C: TS {lo:.3f}-{hi:.3f} V (nominal {I_TS * ntc(t, TH1_R25, TH1_B):.3f} V)")
     print("a fixed 10k in TH1's place reads about 0.75 V at any temperature: VER-135's finger step tells it apart")
     return 0
 
@@ -939,13 +1072,14 @@ def tempwin():
     def b_for(t_c, r, r25):
         return math.log(r / r25) / (1 / (t_c + 273.15) - 1 / 298.15)
 
+    TH1_R25, TH1_B, mpn = th1_spec()
     i_lo, i_hi = I_TS * (1 - I_TS_TOL), I_TS * (1 + I_TS_TOL)
     hot_nom_r, cold_nom_r = sum(V_HOT) / 2 / I_TS, sum(V_COLD) / 2 / I_TS
     hot_r, cold_r = V_HOT[0] / i_hi, V_COLD[1] / i_lo
     r25_hot, r25_cold = TH1_R25 * (1 + TH1_TOL), TH1_R25 * (1 - TH1_TOL)
     print(f"SLUS810N: V_HOT {V_HOT[0]}-{V_HOT[1]} V, V_COLD {V_COLD[0]}-{V_COLD[1]} V, INTC {i_lo * 1e6:.0f}-"
           f"{i_hi * 1e6:.0f} uA (bq24074.txt:823-826); TH1 {TH1_R25 / 1e3:g}k +-{TH1_TOL:.0%}, B{TH1_B:g} "
-          f"+-{TH1_B_TOL:.0%} (design.py)")
+          f"+-{TH1_B_TOL:.0%} ({mpn}, design.py)")
     rows = [("nominal (0.300 V and 2.100 V at 75 uA, TH1 nominal)",
              temp_at(cold_nom_r, TH1_B, TH1_R25), temp_at(hot_nom_r, TH1_B, TH1_R25)),
             ("the charger's limits, TH1 nominal",
@@ -963,7 +1097,7 @@ def tempwin():
     cold_at = temp_at(cold_r, b_worst * (1 - TH1_B_TOL), r25_cold)
     print(f"a 45 C hot edge: B {b_nom:.0f} with TH1 exactly nominal; B {b_worst:.0f} or more for a 10k 1% part "
           f"with B +-1% at the worst corner, whose cold edge is then {cold_at:.1f} C")
-    for b in (4250.0, 4350.0):
+    for b in sorted({3950.0, 4250.0, 4350.0, 4460.0} - {TH1_B}):
         print(f"  B{b:g} 1%: the hot edge {temp_at(hot_r, b * (1 - TH1_B_TOL), r25_hot):.1f} C at the worst corner "
               f"({temp_at(hot_nom_r, b, TH1_R25):.1f} C nominal)")
     ok = hot <= 45.0 and cold >= 0.0

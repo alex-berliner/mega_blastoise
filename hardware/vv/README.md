@@ -161,7 +161,7 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   release record, and they must match.
 - **The baseline is checked against the baseline commit too.** The default mode fails when a
   design path's hash in README differs from HEAD's blob for that path, or from the blob at the
-  baseline commit (`be437f8`), so a baseline rewritten from HEAD cannot hide a design edit.
+  baseline commit (`71737ae`), so a baseline rewritten from HEAD cannot hide a design edit.
 - **Detection is only what can see the failure.** A DFMEA row's 'detects' lists the checks
   that must all pass before it is DONE. Its detection rating is 10 with none, and 8 or more
   while every one is NOT_BUILT. An occurrence of 3 needs `Similar: <the board and part>` in its
@@ -227,36 +227,48 @@ The design files this register describes, as git object hashes (`git rev-parse
 HEAD:<path>`; board/lib and board/tools are trees). The default mode fails when any differs
 from HEAD, and every ref_design gate fails with "gate evaluated against a design it does not
 describe" (the order gate reads the board's files, the case gate case.scad and export.py,
-later gates all). Re-seeded on 2026-10-26 at be437f8 (branch ref-design-35in), the board Alex
-is ordering: the board itself is final at 62b01f2, the later commits are docs and print kits.
-The earlier seeds are kept on branches vv-plan-684a609 (2026-10-25, ref-design-island-45) and
-vv-plan-76955d2 (2026-10-24). The second review (F-R13) added the schematics,
-battler.kicad_pro (its DRC rules, which VER-04 relies on), the whole board/tools tree (the
-route, silk and fab scripts and last_route.ses; cost.py and the like churn it too, accepted)
-and case/export.py (it writes case/positions.json, which placement.py reads; positions.json is
-gitignored, so its sha256 goes in the release record instead).
+later gates all). Re-seeded on 2026-10-27 at 71737ae (main), the board Alex is ordering: the
+board spin 40281b8 (branch ref-design-35in) merged as bfe9609, then a SOURCES.md fix. The
+earlier seeds are kept on branches vv-plan-f0ab637 (2026-10-27, be437f8's register before the
+rebase), vv-plan-684a609 (2026-10-25, ref-design-island-45) and vv-plan-76955d2 (2026-10-24).
+The second review (F-R13) added the schematics, battler.kicad_pro (its DRC rules, which VER-04
+relies on), the whole board/tools tree (the route, silk and fab scripts and last_route.ses;
+cost.py and the like churn it too, accepted) and case/export.py (it writes case/positions.json,
+which placement.py reads; positions.json is gitignored, so its sha256 goes in the release record
+instead). Round 3's sign-off (O-S4) and this re-seed added tools/build.py (it runs the build_pcb,
+route, silk and fab stages), battler.kicad_dru (the copper-to-NPTH rule VER-04's DRC reads),
+fp-lib-table, sym-lib-table and placement_zones.py (placement.py imports it). A pin_review/*.json
+change is not a design path: it stales VER-02, which covers it.
 
 The order branch below is read by check_trace (O-R13): a commit on it after the baseline commit
-that touches any of these paths makes the default mode warn and the order gate fail (R8), even
-before it is merged here. Every hash below equals the same path at be437f8.
+that touches any of these paths makes the default mode warn and the order gate fail (R8). The
+board is merged, so the order branch is main. Every hash below equals the same path at 71737ae.
+The gate-moves line names the register state round 3's two reviewers read: until Alex signs a
+`GATE@` line, the order gate prints every phase or Gate moved later since it (G0, O-S5).
 
-- Order branch: `ref-design-35in` from `be437f8`
-- `hardware/ref_design/board/design.py` 1b2ce08a3f966375a9babc9777abff73fc01f89e
-- `hardware/ref_design/board/placement.py` 65f219bc34795b8ec697a86203f5db8ff88dae12
-- `hardware/ref_design/board/lib` 50f371cbf7df2fae7db3746b134434297c38a4fa
-- `hardware/ref_design/board/battler.kicad_pcb` 1094c8d8347db6ffee35c37c48f0d12fdf35b909
-- `hardware/ref_design/board/battler.kicad_pro` 3633f0dd64d37be8ed692d95dfb9c3d86589e6bc
-- `hardware/ref_design/board/tools` 7ace29d2c562703c2fe97ec908c84432f2f1212a
-- `hardware/ref_design/board/audio.kicad_sch` c26fffa4213c87a1ae70dd9cef9354229cdfba03
+- Order branch: `main` from `71737ae`
+- Gate moves listed since: `b9b38a9`
+- `hardware/ref_design/board/design.py` dc9163eafc2ddeb48212a885e0221194eedd1fbc
+- `hardware/ref_design/board/placement.py` 417f9cb14f2495023e04ee0652e40cdfbf34fe72
+- `hardware/ref_design/board/placement_zones.py` a1594329d1f088749a82e1aa1f165a24542843ad
+- `hardware/ref_design/board/lib` 47bf656ce9c005f65a94f5d06666cb6a860bc95c
+- `hardware/ref_design/board/battler.kicad_pcb` 8ae5446e6bfecde96b576d6afa99babae7305603
+- `hardware/ref_design/board/battler.kicad_pro` c599c39e15604818d89953e674d8fdec6cf8eb8e
+- `hardware/ref_design/board/battler.kicad_dru` a70cf22f24b815cb27e8f6808c297eafcc3e3706
+- `hardware/ref_design/board/fp-lib-table` 869deca7bc078b6e52f2016868bfb4b0cffe28ad
+- `hardware/ref_design/board/sym-lib-table` bad6b19dda9197494092e27b4854bcbf59f9d307
+- `hardware/ref_design/board/tools` 09b48b6fef6158e0420e2477b6b33ea2cfa0fc90
+- `hardware/ref_design/tools/build.py` 93bcb52fa546055454242aa2bf1e65581bb27a84
+- `hardware/ref_design/board/audio.kicad_sch` c3f05af80eedccd73d79e9e00ccdd9ea6cb7572d
 - `hardware/ref_design/board/battler.kicad_sch` d5ed7b835ef3668f9be177a601270a0c16692406
-- `hardware/ref_design/board/buttons.kicad_sch` 058ae4c0a8e9039fda0591dcb321200670296dc5
-- `hardware/ref_design/board/debug.kicad_sch` 967425f19e2c54b7737201fafd07f60db1b25670
-- `hardware/ref_design/board/display.kicad_sch` 22130b7609cffdbba4cb541199a447416b37ca45
-- `hardware/ref_design/board/mcu.kicad_sch` 080a7e2143d4b999192fa458f4c550112e933c52
-- `hardware/ref_design/board/mcu_power.kicad_sch` b994e45467e2b21e4fd9085c86b90b034d78c351
-- `hardware/ref_design/board/power.kicad_sch` fe37406611536d354edfc64c0210c89698bad0df
-- `hardware/ref_design/board/usb_charger.kicad_sch` 48d861d4ac36d8852018858b4d54e1e4229fb958
-- `hardware/ref_design/case/case.scad` af69698eb5f95d7cb61e4fb9bc8dbe32b3d0ed55
+- `hardware/ref_design/board/buttons.kicad_sch` 3d9e7e5b5b3d3996477a21796e2d07261692eaff
+- `hardware/ref_design/board/debug.kicad_sch` d9566469d2b707bf8f96cf4a8047aa315b627359
+- `hardware/ref_design/board/display.kicad_sch` f11fac00141b33241e662ceb9ec6ea31323f6d3a
+- `hardware/ref_design/board/mcu.kicad_sch` c45cd6d9162738bd627999e9e296c7c8ac57c8fe
+- `hardware/ref_design/board/mcu_power.kicad_sch` 31b3b9ecf81724e63967f21da5ca78b9820b1c64
+- `hardware/ref_design/board/power.kicad_sch` 59cc8282fde42a7cbc79fc9024fe1bfd9bfbb799
+- `hardware/ref_design/board/usb_charger.kicad_sch` bed1f5bfa7f7fe315ed4eca6183f687b77dab721
+- `hardware/ref_design/case/case.scad` 07cae29bb29ce02439fdf8b2b0bf3314d3118646
 - `hardware/ref_design/case/export.py` 41fdd1f0834187e938832421a83506032ccec9a5
 
 ## Ratings (DFMEA)

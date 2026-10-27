@@ -76,6 +76,16 @@ HEAD_SHA = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"], capture_outp
 TODAY = datetime.date.today().isoformat()
 DESIGN_BLOB = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD:hardware/ref_design/board/design.py"],
                              capture_output=True, text=True).stdout.strip()
+# README's order branch and baseline commit (main from 71737ae since 2026-10-27): the seeds name them from there,
+# so a re-seed moves them without editing this file
+_OB = re.search(r"^- Order branch: `([^`]+)` from `([0-9a-f]+)`", open(os.path.join(VV, "README.md"), encoding="utf-8").read(),
+                re.M)
+ORDER_BRANCH, BASE7 = (_OB.group(1), _OB.group(2)[:7]) if _OB else ("main", "?")
+
+
+def name_order_branch(vv, name):
+    """Point README's order-branch line at another branch (the seeded ones), whatever it names today."""
+    text_edit(vv, "README.md", f"- Order branch: `{ORDER_BRANCH}`", f"- Order branch: `{name}`")
 
 
 def csv_edit(d, name, rid, **fields):
@@ -219,6 +229,9 @@ FAULTS = [
     ("design baseline leaves out the routed board", "structure",
      "the design baseline does not name hardware/ref_design/board/battler.kicad_pcb",
      lambda d: text_edit(d, "README.md", "- `hardware/ref_design/board/battler.kicad_pcb`", "- `hardware/ref_design/board/battler_old.kicad_pcb`")),
+    ("O-S4: the design baseline leaves out tools/build.py (it runs the build, route, silk and fab stages)", "structure",
+     "the design baseline does not name hardware/ref_design/tools/build.py",
+     lambda d: drop_line(d, "README.md", "- `hardware/ref_design/tools/build.py`")),
     ("an advisory-only check made binding", "gate", "VER-40 NOT_RUN",
      lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| VER-40 VER-21 VER-27 |")),
     # the second review (2026-10-25)
@@ -252,17 +265,17 @@ FAULTS = [
     ("round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE", "gate", "parts in no DFMEA row: R64",
      lambda d: csv_edit(d, "dfmea.csv", "DF-153", item="the ILIM resistor", failure_mode="the ILIM resistor open")),
     ("round 2 (F): detection rating 2 on a single 'detects' check", "structure",
-     "DF-95: detection_rating 2 needs two or more independent 'detects' checks",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-95", detection_rating="2", action_priority="L")),
+     "DF-96: detection_rating 2 needs two or more independent 'detects' checks",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-96", detection_rating="2", action_priority="L")),
     # the coverage grid and the stale-names scan (2026-10-27)
     ("VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')", "structure",
-     "DF-147: names what design.py at be437f8 does not have: TP4056",
+     f"DF-147: names what design.py at {BASE7} does not have: TP4056",
      lambda d: csv_edit(d, "dfmea.csv", "DF-147", cause=lambda x: x.replace("(Was: the TP4056's,", "(the TP4056's,"))),
     ("VER-188: a live check names a net that left design.py (LS_GATE)", "structure",
-     "VER-21: names what design.py at be437f8 does not have: LS_GATE (net",
+     f"VER-21: names what design.py at {BASE7} does not have: LS_GATE (net",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", LS_GATE")),
     ("VER-188: a live requirement names a part that left design.py (J6 outside 'Was:')", "structure",
-     "REQ-MCU-04: names what design.py at be437f8 does not have: J6 (part",
+     f"REQ-MCU-04: names what design.py at {BASE7} does not have: J6 (part",
      lambda d: text_edit(d, "requirements.md", "since 86bf694 (Was: J6).", "since 86bf694 (J6).")),
     ("grid: a live check that names no classes", "structure", "VER-99: a live check names its classes and subsystems",
      lambda d: csv_edit(d, "verification.csv", "VER-99", classes="")),
@@ -604,8 +617,7 @@ def g_order_branch_moves(repo, base):
     with open(os.path.join(wt, "hardware/ref_design/board/tools/silk.py"), "a") as f:
         f.write("# a silk change on the order branch\n")
     commit(wt, "silk change on the order branch")
-    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
-              "- Order branch: `seeded-order`")
+    name_order_branch(os.path.join(repo, "hardware/vv"), "seeded-order")
     commit(repo, "README names the seeded order branch")
     return "order"
 
@@ -619,8 +631,7 @@ def g_order_branch_case(repo, base):
     with open(os.path.join(wt, "hardware/ref_design/case/case.scad"), "a") as f:
         f.write("// a case change on the order branch\n")
     commit(wt, "case change on the order branch")
-    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
-              "- Order branch: `seeded-order-case`")
+    name_order_branch(os.path.join(repo, "hardware/vv"), "seeded-order-case")
     commit(repo, "README names the seeded order branch")
     return "case"
 
@@ -645,9 +656,17 @@ def g_chg_omits(repo, base):
 
 
 def g_fab_comment(repo, base):
-    """O-R1's attack: a docstring-style comment in fab.py must not pass the CPL or drill check."""
-    with open(os.path.join(repo, "hardware/ref_design/board/tools/fab.py"), "a") as f:
-        f.write("# JLC places at its own centroid; --excellon-separate-th is not used yet\n")
+    """O-R1's attack: fab.py's text cannot pass the CPL or drill check.  Since 71737ae fab.py writes the pads' centre
+    and separate drill files, so both pass; here the code goes back to KiCad's origin and one mixed drill file while
+    a comment claims the fixes are still in: both checks must fail, as they read what fab.py writes."""
+    p = os.path.join(repo, "hardware/ref_design/board/tools/fab.py")
+    s = open(p).read()
+    olds = ('"--excellon-separate-th", ', 'rows.append([ref, f"{cx:.3f}mm", f"{-cy:.3f}mm", side,')
+    if not all(o in s for o in olds):
+        raise SystemExit("seed_faults: fab.py's drill or CPL line moved")
+    s = s.replace(olds[0], "", 1).replace(
+        olds[1], 'rows.append([ref, f"{pcbnew.ToMM(pos.x):.3f}mm", f"{-pcbnew.ToMM(pos.y):.3f}mm", side,', 1)
+    open(p, "w").write(s + "# --excellon-separate-th is used and the CPL carries the pads' centre\n")
     return ("dn", [["cpl"], ["drill"]])
 
 
@@ -660,6 +679,17 @@ def g_tp_near_hole(repo, base):
             "assert fp.IsFlipped()\n"
             "fp.SetPosition(pcbnew.VECTOR2I(pcbnew.FromMM(x1 + 0.6), pcbnew.FromMM((y0 + y1) / 2)))\n"
             "sys.exit(dn.th1(b))\n")
+    return ("py", code)
+
+
+def g_body_past_edge(repo, base):
+    """2026-10-27: VER-18 prints a courtyard past the outline but fails a pad or a body past it: J2 moved 1.0 mm
+    towards the right edge, in memory (no KiCad file is written), puts its mounting pad past the outline."""
+    code = ("import sys; sys.path.insert(0, 'hardware/vv/tools'); import design_numbers as dn\n"
+            "pcbnew, b = dn.board()\n"
+            "fp = [f for f in b.GetFootprints() if f.GetReference() == 'J2'][0]\n"
+            "p = fp.GetPosition(); fp.SetPosition(pcbnew.VECTOR2I(p.x + pcbnew.FromMM(1.0), p.y))\n"
+            "sys.exit(dn.edge(b))\n")
     return ("py", code)
 
 
@@ -683,14 +713,46 @@ def g_bulk_edited(repo, base):
 
 
 def g_cellgap_right_end(repo, base):
-    """Round 2: widening only the hole's right end (the first proposed fix) leaves VER-181 failing."""
+    """Round 2: widening only the hole's right side (the first proposed fix; since 71737ae the cell lies along y, so
+    its long side) leaves VER-181 failing: the pocket follows the hole, and the cell's length still has no fit."""
     p = os.path.join(repo, "hardware/ref_design/case/case.scad")
     s = open(p).read()
-    old = "cell_hole = [[-27.0, 6.0], [27.0, 43.0]]"
+    old = "cell_hole = [[-18.9, -7.8 + cell_dy], [18.9, 47.0 + cell_dy]]"
     if old not in s:
         raise SystemExit("seed_faults: case.scad's cell_hole line moved")
-    open(p, "w").write(s.replace(old, "cell_hole = [[-27.0, 6.0], [27.5, 43.0]]", 1))
+    open(p, "w").write(s.replace(old, "cell_hole = [[-18.9, -7.8 + cell_dy], [19.4, 47.0 + cell_dy]]", 1))
     return ("dn", [["cellgap"]])
+
+
+def g_cell_fit(repo, base):
+    """Round 3's sign-off (O-S1): a cell 0.1 mm too long for its pocket's fit fails VER-181, though every gap to the
+    FR4 passes: the pocket printed 0.1 mm small must still take it with 0.1 mm a side."""
+    p = os.path.join(repo, "hardware/ref_design/case/case.scad")
+    s = open(p).read()
+    old = "cell = [52, 36, 4.5];"
+    if old not in s:
+        raise SystemExit("seed_faults: case.scad's cell line moved")
+    open(p, "w").write(s.replace(old, "cell = [51.7, 35.6, 4.5];", 1))
+    return ("dn", [["cellgap"]])
+
+
+def g_cell_fit_control(repo, base):
+    """O-S1's control: a cell spec of 51.6 x 35.6 mm (what cellgap says this hole takes) passes VER-181."""
+    p = os.path.join(repo, "hardware/ref_design/case/case.scad")
+    s = open(p).read()
+    old = "cell = [52, 36, 4.5];"
+    if old not in s:
+        raise SystemExit("seed_faults: case.scad's cell line moved")
+    open(p, "w").write(s.replace(old, "cell = [51.6, 35.6, 4.5];", 1))
+    return ("dn_pass", [["cellgap"]])
+
+
+def g_moves_listed(repo, base):
+    """Round 3's sign-off (O-S5): with no GATE@ line signed, the order gate lists a check moved later since the
+    register state README names (G0), so Alex sees it before he freezes the phases."""
+    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-138", phase="DVT")
+    commit(repo, "VER-138 moves to DVT")
+    return "order"
 
 
 def g_case_move(repo, base):
@@ -707,22 +769,24 @@ def g_case_move(repo, base):
         raise SystemExit("seed_faults: case.scad's ss_pitch line moved")
     open(p, "w").write(s.replace(old, "ss_pitch = 7.4;", 1))
     commit(wt, "the Start/Select pills 0.05 mm closer together")
-    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
-              "- Order branch: `seeded-case-move`")
+    name_order_branch(os.path.join(repo, "hardware/vv"), "seeded-case-move")
     commit(repo, "README names the seeded case branch")
     return "order"
 
 
 def g_case_labels(repo, base):
-    """O-R4 (control): a case-only commit that moves no position (2ddb7fe's engraved labels) passes that
-    part of R8 at the order gate: the two positions.json files hash the same."""
-    try:
-        git(repo, "branch", "-q", "seeded-case-labels", "2ddb7fe")
-        text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
-                  "- Order branch: `seeded-case-labels`")
-        commit(repo, "README names the labels-only branch")
-    except SystemExit:
-        pass          # that commit is not in this clone: the order branch itself is the control
+    """O-R4 (control): a case-only commit that moves no position (like 2ddb7fe's engraved labels, which is history
+    since the baseline moved past it: a comment in case.scad here) passes that part of R8 at the order gate: the
+    two positions.json files hash the same."""
+    b = re.search(r"^- Order branch: `[^`]+` from `([0-9a-f]+)`", open(os.path.join(repo, "hardware/vv/README.md")).read(),
+                  re.M).group(1)
+    wt = os.path.join(os.path.dirname(repo), "order_wt_labels")
+    git(repo, "worktree", "add", "-q", "-b", "seeded-case-labels", wt, b)
+    with open(os.path.join(wt, "hardware/ref_design/case/case.scad"), "a") as f:
+        f.write("// a case-only change that moves no board position\n")
+    commit(wt, "a case.scad comment on the order branch")
+    name_order_branch(os.path.join(repo, "hardware/vv"), "seeded-case-labels")
+    commit(repo, "README names the labels-only branch")
     return "order"
 
 
@@ -836,7 +900,8 @@ GIT_FAULTS = [
     ("O-R21: a change record that omits a bench test of the changed part", "structure",
      "CHG-01: 'What to re-run' omits VER-52", g_chg_omits),
     ("O-R1: a comment in fab.py does not pass the CPL or drill check", "dn", "RESULT: FAIL", g_fab_comment),
-    ("O-R14: a back-side test point next to the cell's hole fails th1", "dn", "RESULT: FAIL", g_tp_near_hole),
+    ("O-R14: a back-side test point next to the cell's hole fails th1", "dn",
+     "back-side pads within 1 mm of the hole: TP11", g_tp_near_hole),
     # round 2's sign-off objections (2026-10-26)
     ("round 2 (O): an approval signed by another key in the allowed-signers file", "structure",
      "A-001 pending: signed with another key", g_other_key),
@@ -869,6 +934,15 @@ GIT_FAULTS = [
     # the coverage grid (2026-10-27)
     ("grid R9: a gap Alex accepts in a signed GRID line leaves R9", "gate_no",
      "R9 the coverage grid", g_grid_accepted, "3 case no check"),
+    # round 3's sign-off objections, applied at the 71737ae re-seed (2026-10-27)
+    ("O-S1: a cell 0.1 mm too big for its pocket's fit fails VER-181 though every FR4 gap passes", "dn",
+     "in the pocket's length: 0.30 mm spare against 0.40", g_cell_fit),
+    ("O-S1 (control): the largest cell cellgap says this hole takes passes VER-181", "dn_pass",
+     "RESULT: PASS", g_cell_fit_control),
+    ("O-S5: a check moved later with no GATE@ line is listed by the order gate (G0)", "gate_line",
+     "VER-138 moved from EVT to DVT", g_moves_listed),
+    ("VER-18: a connector's pad past the board's outline fails edge (a courtyard alone does not)", "dn",
+     "J2 (a pad or its body past the outline)", g_body_past_edge),
 ]
 
 
@@ -887,6 +961,9 @@ def fresh_copy(tmp, name):
 def judge(mode, rc, out, want, forbid=""):
     if mode == "dn":
         return rc != 0 and want in out
+    if mode == "dn_pass":
+        # a control: the design_numbers check must pass on the seeded change
+        return rc == 0 and want in out
     if mode == "structure":
         return rc == 1 and want in out
     if mode == "report":

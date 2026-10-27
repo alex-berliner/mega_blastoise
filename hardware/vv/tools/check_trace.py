@@ -161,8 +161,13 @@ DESIGN_PY = "hardware/ref_design/board/design.py"
 # The second review (F-R13, O-R13) added the schematics, the project file (its DRC rules) and the whole
 # board/tools tree (one hash: the route, silk and fab scripts and the routed session), and case/export.py,
 # which writes the positions placement.py reads.
-BOARD_FILES = ("board/design.py", "board/placement.py", "board/lib", "board/battler.kicad_pcb",
-               "board/battler.kicad_pro", "board/tools")
+# Round 3's sign-off (O-S4) and the 71737ae re-seed added what else builds or checks the board: tools/build.py
+# (it runs the build_pcb, route, silk and fab stages), the custom DRC rules (battler.kicad_dru, which VER-04's
+# DRC reads), the library tables, and placement_zones.py (placement.py imports it).  pin_review/*.json is not a
+# design path: VER-02 covers it, so a pin_review change stales VER-02's evidence instead.
+BOARD_FILES = ("board/design.py", "board/placement.py", "board/placement_zones.py", "board/lib",
+               "board/battler.kicad_pcb", "board/battler.kicad_pro", "board/battler.kicad_dru", "board/fp-lib-table",
+               "board/sym-lib-table", "board/tools", "tools/build.py")
 BOARD_GLOBS = ("board/*.kicad_sch",)
 CASE_FILES = ("case/case.scad", "case/export.py")
 EVIDENCE_DIR = "hardware/vv/evidence/"
@@ -906,7 +911,24 @@ def gate_freeze_violations(db, phase=None):
     m = BULK.match(a["item"])
     if not m or not resolve(m.group(2)):
         return [], a
-    then = gate_state_at(m.group(2))
+    return state_moves(db, gate_state_at(m.group(2))), a
+
+
+def unfrozen_moves(db):
+    """Round 3's sign-off (O-S5): until Alex signs a 'GATE@<commit>' line, the gate prints every move later (a
+    check's phase, a defect's Gate, a criterion's Needs, a requirement's Phase or Verified-by) since the register
+    state README names on its '- Gate moves listed since: `<commit>`' line (the last state two reviewers read),
+    so he sees the list before he freezes it.  Returns (lines, the commit) or ([], None)."""
+    path = os.path.join(VV, "README.md")
+    m = re.search(r"^- Gate moves listed since: `([0-9a-f]{7,40})`", open(path, encoding="utf-8").read(), re.M) \
+        if os.path.exists(path) else None
+    if not m or not resolve(m.group(1)):
+        return [], None
+    return state_moves(db, gate_state_at(m.group(1))), m.group(1)
+
+
+def state_moves(db, then):
+    """What moved later since a gate state (gate_state_at): the lines G1 and G0 print."""
     bad = []
     for vid, (was, res) in then["checks"].items():
         v = db["vers"].get(vid)
@@ -943,7 +965,7 @@ def gate_freeze_violations(db, phase=None):
         dropped = set(VER_ID.findall(vb_then)) - set(VER_ID.findall(vb_now))
         if dropped:
             bad.append(f"{rid} no longer lists {' '.join(sorted(dropped))} in Verified by")
-    return bad, a
+    return bad
 
 
 def case_positions_hash(commit):
@@ -2123,6 +2145,12 @@ def gate(db, phase, board, verbose, accept_sw=False):
                         ([f"moved after {aline['id']} ({aline['item']}) without a newer signed line: "
                           + "; ".join(frozen[:8])] if frozen else
                          [f"frozen at {aline['item']} by {aline['id']} ({aline['who']} {aline['date']})"])))
+    else:
+        moves, since = unfrozen_moves(db)
+        if since:
+            results.append(("G0 moves later since the reviewed register state (O-S5; not frozen yet)", "INFO",
+                            ([f"{len(moves)} since {since[:7]}: " + "; ".join(moves)] if moves else
+                             [f"none since {since[:7]}"]) + ["read these before signing GATE@ (README, Approvals)"]))
     # O-R12: the key that counts must be a hardware key; a software key is Alex's explicit choice
     pin, pin_bad = pinned_key()
     kt = allowed_key_type(pin) if (pin and not pin_bad) else None
