@@ -15,6 +15,7 @@ the case, survives use.
 | File | What | ID |
 |---|---|---|
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
+| [HISTORY.md](HISTORY.md) | the earlier rounds' ledgers and findings, moved out of PLAN.md (O-S9); check_trace does not read it | |
 | [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.R / .P |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
 | [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, and the check classes and subsystems it targets | VER-NN |
@@ -29,7 +30,7 @@ the case, survives use.
 | [tools/check_trace.py](tools/check_trace.py) | the trace gate (Python 3 standard library) | |
 | [tools/run_checks.py](tools/run_checks.py) | runs the quick scripted checks, writes their evidence with a header and records the result | |
 | [tools/seed_faults.py](tools/seed_faults.py) | proves check_trace can fail: seeds one fault at a time into a copy, and the faults that need git history into a scratch clone (VER-129) | |
-| [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws per pilot, MLCC keep-out, TH1, the cell's gap on every side, VBUS fault reach, BOM coverage, holes, swelling, copper and silk against the routed edges, the cell's plug against J4, the charge window TH1 gives against U2's TS limits) and prints two bench numbers (the TS band at an ambient, and the CV load that holds the charge without terminating: there is no resistive window); the CPL and drill checks run fab.py's own export into a temp dir and read what it writes | |
+| [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws per pilot, MLCC keep-out, TH1, the cell's gap on every side and its fit in the pocket, VBUS fault reach, BOM coverage, holes, swelling, copper and silk against the routed edges, the cell's plug against J4, the charge window TH1 gives against U2's TS limits) and prints two bench numbers (the TS band at an ambient, and the CV load that holds the charge without terminating: there is no resistive window); the CPL and drill checks run fab.py's own export into a temp dir and read what it writes | |
 | [tools/grid.py](tools/grid.py) | writes grid.md from verification.csv and grid_reasons.csv; check_trace's R9 reads the same grid | |
 | [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188); check_trace's default mode runs it | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
@@ -310,15 +311,18 @@ IEC 62133-2 and UN38.3 (the cell), USB 2.0 cl. 7.2 (power), IEC 61000-4-2 and EN
 ANSI/NCSL Z540.3 (test uncertainty ratio). Clause numbers quoted here are from memory: check
 them against the purchased standards.
 
-## Status on 2026-10-26
+## Status on 2026-10-27
 
 Seeded by Claude at 76955d2 on 2026-10-24, attacked by two models, re-seeded on 2026-10-25 for
-684a609 and attacked again (39 findings applied, PLAN.md section l); both reviewers then
-declined sign-off with 18 objections. On 2026-10-26 the register was re-seeded for be437f8,
-the board being ordered (the 3.5 in panel back, the new placement, the one-piece top), the
-board-level checks were re-run, the 18 objections answered (PLAN.md section g) and the order
-gate trimmed to what the copper, the BOM and the fab files freeze. On 2026-10-26 a third
-round added 23 findings (O-R1 to O-R12, F-R1 to F-R11; PLAN.md section n): the SPI numbers
+684a609 and attacked again (39 findings applied, HISTORY.md section l); both reviewers then
+declined sign-off with 18 objections. On 2026-10-26 the register was re-seeded for be437f8
+(the 3.5 in panel back, the new placement, the one-piece top), the board-level checks were
+re-run, the 18 objections answered (HISTORY.md section g) and the order gate trimmed to what
+the copper, the BOM and the fab files freeze. On 2026-10-27 it was re-seeded for 71737ae, the
+board being ordered (the board spin: the cell's hole rotated, U10, TH1 B4460, J4 a JST SH, the
+BOM values the register asked for), every scripted check re-run against it, and round 3's
+twelve sign-off objections answered (PLAN.md sections b, c and g). On 2026-10-26 a third
+round added 23 findings (O-R1 to O-R12, F-R1 to F-R11; HISTORY.md section n): the SPI numbers
 corrected, the charge window and the CV load computed from the datasheets on disk, the
 panel's mechanics read from its drawing, the phases re-cut by what the order freezes, and
 new gate rules (the frozen gate state G1, the hardware signing key K1, the case's positions in

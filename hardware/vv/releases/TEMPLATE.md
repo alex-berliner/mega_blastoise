@@ -82,13 +82,17 @@ These must arrive as designed or the order stops. Pre-ordered or consigned parts
 | U3 | RT9013-33GB | C47773 | another output voltage of the family (1.2-3.3 V) runs the chip low or puts the panel over its VCI (DF-155) | |
 | U1 | SRV05-4.TCT | C13612 | the JLC footprint orientation is settled for this part only: KiCad's SOT-23-6 turned 180 degrees (DF-68) | |
 | U8, U9 | SN74HC165PWR | C43420 | a 74HCT165 wants 4.5-5.5 V and misreads at 3.3 V (DF-160) | |
-| TH1 | SDNT1005X103F3950FTF (10k, B3950, 1%) | C95939 | its B value sets the charge window (3.5-47.2 C); a fixed 10k in its place disables the temperature pause (DF-146, DF-147) | |
+| TH1 | TCTR0805F10K0F4460T (10k, B4460, 1%, 0805; since 71737ae) | C525375 | its B value sets the charge window (3.9-48.2 C at the worst corner; a B3950 part gives 51.5 C); a fixed 10k in its place disables the temperature pause (DF-146, DF-147) | |
+| U10 | MCP6001T-I/OT (SOT-23-5; since 71737ae) | C116490 | the MCP6001R and MCP6001U share the package with other pin orders (from memory: to confirm in DS20001733L, VER-34): a substitute misreads VBAT and moves the cutoff (DF-182) | |
 | D2 | BAT54C,215 | C37704 | BAT54A/S/single share the package and break the latch (DF-20) | |
 | J3 | FH12-50S-0.5SH(55) | C202116 | bottom contact; a top-contact part does not meet the FPC (DF-58) | |
-| J2, J4 | Molex 53261-0271 | C177225 | the cell's and the speaker's PicoBlade plugs must latch in it (DF-113); while both are this part the cell's plug also fits J4 (DF-170, DEC-33) | |
+| J2 | Molex 53261-0271 | C177225 | the cell's PicoBlade plug must latch in it (DF-113) | |
+| J4 | JST SM02B-SRSS-TB(LF)(SN) (since 71737ae) | C160402 | a 1.0 mm SH header, so the cell's 1.25 mm plug cannot enter it (DF-170); the speaker's SH plug is made for it (DF-183) | |
 | J5 | SM03B-SRSS-TB(LF)(SN) | C160403 | the Megastar clone (C7430445) has another land pattern and is taller (DF-64) | |
 | X1 | ABM8-272-T3 | C20625731 | Raspberry Pi's core layout and its 15 pF load caps are drawn for it (DF-92) | |
-| R61 | 3.9k 1% 0402 (or the value DEC-31 sets) | C51721 | it sets the backlight's full scale: 122.4 mA worst case at 3.9k against the panel's 120 mA (DF-130); a 1% part, not 5% | |
+| R61 | 3.74k 1% 0402 (since 71737ae) | C15172 | it sets the backlight's full scale: 117.7 mA worst case against the panel's 120 mA (3.9k gave 122.4 mA: DF-130); a 1% part, not 5% | |
+| R14, R43 | 47k and 220k 1% 0402 (since 71737ae) | C25792, C25767 | they set how far a faulty VBUS reaches U3's EN and U2's EN1 (9.1 V and 12.4 V: DF-101) | |
+| RN1-RN4 | 4D02WGJ0473TCE, 47k x4 (since 71737ae) | C2028 | a 10k array cuts the pill margin from about 17 kohm to 3.7 kohm (DF-164) | |
 
 Bought by Alex and fitted by hand (not on JLC's BOM), held to the same rule:
 
@@ -96,7 +100,7 @@ Bought by Alex and fitted by hand (not on JLC's BOM), held to the same rule:
 |---|---|---|
 | Panel | EastRising ER-TFT035IPS-6, 'No Touch' (ILI9488, 320 x 480) | J3's pin map, the FPC fold and J3's place, and the backlight's 120 mA are this panel's (DF-57, DF-61, DF-130) |
 | Cell | the 403450 whose spec sheet VER-37 recorded, at most the length and width DEC-27 sets, its PCM named | the hole's gap on every side (DF-85), R5's charge current (DF-07) and the PCM layer (DF-151, DF-172) |
-| Speaker | INGHAi GSPK151035PN (LCSC C530539) | its 35 mm leads and plug, its outline in the board's hole, its rating (REQ-AUD-06) |
+| Speaker | INGHAi GSPK151035PN (LCSC C530539), its plug replaced by a JST SH 2-pin (SHR-02V-S) for J4 since 71737ae | its 35 mm leads, its outline in the board's hole, its rating (REQ-AUD-06); the SH plug's polarity as J4's silk (DF-183) |
 | Start/Select domes | HYP 600-415S-260, 4 mm | Dome_4mm_Round is drawn for it (DF-168) |
 
 ## Case

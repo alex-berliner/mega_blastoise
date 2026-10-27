@@ -122,7 +122,7 @@ The order gate holds 33 cells of classes 1-15 (0 GAP, 33 planned); classes 16-18
 - 10 Fab rules / case: Class 10 is the PCB's fab rules at JLC (holes, plating, clearances, silk). The case is printed by Alex; whether a print makes the parts that fit is VER-48 (class 13).
 - 11 Assembly data / case: No case part is on JLC's BOM or CPL. The case is printed, and its hand parts are bom.md's: VER-167 checks the silicone, caps and domes, VER-147 the screw length bom.md names against case.scad's, and VER-173 records the material and the panel tape.
 - 12 Signals and timing / power: Power is a linear charger (BQ24073) and an LDO (RT9013): no switching node, no clock and no data line. Its only changing signals are the 2 Hz status pins and the latch's 1 s hold, which are class 6. The core's buck is the mcu's.
-- 12 Signals and timing / cell: The cell's subsystem carries DC only: VBAT_SENSE is read at DC through C8 (100 nF) and TH1's TS node is a DC level. No clock or data passes through it.
+- 12 Signals and timing / cell: The cell's subsystem carries DC only: VBAT_DIV is filtered by C8 (100 nF) and copied to VBAT_SENSE by U10, a unity buffer, at DC (since 71737ae), and TH1's TS node is a DC level. No clock or data passes through it; how U10 settles the ADC's sample charge is read on unit 1 by VER-67 (the ADC against a meter).
 - 12 Signals and timing / case: The case carries no signal: there is no radio, antenna or cable through it. Static through its seams is class 7 (VER-95, VER-170).
 
-Last updated: 2026-10-27 16:56 EDT (generated)
+Last updated: 2026-10-27 17:06 EDT (generated)
