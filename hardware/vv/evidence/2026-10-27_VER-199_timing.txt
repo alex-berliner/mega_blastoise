@@ -1,0 +1,33 @@
+# VER-199 timing
+DATE: 2026-10-27
+COMMIT: 20d4e3cf59e89cd8de4141af75a3167b3fb6d865
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/circuit_checks.py timing
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+[ili9488.pdf sha256 d9d7ecd61ed69c845bc34c4a8c4acb2bd75b099fb0ff49efdecfa827b4e33469; its pdftotext -layout text sha256 2100176f5cb6a458..., 17154 lines]
+the RP2350's pad at its reset 4 mA drive: 170 ohm (VOH 2.62 V at 4 mA, rp2350.txt:101144); tracks 0.1 pF/mm (paper_checks.py's stand-in); an input 10 pF, the FPC 3 pF (stand-ins)
+SPI0 to the panel at 18.75 MHz (clk_peri 150 MHz / 8: 20 MHz is no divider of it):
+  LCD_SCK: 37.3 mm of track, 16.7 pF, through R28 33 ohm: 10-90% edge 7.5 ns
+  LCD_MOSI: 42.9 mm of track, 17.3 pF, through R29 33 ohm: 10-90% edge 7.7 ns
+  ok    write cycle 53.3 ns against twc 50 ns (ili9488.txt:16258): 3.3 ns spare (at 20 MHz it would be 0.0)
+  ok    SCL high and low 26.7 ns less an edge of 7.5 ns = 19.2 ns against twrh and twrl 10 ns (16259-16260; edges not included, 16277)
+  ok    SDA set-up before SCL rises, at the 50% crossings: half a cycle 26.7 ns less the SPI's 10 ns (stand-in) and the two edges' difference: 16.6 ns against tds 10 ns (16269)
+  firmware rule: a read (LCD_MISO) at 6.25 MHz or less (trc 150 ns, ili9488.txt:16262)
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+SR_CLK to U8 and U9: 178.7 mm of track, 37.9 pF, edge 16.9 ns through R65; at 3.3 V the 74HC165 is read at its 2 V figures (fmax 6 MHz, tw 80 ns, tpd CLK to QH 150 ns, SH/LD high 80 ns before CLK: sn74hc165.txt:371-377, 472, 488), which bound it from the slow side
+  ok    SR_CLK's edge 16.9 ns against the 74HC165's input transition limit, 1000 ns/V at 2 V (sn74hc165.txt:264-265)
+  firmware rule: SR_CLK at 5.44 MHz or less, SR_PL low 80 ns or more and high 80 ns before the first edge
+  ok    the chain U9 QH to U8 SER: the clock reaches the two 1053 ps apart (6.5 ps/mm), inside the 5 ns SER hold (sn74hc165.txt:503-504)
+  FAIL  pinmap.md states the panel's SPI write and read clocks: it does not, so no firmware is held to these limits
+  FAIL  pinmap.md states the buttons' SR_CLK rate and SR_PL widths: it does not, so no firmware is held to these limits
+2 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

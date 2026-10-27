@@ -1,0 +1,30 @@
+# VER-21 ret
+DATE: 2026-10-27
+COMMIT: 20d4e3cf59e89cd8de4141af75a3167b3fb6d865
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py ret
+GND fills: F.Cu 3 zone(s), B.Cu 1; each fast net's tracks sampled every 0.1 mm, a sample over no GND fill on the other layer is a gap; limit 2.0 mm in a run
+  FAIL  LCD_SCK: longest run over no GND on the other layer 3.43 mm (a B.Cu track from (92.49, 123.49))
+  FAIL  LCD_SCK_MCU: longest run over no GND on the other layer 2.25 mm (a F.Cu track from (84.41, 120.36))
+  FAIL  LCD_MOSI: longest run over no GND on the other layer 3.14 mm (a B.Cu track from (84.99, 124.0))
+  FAIL  LCD_MOSI_MCU: longest run over no GND on the other layer 2.15 mm (a F.Cu track from (84.71, 120.23))
+  FAIL  USB_DP: longest run over no GND on the other layer 38.70 mm (a B.Cu track from (80.65, 107.3))
+  FAIL  USB_DM: longest run over no GND on the other layer 38.70 mm (a F.Cu track from (80.65, 107.3))
+  ok    USB_DP_MCU: longest run over no GND on the other layer 0.72 mm (a F.Cu track from (74.6, 107.1))
+  ok    USB_DM_MCU: longest run over no GND on the other layer 0.85 mm (a F.Cu track from (74.97, 107.9))
+  FAIL  AUDIO_PWM: longest run over no GND on the other layer 5.53 mm (a B.Cu track from (106.88, 120.34))
+  FAIL  SR_CLK: longest run over no GND on the other layer 6.91 mm (a B.Cu track from (73.23, 121.45))
+  ok    SR_CLK_MCU: longest run over no GND on the other layer 1.41 mm (a B.Cu track from (81.62, 125.4))
+  FAIL  SR_PL: longest run over no GND on the other layer 5.97 mm (a B.Cu track from (98.87, 46.68))
+  FAIL  SR_DATA: longest run over no GND on the other layer 2.45 mm (a F.Cu track from (101.14, 150.76))
+10 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL
