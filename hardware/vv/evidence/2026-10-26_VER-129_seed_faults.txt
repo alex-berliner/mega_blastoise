@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-26
-COMMIT: f9e107177fd6bb50158aa45f7511b1db18f44d96
+COMMIT: b187fcf50eb19235f169e58c85746a96a3f00250
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -84,10 +84,11 @@ ok  structure F-R4: a JLC_FIXED entry whose evidence file is not committed does 
 ok  gate      O-R4: a case.scad commit that moves a button position fails the order gate (git)
 ok  gate_no   O-R4: a case-only commit that moves no position passes that part of R8 (git)
 ok  gate      O-R5: a check moved after Alex's signed GATE@ line fails the order gate (git)
+ok  gate      O-R5: a check made advisory after Alex's signed GATE@ line fails the order gate (git)
 ok  gate      O-R12: a software signing key fails the order gate (git)
 ok  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
 ok  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
-81 seeded faults, 81 caught
+82 seeded faults, 82 caught
 RESULT: PASS
 
 exit 0
