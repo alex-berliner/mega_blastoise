@@ -137,8 +137,8 @@ put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
 at("C29", -10.6, -13.0, 90)                  # panel VCI/VDDI, over J3's 3V3 pins
 at("C30", -9.4, -13.0, 90)
 at("JP4", -10.0, -24.0, 0)                   # 3V3 -> panel: flat, under the tail
-at("R28", -18.6, -16.0, 90)                    # SPI source terminations, by the core's panel pins
-at("R29", -17.0, -16.0, 90)
+at("R28", -14.0, -24.0, 90)                    # SPI source terminations, below J3 left end: out of the fan-out of the core's east pins (V&V round 3 routing)
+at("R29", -14.0, -26.2, 90)
 at("JP2", 26.9, -13.0, 0)                    # VSYS to LED_A (J3 pin 50): flat, by J3's right end
 
 # ---- backlight current sinks: the ends' spine (U6, 1.7 tall in its pocket) and the row under the slope above it
@@ -231,8 +231,8 @@ for i in range(5):
 at("TP3", 26.0, 25.0, 0, "B")                # VBAT: on the back by JP5 and the cell's path
 at("J7", 0.0, -48.5, 0, "B")                 # SWD pogo pads on the back, under the row
 put("TP9", *core_pt(0.8, 7.22), 0, "B" if CORE_SIDE == "F" else "F")    # +1V1: on the core's own +1V1 via
-for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, under J3's rear
-    at(ref, -7.8 + 2.54 * i, -12.8, 0, "B")
+for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, below J3 (they sat in the channel between the hole and J3 and took its back-side lanes)
+    at(ref, -6.0 + 2.54 * i, -25.0, 0, "B")
 
 # ---- audio: the amplifier under the glass right of J3, J4 in the strip (mouth towards the speaker), the filter in the rows below
 at("U7", 21.0, -20.0, 90)                    # FM8002A

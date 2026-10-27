@@ -970,10 +970,10 @@ def dsn_for_router(text, contacts, fences, circles=(), npth=()):
     for x0, y0, x1, y1 in fences:
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(x0, y0, x1, y1))
         extra += f'\n    (keepout "" (polygon {fence_layer} 0 {pts}))'
-    # the cutouts: the router's copy of the outline doesn't keep its tracks 0.2 mm off
-    # their rounded corners, so each gets a keep-out on both layers
+    # the cutouts: the router's copy of the outline doesn't keep its tracks 0.3 mm off their edges and rounded corners, so each
+    # gets a keep-out on both layers, 0.22 out (+ 0.155 clearance + half a track = 0.45 centre to edge; the rule needs 0.375)
     for sx0, sy0, sx1, sy1 in slot_boxes():
-        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.4, sy0 - 0.4, sx1 + 0.4, sy1 + 0.4))
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.22, sy0 - 0.22, sx1 + 0.22, sy1 + 0.22))
         for layer in ("F.Cu", "B.Cu"):
             extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
@@ -1711,6 +1711,30 @@ def attempts(passes, n, argv, tries=None, seed=0, exhaustive=False):
         print(f"after --finish: {left[0]} DRC errors, {left[1]} unconnected" if left else "after --finish: no DRC report", flush=True)
 
 
+# USB D+/D- cross from the core's side (R21/R22, left of the cell's hole) to U1 in the right strip, under the hole, through the channel
+# between the hole and J3 that the panel's nets share. Freerouting left D- open in 4 of 4 rounds (2026-10-27): the run is long and
+# it loses it to everything else. So the pair goes first, one maze route each, as fixed wiring (0.2 wide like the rest of the USB
+# class); the router works round them. (All nine nets that cross were tried: that wrecked the panel bus.)
+CROSS_NETS = ("USB_DM", "USB_DP")
+
+
+def cross_nets(board):
+    hole = next(c["box"] for c in CUTOUTS if c.get("name") == "cell")
+    done = []
+    pads = [(p.GetNetname(), p) for fp in footprints(board) for p in pads_of(fp)]
+    for net in CROSS_NETS:
+        left = [p for n, p in pads if n.split("/")[-1] == net and xy(p.GetPosition())[0] < hole[0] - 0.5]
+        right = [p for n, p in pads if n.split("/")[-1] == net and xy(p.GetPosition())[0] > hole[2] + 0.5]
+        if not left or not right:
+            continue
+        _, a, b = min(((math.dist(xy(a.GetPosition()), xy(b.GetPosition())), a, b) for a in left for b in right), key=lambda t: t[0])
+        la = pcbnew.F_Cu if a.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        lb = pcbnew.F_Cu if b.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        if maze_connect(board, a.GetNetname(), xy(a.GetPosition()), la, xy(b.GetPosition()), lb, reach=12.0):
+            done.append(net)
+    print(f"crossing nets routed first: {', '.join(done) or 'none'}", flush=True)
+
+
 def prepare(board):
     """The pre-routes Freerouting is given as fixed wiring (everything before it in the run); returns the contacts."""
     hide_bom_fields(board)
@@ -1723,6 +1747,7 @@ def prepare(board):
         usb_pair(board)
     usb_shell_ground(board)
     fanout(board)
+    cross_nets(board)
     return contacts
 
 
