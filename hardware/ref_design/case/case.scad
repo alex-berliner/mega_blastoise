@@ -71,8 +71,8 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
 cell = [52, 36, 4.5];                                   // 403450, worst case: 50 +-2 by 34 +-2 by 4.0 +-0.5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
-cell_dy = 0;                                            // the hole's shift towards seat 2 (+y; the placement search's "hole"); 0 as built: 1 passes every assert here and gave one clean board (2026-10-27) that failed check_fit on 6 moved parts, 2 mm and more put the cell's top into the ends' ceiling
-j2_dy = 0;                                              // J2, its plug and its frame notch follow the hole this far: +1 puts J2's plug 2.4 from H1's boss (3.1 needed), more than 0.3 puts J2 over 22 from the hole's corner
+cell_dy = 1;                                            // the hole's shift towards seat 2 (+y; the placement search's "hole"); 0 as built: 1 passes every assert here and gave one clean board (2026-10-27) that failed check_fit on 6 moved parts, 2 mm and more put the cell's top into the ends' ceiling
+j2_dy = 0.3;                                            // J2, its plug and its frame notch follow the hole this far: +1 puts J2's plug 2.4 from H1's boss (3.1 needed), more than 0.3 puts J2 over 22 from the hole's corner
 cell_hole = [[-18.9, -7.8 + cell_dy], [18.9, 47.0 + cell_dy]];  cell_hole_r = 1.0;   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches

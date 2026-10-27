@@ -55,7 +55,7 @@ CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(81.1, 53.0, 118.9, 107.8), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
+    dict(name="cell", box=(81.1, 52.0, 118.9, 106.8), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -6.8 .. 48 since the placement search of 2026-10-27, 1 mm towards seat 2 to widen the gap to J3 (case.scad cell_dy), was -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
@@ -279,6 +279,31 @@ at("R13", 24.5, 45.0, 90)
 at("R14", 25.7, 45.0, 90)
 at("R38", 33.0, 44.0, 90)
 at("R42", 34.2, 44.0, 90)
+
+# ---- the placement search's result (2026-10-27, tools/place_search.py: hole 1 mm towards seat 2, the latch row in end2_l) ------------------
+# The cell hole 1 mm towards seat 2 (CUTOUTS above, case.scad cell_dy 1, j2_dy 0.3) with J2 (0.3), TH1, JP5 and TP3, the power latch
+# (Q1, R16, D2, R13, R42: at seat 1's end) and the seat-2 Start's row (Q7, D8, R62, R63, R15, C47, TP6: end2_l) that the hole's new edge
+# landed on, put where the search found room (the zones in placement_zones.py; check_fit passes). KiCad frame: x, y, rot, side.
+ADOPTED = {
+    "J2": (131.55, 69.7, 180, "F"),
+    "TH1": (119.95, 79.0, 90, "F"),
+    "JP5": (124.0, 70.0, 0, "F"),
+    "TP3": (126.0, 74.0, 0, "B"),
+    "Q1": (74.759, 142.987, 0, "F"),
+    "D2": (109.08, 149.543, 0, "F"),
+    "R13": (106.489, 150.046, 90, "F"),
+    "R42": (117.43, 148.073, 90, "F"),
+    "R16": (79.08, 146.869, 90, "F"),
+    "Q7": (79.107, 54.948, 180, "F"),
+    "D8": (75.093, 54.549, 180, "F"),
+    "TP6": (96.645, 50.484, 180, "F"),
+    "R62": (74.645, 51.524, 270, "F"),
+    "R15": (68.206, 51.084, 270, "F"),
+    "R63": (67.822, 49.028, 270, "F"),
+    "C47": (67.006, 51.084, 270, "F"),
+}
+for _ref, (_x, _y, _rot, _side) in ADOPTED.items():
+    P[_ref] = (round(_x, 3), round(_y, 3), _rot, _side)
 
 # ---- the placement search's result (tools/place_search.py): a no-op unless picks.json or PLACE_PICKS says otherwise ----------------
 placement_zones.apply(P, PICKS)
