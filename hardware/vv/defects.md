@@ -451,7 +451,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073).
 - Updated: REQ-PWR-13
 - Gate: ORDER
-- Status: FIXED (round 3 changed design_numbers.py, so VER-99's evidence is stale until run_checks.py re-runs it)
+- Status: CLOSED (VER-99 re-run 2026-10-26 at fec2fc4 after round 3 changed design_numbers.py: PASS; first PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -533,7 +533,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-182 (design_numbers.py swell, rewritten 2026-10-26 to read what case.scad puts over the tub's pocket instead of assuming a deck: PASS, 0.80 mm).
 - Updated: REQ-BAT-07, DF-84
 - Gate: CASE
-- Status: FIXED (round 3 changed design_numbers.py, so VER-182's evidence is stale until run_checks.py re-runs it)
+- Status: CLOSED (VER-182 PASS 2026-10-26 at fec2fc4 on be437f8's case.scad: 0.80 mm under the panel's back)
 
 ### DEF-52: The trace gate and the fab checks still passed on words, typed results and unsigned approvals
 - Board: both

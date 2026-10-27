@@ -1,6 +1,6 @@
 # VER-137 backlight
 DATE: 2026-10-26
-COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
+COMMIT: fec2fc42b96caf0404ec79af135f0a69b25b0649
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/design_numbers.py backlight

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Record the datasheet extracts this register quotes: sha256, byte size, the drawing's date.
 
-    python3 hardware/vv/tools/datasheet_hashes.py            # write hardware/vv/evidence/datasheets.txt
+    python3 hardware/vv/tools/datasheet_hashes.py            # write hardware/vv/evidence/<date>_VER-34_datasheets.txt
     python3 hardware/vv/tools/datasheet_hashes.py --print    # print only, write nothing
 
 The extracts are not committed: they were downloaded on 2026-10-26 to the main checkout's
@@ -20,6 +20,7 @@ files and cites this file's hashes.
 
 Python 3 standard library only.
 """
+import datetime
 import hashlib
 import os
 import platform
@@ -159,7 +160,7 @@ def main():
     body.append(f"RESULT: {'FAIL' if missing else 'PASS'}")
     text = "\n".join(body) + "\n"
     if write:
-        out = os.path.join(VV, "evidence", "datasheets.txt")
+        out = os.path.join(VV, "evidence", f"{datetime.date.today().isoformat()}_VER-34_datasheets.txt")
         os.makedirs(os.path.dirname(out), exist_ok=True)
         open(out, "w", encoding="utf-8").write(text)
         print(f"wrote {os.path.relpath(out, ROOT)}")
