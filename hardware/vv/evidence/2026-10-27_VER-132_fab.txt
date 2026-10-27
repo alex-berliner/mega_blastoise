@@ -1,0 +1,84 @@
+# VER-132 fab
+DATE: 2026-10-27
+COMMIT: 55b8cdbd39785db7c00cf519a3c246e556bb930e
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py fab
+fab.py's own export into /tmp/vv_fab_t8o4p3kw: 14 files; BOM 48 lines, CPL 120 rows
+  ok    (a) every Excellon tool >= 0.3 mm: PTH [0.3, 0.3, 0.6], NPTH [0.5, 0.65, 2.2]
+  ok    (b) no F.Paste inside any of the 20 contacts' 4.8 mm circles
+  ok    (b) no F.Silkscreen inside them
+  ok    (b) the 16 combs' F.Mask openings >= 4.8 mm: smallest 4.80 mm; the four domes' (SW20-SW23, 4 mm domes, VER-178's) 4.80, 4.80, 4.80, 4.80 mm
+  FAIL  (b) no via, pour or other track within 2.9 mm of the 16 combs' centres on F.Cu (vias on any layer): SW1: the GND pour on F.Cu at 2.875 mm; SW2: the GND pour on F.Cu at 2.875 mm; SW3: the GND pour on F.Cu at 2.875 mm; SW4: the GND pour on F.Cu at 2.875 mm; SW5: the GND pour on F.Cu at 2.875 mm; SW6: the GND pour on F.Cu at 2.875 mm; SW7: the GND pour on F.Cu at 2.875 mm; SW8: the GND pour on F.Cu at 2.875 mm ...
+  ok    (c) every one of the 120 CPL centroids inside its part's pads (on its side's copper)
+  ok    (d) BOM 48 lines and CPL 120 rows against design.py's 48 part numbers on 120 parts
+  ok    (e, g) copper 0.30 mm from every routed edge but J1's pads, every silk text on the board: design_numbers.py edge says RESULT: PASS
+  ok    (f) B.Paste empty: 0 flashes, 0 draws, 0 regions
+  ok    (g) all 9 layers, both drill files and the job file: present
+  ok    (g) Edge.Cuts closed: 1 outline with 2 holes (the cell's and the speaker's)
+  ok    (h) no auxiliary origin in the board (gerbers use the drill-file origin, the drill files the absolute one): none set, so both are (0, 0)
+  ok    (h) every one of 750 Excellon holes on a pad or via centre within 0.01 mm
+  ok    (i) the drill files as VER-131: design_numbers.py drill says RESULT: PASS
+  ok    (j) the CPL as VER-176: design_numbers.py cpl says RESULT: PASS
+  FAIL  (k) 'JLCJLCJLCJLC' on B.Silkscreen (REQ-FAB-05): absent (20 back-silk texts: DEF-55); or the release record names JLC's paid removal option
+  sha256 1adf32d7e699a8fbb49c7d2b5c98f474f3988d3f542341a8eb7d07c1af43231d  battler_gerbers.zip (into the release record; the zip's dates differ run to run)
+  sha256 2291ad4878210ade586f2e822e2f08d520ad06fe04d2d83cc83535ee8046529f  battler_bom_jlc.csv (into the release record; the zip's dates differ run to run)
+  sha256 2fcf93ee945d1d32c62d50241111a0cb8a455bb8e75d0326d845e46735aa4a18  battler_cpl_jlc.csv (into the release record; the zip's dates differ run to run)
+2 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+18:39:53: Debug: Adding duplicate image handler for 'PNG file'
+18:39:53: Debug: Adding duplicate image handler for 'JPEG file'
+18:39:53: Debug: Adding duplicate image handler for 'TIFF file'
+18:39:53: Debug: Adding duplicate image handler for 'GIF file'
+18:39:53: Debug: Adding duplicate image handler for 'PNM file'
+18:39:53: Debug: Adding duplicate image handler for 'PCX file'
+18:39:53: Debug: Adding duplicate image handler for 'IFF file'
+18:39:53: Debug: Adding duplicate image handler for 'Windows icon file'
+18:39:53: Debug: Adding duplicate image handler for 'Windows cursor file'
+18:39:53: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+18:39:53: Debug: Adding duplicate image handler for 'TGA file'
+18:39:53: Debug: Adding duplicate image handler for 'XPM file'
+18:39:54: Debug: Adding duplicate image handler for 'PNG file'
+18:39:54: Debug: Adding duplicate image handler for 'JPEG file'
+18:39:54: Debug: Adding duplicate image handler for 'TIFF file'
+18:39:54: Debug: Adding duplicate image handler for 'GIF file'
+18:39:54: Debug: Adding duplicate image handler for 'PNM file'
+18:39:54: Debug: Adding duplicate image handler for 'PCX file'
+18:39:54: Debug: Adding duplicate image handler for 'IFF file'
+18:39:54: Debug: Adding duplicate image handler for 'Windows icon file'
+18:39:54: Debug: Adding duplicate image handler for 'Windows cursor file'
+18:39:54: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+18:39:54: Debug: Adding duplicate image handler for 'TGA file'
+18:39:54: Debug: Adding duplicate image handler for 'XPM file'
+18:39:56: Debug: Adding duplicate image handler for 'PNG file'
+18:39:56: Debug: Adding duplicate image handler for 'JPEG file'
+18:39:56: Debug: Adding duplicate image handler for 'TIFF file'
+18:39:56: Debug: Adding duplicate image handler for 'GIF file'
+18:39:56: Debug: Adding duplicate image handler for 'PNM file'
+18:39:56: Debug: Adding duplicate image handler for 'PCX file'
+18:39:56: Debug: Adding duplicate image handler for 'IFF file'
+18:39:56: Debug: Adding duplicate image handler for 'Windows icon file'
+18:39:56: Debug: Adding duplicate image handler for 'Windows cursor file'
+18:39:56: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+18:39:56: Debug: Adding duplicate image handler for 'TGA file'
+18:39:56: Debug: Adding duplicate image handler for 'XPM file'
+18:39:56: Debug: Adding duplicate image handler for 'PNG file'
+18:39:56: Debug: Adding duplicate image handler for 'JPEG file'
+18:39:56: Debug: Adding duplicate image handler for 'TIFF file'
+18:39:56: Debug: Adding duplicate image handler for 'GIF file'
+18:39:56: Debug: Adding duplicate image handler for 'PNM file'
+18:39:56: Debug: Adding duplicate image handler for 'PCX file'
+18:39:56: Debug: Adding duplicate image handler for 'IFF file'
+18:39:56: Debug: Adding duplicate image handler for 'Windows icon file'
+18:39:56: Debug: Adding duplicate image handler for 'Windows cursor file'
+18:39:56: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+18:39:56: Debug: Adding duplicate image handler for 'TGA file'
+18:39:56: Debug: Adding duplicate image handler for 'XPM file'
+
+exit 1
+RESULT: FAIL
