@@ -737,7 +737,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the copied core is the most layout-sensitive part; the datasheet recommends a second 4.7 uF that design.py lacks.
 - Source: RP2350 datasheet 6.3.8.1, Table 1688 (pin_review/u4.json pin 10).
 - Method: A, T
-- Verified by: VER-23, VER-187, VER-84
+- Verified by: VER-23, VER-197, VER-187, VER-84
 - Phase: EVT
 - Status: PROPOSED
 - Notes: write the DVDD minimum and maximum into VER-84 from Table 1688 on first use.

@@ -14,7 +14,8 @@ covered files have uncommitted changes: evidence describes a commit, so commit f
 
 Only quick, read-only checks belong here. The long pipelines (route.py, check_buttons.py,
 board/sim/, the fit kit, case/export.py --stl) keep a hand-run evidence file with the same
-header. Add a check here once its script exists (check_bom_cpl, check_fab_content, ...). A
+header. Add a check here once its script exists (check_fab_content, ...). A script that exits 2
+is BLOCKED (an input it needs is not on disk): nothing is written for it. A
 check that FAILs is recorded as FAIL with its evidence: a finding the order gate shows. A
 script that tests only part of its row's pass limit does not belong here: split the row first
 (VER-20 and VER-182, O-R21), so an exit 0 is a whole PASS.
@@ -38,6 +39,7 @@ ROOT = ct.ROOT
 REG = os.path.join(ct.VV, "verification.csv")
 
 DN = "hardware/vv/tools/design_numbers.py"
+PC = "hardware/vv/tools/paper_checks.py"
 
 # VER id: (evidence name, command, uses kicad-cli)
 CHECKS = {
@@ -68,6 +70,14 @@ CHECKS = {
     "VER-18": ("edge", ["python3", DN, "edge"], True),
     "VER-184": ("plugs", ["python3", DN, "plugs"], True),
     "VER-188": ("stale_names", ["python3", "hardware/vv/tools/stale_names.py"], False),
+    # the paper checks of classes 4, 6, 9 and 11 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
+    "VER-33": ("latch", ["python3", PC, "latch"], False),
+    "VER-191": ("usb", ["python3", PC, "usb"], True),
+    "VER-100": ("audio", ["python3", PC, "audio"], False),
+    "VER-13": ("copper", ["python3", PC, "copper"], True),
+    "VER-103": ("shelf", ["python3", PC, "shelf"], False),
+    "VER-30": ("mlccbias", ["python3", PC, "mlccbias"], False),
+    "VER-197": ("core", ["python3", PC, "core"], True),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
@@ -110,6 +120,9 @@ def main():
             report = ""
             if vid == "VER-03" and os.path.exists(os.path.join(tmp, "erc.rpt")):
                 report = "--- report\n" + open(os.path.join(tmp, "erc.rpt"), encoding="utf-8").read()
+        if r.returncode == 2:
+            print(f"{vid} {name}: BLOCKED (exit 2): nothing recorded\n" + r.stdout[-600:])
+            continue
         result = "PASS" if r.returncode == 0 else "FAIL"
         shown = " ".join(a if "\n" not in a else "'<inline script below>'" for a in cmd)
         body = io.StringIO()

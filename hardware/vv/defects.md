@@ -685,3 +685,43 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-05.R, DF-125
 - Gate: ORDER
 - Status: OPEN (a silk.py change in the next design pass: '+' and 'BATT' apart by 0.15 mm or more, 'PANEL' off U4's pads; or Alex accepts both for EVT, since the '+' stays readable through the overlap at 10x)
+
+### DEF-67: Three of U4's supply pins have no capacitor near them, and the far DVDD pin has no 4.7 uF
+- Found: VER-197 (paper_checks.py core), built 2026-10-27 for the coverage grid's class 4 / mcu cell, at 71737ae
+- Symptom: on the routed board the nearest capacitor to DVDD pin 51 is C25 at 7.2 mm; C22, the 100 nF the schematic gives pin 51 (sch_sheets.py SERVES), sits about 15 mm away. IOVDD pins 41 and 50 have no capacitor within 5 mm (7.4 and 6.7 mm); their own C17 and C15 sit about 10 mm away. DVDD pin 32, the one furthest from the regulator, has C21 (100 nF, 3.0 mm) and no 4.7 uF: rp2350.txt:32665-32675 asks 4.7 uF there, and 6.3.8.1 recommends a second 4.7 uF on the core supply (DF-94). The other IOVDD, ADC_AVDD, USB_OTP_VDD and QSPI_IOVDD pins each have one within 3.6 mm.
+- Root cause: placement.py places C13-C20, C22 and C23 by hand ('the screw, J2 and the folded FPC', placement.py:226-230); C15, C17 and C22 landed in a cluster near (83, 127), outside the core, and nothing measures a decoupler's distance to its pin.
+- Why missed: DRC and the netlist check connectivity, not distance; VER-23 (the overlay against RP-010329) is not built and its files are not on disk.
+- Check added or changed: VER-197 (new; its --seed fails on C25 at 1 uF)
+- Updated: DF-94, REQ-MCU-09
+- Gate: ORDER
+- Status: OPEN (copper: move C15, C17 and C22 to within about 2 mm of pins 50, 41 and 51, and add a 4.7 uF 0402 at pin 32, or Alex accepts the distances for EVT with VER-84's ripple measurement as the check)
+
+### DEF-68: The cell's current runs through a 0.15 mm track, and VSYS reaches U3 through 229 mohm
+- Found: VER-13 (paper_checks.py copper), built 2026-10-27, at 71737ae
+- Symptom: CELL_P, from J2 pin 1 to JP5, is 13.5 mm of 0.15 mm track: 44 mohm, and at the row's 0.75 A it carries 124% of IPC-2221's 0.60 A for a 10 C rise. JP5 to U2's BAT is 52 mohm of 0.30 mm track. U2's OUT reaches U3's input through 229 mohm (about 116 mm of 0.25 mm), JP3 through 87 mohm. Copper alone drops 115 mV from the cell to the worst VSYS branch against the 30 mV limit, and 62.5 mV from VBUS against 50 mV. At the realistic peak on the cell (about 0.35 A) CELL_P is within its 10 C chart and drops about 15 mV; the drop to U3 adds to its dropout near the cutoff (VER-138).
+- Root cause: build_pcb.py's PWR net class (0.3 mm, build_pcb.py:56-58) lists VSYS, VBAT and VBUS but not /USB_Charger/CELL_P or /Audio/AMP_VDD (it still lists /USB_Charger/VBUS_D5, a net that left the design), so both route at the default 0.15 mm (build_pcb.py:62); VSYS's long run to the left strip is 0.25-0.30 mm.
+- Why missed: no copper resistance check existed (VER-13 was NOT_BUILT); DRC only checks minimum widths.
+- Check added or changed: VER-13 (built; --seed narrows CELL_P to 0.05 mm)
+- Updated: REQ-BAT-12, DF-138
+- Gate: ORDER
+- Status: OPEN (copper: CELL_P at 0.5 mm or a pour, VSYS to U3 at 0.5 mm; or Alex sets the current and the drop limits VER-13 uses and accepts the copper for EVT)
+
+### DEF-69: A cell cut off at 3.50 V can reach its PCM's under-voltage trip in under a month
+- Found: VER-103 (paper_checks.py shelf), built 2026-10-27, at 71737ae
+- Symptom: with the device off the board draws about 27 uA at 25 C (U2 6.5, R17 into U10's clamp 7.9, U7 shut down 8.4 as twice its typical, U3 1.5, three FETs' leakage 3: stand-ins where the datasheets are not on disk) and 40 uA at 45 C. With the cell's stand-ins (700 mAh, 5-10% of it below 3.50 V, a PCM's 3-6 uA, 1-3% a month of self-discharge) the cell reaches the UVP 2.5 months after the cutoff at nominal but 0.8 months at the worst case, and 15.5 months from full against 24. The board's drain is about half the loss, the cell's own self-discharge the other half.
+- Root cause: REQ-BAT-10's 2-month and 2-year numbers were set before the budget was added up; U10's unpowered input (R17) and U7's shutdown on the live VSYS each add 4-8 uA.
+- Why missed: VER-103 was NOT_BUILT.
+- Check added or changed: VER-103 (built; --seed stiffens the divider and must fail)
+- Updated: REQ-BAT-10, REQ-PWR-07
+- Gate: EVT
+- Status: OPEN (Alex sets REQ-BAT-10's period knowing both terms, or the cutoff moves up (firmware), or R17/R18 rise; VER-37's cell numbers and VER-65's measured drain replace the stand-ins)
+
+### DEF-70: C24, the core regulator's input capacitor, is under the RP2350's 4.7 uF minimum at its own tolerance
+- Found: VER-30 (paper_checks.py mlccbias), built 2026-10-27, at 71737ae
+- Symptom: C24 is CL05A475MP5NRNC, 4.7 uF +-20% (the M in its part number): 3.76 uF at its low tolerance before any DC bias, against VREG_VIN's 'at least 4.7 uF' (rp2350.txt:33598). C25, the same part as the regulator's output, meets 'COUT 4.7 uF +-20%' (33603) only before DC bias: at -20% it has nothing left for the loss at 1.1 V. Raspberry Pi's minimal design, which the core copies, uses a 4.7 uF 0402 in both places (VER-23 confirms, its files not on disk).
+- Root cause: the copied core's values were kept without reading the datasheet's limits against the parts' tolerance.
+- Why missed: VER-30 (MLCC derating) was NOT_BUILT; VER-23 is not built.
+- Check added or changed: VER-30 (built: a group short at its own tolerance fails whatever its curve; the rest wait for Samsung's curves)
+- Updated: DF-94
+- Gate: ORDER
+- Status: OPEN (a BOM change if the pads allow: a 10 uF 0402 (or a K-tolerance 4.7 uF) for C24, and a 4.7 uF K-tolerance part for C25; or Alex accepts Raspberry Pi's choice with VER-84's ripple measurement as the check)
