@@ -1,0 +1,41 @@
+# VER-125 check_land
+DATE: 2026-10-27
+COMMIT: dd4f6614005135dc6d6e781a3ac3a9563b67fdbb
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/check_land.py
+compared with a drawing on disk:
+  FAIL  U2 VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm: pad to exposed pad 0.21 mm, the drawing's 0.26: closer, more bridging (DF-148); 16 pads at 0.500 mm (0.5); pad 0.82 x 0.25 (0.60 x 0.24); span 2.92 (2.80); pad to EP 0.21 mm (the drawing's 0.26); pin 1 top-left, counter-clockwise  [SLUS810N RGT0016C example board layout, bq24074.txt:3061-3100 (16X (0.6) x (0.24), 12X (0.5), (2.8), EP (1.68))]
+  ok    U4 RP2350B_QFN80_RPi: EP 3.40 x 3.40 (3.4 x 3.4); 80 pads at 0.400 mm (0.4); pad 0.80 x 0.23 (0.78 x 0.18); span 9.80 (9.79); pad to EP 2.80 mm (the drawing's 2.81); pin 1 top-left, counter-clockwise  [rp2350.pdf p.1330 Figure 146, the QFN-80 recommended footprint (10.573 and 9.013 across, 0.18 pads at 0.40, EP 3.40)]
+  ok    U8 TSSOP-16_4.4x5mm_P0.65mm: 16 pads at 0.650 mm (0.65); pad 1.48 x 0.40 (1.50 x 0.45); span 5.72 (5.80); pin 1 top-left, counter-clockwise  [sn74hc165.pdf p.34, PW0016A example board layout (16X (1.5) x (0.45), 14X (0.65), (5.8))]
+  ok    U9 TSSOP-16_4.4x5mm_P0.65mm: 16 pads at 0.650 mm (0.65); pad 1.48 x 0.40 (1.50 x 0.45); span 5.72 (5.80); pin 1 top-left, counter-clockwise  [sn74hc165.pdf p.34, PW0016A example board layout (16X (1.5) x (0.45), 14X (0.65), (5.8))]
+  ok    U3 SOT-23-5: 5 pads at 0.950 mm (e 0.838-1.041); span 2.27; 1-2-3 along one side, 4 opposite 3, 5 opposite 1  [rt9013.pdf p.11, SOT-23-5 package (e 0.838-1.041, lead tips C 2.591-2.997); pins 1-3 along one side, 4-5 along the other (p.2, u3.json)]
+BLOCKED, the maker's drawing not in hardware/ref_design/datasheets:
+  D2: BAT54C,215 (SOT-23): https://datasheet.lcsc.com/datasheet/pdf/753e903e66757b8dda706efd5e61ce1e.pdf?productCode=C37704
+  D3, D8: BAT54WS (D_SOD-323): https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2308281443_hongjiacheng-BAT54WS_C7502694.pdf
+  J1: TYPE-C-31-M-12 (USB_C_Receptacle_HRO_TYPE-C-31-M-12): downloaded as C165948_TYPE-C-31-M-12.pdf
+  J2: 532610271 (Molex_PicoBlade_53261-0271_1x02-1MP_P1.25mm_Horizontal): https://media.onlinecomponents.com/productfiles/mf-mol/mol-532610271-38993534.pdf
+  J3: FH12-50S-0.5SH(55) (Hirose_FH12-50S-0.5SH_1x50-1MP_P0.50mm_Horizontal): https://www.lcsc.com/datasheet/lcsc_datasheet_1811021331_HRS-Hirose-FH12-50S-0-5SH-55_C202116.pdf
+  J4: SM02B-SRSS-TB(LF)(SN) (JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal): https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_JST-SM02B-SRSS-TB-LF-SN_C160402.pdf (not retrieved 2026-10-27)
+  J5: SM03B-SRSS-TB(LF)(SN) (JST_SH_SM03B-SRSS-TB_1x03-1MP_P1.00mm_Horizontal): downloaded as rpi_debug_connector_spec.pdf
+  L2: AOTA-B201610S3R3-101-T (AOTA-B201610S3R3-101-T): https://www.lcsc.com/datasheet/lcsc_datasheet_2412101620_Abracon-LLC-AOTA-B201610S3R3-101-T_C42411119.pdf ; RP2350: https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf
+  Q1, Q7, Q3: 2N7002 (SOT-23): https://datasheet.lcsc.com/datasheet/pdf/a141b8bd86b14475955ac8c4d3eea0a8.pdf?productCode=C8545
+  Q5, Q6: AO3400A (SOT-23): https://datasheet.lcsc.com/datasheet/pdf/130876b936da464599428c58fd8de8f6.pdf?productCode=C20917
+  R1, R2, R3, R4, R41, C1, R38, R5, R64, R43, R44, R9 ...: chip passives (UNI-ROYAL, Samsung, FH), KiCad's IPC-7351 R/C footprints; the makers' land patterns
+  RN1, RN2, RN3, RN4: 4D02WGJ0473TCE (R_Array_Convex_4x0402): no URL recorded
+  TH1: TCTR0805F10K0F4460T (R_0805_2012Metric): https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_RESI-TCTR0805F10K0F4460T_C525375.pdf (not retrievable 2026-10-27: LCSC answered with an HTML page); the JLC listing C525375 gives 10k, 4460K, +-1%, 0805, stock 3962
+  U1: SRV05-4.TCT (SOT-23-6): https://www.semtech.com/products/circuit-protection/low-capacitance/srv05-4
+  U10: MCP6001T-I/OT (SOT-23-5): https://ww1.microchip.com/downloads/en/DeviceDoc/MCP6001-1R-1U-2-4-1-MHz-Low-Power-Op-Amp-DS20001733L.pdf
+  U6: MCP6002T-I/SN (SOIC-8_3.9x4.9mm_P1.27mm): https://datasheet.lcsc.com/datasheet/pdf/e34ab395f01d53f1e893b6004de17b98.pdf?productCode=C7377
+  U7: FM8002A (SOIC-8_3.9x4.9mm_P1.27mm): https://www.chipsourcetek.com/DataSheet/FM8002A.pdf ; https://www.lcsc.com/datasheet/lcsc_datasheet_2202252130_Shenzhen-Fuman-Elec-FM8002A_C94625.pdf
+  X1: ABM8-272-T3 (ABM8-272-T3): https://www.lcsc.com/datasheet/lcsc_datasheet_2410121909_Abracon-LLC-ABM8-272-T3_C20625731.pdf
+the SOT pin numbering (D2, Q1, Q3, Q5, Q6, Q7, U1, U3, D3, D8) is pin_review's per-pin table, which VER-02 (check_pins.py) reads; U3's is checked above
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL
