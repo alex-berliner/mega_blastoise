@@ -1,0 +1,23 @@
+# VER-20 stack
+DATE: 2026-10-27
+COMMIT: b3c9f2ac0c70639461435143b523ef240ce460e7
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/case_checks.py stack
+case.scad's STACK line: "STACK floor 1.5 + ribs 0.7 + PCB 1.6 + under the panel 2.4 + panel 2.45 + tape 0.15 + top over the panel 0.8 = 9.6 mm; top's underside 3.8 over the board; seam 2.55 over the tub's bottom"
+  ok    the terms sum to 9.60 mm, case_h 9.60
+the board's top face is clamped to the top's bosses by the six screws, so the space over it is the top's own (print +-0.1 mm) and the board's thickness (+-0.16, stand-in) moves the tub: the seam steps by up to 0.16 mm, inside the 4.05 mm tongue
+  ok    under the glass: 2.4 mm over the board, the tallest part J3 2.00 mm (its 3D model): 0.40 nominal, 0.27 worst case, 0.30 RSS (print 0.1, tape 0.03) against 0.2
+  ok    over a 4.5 mm cell under the panel: 0.80 mm free, 0.40 after REQ-BAT-07's 0.4 mm of swelling, 0.27 at worst case: the swelling room holds (VER-182 reads the slope's ceiling too)
+  ok    under the button ends: 1.90 mm (3.15 in the top's pockets, case.scad's TOP line); the least room over a part: C43 1.59 mm under 1.90: 0.30 nominal, 0.20 worst case against 0.2
+  ok    under the folded FPC: the tallest part but J3 C38 0.50 mm against fpc_low 1.05 (an ESTIMATE, VER-152) less 0.2
+0 failing
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

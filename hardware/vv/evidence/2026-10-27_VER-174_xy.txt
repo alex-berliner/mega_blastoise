@@ -1,0 +1,18 @@
+# VER-174 xy
+DATE: 2026-10-27
+COMMIT: b3c9f2ac0c70639461435143b523ef240ce460e7
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/case_checks.py xy
+  +-0.075 mm  the comb's copper to the board's holes (JLC registration, stand-in)
+  +-0.100 mm  the board on its M2 screws in 2.2 mm holes
+  +-0.100 mm  the top's pilots to its button walls (one print)
+  +-0.100 mm  the silicone's rim in the top's walls (rim_clear)
+  +-0.100 mm  the pill in the silicone (stand-in)
+  ok    pill to comb: nominal 0.00 mm (positions.json's pieces over their combs), worst case 0.475 mm, RSS 0.214 mm against 0.9 mm (REQ-BTN-06)
+  cap to hole: the D-pad's opening clears its cap by 0.6 mm a side (case.scad dpad_gap); a cap rides on its silicone, so the same chain moves it: worst case 0.48 mm inside that gap
+  ok    cap to hole: the chain's 0.48 mm against the D-pad's 0.6 mm gap
+RESULT: PASS
+
+exit 0
+RESULT: PASS

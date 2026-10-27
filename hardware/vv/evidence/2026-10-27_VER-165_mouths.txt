@@ -1,0 +1,35 @@
+# VER-165 mouths
+DATE: 2026-10-27
+COMMIT: b3c9f2ac0c70639461435143b523ef240ce460e7
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/case_checks.py mouths
+  ok    J2 mouth box 127.95-135.40 x 63.10-67.10 (the cell's plug (case.scad j2_plug)): parts over 1.0 mm in it: none
+  ok    J2 mouth box inside the tub's inner wall (x 63.30-136.70): yes
+  ok    J4 mouth box 129.00-134.20 x 110.90-114.80 (the speaker's SH plug (case.scad j4_plug)): parts over 1.0 mm in it: none
+  ok    J4 mouth box inside the tub's inner wall (x 63.30-136.70): yes
+  ok    J5 mouth box 59.28-65.28 x 102.45-107.55 (a JST SH cable, 6 mm (VER-165's procedure)): parts over 1.0 mm in it: none
+  FAIL  J5 mouth box inside the tub's inner wall (x 63.30-136.70): crosses it by 4.02 mm: a plug cannot go in with the board in the tub
+J1 (a mated plug through the wall's opening) and J3 (the FPC's lead-in under the panel) are check_fit's (VER-06): its USB-C and folded-FPC items
+  ok    no pinhole inside a boss circle (boss 5 mm + 1 mm): the nearest 6.33 mm
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+18:56:04: Debug: Adding duplicate image handler for 'PNG file'
+18:56:04: Debug: Adding duplicate image handler for 'JPEG file'
+18:56:04: Debug: Adding duplicate image handler for 'TIFF file'
+18:56:04: Debug: Adding duplicate image handler for 'GIF file'
+18:56:04: Debug: Adding duplicate image handler for 'PNM file'
+18:56:04: Debug: Adding duplicate image handler for 'PCX file'
+18:56:04: Debug: Adding duplicate image handler for 'IFF file'
+18:56:04: Debug: Adding duplicate image handler for 'Windows icon file'
+18:56:04: Debug: Adding duplicate image handler for 'Windows cursor file'
+18:56:04: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+18:56:04: Debug: Adding duplicate image handler for 'TGA file'
+18:56:04: Debug: Adding duplicate image handler for 'XPM file'
+
+exit 1
+RESULT: FAIL
