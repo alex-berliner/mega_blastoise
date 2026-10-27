@@ -1,5 +1,5 @@
 {
- "part": "SRV05-4 4-line steering diode/TVS array, SOT-23-6",
+ "part": "Semtech SRV05-4 RailClamp 4-line TVS diode array, SOT-23-6L",
  "refs": [
   "U1"
  ],
@@ -9,34 +9,35 @@
  "symbol": "Power_Protection:SRV05-4",
  "footprint": "Package_TO_SOT_SMD:SOT-23-6",
  "datasheet": {
-  "url": "https://datasheet.lcsc.com/datasheet/pdf/4abe760a30bb447e9c1dddced46e8df7.pdf?productCode=C13612",
-  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1809212114_SEMTECH-SRV05-4-TCT_C13612.pdf",
-  "revision_or_date": "Revision 08/11/04 (Semtech, LCSC's copy; 12 pages)"
+  "url": "https://www.semtech.com/products/circuit-protection/low-capacitance/srv05-4",
+  "jlc_db_url": "JLC part page C13612, Datasheet link (smtDataManualFile/...-C13612.pdf)",
+  "revision_or_date": "Revision 08/11/04 (Semtech, 12 pages)"
  },
  "notes": [
-  "Semtech's SRV05-4.TCT replaced ProTek's SRV05-4-P-T7 (C85364) on 2026-10-07: JLC had 2 left. Same pinout (1, 3, 4, 6 I/O; 2 REF1 = ground; 5 REF2 = positive reference) and the same JLC library footprint (SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BR) as C85364, so the CPL rotation is unchanged. Plain Extended at JLC (C85364 was Preferred): one more setup fee.",
-  "Repo datasheets/SOURCES.md now points at this Semtech PDF (it used to cite onsemi's SRV05-4).",
-  "REF tied to +3V3 rather than VBUS (a deliberate design choice). Semtech p5, connection option 1: 'connect pin 5 directly to the positive supply rail (VCC)'; the data lines are then referenced to that supply.",
-  "Package: p11 outline (mistitled 'SO-8'; the dimensions are SOT-23-6): body 2.80-3.00 x 1.50-1.75 mm, e 0.95 mm, e1 1.90 mm, E 2.80 mm BSC; fits Package_TO_SOT_SMD:SOT-23-6. Marking V05 (p12)."
+  "2026-10-22 (Alex): Semtech's SRV05-4.TCT (C13612, Extended, about 100k in stock at JLC) back in place of hongjiacheng's SRV05-4A (C20615829), so a 30-board order needs no pre-order. Same pinout and package.",
+  "Pinout (p1 Schematic and PIN Configuration; p5 Device Connection Options): data lines on pins 1, 3, 4 and 6; the negative reference (REF1) on pin 2, straight to the ground plane; the positive reference (REF2) on pin 5, option 1 directly to the supply rail.",
+  "CPL: JLC's library footprint for C13612 (SOT-23-6_L2.9-W1.6-P0.95-LS2.8-BR) has pins 1-3 down its right side, pin 1 at the bottom: KiCad's SOT-23-6 turned 180 degrees (C20615829's was turned 90). Placed at KiCad's angle without a correction, pin 2 (GND) would land on the +3V3 pad. Check U1 in JLC's placement preview.",
+  "REF tied to +3V3 rather than VBUS (a deliberate design choice).",
+  "Against the SRV05-4A: 3 pF typ, 5 pF max I/O to GND (against 1.0 pF), which USB full speed tolerates; ESD 8 kV contact, 15 kV air; surge 12 A (8/20 us)."
  ],
  "ratings": [
   {
-   "what": "VRWM (REF2 pin 5 to pin 2)",
-   "limit": "5 V stand-off; V(BR) >= 6 V at 1 mA, pin 5 to 2",
+   "what": "VRWM (pin 5 to pin 2)",
+   "limit": "5 V max; VBR >= 6 V at 1 mA",
    "design": "+3V3",
    "ok": true,
    "cite": "p2 Electrical Characteristics"
   },
   {
    "what": "Leakage at VRWM",
-   "limit": "5 uA max at 5 V, 25 C, pin 5 to 2",
+   "limit": "5 uA max at 5 V, 25 C",
    "design": "at 3.3 V, below VRWM",
    "ok": true,
    "cite": "p2"
   },
   {
-   "what": "Capacitance I/O-GND",
-   "limit": "3 pF typ, 5 pF max (VR 0 V, 1 MHz); 1.5 pF typ between I/O pins",
+   "what": "Capacitance",
+   "limit": "3 pF typ, 5 pF max I/O to GND; 1.5 pF typ between I/O pins (VR 0 V, 1 MHz)",
    "design": "USB FS D+/D-",
    "ok": true,
    "cite": "p2"
@@ -50,7 +51,7 @@
   },
   {
    "what": "ESD",
-   "limit": "IEC 61000-4-2 +-8 kV contact, +-15 kV air; 12 A 8/20 us; VC 12.5 V at 1 A, 17.5 V at 5 A",
+   "limit": "IEC 61000-4-2 15 kV air, 8 kV contact; 12 A 8/20 us; VC 17.5 V max at 5 A",
    "design": "USB-C D+/D- at the connector",
    "ok": true,
    "cite": "p1 Features; p2 Absolute Maximum Rating"
@@ -62,7 +63,7 @@
    "ds_name": "I/O 1",
    "type": "io",
    "requirement": "Protected line.",
-   "cite": "p1 Schematic and PIN Configuration; p5",
+   "cite": "p1 Schematic and PIN Configuration; p5 Device Connection Options",
    "quote": "Data lines are connected at pins 1, 3, 4 and 6.",
    "symbol_name": "IO1",
    "footprint_pad": "1",
@@ -77,7 +78,7 @@
    "ds_name": "REF1 (ground)",
    "type": "ground",
    "requirement": "Negative reference: straight to the ground plane, short path (TVS anode).",
-   "cite": "p1; p2; p5",
+   "cite": "p1 Schematic and PIN Configuration; p5 Device Connection Options",
    "quote": "The negative reference (REF1) is connected at pin 2. This pin should be connected directly to a ground plane",
    "symbol_name": "VN",
    "footprint_pad": "2",
@@ -92,7 +93,7 @@
    "ds_name": "I/O 2",
    "type": "io",
    "requirement": "Protected line.",
-   "cite": "p1; p5",
+   "cite": "p1 Schematic and PIN Configuration; p5 Device Connection Options",
    "quote": "Data lines are connected at pins 1, 3, 4 and 6.",
    "symbol_name": "IO2",
    "footprint_pad": "3",
@@ -107,7 +108,7 @@
    "ds_name": "I/O 3",
    "type": "io",
    "requirement": "Protected line; datasheet states no requirement for unused lines.",
-   "cite": "p1; p5",
+   "cite": "p1 Schematic and PIN Configuration; p5 Device Connection Options",
    "quote": "Data lines are connected at pins 1, 3, 4 and 6.",
    "symbol_name": "IO3",
    "footprint_pad": "4",
@@ -122,7 +123,7 @@
    "ds_name": "REF2 (positive reference)",
    "type": "supply reference (TVS cathode)",
    "requirement": "Positive reference: steering-diode common / TVS cathode; VRWM 5 V. Option 1 on p5: directly to the supply rail.",
-   "cite": "p1; p2 (VRWM 'Pin 5 to 2'); p5",
+   "cite": "p1 Schematic and PIN Configuration; p5 Device Connection Options",
    "quote": "The positive reference (REF2) is connected at pin 5.",
    "symbol_name": "VP",
    "footprint_pad": "5",
@@ -137,7 +138,7 @@
    "ds_name": "I/O 4",
    "type": "io",
    "requirement": "Protected line; unused lines have no stated requirement.",
-   "cite": "p1; p5",
+   "cite": "p1 Schematic and PIN Configuration; p5 Device Connection Options",
    "quote": "Data lines are connected at pins 1, 3, 4 and 6.",
    "symbol_name": "IO4",
    "footprint_pad": "6",

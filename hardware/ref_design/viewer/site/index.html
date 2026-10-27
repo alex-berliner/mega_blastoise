@@ -119,26 +119,24 @@ input[type=range] { width: 100%; accent-color: var(--accent); }
 // lift = how far each part rises (mm) when fully exploded.
 let MODEL = { z_board: 2.0, case_h: 13.9, z: {} };   // replaced by parts/model.json
 const PARTS = [
-  { key: "lid", name: "Lid", file: "parts/lid.stl", color: "#5a6573", lift: 112, shell: true,
-    note: "Printed. Six hooks click onto the tub; the window frames the panel." },
+  { key: "top", name: "Top", file: "parts/top.stl", color: "#5a6573", lift: 112, shell: true,
+    note: "One printed piece: the whole face and sides. Printed face down, its slopes and side rounds on support filament (Bambu Support For PLA as the interface of the supports that hold them, in a second colour), then peeled. A band at the screen's height from side to side; its two ends copy the DS Lite's lower screen frame in section (a sharp top edge, then one concave arc down to the buttons' height); beyond them the ends, at the buttons' height, where the genuine caps stand 1.41 mm proud. It rolls over the sides in true arcs and down the back's round to the seam. The panel sits in its pocket under the screen, the speaker under a grille in the right bezel; four screws hold it beside the glass and one at each end. Caps and silicone go in from behind." },
   { key: "caps", name: "Button caps", file: "parts/caps.stl", color: "#eef0f4", lift: 88,
-    note: "DS Lite caps, bought. Their flanges sit under the lid, which holds them in." },
+    note: "DS Lite caps, bought. Their flanges sit under the top's ends, which hold them in." },
   { key: "panel", name: "Display panel", file: "parts/panel.stl", color: "#0b0e13", lift: 68, rough: 0.25,
-    note: "3.5 in IPS (ER-TFT035IPS-6), taped to the lid's window ledge. Its ribbon folds round to J3." },
-  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 14, metal: 0.6,
-    note: "403450 Li-ion, 4 × 34 × 50 mm, lying on the tub floor under the board. Its wires come up through a slot to J2." },
-  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 10, metal: 0.5,
-    note: "15 mm, 4 mm thick, on the tub floor beside the cell; it plays through the floor's grille." },
-  { key: "foam", name: "Foam spacer", file: "parts/foam.stl", color: "#e2bf55", lift: 26,
-    note: "0.45 mm foam pad between the cell and the board's back." },
+    note: "2.4 in IPS (ER-TFT024IPS-3), taped into the top's pocket. Its ribbon folds round under it to J3." },
+  { key: "cell", name: "Battery", file: "parts/cell.stl", color: "#c4c9d1", lift: 20, metal: 0.6,
+    note: "403450 Li-ion, 50 × 34 × 4 mm, in a hole in the board, its bottom in a pocket in the tub's floor. Its leads run from its left end to J2 at the hole's corner." },
+  { key: "speaker", name: "Speaker", file: "parts/speaker.stl", color: "#b8912e", lift: 46, metal: 0.5,
+    note: "15 × 10 mm, face up on the board in the right bezel, plugged into J4; it plays up through a grille in the face." },
   { key: "silicone", name: "Silicone domes", file: "parts/silicone.stl", color: "#8e959f", lift: 52,
     note: "DS Lite button membranes, 1.2 mm, over the board's contact pads." },
   { key: "board", name: "Circuit board", file: "parts/board.glb", lift: 40,
     note: "2 layers, 1.6 mm, assembled by JLC. Every fitted part is shown." },
   { key: "tub", name: "Tub", file: "parts/tub.stl", color: "#2c343f", lift: 0, shell: true,
-    note: "Printed. Bosses take the screws; the USB-C opening is in the end wall." },
+    note: "Printed back down, no supports. The back and the lower part of its rounded edge, up to the seam (2.55 mm up); a tongue standing 4.05 mm over it round the ends (3.0 along the side walls) inside the top's skirt, with two keys on each side wall that sit in pockets in the top and grip ribs that hold the case together before the screws; and a tab rising from the seam that carries the USB-C opening's lower half." },
   { key: "screws", name: "Screws", file: "parts/screws.stl", color: "#a9afb8", lift: -28, metal: 0.9,
-    note: "Six M2 × 8 self-tapping, from the back, through the board into the lid." },
+    note: "Six M2 × 6 self-tapping, from the back, through the board: four into the top beside the glass, one into each end." },
 ];
 
 const canvas = document.getElementById("c");
@@ -205,10 +203,15 @@ function done() {
 // Models are published as base64 text (artifacts serve text, not raw binary).
 // GitHub Pages serves the binary files; a claude.ai artifact only serves text, so there
 // each model is published beside them as base64 (file + ".txt").
+// Each model's address carries the build it came from, so a new deploy isn't hidden behind the
+// copy a browser cached (GitHub Pages lets browsers keep files for 10 minutes).
+function versioned(file) {
+  return MODEL.commit ? `${file}?v=${MODEL.commit}${MODEL.dirty ? "-" + MODEL.built : ""}` : file;
+}
 async function fetchModel(file) {
-  const raw = await fetch(file).catch(() => null);
+  const raw = await fetch(versioned(file)).catch(() => null);
   if (raw && raw.ok) return raw.arrayBuffer();
-  const r = await fetch(file + ".txt");
+  const r = await fetch(versioned(file + ".txt"));
   if (!r.ok) throw new Error(r.status);
   const bin = atob((await r.text()).trim());
   const buf = new Uint8Array(bin.length);
@@ -217,7 +220,7 @@ async function fetchModel(file) {
 }
 async function start() {
   try {
-    const r = await fetch("parts/model.json");
+    const r = await fetch("parts/model.json", { cache: "no-cache" });   // always the latest build's
     if (r.ok) MODEL = await r.json();
   } catch (e) { /* keep the defaults */ }
   const chip = t => { const c = document.createElement("span"); c.className = "chip"; c.textContent = t; return c; };
@@ -269,7 +272,7 @@ function t() { return slider.value / 1000; }
 function update() {
   const e = ease(t());
   for (const k in slots) slots[k].holder.position.z = slots[k].part.lift * e;
-  gapOut.textContent = e < 0.002 ? `closed, ${MODEL.case_h} mm` : `lid ${Math.round(112 * e)} mm up`;
+  gapOut.textContent = e < 0.002 ? `closed, ${MODEL.case_h} mm` : `top ${Math.round(112 * e)} mm up`;
   controls.target.y = 7 + 44 * e;
 }
 slider.addEventListener("input", () => { stopPlay(); update(); });
@@ -286,7 +289,7 @@ playBtn.addEventListener("click", () => {
 // ---- see-through shell ----
 const xray = document.getElementById("xray");
 function applyXray() {
-  ["tub", "lid"].forEach(k => {
+  ["tub", "top"].forEach(k => {
     const s = slots[k]; if (!s) return;
     s.meshes.forEach(m => [].concat(m.material).forEach(mat => {
       mat.transparent = xray.checked; mat.opacity = xray.checked ? 0.2 : 1;
@@ -345,7 +348,7 @@ canvas.addEventListener("pointerup", e => {
     let o = m; while (o) { if (!o.visible) return false; o = o.parent; } return true;
   }), false);
   const shellSeeThrough = xray.checked;
-  const hit = hits.find(h => !(shellSeeThrough && ["tub", "lid"].includes(h.object.userData.key)));
+  const hit = hits.find(h => !(shellSeeThrough && ["tub", "top"].includes(h.object.userData.key)));
   select(hit ? hit.object.userData.key : null);
 });
 

@@ -1,8 +1,8 @@
 """Read pin geometry out of KiCad symbol libraries (.kicad_sym).
 
-Konnect reports a pin's root, not its tip, so labels placed at its coordinates
-land inside the symbol and never connect. This computes the true connection
-point of every pin for a placed symbol instead.
+A library pin's (at ...) is its connection point (its tip, not its root at the
+body); this places those for a symbol at a given position and rotation, for the
+drawing kit (tools/schdraw.py) to wire to.
 """
 import math
 import os
@@ -23,18 +23,64 @@ def parse(text):
         elif t == ")":
             done = cur; cur = stack.pop(); cur.append(done)
         else:
-            cur.append(t[1:-1] if t.startswith('"') else t)
+            cur.append(re.sub(r'\\(.)', lambda m: "\n" if m.group(1) == "n" else m.group(1), t[1:-1])
+                       if t.startswith('"') else t)
     return cur[0]
+
+
+class Library:
+    """A symbol library's symbols by name, each parsed when first asked for. KiCad's own
+    libraries are large (Device.kicad_sym alone takes seconds to parse whole) and a schematic
+    uses a few symbols from each: the top-level symbols are found by their lines (KiCad writes
+    each as a tab and (symbol "NAME"), and only a used symbol's block is parsed. A symbol not
+    found that way comes from the whole library, parsed as before. parse_fn: the parser
+    (schwrite's keeps quoted strings apart)."""
+
+    HEAD = re.compile(r'^\t\(symbol ("(?:[^"\\]|\\.)*")\s', re.M)
+    TOKEN = re.compile(r'\(|\)|"(?:[^"\\]|\\.)*"')
+
+    def __init__(self, path, parse_fn):
+        self.text, self.parse, self.whole, self.done = open(path).read(), parse_fn, None, {}
+        self.heads = {}
+        for m in self.HEAD.finditer(self.text):
+            self.heads.setdefault(_unquote(m.group(1)), []).append(m.start() + 1)
+
+    def _whole(self):
+        if self.whole is None:
+            root = self.parse(self.text)
+            self.whole = {n[1]: n for n in root[1:] if isinstance(n, list) and n[0] == "symbol"}
+        return self.whole
+
+    def __getitem__(self, name):
+        if name not in self.done:
+            self.done[name] = self._block(name)
+        return self.done[name]
+
+    def _block(self, name):
+        at = self.heads.get(name, [])
+        if len(at) == 1 and self.whole is None:
+            depth = 0
+            for m in self.TOKEN.finditer(self.text, at[0]):
+                depth += {"(": 1, ")": -1}.get(m.group(0), 0)
+                if depth == 0:
+                    node = self.parse(self.text[at[0]:m.end()])
+                    if isinstance(node, list) and node[:2] == ["symbol", name]:
+                        return node
+                    break
+        return self._whole()[name]
+
+
+def _unquote(t):
+    return re.sub(r'\\(.)', lambda m: "\n" if m.group(1) == "n" else m.group(1), t[1:-1])
 
 
 _cache = {}
 
 
-def library(path):
-    if path not in _cache:
-        root = parse(open(path).read())
-        _cache[path] = {n[1]: n for n in root[1:] if isinstance(n, list) and n[0] == "symbol"}
-    return _cache[path]
+def library(path, parse_fn=None):
+    if (path, parse_fn) not in _cache:
+        _cache[path, parse_fn] = Library(path, parse_fn or parse)
+    return _cache[path, parse_fn]
 
 
 def find(n, key):

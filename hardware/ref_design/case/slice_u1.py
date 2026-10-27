@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""The U1 kit sliced: Snapmaker Orca's command line on each plate's project, for the print time, the weights, the tool
+changes, and the errors a slicer finds that the hand-written projects can't.
+
+    SNAPMAKER_ORCA=/path/Snapmaker_Orca-2.4.1-beta.AppImage python3 case/slice_u1.py [plate ...]   # after print_package.py
+
+print_package.py calls run() after it writes the projects, when asked to slice (`print_package.py --slice`, RELEASE=1, or
+`tools/build.py --slice`; SNAPMAKER_ORCA is defaulted there to ~/Applications/Snapmaker_Orca-2.4.1-beta.AppImage when that
+exists). Otherwise, and without the slicer, the projects are still written and the build says so. A plate whose inputs
+didn't change (print_cache.py) takes its sliced file from print/.slice_cache/ and only runs the checks again.
+
+Which Snapmaker Orca (2026-10-25): **2.4.1-beta or later.** 2.4.0 (and 2.3.6) crash on every U1 preset and on every project
+in the command line: `wxGetApp()` is null there and `GUI_App::filaments_cnt()` dereferences it (a bare STL on the U1 preset
+dies earlier, in `DynamicPrintConfig::normalize_fdm`); 2.4.1-beta fixed both. Pinned: Snapmaker_Orca_Linux_AppImage_Ubuntu2404_V2.4.1-beta.AppImage,
+sha256 c3952dbefae77713780dd606c06b4caf3bfd09ebaeb0eda6e92b53294ad28cba,
+https://github.com/Snapmaker/OrcaSlicer/releases/download/v2.4.1-beta/. The command (a throwaway --datadir keeps it off
+the desktop app's settings; --allow-newer-file because the template's project is a 2.4.0 file):
+
+    Snapmaker_Orca.AppImage --datadir DIR --allow-newer-file --slice 0 --outputdir OUT --export-3mf plate.3mf project.3mf
+
+The projects are NOT replaced by the sliced ones: they stay the hand-written, unsliced projects (open, check, slice), and
+the G-code in the sliced copy is read for the report and the checks, then thrown away. The checks, which fail the build:
+the slicer's own validation and G-code path conflict check (that is what found the top's supports crossing a neighbour on
+5_unit), every extrusion on the bed, the layer height the plate asks for actually in the G-code, the case settings (wall
+speeds, walls) in its config, and support_check.py's: no support in a part that needs none, and the support filament (toolhead 2)
+printing only the top's interface and the prime tower.
+"""
+import json
+import os
+import re
+import subprocess
+import sys
+import tempfile
+import zipfile
+from concurrent.futures import ThreadPoolExecutor
+
+import numpy as np
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import print_cache  # noqa: E402
+import print_package  # noqa: E402
+import support_check  # noqa: E402
+
+# Snapmaker Orcas slicing at once (each uses a few cores); SLICE_JOBS when the P1S kit slices at the same time (tools/build.py)
+SLICERS = int(os.environ.get("SLICE_JOBS") or max(1, (os.cpu_count() or 4) // 4))
+MIN_VERSION = (2, 4, 1)
+BED_SLACK = 0.6                                   # mm past the bed_shape in the G-code (the extrusion's own width)
+INSTALL = ("Snapmaker Orca 2.4.1-beta or later: "
+           "https://github.com/Snapmaker/OrcaSlicer/releases/download/v2.4.1-beta/Snapmaker_Orca_Linux_AppImage_Ubuntu2404_V2.4.1-beta.AppImage")
+
+
+def slicer():
+    """The Snapmaker Orca command, or None (with the reason printed once)."""
+    exe = os.environ.get("SNAPMAKER_ORCA", "")
+    if not exe:
+        print("  U1 plates not sliced: set SNAPMAKER_ORCA to " + INSTALL)
+    elif not os.access(exe, os.X_OK):
+        print(f"  U1 plates not sliced: SNAPMAKER_ORCA={exe} isn't an executable; it should be " + INSTALL)
+    else:
+        return exe
+    return None
+
+
+def config_block(gcode):
+    """{key: value} of the '; key = value' lines of the G-code's config block (the project as sliced)."""
+    block = gcode[gcode.index("; CONFIG_BLOCK_START"):]
+    return {k: v for k, v in re.findall(r"^; (\w+) = (.*)$", block, re.M)}
+
+
+def slice_plate(plate, parts, supported, project, work):
+    """Slice one plate's project: a result dict, or None after printing what went wrong (a crash, the validation, a conflict)."""
+    out = os.path.join(work, "out")
+    ckey = print_cache.key("U1", plate, [p for _, p in parts], os.environ["SNAPMAKER_ORCA"])
+    sliced = print_cache.get(ckey, "sliced.3mf")
+    done = print_cache.get(ckey, "result.json")           # the checks' result, kept when they passed
+    hit = bool(sliced)
+    if hit and done:
+        print(f"  {plate}: sliced and checked, from the cache ({ckey})", flush=True)
+        return dict(json.load(open(done)), sliced=sliced)
+    if hit:
+        print(f"  {plate}: sliced file from the cache ({ckey})", flush=True)
+    else:
+        cmd = [os.environ["SNAPMAKER_ORCA"], "--datadir", os.path.join(work, "data"), "--allow-newer-file", "--slice", "0",
+               "--outputdir", out, "--export-3mf", "sliced.3mf", project]
+        r = subprocess.run(cmd, capture_output=True, text=True, timeout=1500)
+        try:
+            result = json.load(open(os.path.join(out, "result.json")))
+        except (OSError, ValueError):
+            result = {}
+        sliced = os.path.join(out, "sliced.3mf")
+    if not hit and (r.returncode != 0 or result.get("return_code") != 0 or not os.path.exists(sliced)):
+        if r.returncode < 0:
+            why = f"Snapmaker Orca crashed (signal {-r.returncode}): it needs to be {INSTALL}"
+        else:
+            log = [l for l in (r.stdout + r.stderr).splitlines() if "got error when validate" in l or "conflicts found" in l]
+            why = (result.get("error_string") or f"exit {r.returncode}").strip() + "".join(f"\n      {l.split(']')[-1].strip()}" for l in log)
+        print(f"  {plate}: {why}")
+        return None
+    z = zipfile.ZipFile(sliced)
+    gcode = z.read("Metadata/plate_1.gcode").decode()
+    info = z.read("Metadata/slice_info.config").decode()
+    version = tuple(int(v) for v in re.search(r"generated by Snapmaker Orca (\d+)\.(\d+)\.(\d+)", gcode).groups())
+    if version < MIN_VERSION:
+        print(f"  {plate}: sliced by Snapmaker Orca {version}, older than 2.4.1")
+        return None
+    cfg = config_block(gcode)
+    used = {int(i): float(g) for i, g in re.findall(r'<filament id="(\d+)"[^>]*used_g="([\d.]+)"', info)}
+    res = {"secs": int(re.search(r'key="prediction" value="(\d+)"', info).group(1)),
+           "pla": used.get(1, 0.0), "support": used.get(2, 0.0), "grams": float(re.search(r"total filament used \[g\] = ([\d.]+)", gcode).group(1)),
+           "changes": int((re.search(r"total filament change = (\d+)", gcode) or [0, 0])[1]),
+           "layers": int(re.search(r"total layer number: (\d+)", gcode).group(1)),
+           "warnings": re.findall(r'<warning msg="([^"]+)"', info), "version": ".".join(map(str, version)), "problems": []}
+    bad = res["problems"]
+
+    moves = support_check.extrusions(gcode)
+    # every extrusion on the bed (the start G-code's purge line is "Custom", on the bed too)
+    xs, ys = (float(v) for v in re.search(r"; bed_shape = (\S+)", gcode).group(1).replace("x", ",").split(",")[4:6])
+    pts = np.concatenate([p for _, _, p, _ in moves])
+    if pts.min() < -BED_SLACK or pts[:, 0].max() > xs + BED_SLACK or pts[:, 1].max() > ys + BED_SLACK:
+        bad.append(f"extrusion off the bed: x {pts[:, 0].min():.1f} to {pts[:, 0].max():.1f}, y {pts[:, 1].min():.1f} to {pts[:, 1].max():.1f}")
+
+    # the layer height the plate asks for is in the G-code (the first layer and bridges aside)
+    heights = sorted({round(float(h), 3) for h in re.findall(r"^;HEIGHT:([\d.]+)", gcode, re.M)})
+    fine = float(print_package.FINE_LAYER_RELEASE if plate in print_package.RELEASE_PLATES else print_package.FINE_LAYER_TEST)
+    if print_package.case_plate(plate):
+        if print_package.layer_ranges_xml(plate, {i: n for i, (n, _) in enumerate(parts, 1)}, False) and \
+                not any(abs(h - fine) < 0.002 for h in heights):
+            bad.append(f"no layer of the fine {fine} mm in the G-code (layer heights {heights})")
+        for k in ("outer_wall_speed", "inner_wall_speed", "wall_loops", "sparse_infill_pattern", "wall_sequence", "seam_position"):
+            want = print_package.CASE_SETTINGS[k]
+            want = ",".join(want) if isinstance(want, list) else want
+            if cfg.get(k) != want:
+                bad.append(f"{k} is {cfg.get(k)} in the G-code, not {want}")
+    else:                                       # a test plate: its own layer height (7_overhangs_*) or the preset's 0.20
+        want = float(print_package.PLATE_SETTINGS.get(plate, {}).get("layer_height", 0.2))
+        if not any(abs(h - want) < 0.002 for h in heights):
+            bad.append(f"no layer of {want} mm in the G-code (layer heights {heights})")
+
+    top = {o for o, p in parts if p in print_package.TOP_PARTS}
+    plain = {o for o, p in parts if p not in supported and p not in print_package.TOP_PARTS}
+    report, no_support, mm, filament = support_check.check(sliced, plain, top, moves=moves)
+    if no_support:
+        bad.append(f"support under {', '.join(no_support)}, which need none")
+    bad.extend(filament)
+    res["report"], res["sup"] = report, mm
+    res["sliced"] = sliced
+    if bad:
+        print(f"  {plate}: " + "; ".join(bad) + "\n" + "\n".join(report))
+    else:                                              # sliced and checked: kept, so the same inputs cost nothing
+        import tempfile
+        with tempfile.TemporaryDirectory() as t:
+            json.dump({kk: v for kk, v in res.items() if kk != "sliced"}, open(os.path.join(t, "result.json"), "w"),
+                      default=float)
+            print_cache.put(ckey, sliced, os.path.join(t, "result.json"))
+    return res
+
+
+def hm(secs):
+    return f"{int(secs // 3600)} h {int(secs % 3600 // 60):02d} min"
+
+
+def run(plates, supported, out=print_package.OUT, force=False):
+    """Slice the built projects of `plates` ({name: parts}); {name: result}, {} if slicing isn't asked for (print_cache.wanted())
+    or there is no slicer. Exits if a plate fails a check; a plate the slicer can't take stops the build as the P1S kit's does."""
+    if not (force or print_cache.wanted()):
+        print("  U1 plates written, not sliced (--slice or RELEASE=1 slices them)")
+        return {}
+    exe = slicer()
+    if not exe:
+        return {}
+    rows = {}
+    with tempfile.TemporaryDirectory() as tmp, ThreadPoolExecutor(SLICERS) as pool:
+        def one(item):
+            name, parts = item
+            work = os.path.join(tmp, name)
+            os.makedirs(work)
+            project = os.path.join(print_package.plate_dir(name, out, "U1"), name + ".3mf")
+            return name, parts, slice_plate(name, parts, supported, project, work)
+        failed = []
+        for name, parts, res in pool.map(one, plates.items()):
+            if res is None or res["problems"]:
+                failed.append(name)
+                continue
+            rows[name] = res
+            print(f"{name + '.3mf':24s} PLA {res['pla']:5.1f} g, support filament {res['support']:4.1f} g, {res['changes']} changes, "
+                  f"{res['layers']} layers, {hm(res['secs'])}  (Snapmaker Orca {res['version']})")
+        for w in sorted({w for r in rows.values() for w in r["warnings"]}):       # (the same on every plate: said once)
+            print(f"  slicer warning on {sum(w in r['warnings'] for r in rows.values())} of {len(rows)} plates: {w}")
+    if failed:
+        sys.exit("U1 plates that don't slice cleanly: " + ", ".join(failed))
+    return rows
+
+
+def table(rows, plates):
+    """The README's U1 table: a row per case plate that was sliced."""
+    sup = lambda parts: "; ".join(
+        ([f"{', '.join(o for o, p in parts if p in print_package.TOP_PARTS)}: tree, interface on toolhead 2"]
+         if any(p in print_package.TOP_PARTS for _, p in parts) else []) +
+        ([f"{', '.join(o for o, p in parts if p in print_package.STANDIN_PARTS)}: plain PLA"]
+         if any(p in print_package.STANDIN_PARTS for _, p in parts) else [])) or "none"
+    return "\n".join(f"| `{n}.3mf` | {sup(plates[n])} | {r['pla']:.1f} g | {r['support']:.1f} g | {r['changes']} | {hm(r['secs'])} | "
+                     f"{', '.join(o for o, _ in plates[n])} |"
+                     for n, r in rows.items() if n not in print_package.TEST_PLATES)
+
+
+def main():
+    only = sys.argv[1:]
+    print("supports, measured part by part:")
+    supported = print_package.support_parts()
+    plates = {n: p for n, p in print_package.PLATES.items() if not only or n in only}
+    rows = run(plates, supported, force=True)
+    print(table(rows, plates))
+
+
+if __name__ == "__main__":
+    main()

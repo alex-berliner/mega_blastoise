@@ -1,10 +1,10 @@
 {
  "ref": "TH1",
- "mpn": "NCP15XH103F03RC (Murata, C77131)",
+ "mpn": "TCTR0805F10K0F4460T (Resistor.Today, C525375), 10k 1% B4460 1%, 0805 (2026-10-27, was SDNT1005X103F3950FTF B3950)",
  "datasheet": [
-  "downloaded as C77131_NCP15XH103F03RC.pdf"
+  "https://wmsc.lcsc.com/wmsc/upload/file/pdf/v2/lcsc/2304140030_RESI-TCTR0805F10K0F4460T_C525375.pdf (not retrievable 2026-10-27: LCSC answered with an HTML page); the JLC listing C525375 gives 10k, 4460K, +-1%, 0805, stock 3962"
  ],
- "footprint": "Resistor_SMD:R_0402_1005Metric",
+ "footprint": "Resistor_SMD:R_0805_2012Metric",
  "refs": [
   "TH1"
  ],
@@ -12,11 +12,11 @@
   {
    "pin": "1",
    "ds_name": "terminal (non-polar)",
-   "cite": "Murata NTC Thermistors catalogue (C77131 LCSC PDF), chip type NCP15 table, PDF p.10",
-   "quote": "\"NCP15XH103F03RC 10k +/-1% 3380 +/-1% ... 0.31 [mA permissible operating current] 100 [mW] 1 [mW/C]\"; size code 15 = \"1.00 x 0.50mm\" (0402)",
+   "cite": "LCSC listing C525375 (datasheet not retrieved): TCTR0805F10K0F4460T 10k +-1%, B4460K +-1%",
+   "quote": "10k, 4460K, +-1%, 0805",
    "symbol_name": "(unnamed)",
    "ok": true,
-   "issue": "",
+   "issue": "Biased by the BQ24073's TS current (75 uA): 0.75 V at 25 C. At SLUS810N's worst corner charging runs from 4.6 C to 48.2 C (TS 0.27 V hot / 2.2 V cold): no 10k NTC with the B of 5130 that a 45 C hot edge needs is stocked at JLC (V&V DEC-05); the cell's own limit decides at VER-37.",
    "nets": {
     "TH1": "CHG_TEMP"
    }
@@ -24,11 +24,11 @@
   {
    "pin": "2",
    "ds_name": "terminal (non-polar)",
-   "cite": "Murata NTC Thermistors catalogue (C77131 LCSC PDF), chip type NCP15 table, PDF p.10",
-   "quote": "as pin 1",
+   "cite": "LCSC listing C525375 (datasheet not retrieved): TCTR0805F10K0F4460T 10k +-1%, B4460K +-1%",
+   "quote": "10k, 4460K, +-1%, 0805",
    "symbol_name": "(unnamed)",
    "ok": true,
-   "issue": "Footprint R_0402_1005Metric fits the 1.0x0.5 mm body. Note (not a pin issue): at 25 C with VBUS 5.0-5.5 V the R39/(TH1||R40) divider puts ~3.1-3.4 V across TH1, ~0.31-0.34 mA, at or slightly above the 0.31 mA \"permissible operating current\" (defined in the catalogue as the current that keeps self-heating to max 1 C). Expect ~1 C self-heating bias in the TEMP window.",
+   "issue": "Biased by the BQ24073's TS current (75 uA): 0.75 V at 25 C. At SLUS810N's worst corner charging runs from 4.6 C to 48.2 C (TS 0.27 V hot / 2.2 V cold): no 10k NTC with the B of 5130 that a 45 C hot edge needs is stocked at JLC (V&V DEC-05); the cell's own limit decides at VER-37.",
    "nets": {
     "TH1": "GND"
    }

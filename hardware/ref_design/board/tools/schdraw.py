@@ -1,5 +1,5 @@
 """Drawing kit for build_sch.py: hand layouts of schematic blocks, checked before
-they are written through Konnect.
+they are written (tools/schwrite.py).
 
 A Sheet collects what a page should hold (symbols with their field positions,
 wires, junctions, labels, power symbols, text), then
@@ -8,22 +8,18 @@ wires, junctions, labels, power symbols, text), then
     puts a junction where three or more connections meet;
   * check() traces the drawing (wires, labels, power symbols) and compares every
     group of joined pins with design.py, and looks for drawing faults: wires
-    through symbols or text, text on text, wires crossing, parts off the page;
-  * emit() writes it through Konnect.
+    through symbols or text, text on text, wires crossing, parts off the page.
 
-Konnect behaviours this works around (see docs/konnect_notes.md):
+Conventions:
 
-  * A symbol's Reference and Value land 3.81 mm above and below the point it is
-    first placed at, and move_schematic_component moves only the symbol. So a
-    part is placed at its field point first and then moved to where it goes:
-    that is how fields end up beside a part instead of on its wires.
-  * Fields can't be hidden, so a power symbol's "#PWR" reference would show.
-    Power symbols are placed with both fields parked off the page (outside the
-    printed area), and a rail's name is written as plain text by its arrow.
-  * Labels have no "justify": text runs right from the anchor (rotation 0) or up
-    (90). A global label's box extends right of (or above) its anchor, so one fed
-    from the right is drawn as a hook: the label sits a row above its wire, joined
-    at its left end.
+  * Fields are horizontal and centred: a part's Reference above its Value, beside
+    or above and below its body (place()'s f).
+  * Power symbols are KiCad's own (power:GND, power:+3V3, ...) with the rail's name
+    as the symbol's Value by its arrow, GND's under its bars. A power symbol's
+    "#PWR" reference is hidden, as KiCad does.
+  * A local label sits at the end of a wire with its text on the wire (left or
+    down) or running on past its end (right). A global label points the way its
+    wire travels: one fed from the right points left.
 """
 import math
 import os
@@ -37,7 +33,7 @@ import design  # noqa: E402
 import kisym  # noqa: E402
 
 G = 2.54
-PARK = (-25.4, -25.4)          # where power symbols' fields go: off the printed page
+H = 1.27
 FRAME = (12.7, 12.7, 284.3, 197.3)
 TITLE = (176.0, 165.0)         # title block: x > 176 and y > 165
 CW = 0.97                      # character advance, times the font size
@@ -133,20 +129,22 @@ class Sheet:
     def __init__(self, file):
         self.file = file
         self.parts = {p["ref"]: p for p in design.PARTS if p["sheet"] == file}
-        self.sym = {}          # ref -> dict(x, y, rot, fx, fy)
+        self.sym = {}          # ref -> dict(x, y, rot, fields={key: (cx, cy, shown, size)})
         self.wires = []        # [(x1, y1, x2, y2)]
         self.labels = []       # [(net, x, y, rot, kind)]  kind: local | global
-        self.power = []        # [(net, x, y, rot)]
+        self.power = []        # [(net, x, y, rot, (value cx, cy) or None)]
         self.texts = []        # [(cx, cy, size, text, rot)] centre-anchored
+        self.sheets = []       # root only: [(file, name, x, y, w, h)]
         self.ncs = []
         self.junctions = []
         self.notes = []        # (x, y, text) problems found by check()
 
     # -- parts --
     def place(self, ref, x, y, rot=0, f=None):
-        """Put ref's origin at x, y. f: where Reference/Value go: 'r'/'l' (beside a
-        vertical part), 'c' (above and below the origin), 'park', (dx, dy) from the
-        origin to the midpoint between the two fields, or ('at', fx, fy)."""
+        """Put ref's origin at x, y. f: where Reference and Value go (Reference on top):
+        'r'/'l' or ('r'|'l', dy): stacked beside the body; 'c': Reference above the body
+        and Value below it; (dx, dy) or ('at', cx, cy): stacked around that point;
+        ('value', cx, cy, size): Reference hidden, Value alone there."""
         p = self.parts[ref]
         x, y = snap(x), snap(y)
         x0, y0, x1, y1 = placed_box(p["lib"], x, y, rot)
@@ -154,23 +152,27 @@ class Sheet:
             vertical2 = len(p["pins"]) == 2 and rot in (0, 180) and p["lib"] in (
                 "Device:R", "Device:C", "Device:L", "Device:Thermistor_NTC")
             f = "r" if vertical2 else "c"
-        if f == "park":
-            fx, fy = PARK
-        elif f == "c":
-            fx, fy = x, y
-        elif f in ("r", "l") or (isinstance(f, tuple) and f[0] in ("r", "l")):
-            side, dy = (f, 0) if isinstance(f, str) else f
-            w = max(tw(ref), tw(p["value"])) / 2
-            if side == "r":
-                fx = math.ceil((x1 + 0.6 + w) / 1.27) * 1.27
-            else:
-                fx = math.floor((x0 - 0.6 - w) / 1.27) * 1.27
-            fy = y + dy
-        elif f[0] == "at":
-            fx, fy = f[1], f[2]
+        size = TXT
+        if f == "c":
+            ref_at, val_at = (x, y0 - 1.6), (x, y1 + 1.6)
+        elif f[0] == "value":
+            ref_at, val_at = None, (f[1], f[2])
+            size = f[3] if len(f) > 3 else TXT
         else:
-            fx, fy = x + f[0], y + f[1]
-        self.sym[ref] = dict(x=x, y=y, rot=rot, fx=snap(fx), fy=snap(fy))
+            if f in ("r", "l") or f[0] in ("r", "l"):
+                side, dy = (f, 0) if isinstance(f, str) else f
+                w = max(tw(ref), tw(p["value"])) / 2
+                cx = x1 + 0.6 + w if side == "r" else x0 - 0.6 - w
+                cx = (math.ceil if side == "r" else math.floor)(cx / 0.635) * 0.635
+                cy = y + dy
+            elif f[0] == "at":
+                cx, cy = f[1], f[2]
+            else:
+                cx, cy = x + f[0], y + f[1]
+            ref_at, val_at = (cx, cy - H), (cx, cy + H)
+        fields = {"Reference": (round(ref_at[0], 4), round(ref_at[1], 4), True, size) if ref_at else (x, y, False, size),
+                  "Value": (round(val_at[0], 4), round(val_at[1], 4), True, size)}
+        self.sym[ref] = dict(x=x, y=y, rot=rot, fields=fields)
         return self
 
     def pin(self, ref, num):
@@ -219,61 +221,67 @@ class Sheet:
 
     # -- power --
     def gnd(self, at):
+        """GND symbol with its pin at `at`. Its name goes under the bars, or beside them where
+        that is taken (gnd_names, once the sheet is drawn)."""
         at = self.P(at)
-        self.power.append(("GND", at[0], at[1], 0))
+        self.power.append(("GND", at[0], at[1], 0, None))
         return at
 
-    def rail(self, net, at, d="up", text=True):
-        """Power symbol for net with its pin at `at`, pointing d (up/left/right/down),
-        and the rail's name written by its arrow."""
-        at = self.P(at)
-        rot = {"up": 0, "left": 90, "down": 180, "right": 270}[d]
-        self.power.append((net, at[0], at[1], rot))
-        if text:
-            x, y = at
-            if d == "up":
-                self.text(x, y - 3.81, net, align="c")
-            elif d == "down":
-                self.text(x, y + 3.81, net, align="c")
-            elif d == "left":
-                self.text(x - 3.3 - tw(net) / 2, y, net, align="c")
+    def gnd_names(self):
+        """Name every GND symbol (Alex, 2026-10-20: a bare triangle didn't say what it was):
+        under its bars, else to their right, else to their left, wherever the text clears
+        everything else on the sheet."""
+        w = tw("GND") / 2
+        for i, (net, x, y, rot, val) in enumerate(self.power):
+            if net != "GND" or val:
+                continue
+            others = [b for k, o, b in self.boxes()] + [(min(a, c) - 0.2, min(b, d) - 0.2, max(a, c) + 0.2, max(b, d) + 0.2)
+                                                       for a, b, c, d in self.wires]
+            for cx, cy in ((x, y + 3.81), (x + 1.9 + w, y + 1.8), (x - 1.9 - w, y + 1.8)):
+                box = (cx - w, cy - 0.75, cx + w, cy + 0.75)
+                if not any(_overlap(box, b, 0.05) for b in others):
+                    break
             else:
-                self.text(x + 3.3 + tw(net) / 2, y, net, align="c")
+                cx, cy = x, y + 3.81             # nowhere clear: under it, and the check says so
+            self.power[i] = (net, x, y, rot, (round(cx, 4), round(cy, 4)))
+
+    def rail(self, net, at, d="up"):
+        """Power symbol for net with its pin at `at`, pointing d (up/left/right/down), the
+        rail's name (the symbol's Value) by its arrow."""
+        at = self.P(at)
+        x, y = at
+        rot = {"up": 0, "left": 90, "down": 180, "right": 270}[d]
+        val = {"up": (x, y - 3.81), "down": (x, y + 3.81), "left": (x - 3.3 - tw(net) / 2, y),
+               "right": (x + 3.3 + tw(net) / 2, y)}[d]
+        self.power.append((net, x, y, rot, (round(val[0], 4), round(val[1], 4))))
         return at
 
     def flag(self, ref, at):
-        """PWR_FLAG ref (from design.py) on the wire at `at`, flag pointing up."""
+        """PWR_FLAG ref (from design.py) on the wire at `at`, flag pointing up, its name
+        small to the right of it."""
         at = self.P(at)
-        self.place(ref, at[0], at[1], 0, f="park")
-        self.text(at[0] + 1.6 + tw("PWR_FLAG", 1.0) / 2, at[1] - 1.9, "PWR_FLAG", size=1.0, align="c")
+        self.place(ref, at[0], at[1], 0, f=("value", at[0] + 1.6 + tw("PWR_FLAG", 1.0) / 2, at[1] - 1.9, 1.0))
         return at
 
     # -- labels --
     def kind(self, net):
         return design.label_kind(net)
 
-    def label(self, net, at, d="right", hook=None):
+    def label(self, net, at, d="right", vertical=False):
         """Label for net at the end `at` of a wire that arrives travelling d.
         Local labels: text lies along the wire (d left/down) or runs on past its end.
-        Global labels arriving leftwards are drawn as a hook (hook='up' or 'down':
-        the label a row above or below the wire end)."""
+        Global labels point the way the wire travels (left, or right for right, up and
+        down); vertical=True stands either kind on end, reading upwards."""
         at = self.P(at)
         x, y = at
         if self.kind(net) == "power":
             raise SystemExit(f"{net} is a power net: use rail()/gnd()")
-        if self.kind(net) == "local":
-            self.labels.append((net, x, y, 90 if hook == "vertical" else 0, "local"))
-            return at
-        if d in ("right", "down", "up"):
-            self.labels.append((net, x, y, 90 if hook == "vertical" else 0, "global"))
-        else:
-            dy = -G if (hook or "up") == "up" else G
-            b = (x, snap(y + dy))
-            self.wire(at, b)
-            self.labels.append((net, b[0], b[1], 0, "global"))
+        kind = self.kind(net)
+        rot = 90 if vertical else 180 if (kind == "global" and d == "left") else 0
+        self.labels.append((net, x, y, rot, kind))
         return at
 
-    def tag(self, spec, length=None, d=None, hook=None, net=None):
+    def tag(self, spec, length=None, d=None, vertical=False, net=None):
         """Stub out of a pin and label it with the pin's net (power nets get their
         symbol). Left/down stubs of local labels get long enough to carry the text."""
         ref, num = spec.rsplit(".", 1)
@@ -293,7 +301,7 @@ class Sheet:
         elif kind == "power":
             self.rail(net, end, "up" if d in ("up", "left", "right") else "down")
         else:
-            self.label(net, end, d, hook)
+            self.label(net, end, d, vertical)
         return end
 
     def nc(self, spec):
@@ -317,7 +325,7 @@ class Sheet:
                 pts.setdefault(_key((pin["sx"], pin["sy"])), []).append(("pin", ref, num))
         for net, x, y, rot, kind in self.labels:
             pts.setdefault(_key((x, y)), []).append(("label", net, kind))
-        for net, x, y, rot in self.power:
+        for net, x, y, rot, val in self.power:
             pts.setdefault(_key((x, y)), []).append(("power", net))
         return pts
 
@@ -378,6 +386,7 @@ class Sheet:
         self.split()
         self.name_nets()
         self.split()
+        self.gnd_names()
         self.junctions = []
         pts = self.points()
         deg = {}
@@ -501,27 +510,32 @@ class Sheet:
         for ref, s in self.sym.items():
             p = self.parts[ref]
             out.append(("body", ref, placed_box(p["lib"], s["x"], s["y"], s["rot"])))
-            if (s["fx"], s["fy"]) == (snap(PARK[0]), snap(PARK[1])):
-                continue
-            for text, dy in ((ref, -3.81), (p["value"], 3.81)):
-                cx, cy = s["fx"], s["fy"] + dy
-                h, w = 0.75, tw(text) / 2
-                if s["rot"] in (90, 270):
-                    h, w = w, h
-                out.append(("field", ref, (cx - w, cy - h, cx + w, cy + h)))
+            for key, text in (("Reference", ref), ("Value", p["value"])):
+                cx, cy, shown, size = s["fields"][key]
+                if shown:
+                    h, w = 0.6 * size, tw(text, size) / 2
+                    out.append(("field", ref, (cx - w, cy - h, cx + w, cy + h)))
         for net, x, y, rot, kind in self.labels:
             w = tw(net) + (2.0 if kind == "global" else 0)
             if kind == "global":
-                b = (x, y - 1.2, x + w, y + 1.2) if rot == 0 else (x - 1.2, y - w, x + 1.2, y)
+                b = {0: (x, y - 1.2, x + w, y + 1.2), 180: (x - w, y - 1.2, x, y + 1.2),
+                     90: (x - 1.2, y - w, x + 1.2, y)}[rot]
             else:
                 b = (x + 0.2, y - 1.9, x + w, y - 0.3) if rot == 0 else (x - 1.9, y - w, x - 0.3, y - 0.2)
             out.append(("label", net, b))
-        for net, x, y, rot in self.power:
+        for net, x, y, rot, val in self.power:
             if net == "GND":
                 out.append(("body", "GND", (x - 1.27, y + 1.0, x + 1.27, y + 2.6)))
             else:
                 (a, b), (c, d) = rot_pt(-0.8, 1.0, rot), rot_pt(0.8, 2.6, rot)
                 out.append(("body", net, (x + min(a, c), y + min(b, d), x + max(a, c), y + max(b, d))))
+            if val:
+                w = tw(net) / 2
+                out.append(("text", net, (val[0] - w, val[1] - 0.75, val[0] + w, val[1] + 0.75)))
+        for file, name, x, y, w, h in self.sheets:
+            out.append(("sheet", name, (x, y, x + w, y + h)))
+            out.append(("text", name, (x, y - 2.6, x + tw(name, 1.524), y - 0.6)))
+            out.append(("text", file, (x, y + h + 0.5, x + tw(file), y + h + 2.2)))
         for cx, cy, size, s, rot in self.texts:
             w, h = tw(s, size) / 2, size * 0.6
             out.append(("text", s, (cx - w, cy - h, cx + w, cy + h)))
@@ -534,6 +548,8 @@ class Sheet:
             if not _on_page(b1):
                 warns.append(f"{k1} {o1} off the page or on the title block {tuple(round(v, 1) for v in b1)}")
             for k2, o2, b2 in bx[i + 1:]:
+                if "sheet" in (k1, k2) and _within(b1 if k2 == "sheet" else b2, b2 if k2 == "sheet" else b1):
+                    continue                     # a sheet box's notes are written inside it
                 if k1 == "body" and k2 == "body":
                     if _overlap(b1, b2, 0.1):
                         warns.append(f"bodies overlap: {o1} {o2}")
@@ -594,6 +610,11 @@ def _inside(c, w):
     return False
 
 
+def _within(a, b):
+    """Box a wholly inside box b."""
+    return b[0] <= a[0] and b[1] <= a[1] and a[2] <= b[2] and a[3] <= b[3]
+
+
 def _overlap(a, b, m=0.0):
     return a[0] < b[2] - m and b[0] < a[2] - m and a[1] < b[3] - m and b[1] < a[3] - m
 
@@ -630,59 +651,3 @@ def _on_page(b):
     if b[0] < FRAME[0] or b[1] < FRAME[1] or b[2] > FRAME[2] or b[3] > FRAME[3]:
         return False
     return not (b[2] > TITLE[0] and b[3] > TITLE[1])
-
-
-# ---- writing ------------------------------------------------------------------------
-class Writer:
-    """Writes Sheets through Konnect."""
-
-    def __init__(self, k, board):
-        self.k = k
-        self.board = board
-        self.pwr = 0
-
-    def emit(self, sh):
-        k = self.k
-        path = os.path.join(self.board, sh.file)
-        edits = []
-        for ref, s in sh.sym.items():
-            p = sh.parts[ref]
-            k.call("add_schematic_component", schematic=path, lib_id=p["lib"], x=s["fx"], y=s["fy"],
-                   reference=ref, value=p["value"], rotation=s["rot"])
-            if (s["fx"], s["fy"]) != (s["x"], s["y"]):
-                k.call("move_schematic_component", schematic=path, reference=ref, x=s["x"], y=s["y"])
-            if p["fp"]:
-                edits.append({"reference": ref, "footprint": p["fp"]})
-            for key, name in (("lcsc", "LCSC"), ("mpn", "MPN"), ("mfr", "Manufacturer")):
-                if p.get(key):
-                    k.call("add_component_annotation", schematic=path, reference=ref, key=name, value=p[key])
-            if not p["bom"] and not ref.startswith("#"):
-                k.call("add_component_annotation", schematic=path, reference=ref, key="BOM", value="exclude")
-        for net, x, y, rot in sh.power:
-            lib, value = POWER_SYM[net]
-            self.pwr += 1
-            ref = f"#PWR{self.pwr:03d}"
-            k.call("add_schematic_component", schematic=path, lib_id=lib, x=PARK[0], y=PARK[1],
-                   reference=ref, value=value, rotation=rot)
-            k.call("move_schematic_component", schematic=path, reference=ref, x=x, y=y)
-        if sh.wires:
-            k.call("batch_add_wire", schematic=path,
-                   wires=[dict(x1=a, y1=b, x2=c, y2=d) for a, b, c, d in sh.wires])
-        if sh.junctions:
-            k.call("batch_add_junction", schematic=path, positions=[dict(x=x, y=y) for x, y in sh.junctions])
-        for net, x, y, rot, kind in sh.labels:
-            k.call("add_schematic_net_label", schematic=path, net=net, x=x, y=y,
-                   label_type="global_label" if kind == "global" else "net_label", rotation=rot, shape="passive")
-        for x, y in sh.ncs:
-            k.call("add_no_connect", schematic=path, x=x, y=y)
-        for cx, cy, size, s, rot in sh.texts:
-            k.call("add_schematic_text", schematic=path, text=s, x=round(cx, 3), y=round(cy, 3), size=size,
-                   rotation=rot)
-        if edits:
-            res = k.call("batch_edit_schematic_components", schematic=path, edits=edits)
-            if isinstance(res, dict) and res.get("errors"):
-                raise SystemExit(f"{sh.file}: {res['errors']}")
-
-
-POWER_SYM = {"GND": ("power:GND", "GND"), "+3V3": ("power:+3V3", "+3V3"), "+1V1": ("power:+1V1", "+1V1"),
-             "VBUS": ("power:VBUS", "VBUS"), "VSYS": ("power:VCC", "VSYS"), "VBAT": ("power:VCC", "VBAT")}

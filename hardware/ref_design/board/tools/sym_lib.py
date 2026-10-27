@@ -31,10 +31,10 @@ SYMBOLS = {
         "U", "FM8002A", "Package_SO:SOIC-8_3.9x4.9mm_P1.27mm",
         "https://www.lcsc.com/product-detail/Audio-Power-OpAmps_Shenzhen-Fuman-Elec_C94625.html",
         "2 W mono bridge-tied audio amplifier, 2.5-5.5 V, gain 2 x Rf/Ri, SHUTDOWN high = off",
-        7.62, 7.62,
+        10.16, 7.62,       # wide enough that SHUTDOWN's name clears GND's, which sits right of centre
         [("3", "+IN", "input", "L", 2), ("4", "-IN", "input", "L", 1), ("2", "BYPASS", "passive", "L", -1),
          ("1", "SHUTDOWN", "input", "L", -2), ("5", "VO1", "output", "R", 1), ("8", "VO2", "output", "R", -1),
-         ("6", "VDD", "power_in", "T", 0), ("7", "GND", "power_in", "B", 0)]),
+         ("6", "VDD", "power_in", "T", 1), ("7", "GND", "power_in", "B", 1)]),
 }
 PIN_LEN = 2.54
 

@@ -1,36 +1,52 @@
 {
  "ref": "J4",
- "mpn": "speaker wire pads (no part)",
+ "mpn": "SM02B-SRSS-TB(LF)(SN) (JST SH 2-pin, C160402), 1.0 mm, right-angle SMT (2026-10-27: was Molex PicoBlade 53261-0271, which the cell's J2 plug also fits)",
  "datasheet": [
-  "downloaded as FM8002A_lcsc.pdf"
+  "https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_JST-SM02B-SRSS-TB-LF-SN_C160402.pdf (not retrieved 2026-10-27)",
+  "KiCad 10 Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal"
  ],
- "footprint": "battler:Speaker_Wire_Pads_P4.0mm",
+ "footprint": "Connector_JST:JST_SH_SM02B-SRSS-TB_1x02-1MP_P1.00mm_Horizontal",
  "refs": [
   "J4"
  ],
  "pins": [
   {
    "pin": "1",
-   "ds_name": "speaker lead (VO1 side)",
-   "cite": "custom pad pair battler:Speaker_Wire_Pads_P4.0mm (no datasheet); FM8002A datasheet (C94625) pin table",
-   "quote": "FM8002A: \"5 VO1 O\" (output 1)",
+   "ds_name": "Circuit 1 (speaker +)",
+   "cite": "JST SH series 2-pin SMT right-angle header (LCSC listing C160402: 1 mm, 1 A per contact, 50 V, 2.9 mm high); KiCad's footprint (generated from JST's drawing)",
+   "quote": "1.0mm pitch, 2 circuits, side-entry",
    "symbol_name": "Pin_1",
+   "footprint_pad": "1",
    "ok": true,
-   "issue": "U7 pin 5 (VO1) = SPK_P, R35 Rf from SPK_P to -IN (VO1 is the feedback output). BTL: speaker polarity only sets acoustic phase; no standard.",
+   "issue": "U7 VO1/VO2 = SPK_P/SPK_N; the speaker needs an SH 2-pin plug on its leads (2026-10-27): the cell's PicoBlade plug cannot enter this 1.0 mm housing (V&V DF-170).",
    "nets": {
     "J4": "SPK_P"
    }
   },
   {
    "pin": "2",
-   "ds_name": "speaker lead (VO2 side)",
-   "cite": "as pin 1",
-   "quote": "FM8002A: \"8 VO2 O\" (output 2)",
+   "ds_name": "Circuit 2 (speaker -)",
+   "cite": "JST SH series 2-pin SMT right-angle header (LCSC listing C160402: 1 mm, 1 A per contact, 50 V, 2.9 mm high); KiCad's footprint (generated from JST's drawing)",
+   "quote": "1.0mm pitch, 2 circuits, side-entry",
    "symbol_name": "Pin_2",
+   "footprint_pad": "2",
    "ok": true,
-   "issue": "Neither lead may touch GND (BTL). PCB pads: 2x3 mm on 4 mm pitch, nets SPK_P/SPK_N as design.",
+   "issue": "U7 VO1/VO2 = SPK_P/SPK_N; the speaker needs an SH 2-pin plug on its leads (2026-10-27): the cell's PicoBlade plug cannot enter this 1.0 mm housing (V&V DF-170).",
    "nets": {
     "J4": "SPK_N"
+   }
+  },
+  {
+   "pin": "MP",
+   "ds_name": "mounting pad",
+   "cite": "JST SH series 2-pin SMT right-angle header (LCSC listing C160402: 1 mm, 1 A per contact, 50 V, 2.9 mm high); KiCad's footprint (generated from JST's drawing)",
+   "quote": "1.0mm pitch, 2 circuits, side-entry",
+   "symbol_name": "MountPin",
+   "footprint_pad": "MP",
+   "ok": true,
+   "issue": "tied to nothing (mechanical)",
+   "nets": {
+    "J4": null
    }
   }
  ]

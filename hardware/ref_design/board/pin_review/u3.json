@@ -1,64 +1,73 @@
 {
- "part": "ME6211 C-series 3.3 V LDO with CE, SOT-23-5",
+ "part": "Richtek RT9013 3.3 V 500 mA LDO with EN, SOT-23-5",
  "refs": [
   "U3"
  ],
- "mpn": "ME6211C33M5G-N",
- "lcsc": "C82942",
- "manufacturer": "MICRONE (Nanjing Micro One Elec)",
+ "mpn": "RT9013-33GB",
+ "lcsc": "C47773",
+ "manufacturer": "Richtek",
  "symbol": "Regulator_Linear:ME6211C33M5",
  "footprint": "Package_TO_SOT_SMD:SOT-23-5",
  "datasheet": {
-  "url": "https://datasheet.lcsc.com/datasheet/pdf/d15331d096a848ac81a26b001a32d4e3.pdf?productCode=C82942",
-  "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_1811131510_MICRONE-Nanjing-Micro-One-Elec-ME6211C33M5G-N_C82942.pdf",
-  "revision_or_date": "V14 (PDF modified 2017-09-12)"
+  "url": "https://www.richtek.com/assets/product_file/RT9013/DS9013-10.pdf",
+  "jlc_db_url": "JLC part page C47773, Datasheet link (smtDataManualFile/...-C47773.pdf)",
+  "revision_or_date": "DS9013-10 April 2011"
  },
  "notes": [
-  "The '-N' suffix of the MPN does not appear in datasheet V14 (selection guide lists ME6211C33M5G); its meaning is unknown.",
-  "Repo datasheets/SOURCES.md points me6211.pdf at a different LCSC number (C235316, ME6211C33R5G), not C82942."
+  "2026-10-22 (Alex): Richtek's RT9013-33GB (C47773, Extended, about 311k in stock at JLC) replaced the ME6211C33M5G-N (C82942) so a 30-board order needs no pre-order. Same SOT-23-5 pinout; the schematic keeps KiCad's ME6211C33M5 symbol (KiCad has no RT9013), whose pins match number for number.",
+  "Pin 4 is NC on the SOT-23-5 ('No Internal Connection', p2 Functional Pin Description). This revision has no BP pin: the part is the 'without bypass capacitor' version, so nothing is owed to pin 4.",
+  "CPL: JLC's library footprint for C47773 is the same one as C82942's (SOT-23-5_L3.0-W1.7-P0.95-LS2.8-BL): no change from the ME6211.",
+  "Output capacitor: >= 1 uF ceramic with ESR > 5 mOhm (p8, Figure 1 drawn for 1 uF only). The board has 2 x 10 uF on 3V3_LDO and more on +3V3: low ESR at the floor of the stated range; watch 3V3 for ringing on a load step at bring-up."
  ],
  "ratings": [
   {
    "what": "VIN absolute max",
-   "limit": "6.5 V",
-   "design": "VSYS: <= 5.45 V steady with USB; hot-plug peak about 5.7 V (with R47)",
+   "limit": "6 V",
+   "design": "VSYS: BQ24073 OUT regulates 4.3-4.5 V with USB in (VO(REG), its datasheet's Electrical Characteristics); VBAT <= 4.2 V without",
    "ok": true,
-   "cite": "p5 Abs Max"
+   "cite": "p3 Absolute Maximum Ratings"
   },
   {
    "what": "VIN operating range",
-   "limit": "2 V..6.0 V",
-   "design": "VSYS 3.0..5.7 V",
+   "limit": "2.2 V..5.5 V",
+   "design": "VSYS about 3.0..4.5 V",
    "ok": true,
-   "cite": "p1 Features"
+   "cite": "p3 Recommended Operating Conditions"
   },
   {
-   "what": "CE pin voltage",
-   "limit": "VSS-0.3..VIN+0.3 V",
-   "design": "PWR_EN: steady <= ~5.0 V with VSYS >= ~4.85 V (OK); hot-plug transient up to ~6.1 V vs VSYS possibly lagging (UNVERIFIED)",
-   "ok": null,
-   "cite": "p5 Abs Max"
+   "what": "EN pin voltage",
+   "limit": "6 V absolute (not tied to VIN); VIH >= 1.6 V, VIL <= 0.6 V; CMOS, must not float",
+   "design": "PWR_EN: 0.91 x (VBUS - Vf) from R14/D3 (about 4.3 V at 5 V VBUS), VSYS - Vf from the Start button, 3V3 - Vf from PWR_HOLD; R15 100k pulls it down, as the datasheet's application circuit does. A VBUS above about 6.9 V (a faulty charger) would pass 6 V, through 10k",
+   "ok": true,
+   "cite": "p3; p4 Electrical Characteristics; p8 Enable"
   },
   {
-   "what": "VOUT",
-   "limit": "VSS-0.3..VIN+0.3 V",
-   "design": "3.3 V; note 3V3 can be back-driven (probe/USB) while VSYS is low",
+   "what": "Dropout",
+   "limit": "250 mV typ, 400 mV max at 500 mA",
+   "design": "3V3 holds down to VSYS about 3.4-3.5 V at the board's load",
    "ok": true,
-   "cite": "p5"
+   "cite": "p4"
   },
   {
    "what": "Output current",
-   "limit": "600 mA abs max; 500 mA max (C33, VIN = VOUT+1)",
-   "design": "3V3 load not stated in design.py (UNKNOWN)",
-   "ok": null,
-   "cite": "p5; p8"
+   "limit": "500 mA; current limit 0.5-0.85 A",
+   "design": "3V3 load (core, panel logic, op-amp) well under 500 mA",
+   "ok": true,
+   "cite": "p4"
   },
   {
-   "what": "Power dissipation SOT23",
-   "limit": "300 mW",
-   "design": "(VSYS-3.3)*I3V3: at VSYS 5.2 V (USB in) this caps I3V3 at about 158 mA; 3V3 budget UNKNOWN",
-   "ok": null,
-   "cite": "p5"
+   "what": "Power dissipation SOT-23-5",
+   "limit": "0.4 W (250 C/W)",
+   "design": "(4.4 - 3.3) x I3V3 with USB in: 0.4 W at about 360 mA",
+   "ok": true,
+   "cite": "p3"
+  },
+  {
+   "what": "Capacitors",
+   "limit": "CIN >= 1 uF X7R within 0.5 in; COUT >= 1 uF ceramic, ESR > 5 mOhm",
+   "design": "C5 10u on VSYS; C6, C7 10u on 3V3_LDO",
+   "ok": true,
+   "cite": "p8 Applications Information"
   }
  ],
  "pins": [
@@ -66,9 +75,9 @@
    "pin": "1",
    "ds_name": "VIN",
    "type": "supply",
-   "requirement": "Power input; CIN 1 uF in the application circuit.",
-   "cite": "p4 Pin Assignment (ME6211CXXG SOT23-5); p2 Fig2",
-   "quote": "1 ... VIN ... Power Input",
+   "requirement": "Supply input; CIN >= 1 uF.",
+   "cite": "p2 Functional Pin Description (SOT-23-5 column); p1 Pin Configurations",
+   "quote": "4 ... VIN ... Supply Input.",
    "symbol_name": "V_{IN}",
    "footprint_pad": "1",
    "ok": true,
@@ -79,11 +88,11 @@
   },
   {
    "pin": "2",
-   "ds_name": "VSS",
+   "ds_name": "GND",
    "type": "ground",
-   "requirement": "Ground.",
-   "cite": "p4",
-   "quote": "2 ... VSS ... Ground",
+   "requirement": "Common ground.",
+   "cite": "p2 Functional Pin Description (SOT-23-5 column); p1 Pin Configurations",
+   "quote": "2 ... GND ... Common Ground.",
    "symbol_name": "V_{SS}",
    "footprint_pad": "2",
    "ok": true,
@@ -94,27 +103,26 @@
   },
   {
    "pin": "3",
-   "ds_name": "CE",
+   "ds_name": "EN",
    "type": "input (logic)",
-   "requirement": "ON/OFF control, active high: VCEH >= 1.0 V start-up, VCEL <= 0.5 V shut-down (C33). Abs max VSS-0.3..VIN+0.3. Datasheet does not say whether CE has an internal pull; treat as must-drive.",
-   "cite": "p4; p8 ME6211C33 table; p5 Abs Max",
-   "quote": "CE \"High\" Voltage VCEH Start up 1.0 V ... CE \"Low\" Voltage VCEL Shut down 0.5 V",
+   "requirement": "Enable, active high: VIH >= 1.6 V, VIL <= 0.6 V; 6 V absolute; CMOS input, must not float (R15 pulls it down).",
+   "cite": "p2 Functional Pin Description (SOT-23-5 column); p1 Pin Configurations",
+   "quote": "Enable Input Logic, Active High. When the EN goes to a logic low, the device will be shutdown mode.",
    "symbol_name": "CE",
    "footprint_pad": "3",
    "ok": true,
-   "issue": "CE abs max is VIN+0.3 V (VIN = VSYS) but PWR_EN is fed from VBUS through R14/D3 (divider with R15: PWR_EN ~ 0.909*(VBUS - Vf)). Steady state OK (VBUS 5.5 V: PWR_EN <= 5.0 V vs VSYS >= ~4.85 V -> limit >= 5.15 V). At hot plug PWR_EN can reach ~6.1 V while VSYS lags behind R47/D5 into C9 (peak 5.7 V -> limit 6.0 V), and with a cell present Q2 may hold VSYS near VBAT for the first microseconds: CE may exceed VIN+0.3 transiently. Current is limited by R14 10k. Open question: needs a scope of PWR_EN minus VSYS at a live plug-in.",
+   "issue": "",
    "nets": {
     "U3": "PWR_EN"
-   },
-   "resolution": "fixed: C47 (100 nF on PWR_EN) slows its rise from VBUS to about 1 ms, so CE cannot lead VSYS at a live plug-in; scope PWR_EN minus VSYS at bring-up (step 5)"
+   }
   },
   {
    "pin": "4",
    "ds_name": "NC",
    "type": "NC",
-   "requirement": "No connect.",
-   "cite": "p4",
-   "quote": "4 ... NC ... No Connect",
+   "requirement": "No internal connection.",
+   "cite": "p2 Functional Pin Description (SOT-23-5 column); p1 Pin Configurations",
+   "quote": "-- / 4 / 5, 6 ... NC ... No Internal Connection.",
    "symbol_name": "NC",
    "footprint_pad": "4",
    "ok": true,
@@ -127,9 +135,9 @@
    "pin": "5",
    "ds_name": "VOUT",
    "type": "output",
-   "requirement": "Output; CL 1 uF in the application circuit.",
-   "cite": "p4; p2 Fig2",
-   "quote": "5 ... VOUT ... Output",
+   "requirement": "Regulator output; COUT >= 1 uF ceramic.",
+   "cite": "p2 Functional Pin Description (SOT-23-5 column); p1 Pin Configurations",
+   "quote": "3 / 5 / 4 ... VOUT ... Regulator Output.",
    "symbol_name": "V_{OUT}",
    "footprint_pad": "5",
    "ok": true,

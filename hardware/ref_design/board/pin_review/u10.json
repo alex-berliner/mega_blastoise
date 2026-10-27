@@ -1,0 +1,120 @@
+{
+ "part": "Microchip MCP6001 single op-amp, SOT-23-5 (rail-to-rail, 1.8-6 V, 1 MHz), the VBAT sense buffer",
+ "refs": [
+  "U10"
+ ],
+ "mpn": "MCP6001T-I/OT",
+ "lcsc": "C116490",
+ "manufacturer": "Microchip Tech",
+ "symbol": "Amplifier_Operational:MCP6L91T-EOT",
+ "footprint": "Package_TO_SOT_SMD:SOT-23-5",
+ "datasheet": {
+  "url": "https://ww1.microchip.com/downloads/en/DeviceDoc/MCP6001-1R-1U-2-4-1-MHz-Low-Power-Op-Amp-DS20001733L.pdf",
+  "jlc_db_url": "JLC part page C116490",
+  "revision_or_date": "DS20001733L (named by KiCad's symbol); NOT re-read: the datasheet PDF could not be retrieved on 2026-10-27 (LCSC's download answered with an HTML page): the pinout is KiCad's symbol, which cites it, and the listing's own parameters; re-read the datasheet at the next review (UNVERIFIED)"
+ },
+ "notes": [
+  "2026-10-27 (V&V DEF-40, DEC-07): U10 buffers R17/R18's VBAT/2 for GPIO47 so the pad's 1 uA leakage (rp2350 IIN) no longer moves VBAT's reading 0.47 V (235 kohm); error now 1 uA x the op-amp's output resistance (tens of ohms): under 0.01 V of VBAT. the datasheet PDF could not be retrieved on 2026-10-27 (LCSC's download answered with an HTML page): the pinout is KiCad's symbol, which cites it, and the listing's own parameters; re-read the datasheet at the next review (UNVERIFIED). Unverified until a bench step: an ADC pin's sampling charge on a 1 MHz op-amp's output (add RC at the pin if the reading jitters), and the 4.5 mV max input offset (9 mV of VBAT).",
+  "-40\u2103~+85\u2103 1 1.8V~6V 100uA 1MHz 1pA 1pA 23mA 28nV/\u221aHz@1kHz 2uV/\u2103 4.5mV 600V/ms 6V 76dB Rail-to-Rail Input, Rail-to-Rail Output SOT-23-5 Operational Amplifier ROH"
+ ],
+ "ratings": [
+  {
+   "what": "Supply",
+   "limit": "1.8 V..6 V (listing: 1.8V~6V)",
+   "design": "+3V3 (3.234-3.366 V)",
+   "ok": true,
+   "cite": "LCSC listing C116490"
+  },
+  {
+   "what": "Input range",
+   "limit": "rail-to-rail input",
+   "design": "VBAT/2 = 1.5-2.1 V on a 3.3 V supply",
+   "ok": true,
+   "cite": "LCSC listing C116490"
+  },
+  {
+   "what": "Output",
+   "limit": "rail-to-rail, 23 mA short circuit",
+   "design": "drives GPIO47's ADC input",
+   "ok": true,
+   "cite": "LCSC listing C116490"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "VOUT",
+   "type": "output",
+   "requirement": "Op-amp output; drives the ADC pin directly (unity gain)",
+   "cite": "KiCad 10 Amplifier_Operational:MCP6L91T-EOT (the MCP6001-OT's parent symbol) SOT-23-5 pin table; MCP6001 DS20001733L pin function table, not re-read",
+   "quote": "pin 1: VOUT",
+   "symbol_name": "VOUT",
+   "footprint_pad": "1",
+   "ok": true,
+   "issue": "The pin's leakage (1 uA at most) flows from here, not through the divider.",
+   "nets": {
+    "U10": "VBAT_SENSE"
+   }
+  },
+  {
+   "pin": "2",
+   "ds_name": "VSS",
+   "type": "supply",
+   "requirement": "Negative supply",
+   "cite": "KiCad 10 Amplifier_Operational:MCP6L91T-EOT (the MCP6001-OT's parent symbol) SOT-23-5 pin table; MCP6001 DS20001733L pin function table, not re-read",
+   "quote": "pin 2: VSS",
+   "symbol_name": "VSS",
+   "footprint_pad": "2",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U10": "GND"
+   }
+  },
+  {
+   "pin": "3",
+   "ds_name": "VIN+",
+   "type": "input",
+   "requirement": "Non-inverting input, rail-to-rail; 1 pA bias",
+   "cite": "KiCad 10 Amplifier_Operational:MCP6L91T-EOT (the MCP6001-OT's parent symbol) SOT-23-5 pin table; MCP6001 DS20001733L pin function table, not re-read",
+   "quote": "pin 3: VIN+",
+   "symbol_name": "VIN+",
+   "footprint_pad": "3",
+   "ok": true,
+   "issue": "VBAT/2 (1.05 V at 2.1 V ... the divider is 470k/470k: the 1 pA bias moves it by nothing).",
+   "nets": {
+    "U10": "VBAT_DIV"
+   }
+  },
+  {
+   "pin": "4",
+   "ds_name": "VIN-",
+   "type": "input",
+   "requirement": "Inverting input: tied to VOUT (unity-gain buffer)",
+   "cite": "KiCad 10 Amplifier_Operational:MCP6L91T-EOT (the MCP6001-OT's parent symbol) SOT-23-5 pin table; MCP6001 DS20001733L pin function table, not re-read",
+   "quote": "pin 4: VIN-",
+   "symbol_name": "VIN-",
+   "footprint_pad": "4",
+   "ok": true,
+   "issue": "",
+   "nets": {
+    "U10": "VBAT_SENSE"
+   }
+  },
+  {
+   "pin": "5",
+   "ds_name": "VDD",
+   "type": "supply",
+   "requirement": "Positive supply 1.8 to 6 V; 100 nF at the pin",
+   "cite": "KiCad 10 Amplifier_Operational:MCP6L91T-EOT (the MCP6001-OT's parent symbol) SOT-23-5 pin table; MCP6001 DS20001733L pin function table, not re-read",
+   "quote": "pin 5: VDD",
+   "symbol_name": "VDD",
+   "footprint_pad": "5",
+   "ok": true,
+   "issue": "Off (3V3 low) the part is unpowered and its output reads 0 V; VIN+ (up to 2.1 V) is above VDD then and sinks only the input protection's current through 470k (a few uA).",
+   "nets": {
+    "U10": "+3V3"
+   }
+  }
+ ]
+}

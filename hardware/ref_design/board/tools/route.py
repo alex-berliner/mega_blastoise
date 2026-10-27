@@ -2,9 +2,25 @@
 
     FREEROUTING_JAR=/path/freerouting-1.9.0.jar python3 tools/route.py [passes] [--reuse]
 
+passes is Freerouting's limit (default 20; the runs after the first get half, at least 10).
+Freerouting 1.9 has this board as far as it gets by pass 15 or so and then trades the same
+20-30 tracks back and forth (2026-10-21: 80 passes left the same 5 connections open as 15,
+in 3 more minutes).
 --reuse imports tools/last_route.ses instead of routing again (valid while the
 placed board and the pre-routes are unchanged).
---finish takes the saved, routed board and only closes what is still open (stubs,
+--attempts=N routes N copies at once (default: half the cores, at most 8, or ROUTE_ATTEMPTS; 1 routes the board in
+place), each with its own --seed. The first that ends clean, or with 2 or fewer open and no DRC errors, is kept (--finish
+closes the rest) and the other attempts are killed, as is any still running at twice the first finisher's time. See
+attempts(). --exhaustive is the old policy: 4 at once, the next seed when one ends with something open, up to --tries=M
+in all (default 2N), the first clean DRC wins.
+Before any attempt a pre-flight puts the pre-routes on the placed board and runs the DRC (--preflight does only that):
+an error there is the placement's, not the router's, and the run aborts with the list. --no-preflight skips it.
+--seed=S: the order Freerouting reads the board in (default 0, KiCad's own; see dsn_shuffled).
+With attempts, attempt k gets S + k - 1, so --seed= picks another set.
+--optimize runs Freerouting's optimizer after it routes (off: 40 s a run for no difference in
+the routed board, 2026-10-21).
+FREEROUTING_ARGS adds arguments to Freerouting's command line.
+--finish takes the saved, routed board (or --board=FILE's) and only closes what is still open (stubs,
 the maze router with a wide search, plane repairs): the step after a full run that
 left a connection or two.
 
@@ -15,18 +31,25 @@ left a connection or two.
        membrane contacts: each comb's anchor -> radial stub -> via outside the pill
        display connector: the panel's grounded pins joined by a bar per run
        every other GND pad: a short stub and a via down to the GND pour
-  4. Freerouting (1.9.0; 2.x loops on this board) routes the signals and the
-     supplies (3V3 included: two layers have no 3V3 plane) on F.Cu and B.Cu. GND is
+       USB-C's shell legs: joined in pairs on the back, and a via beside each
+       USB D+/D-: one pair from J1 through U1 to R21/R22 (usb_pair)
+       PWR_BTN_RAW: SW21's pad to the latch, 117 mm round the hole, by the maze router (long_nets; 16 s)
+  4. Freerouting (1.9.0; 2.x loops on this board: 2.5.0 left 47 connections open,
+     2026-10-21) routes the signals and the supplies (3V3 included: two layers have
+     no 3V3 plane) on F.Cu and B.Cu. GND is
      left out of its job. (Its per-layer costs would keep B.Cu clearer, but 1.9's
      reader rejects an autoroute_settings block in the structure.) Its copy of the
      board is adjusted first (see dsn_for_router). Any connection it leaves open goes
      to the maze router.
-  5. GND pours on both layers, unused stub vias removed, GND stitching, zones filled
+  5. GND pours on both layers, unused stub vias removed, GND stitching (denser in the strips
+     beside the cell's hole: strip_stitch), zones filled
 kicad-cli's DRC decides whether it is done (tools/check_pcb.py).
 """
+import glob
 import math
 import os
 import re
+import shutil
 import subprocess
 import sys
 import tempfile
@@ -37,18 +60,24 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BOARD_DIR = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
-from placement import CASE, CORE  # noqa: E402
-from build_pcb import core_xy, net_class  # noqa: E402
+from placement import CASE, CORE, CUTOUTS  # noqa: E402
+from build_pcb import core_layer, core_xy, net_class  # noqa: E402
 from maze import Maze  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
+SCRATCH = BOARD_DIR       # DRC's scratch copy of the board: beside the project file (its rules)
+LOGS = HERE               # freerouting.log, last_route.dsn and last_route.ses
 JAR = os.environ.get("FREEROUTING_JAR", "")
+FR_ARGS = os.environ.get("FREEROUTING_ARGS", "").split()
+SEED = int(os.environ.get("ROUTE_SEED", "0"))     # --seed=: the order Freerouting reads the board in
+OPTIMIZE = False                                  # --optimize: Freerouting's optimizer after routing
 STUB_VIAS = []
 STUB_R = 3.3              # contact via distance from the contact centre
 CONTACT_R = 2.9           # nothing but the combs inside this (no pour, no vias, no other tracks)
 VIA_D, VIA_DRILL = 0.5, 0.3     # JLC's standard hole: anything smaller costs extra
 CLEAR = 0.2                 # 0.15 rule + margin: pad outlines are polygons, the check rounds
-# Areas of Raspberry Pi's core the router must stay out of on F.Cu (reference coordinates),
+# Areas of Raspberry Pi's core the router must stay out of on its top layer (F.Cu, or B.Cu when
+# placement.py puts the core on the back; reference coordinates),
 # both already connected by the copied routing:
 #   the 1.1 V switcher's copper (its four small zones)
 #   everything inside the chip's pads (they end 4.5 mm from its centre): the 1.1 V ring
@@ -76,6 +105,18 @@ def footprints(board):
     and the pre-routes must come out the same every time for --reuse to be valid."""
     return sorted(board.GetFootprints(), key=lambda f: (f.GetReference().rstrip("0123456789"),
                                                          int("0" + "".join(c for c in f.GetReference() if c.isdigit()))))
+
+
+REMOVED = []      # every item taken off the board, kept referenced (see remove())
+
+
+def remove(board, item):
+    """board.Remove(item), keeping the item's Python proxy alive for the rest of the run: when
+    the last reference to a removed track or via went, its memory went with it while KiCad's
+    connectivity still pointed there, and later lookups came back as bare SwigPyObjects
+    (route.py --finish died in Space(), 2026-10-22)."""
+    REMOVED.append(item)
+    board.Remove(item)
 
 
 def pads_of(fp):
@@ -154,7 +195,7 @@ def planes(board):
         add_zone(board, None, pcbnew.F_Cu, circle(x, y, CONTACT_R), 0, f"{ref} contact", keepout=("pour", "vias"))
     u4 = board.FindFootprintByReference("U4")
     cx, cy = xy(u4.GetPosition())
-    add_zone(board, "+3V3", pcbnew.F_Cu, rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,
+    add_zone(board, "+3V3", core_layer(pcbnew.F_Cu), rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,
              "3V3 inside the pads")
 
 
@@ -219,7 +260,7 @@ def core_3v3_stubs(board):
             end = (cx + math.copysign(PAD_RING - 0.6, dx), py)
         else:
             end = (px, cy + math.copysign(PAD_RING - 0.6, dy))
-        add_track(board, (px, py), end, net, 0.2)
+        add_track(board, (px, py), end, net, 0.2, core_layer(pcbnew.F_Cu))
         added.append(pad.GetNumber())
     print("3V3 stubs into the pour for U4 pins:", added)
 
@@ -243,6 +284,48 @@ def contact_stubs(board):
     return contacts
 
 
+def dome_stubs(board):
+    """A metal-dome contact's centre pad sits inside its ring pad: its only way out is a via
+    in the 1.1 mm gap between them (r 0.6 to 1.7), which the router won't place. Each dome
+    gets one at r 1.15 opposite the vent (centred in the gap) and a stub to it."""
+    n = 0
+    for fp in footprints(board):
+        if not str(fp.GetFPID().GetLibItemName()).startswith("Dome_"):
+            continue
+        centre = next(p for p in fp.Pads() if p.GetNumber() == "1")
+        vent = next(p for p in fp.Pads() if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH)
+        cx, cy = xy(centre.GetPosition())
+        vx, vy = xy(vent.GetPosition())
+        d = math.hypot(vx - cx, vy - cy)
+        v = (cx - (vx - cx) * 1.15 / d, cy - (vy - cy) * 1.15 / d)
+        add_track(board, (cx, cy), v, centre.GetNet(), 0.2)
+        add_via(board, v, centre.GetNet())
+        n += 1
+    print("dome contacts given a via in their gap:", n)
+
+
+def usb_shell_ground(board):
+    """J1's four shell legs (all pad "SH") are plated holes, so fanout() leaves them to the
+    pours, but on the USB tab the routing often cut a leg's patch of pour off (2026-10-20: 5
+    runs in 6 failed there). So each side's front and rear legs are joined on the back, and
+    each leg gets its own stub and via down into the pours."""
+    fp = board.FindFootprintByReference("J1")
+    gnd = board.FindNet("GND")
+    legs = [p for p in fp.Pads() if p.GetNumber() == "SH"]
+    for side in (-1, 1):
+        pair = sorted((p for p in legs if (xy(p.GetPosition())[1] - xy(fp.GetPosition())[1]) * side > 0),
+                      key=lambda p: p.GetPosition().x)
+        if len(pair) == 2:
+            add_track(board, xy(pair[0].GetPosition()), xy(pair[1].GetPosition()), gnd, 0.4, pcbnew.B_Cu)
+    space = Space(board)
+    fx, fy = xy(fp.GetPosition())
+    for p in legs:
+        px, py = xy(p.GetPosition())
+        if not via_near(board, space, (px, py), "GND", pcbnew.B_Cu, math.atan2(py - fy, px - fx),
+                        lambda q, p=p: p.HitTest(V(*q)), p):
+            print(f"J1 shell leg at ({px:.2f}, {py:.2f}): no room for its via")
+
+
 def fpc_ground_bar(board):
     """The panel connector's grounded pins (GND, the parallel bus and the RGB interface's
     strobes) come in runs of neighbours: each run is joined by a bar behind its pads (the
@@ -254,10 +337,13 @@ def fpc_ground_bar(board):
                   key=lambda p: p.GetPosition().x)
     top = min(pcbnew.ToMM(p.GetBoundingBox().GetY()) for p in pads)
     bar_y, via_y = top - 0.45, top - 1.25
+    others = [xy(p.GetPosition())[0] for p in fp.Pads()
+              if p.GetNumber() != "MP" and p.GetNetname() != "GND" and not p.GetNetname().startswith("unconnected-")]
     runs, run = [], []
     for p in pads:
         x = xy(p.GetPosition())[0]
-        if run and x - run[-1][0] > 0.6:
+        # a run goes on past unconnected pins (2026-10-27: pad 8 sat alone behind three of them with no room for a via)
+        if run and x - run[-1][0] > 0.6 and any(run[-1][0] < o < x for o in others):
             runs.append(run)
             run = []
         run.append((x, p))
@@ -272,6 +358,133 @@ def fpc_ground_bar(board):
         for i in range(0, len(xs), 5):
             add_track(board, (xs[i], bar_y), (xs[i], via_y), gnd, 0.3)
             add_via(board, (xs[i], via_y), gnd)
+
+
+def usb_pair(board):
+    """USB D+ and D- as one pair (0.2 mm tracks, 0.3 mm apart), drawn here: Freerouting has no
+    pairs and ran the two apart, with loops at J1. From J1: D+ joins its two pads (B6, A6)
+    behind them round A7, D- its two (A7, B7) at their tips past A6, and the pair heads for U1.
+    U1 (SRV05-4, turned so pins 1 and 3 face away from J1) has each line run over its own pin
+    with no stub: D+ over the top and down the channel between the pin rows onto pin 1, D- under
+    the bottom onto pin 3 (the channel also takes GND pin 2's via). Past U1 the pair drops to
+    the back and runs straight under J3 to R21/R22 by the core, up through a via each.
+    With J1 beside the cell's hole (2026-10-22, U1 below and left of it) the pair can't head
+    left from J1's pads: it drops to the back beside them, runs down the strip and along under
+    the speaker, and comes up through a via each to the right of U1."""
+    w = 0.2
+    dp, dm = board.FindNet("USB_DP"), board.FindNet("USB_DM")
+    F, B = pcbnew.F_Cu, pcbnew.B_Cu
+
+    def run(net, pts, layer):
+        for a, b in zip(pts, pts[1:]):
+            add_track(board, a, b, net, w, layer)
+    j1 = {p.GetNumber(): p for p in board.FindFootprintByReference("J1").Pads()}
+    b6, a6, a7, b7 = (xy(j1[n].GetPosition()) for n in ("B6", "A6", "A7", "B7"))
+    assert b6[1] < a7[1] < a6[1] < b7[1], "J1's D+/D- pads aren't in the order usb_pair() expects"
+    tip, far = box(j1["A6"])[0], box(j1["A6"])[2]
+    jx, fx = tip - 0.28, far + 0.37            # 0.18 and 0.27 mm clear of the pads they pass
+    run(dp, [b6, (fx, b6[1]), (fx, a6[1]), a6], F)
+    run(dm, [a7, (jx, a7[1]), (jx, b7[1]), b7], F)
+    u1 = board.FindFootprintByReference("U1")
+    pin = {p.GetNumber(): p for p in u1.Pads()}
+    cx, cy = xy(u1.GetPosition())
+    p1, p3 = xy(pin["1"].GetPosition()), xy(pin["3"].GetPosition())
+    assert p1[0] < cx and p3[0] < cx and p1[1] < cy < p3[1], "U1 isn't turned as usb_pair() expects"
+    out = box(pin["1"])[0]                     # the pins' outer ends, away from J1
+    yt, yb = box(pin["6"])[1] - 0.3, box(pin["4"])[3] + 0.3     # over pin 6, under pin 4
+    sp, sm = b6, (jx, a7[1])                   # where each line sets off for U1, and at what height
+    yp, ym = b6[1], a7[1]
+    if cy > b7[1] + 2.0:
+        # J1 beside the hole: D+ and D- each drop through a via just left of the pads (D+ the
+        # outer), run down the strip on the back and along under the speaker, D+ 0.65 above
+        # D-, and come up right of U1; from there as before
+        yp, ym = cy - 0.25, cy + 0.4
+        xs0 = box(pin["5"])[2] + 0.5 + (yp - yt)
+        vp, vm = (jx - 1.45, b6[1]), (jx - 0.95, a7[1] + 0.45)     # the drops beside the pads
+        up, um = (xs0 + 0.6, yp), (xs0 + 1.35, ym)                 # and the vias up right of U1
+        run(dp, [b6, vp], F)
+        run(dm, [(jx, a7[1]), (vm[0], a7[1]), vm], F)
+        for v, net in ((vp, dp), (vm, dm), (up, dp), (um, dm)):
+            add_via(board, v, net)
+        run(dp, [vp, (vp[0], yp), up], B)
+        run(dm, [vm, (vm[0], ym), um], B)
+        sp, sm = up, um
+    xs = box(pin["5"])[2] + 0.5 + (yp - yt)     # where the pair splits, 45 degrees to its runs
+    assert xs < jx - 0.3, "U1 too close to J1 for usb_pair()"
+    run(dp, [sp, (xs, yp), (xs - (yp - yt), yt), (cx, yt), (cx, p1[1]), (out - 0.55, p1[1])], F)
+    run(dm, [sm, (xs, ym), (xs - (yb - ym), yb), (cx, yb), (cx, p3[1]), (out - 0.55, p3[1])], F)
+    gnd, v33 = board.FindNet("GND"), board.FindNet("+3V3")
+    add_track(board, xy(pin["2"].GetPosition()), (cx, cy), gnd, w, F)
+    add_via(board, (cx, cy), gnd)
+    p5 = xy(pin["5"].GetPosition())
+    add_track(board, p5, (box(pin["5"])[2] + 0.55, cy), v33, w, F)
+    add_via(board, (box(pin["5"])[2] + 0.55, cy), v33)
+    vdp, vdm = (out - 0.55, p1[1]), (out - 0.55, p3[1])
+    add_via(board, vdp, dp)
+    add_via(board, vdm, dm)
+    # the back: D+ 0.5 mm above D-, under J3's lead-in, over the core's copied GND via at
+    # (88.9, 108.5) and TP11-TP14 (y 110)
+    ydp = 107.4
+    ydm = ydp + 0.5
+    r21, r22 = (xy(next(p for p in board.FindFootprintByReference(r).Pads() if p.GetNumber() == "1").GetPosition())
+                for r in ("R21", "R22"))
+    edp, edm = (r21[0], r21[1] - 0.775), (r22[0], r22[1] - 0.625)    # each pad's via, just above it
+    run(dp, [vdp, (vdp[0] - abs(vdp[1] - ydp), ydp), (edp[0] + (edp[1] - ydp), ydp), edp], B)
+    run(dm, [vdm, (vdm[0] - abs(vdm[1] - ydm), ydm), (edm[0] + (edm[1] - ydm), ydm), edm], B)
+    add_via(board, edp, dp)
+    add_via(board, edm, dm)
+    add_track(board, edp, r21, dp, w, F)
+    add_track(board, edm, r22, dm, w, F)
+    print("USB pair pre-routed: J1 -> U1 -> R21/R22")
+
+
+def strips():
+    """The strips beside the cell's hole: (x by the hole's edge, y0, y1, x0, x1) for each, between
+    the hole's rounded corners."""
+    bw = CASE["board"]["w"]
+    out = []
+    for x0, y0, x1, y1 in slot_boxes():
+        r = next(c.get("r", 0) for c in CUTOUTS if tuple(c["box"]) == (x0, y0, x1, y1))
+        out.append((x0 - 0.65, y0 + r, y1 - r, 100 - bw / 2, x0))
+        out.append((x1 + 0.65, y0 + r, y1 - r, x1, 100 + bw / 2))
+    return out
+
+
+def strip_stitch(board, pitch=2.0):
+    """After the pours: GND vias in the strips wherever both layers' pours are filled round the
+    spot, so each strip's two pours act as one beside the signals crossing it."""
+    pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+    by_layer = {}
+    for z in board.Zones():
+        if z.GetIsRuleArea() or z.GetNetname() != "GND":
+            continue
+        for layer in (pcbnew.F_Cu, pcbnew.B_Cu):
+            if z.IsOnLayer(layer):
+                by_layer.setdefault(layer, []).append(z.GetFilledPolysList(layer))
+
+    def filled(layer, p):
+        ring = [(0, 0)] + [(0.45 * math.cos(math.radians(a)), 0.45 * math.sin(math.radians(a))) for a in range(0, 360, 45)]
+        return all(any(f.Contains(V(p[0] + dx, p[1] + dy)) for f in by_layer.get(layer, [])) for dx, dy in ring)
+    space = Space(board)
+    gnd = board.FindNet("GND")
+    vias = [xy(v.GetPosition()) for v in board.GetTracks() if v.GetClass() == "PCB_VIA" and v.GetNetname() == "GND"]
+    n = 0
+    for _, y0, y1, x0, x1 in strips():
+        y = y0
+        while y <= y1:
+            x = x0 + 0.6
+            while x <= x1 - 0.6:
+                p = (x, y)
+                if (all(math.dist(p, v) >= pitch for v in vias) and filled(pcbnew.F_Cu, p) and filled(pcbnew.B_Cu, p)
+                        and space.clear_at(p, VIA_D / 2 + CLEAR, "GND", via=True)):
+                    v = add_via(board, p, gnd)
+                    v.SetLocked(False)
+                    space.add(v)
+                    vias.append(p)
+                    n += 1
+                x += 0.25
+            y += 0.25
+    return n
 
 
 def box(item):
@@ -302,8 +515,7 @@ class Space:
         self.contacts = [((x, y), 3.3) for x, y in CASE["buttons"].values()]
         bw, bl = CASE["board"]["w"], CASE["board"]["l"]
         self.edge = (100 - bw / 2 + 0.6, 100 - bl / 2 + 0.6, 100 + bw / 2 - 0.6, 100 + bl / 2 - 0.6)
-        (sx0, sy0), (sx1, sy1) = CASE["slot"]
-        self.slot = (min(sx0, sx1) - 0.6, min(sy0, sy1) - 0.6, max(sx0, sx1) + 0.6, max(sy0, sy1) + 0.6)
+        self.slots = [(b[0] - 0.6, b[1] - 0.6, b[2] + 0.6, b[3] + 0.6) for b in slot_boxes()]
         self.fences = core_fences()
 
     def clear_at(self, p, r, net, via=False):
@@ -312,7 +524,7 @@ class Space:
         x, y = p
         if not (self.edge[0] <= x <= self.edge[2] and self.edge[1] <= y <= self.edge[3]):
             return False
-        if self.slot[0] <= x <= self.slot[2] and self.slot[1] <= y <= self.slot[3]:
+        if any(s[0] <= x <= s[2] and s[1] <= y <= s[3] for s in self.slots):
             return False
         if any(f[0] - r <= x <= f[2] + r and f[1] - r <= y <= f[3] + r for f in self.fences):
             return False
@@ -454,29 +666,31 @@ def edge_box(inset=0.6):
     return (100 - bw / 2 + inset, 100 - bl / 2 + inset, 100 + bw / 2 - inset, 100 + bl / 2 - inset)
 
 
-def slot_box():
-    (sx0, sy0), (sx1, sy1) = CASE["slot"]
-    return (min(sx0, sx1), min(sy0, sy1), max(sx0, sx1), max(sy0, sy1))
+def slot_boxes():
+    """The board's cutouts (the cell's and the speaker's holes), as (x0, y0, x1, y1)."""
+    return [tuple(c["box"]) for c in CUTOUTS]
 
 
-MAX_RIPPED = 6            # connections the maze pass may take other nets' copper up for
+MAX_RIPPED = 12           # connections the maze pass may take other nets' copper up for
 
 
-def maze_for(board, net, a, b, reach=6.0, ignore=()):
+def maze_for(board, net, a, b, reach=6.0, ignore=(), blocks=()):
     c = net_class(net)
     e = edge_box()
-    box = (max(min(a[0], b[0]) - reach, e[0]), max(min(a[1], b[1]) - reach, e[1]),
-           min(max(a[0], b[0]) + reach, e[2]), min(max(a[1], b[1]) + reach, e[3]))
+    rx, ry = reach if isinstance(reach, tuple) else (reach, reach)
+    box = (max(min(a[0], b[0]) - rx, e[0]), max(min(a[1], b[1]) - ry, e[1]),
+           min(max(a[0], b[0]) + rx, e[2]), min(max(a[1], b[1]) + ry, e[3]))
     return Maze(board, net, box, (pcbnew.F_Cu, pcbnew.B_Cu), c["track"], c["clear"], c["via"], c["drill"],
-                fences=core_fences(), blocks=[slot_box()], edge=e, ignore=set(ignore),
+                fences=core_fences(), fence_layer=core_layer(pcbnew.F_Cu), blocks=slot_boxes() + list(blocks), edge=e,
+                ignore=set(ignore),
                 discs=[((x, y), CONTACT_R) for x, y in CASE["buttons"].values()])
 
 
 
-def maze_connect(board, net, a, la, b, lb, reach=6.0):
+def maze_connect(board, net, a, la, b, lb, reach=6.0, blocks=()):
     """One connection, a -> b, by tools/maze.py on the outer layers; added locked.
     Returns the new route as [(layer, points), ...] or None."""
-    runs = maze_for(board, net, a, b, reach=reach).route(a, la, b, lb)
+    runs = maze_for(board, net, a, b, reach=reach, blocks=blocks).route(a, la, b, lb)
     if runs:
         add_route(board, net, runs)
     return runs
@@ -583,15 +797,47 @@ def open_pairs(board):
     return pairs, odd
 
 
-def finish_open(board, rounds=24):
+def corridor_ripup(board, net, a, b, tries=12):
+    """A long connection that one other net blocks part-way, away from its ends (2026-10-20:
+    seat 1's D-pad lines to U4): route it as if one other net's tracks in the way weren't
+    there, the nets with the most copper there first, and take up what the new route
+    crosses; that net comes back open for the next round. Locked pre-routes stay."""
+    reach = 6.0
+    x0, y0 = min(a[0], b[0]) - reach, min(a[1], b[1]) - reach
+    x1, y1 = max(a[0], b[0]) + reach, max(a[1], b[1]) + reach
+    def inside(t):
+        bx = box(t)
+        return bx[0] < x1 and bx[2] > x0 and bx[1] < y1 and bx[3] > y0
+    by_net = {}
+    for t in board.GetTracks():
+        n = t.GetNetname()
+        if n in (net, "") or n in PLANE_NETS or t.IsLocked() or not inside(t):
+            continue
+        by_net.setdefault(n, []).append(t)
+    for other in sorted(by_net, key=lambda n: -len(by_net[n]))[:tries]:
+        cand = by_net[other]
+        runs = maze_for(board, net, a[:2], b[:2], ignore={t.m_Uuid.AsString() for t in cand}).route(a[:2], a[2], b[:2], b[2])
+        if not runs:
+            continue
+        for t in [t for t in cand if conflicts(t, runs, net)]:
+            remove(board, t)
+        add_route(board, net, runs)
+        print(f"  {net}: routed through {other}'s copper, which comes back open", flush=True)
+        return True
+    return False
+
+
+def finish_open(board, rounds=24, known=None):
     """Signal connections Freerouting left open, one at a time by tools/maze.py. When a
     pin is boxed in by the router's tracks for a neighbour, the route is found as if
     those near it weren't there; if it crosses only one other net, that net's crossed
     copper is taken up and comes back as an open connection for the next round (at
-    most MAX_RIPPED times: taking up more tends to leave more open than it closes)."""
+    most MAX_RIPPED times: taking up more tends to leave more open than it closes). `known` is
+    open_pairs() of the board as it is, when the caller has it (one DRC run less)."""
     done = ripped = 0
     for r in range(rounds):
-        pairs, odd = open_pairs(board)
+        pairs, odd = known if known is not None else open_pairs(board)
+        known = (pairs, odd)                 # still the board's until something is added
         print(f"  maze round {r + 1}: {len(pairs)} open", flush=True)
         if not pairs:
             break
@@ -603,6 +849,12 @@ def finish_open(board, rounds=24):
                 continue
             # a long connection may need to swing wide of the straight line between its ends
             if maze_connect(board, net, a[:2], a[2], b[:2], b[2], reach=20.0):
+                done += 1
+                progress = True
+                continue
+            # one that crosses the board (seat 1's shift register to seat 2's, 110 mm, down a strip beside the cell's hole)
+            # needs the strips inside the search box (2026-10-26: SR_CHAIN, reach 36 closed it)
+            if maze_connect(board, net, a[:2], a[2], b[:2], b[2], reach=40.0):
                 done += 1
                 progress = True
                 continue
@@ -621,16 +873,21 @@ def finish_open(board, rounds=24):
                     continue                 # only take up one other net's copper per connection
                 ripped += 1
                 for t in gone:
-                    board.Remove(t)
+                    remove(board, t)
                 add_route(board, net, runs)
                 done += 1
                 took_up = progress = True
                 break
+            if not took_up and ripped < MAX_RIPPED and corridor_ripup(board, net, a, b):
+                ripped += 1
+                done += 1
+                took_up = progress = True
             if took_up:
                 break                        # what was taken up changes the open list: ask the DRC again
         if not progress:
-            break
-    pairs, odd = open_pairs(board)
+            break                            # (nothing added: the board is as the DRC saw it)
+        known = None
+    pairs, odd = known if known is not None else open_pairs(board)
     left = [f"{n}: {a} / {b}" for n, a, b in pairs] + odd
     print(f"open connections finished by the maze router: {done} (nets taken up and re-routed: {ripped}); "
           f"left: {left}")
@@ -656,7 +913,19 @@ def fiducial_keepouts(board):
     return out
 
 
-def dsn_for_router(text, contacts, fences, circles=()):
+def npth_keepouts(board):
+    """Every non-plated hole keeps copper 0.30 mm off (battler.kicad_dru; Freerouting doesn't read that rule): a keep-out disc
+    on both layers, 0.30 + half a track + 0.05 past the drill."""
+    out = []
+    for fp in footprints(board):
+        for p in fp.Pads():
+            if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH:
+                d = pcbnew.ToMM(max(p.GetDrillSize().x, p.GetDrillSize().y))
+                out.append(xy(p.GetPosition()) + (d / 2 + 0.30 + 0.1 + 0.05,))
+    return out
+
+
+def dsn_for_router(text, contacts, fences, circles=(), npth=()):
     """Adjust the router's copy of the board (never the board):
     - membrane contacts: KiCad exports each comb as one polygon that also covers the
       gaps between the combs, so a contact's two pads overlap and the router gives up
@@ -677,7 +946,7 @@ def dsn_for_router(text, contacts, fences, circles=()):
         xs, ys = v[0::2], v[1::2]
         cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
         hx, hy = (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2
-        d = 120.0                                  # um, the DSN's unit
+        d = 220.0                                  # um, the DSN's unit (0.12 for the 0.2 rule; 0.22 since the 0.30 copper-to-edge rule, 2026-10-27)
         pts = [f"{cx + (x - cx) * (hx - d) / hx:.1f} {cy + (y - cy) * (hy - d) / hy:.1f}" for x, y in zip(xs, ys)]
         return m.group(1) + "  ".join(pts) + ")"
     text = re.sub(r"(\(boundary\s*\(path pcb 0\s+)([-0-9.\s]+)\)", shrink, text, count=1)
@@ -691,29 +960,71 @@ def dsn_for_router(text, contacts, fences, circles=()):
         text = re.sub(r"(\(net " + re.escape(net) + r"\s*\(pins )([^()]*)(\))", r"\1\3", text)
     text = re.sub(r"\(image battler:DSL_button_4ring.*?\n    \)",
                   lambda m: re.sub(r"\n\s*\(pin [^\n]*", "", m.group(0)), text, flags=re.S)
-    while True:
-        i = text.find('(keepout "" (polygon F.Cu')
-        if i < 0:
-            break
-        text = text[:i].rstrip(" ") + text[dsn_block_ends(text, i):].lstrip("\n")
+    for layer in ("F.Cu", "B.Cu"):
+        while True:
+            i = text.find(f'(keepout "" (polygon {layer}')
+            if i < 0:
+                break
+            text = text[:i].rstrip(" ") + text[dsn_block_ends(text, i):].lstrip("\n")
     extra = "".join(f'\n    (keepout "" (circle F.Cu 5800 {x * 1000:.0f} {-y * 1000:.0f}))' for _, x, y in contacts)
     extra += "".join(f'\n    (keepout "" (circle F.Cu {2 * r * 1000:.0f} {x * 1000:.0f} {-y * 1000:.0f}))'
                      for x, y, r in circles)
+    extra += "".join(f'\n    (keepout "" (circle {layer} {2 * r * 1000:.0f} {x * 1000:.0f} {-y * 1000:.0f}))'
+                     for x, y, r in npth for layer in ("F.Cu", "B.Cu"))
+    fence_layer = "B.Cu" if core_layer(pcbnew.F_Cu) == pcbnew.B_Cu else "F.Cu"
     for x0, y0, x1, y1 in fences:
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(x0, y0, x1, y1))
-        extra += f'\n    (keepout "" (polygon F.Cu 0 {pts}))'
-    # the battery cable slot: the router's copy of the outline doesn't keep its tracks
-    # 0.2 mm off the slot's rounded ends, so it gets a keep-out on both layers
-    sx0, sy0, sx1, sy1 = slot_box()
-    pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.5, sy0 - 0.5, sx1 + 0.5, sy1 + 0.5))
-    for layer in ("F.Cu", "B.Cu"):
-        extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
+        extra += f'\n    (keepout "" (polygon {fence_layer} 0 {pts}))'
+    # the cutouts: the router's copy of the outline doesn't keep its tracks 0.3 mm off their edges and rounded corners, so each
+    # gets a keep-out on both layers, 0.22 out (+ 0.155 clearance + half a track = 0.45 centre to edge; the rule needs 0.375)
+    for sx0, sy0, sx1, sy1 in slot_boxes():
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.22, sy0 - 0.22, sx1 + 0.22, sy1 + 0.22))
+        for layer in ("F.Cu", "B.Cu"):
+            extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
     j = text.rindex("  )", 0, i)          # end of the structure section
-    return text[:j] + extra + "\n" + text[j:]
+    text = text[:j] + extra + "\n" + text[j:]
+    return text
 
 
-SAVED_SES = os.path.join(HERE, "last_route.ses")
+def dsn_blocks(text, head, item):
+    """(start, end) of each `item` block inside the section that starts with `head`."""
+    i = text.index(head) + len(head) - len(head.lstrip())
+    j = dsn_block_ends(text, i)
+    out, k = [], i
+    while True:
+        m = text.find("\n    (" + item + " ", k, j)
+        if m < 0:
+            return out
+        k = dsn_block_ends(text, m + 5)
+        out.append((m, k))
+
+
+def dsn_shuffled(text, seed):
+    """The same board with its components and nets in another order. Freerouting 1.9 has no
+    seed and routes a given file the same way every time (2026-10-21: identical sessions at
+    any load), so copies of one board all end the same way; the order it reads the parts and
+    nets in is what decides which connection it tries first. (Only the order changes.)"""
+    import random
+    rnd = random.Random(seed)
+    for head, item in (("  (placement", "component"), ("  (network", "net")):
+        blocks = dsn_blocks(text, head, item)
+        parts = [text[a:b] for a, b in blocks]
+        rnd.shuffle(parts)
+        text = text[:blocks[0][0]] + "".join(parts) + text[blocks[-1][1]:]
+    return text
+
+
+def saved_ses():
+    return os.path.join(LOGS, "last_route.ses")
+
+
+class FreeroutingStuck(Exception):
+    """Freerouting 1.9 re-raised its "DSN file reader" warning dialog more than STUCK_DIALOGS times: the design it was handed has
+    wiring it can't normalize (2026-10-26: 30 minutes lost per attempt, 330 to 920 dismissals). The net it names is in the message."""
+
+
+STUCK_DIALOGS = 5
 
 
 def freerouting_19(args):
@@ -721,27 +1032,43 @@ def freerouting_19(args):
     given carries wiring it can't tidy ("normalization of net ... failed") it waits on
     a warning dialog. Run it on a private Xvfb and click that dialog's OK."""
     import time
-    n = next(n for n in range(99, 200) if not os.path.exists(f"/tmp/.X{n}-lock")
-             and not os.path.exists(f"/tmp/.X11-unix/X{n}"))
-    xvfb = subprocess.Popen(["Xvfb", f":{n}", "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
-                            stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+    xvfb, n = None, 98
+    while xvfb is None:
+        # routes running at once can pick the same free display: the Xvfb that finds its lock
+        # taken exits, and that route tries the next one
+        n += 1
+        if n >= 200:
+            sys.exit("no free X display for Freerouting")
+        if os.path.exists(f"/tmp/.X{n}-lock") or os.path.exists(f"/tmp/.X11-unix/X{n}"):
+            continue
+        xvfb = subprocess.Popen(["Xvfb", f":{n}", "-screen", "0", "1280x1024x24", "-nolisten", "tcp"],
+                                stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+        for _ in range(50):                 # up once its socket is there (well under a second)
+            if xvfb.poll() is not None or os.path.exists(f"/tmp/.X11-unix/X{n}"):
+                break
+            time.sleep(0.1)
+        time.sleep(0.2)
+        if xvfb.poll() is not None:
+            xvfb = None
     env = dict(os.environ, DISPLAY=f":{n}")
     env.pop("XAUTHORITY", None)
     try:
-        time.sleep(2)
         # in the session's folder: it writes logs/ into its working directory
         java = subprocess.Popen(["java", "-jar", JAR, *args], env=env, stdout=subprocess.PIPE,
                                 stderr=subprocess.STDOUT, text=True, cwd=os.path.dirname(args[1]))
-        start = time.time()
-        seen = set()
+        start = last = time.time()
+        seen, dismissed = set(), 0
         while java.poll() is None:
-            time.sleep(5)
+            time.sleep(0.5)                  # (it exits the moment the session is written)
             if time.time() - start > 3 * 3600:
                 java.kill()
                 break
+            if time.time() - last < 2:
+                continue
+            last = time.time()
             found = set(subprocess.run(["xdotool", "search", "--name", "DSN file reader"], env=env,
                                        capture_output=True, text=True).stdout.split())
-            stuck, seen = found & seen, found      # still there 5 s later: the dialog, not the loader
+            stuck, seen = found & seen, found      # still there 2 s later: the dialog, not the loader
             for w in stuck:
                 geo = dict(line.split("=", 1) for line in subprocess.run(
                     ["xdotool", "getwindowgeometry", "--shell", w], env=env, capture_output=True,
@@ -750,9 +1077,23 @@ def freerouting_19(args):
                 if wd > 300 and ht > 200:
                     # its OK button sits in the bottom-right corner (a click at the bottom
                     # centre misses it, and Freerouting then waits for ever)
-                    subprocess.run(["xdotool", "mousemove", str(x + wd - 44), str(y + ht - 27), "click", "1"],
-                                   env=env, capture_output=True)
+                    # (and with a long list of warnings the dialog is wide and its OK button is at the bottom centre: 2026-10-26,
+                    # "Multiple vias skipped" for the contacts' stub vias; the corner click missed it for ever, 30 minutes an attempt)
+                    for bx in (x + wd - 44, x + wd // 2):
+                        subprocess.run(["xdotool", "mousemove", str(bx), str(y + ht - 27), "click", "1"], env=env, capture_output=True)
+                        time.sleep(0.3)
+                        if w not in subprocess.run(["xdotool", "search", "--name", "DSN file reader"], env=env,
+                                                   capture_output=True, text=True).stdout.split():
+                            break
+                    dismissed += 1
                     print("  Freerouting warning dialog dismissed", flush=True)
+                    if dismissed > STUCK_DIALOGS:
+                        java.kill()
+                        out = java.stdout.read()
+                        for logfile in glob.glob(os.path.join(os.path.dirname(args[1]), "logs", "*.log")):    # (its WARN lines are in its own log)
+                            out += open(logfile).read()
+                        nets = sorted(set(re.findall(r"normalization of net '([^']*)' failed", out)))
+                        raise FreeroutingStuck(f"Freerouting stuck on its warning dialog ({dismissed} dismissals); nets it could not normalize: {nets or '?'}")
         return java.stdout.read()
     finally:
         xvfb.terminate()
@@ -765,18 +1106,26 @@ def run_freerouting(board, passes, contacts):
         dsn, ses = os.path.join(tmp, "b.dsn"), os.path.join(tmp, "b.ses")
         if not pcbnew.ExportSpecctraDSN(board, dsn):
             sys.exit("DSN export failed")
-        text = dsn_for_router(open(dsn).read(), contacts, core_fences(), fiducial_keepouts(board))
+        text = dsn_for_router(open(dsn).read(), contacts, core_fences(), fiducial_keepouts(board), npth_keepouts(board))
+        if SEED:
+            text = dsn_shuffled(text, SEED)
         open(dsn, "w").write(text)
-        open(os.path.join(HERE, "last_route.dsn"), "w").write(text)
-        args = ["-de", dsn, "-do", ses, "-mp", str(passes)]
-        print("routing:", " ".join(args), flush=True)
+        open(os.path.join(LOGS, "last_route.dsn"), "w").write(text)
+        args = ["-de", dsn, "-do", ses, "-mp", str(passes), *FR_ARGS]
         if "1.9" in os.path.basename(JAR):
+            # -dct 0: no 20 s "start now?" dialog before it routes; -da: no usage reports;
+            # -mt 0: no optimizer pass (2026-10-21: 40 s for nothing route.py keeps, see OPTIMIZE)
+            args += ["-dct", "0", "-da", "-mt", "1" if OPTIMIZE else "0"]
+            print("routing:", " ".join(args), flush=True)
             log = freerouting_19(args)
         else:
-            r = subprocess.run(["java", "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false", *args],
+            print("routing:", " ".join(args), flush=True)
+            # 2.x sends usage analytics unless told not to (Alex, 2026-10-22: off)
+            r = subprocess.run(["java", "-Djava.awt.headless=true", "-jar", JAR, "--gui.enabled=false",
+                                "--usage_and_diagnostic_data.disable_analytics=true", *args],
                                capture_output=True, text=True, timeout=3 * 3600, cwd=tmp)
             log = r.stdout + r.stderr
-        open(os.path.join(HERE, "freerouting.log"), "a").write(log)
+        open(os.path.join(LOGS, "freerouting.log"), "a").write(log)
         if not os.path.exists(ses):
             sys.exit("Freerouting wrote no session; see tools/freerouting.log")
         session = open(ses).read()
@@ -785,23 +1134,56 @@ def run_freerouting(board, passes, contacts):
     return session
 
 
+def snap_slivers(board, tiny=0.005):
+    """Freerouting's own session comes back with a track a nanometre long here and there, and two tracks that
+    then differ by that much between the same two points: a sliver loop its next run can't normalize
+    ("The normalization of net ... failed", then its warning dialog for ever). Each such track is taken away
+    and the ends that met its far end move to its near one; split_at_joins() then drops the twin it leaves."""
+    n = 0
+    for t in [t for t in board.GetTracks() if not isinstance(t, pcbnew.PCB_VIA) and not t.IsLocked()]:
+        a, b = xy(t.GetStart()), xy(t.GetEnd())
+        if math.dist(a, b) >= tiny:
+            continue
+        for o in board.GetTracks():
+            if o is t or o.GetLayer() != t.GetLayer() or o.GetNetname() != t.GetNetname():
+                continue
+            if isinstance(o, pcbnew.PCB_VIA):
+                continue
+            if math.dist(xy(o.GetStart()), b) < tiny:
+                o.SetStart(V(*a))
+            if math.dist(xy(o.GetEnd()), b) < tiny:
+                o.SetEnd(V(*a))
+        remove(board, t)
+        n += 1
+    return n
+
+
 def freeroute(board, passes, contacts, reuse=False, again=2):
-    if reuse and os.path.exists(SAVED_SES):
+    """Returns open_pairs() of the routed board when it already asked the DRC for it, else None."""
+    if reuse and os.path.exists(saved_ses()):
         # same placed board + same pre-routes = the saved session still fits
-        print("reusing", SAVED_SES)
-        if not pcbnew.ImportSpecctraSES(board, SAVED_SES):
+        print("reusing", saved_ses())
+        if not pcbnew.ImportSpecctraSES(board, saved_ses()):
             sys.exit("SES import failed")
-        return
-    open(os.path.join(HERE, "freerouting.log"), "w").close()
+        return None
+    open(os.path.join(LOGS, "freerouting.log"), "w").close()
     session = run_freerouting(board, passes, contacts)
     # what it leaves open often goes through on a second run from its own result
+    known = None
     for _ in range(again):
-        pairs, _ = open_pairs(board)
-        if not pairs:
+        known = open_pairs(board)
+        if not known[0]:
             break
-        print(f"Freerouting left {len(pairs)} open; running it again from its result", flush=True)
-        session = run_freerouting(board, max(10, passes // 2), contacts)
-    open(SAVED_SES, "w").write(session)
+        print(f"Freerouting left {len(known[0])} open; running it again from its result", flush=True)
+        known = None
+        print("slivers taken out before the re-run:", snap_slivers(board), "; tracks split, duplicates dropped:", split_at_joins(board), flush=True)
+        try:
+            session = run_freerouting(board, max(10, passes // 2), contacts)
+        except FreeroutingStuck as e:       # the first run's wiring stands; the maze router takes it from here
+            print("re-run abandoned:", e, flush=True)
+            break
+    open(saved_ses(), "w").write(session)
+    return known
 
 
 def drop_unused_stub_vias(board, stub_vias):
@@ -816,7 +1198,7 @@ def drop_unused_stub_vias(board, stub_vias):
         layers = {t.GetLayer() for t in tracks if t.GetNetname() == v.GetNetname()
                   and min(math.dist(p, xy(t.GetStart())), math.dist(p, xy(t.GetEnd()))) < 0.05}
         if v.GetNetname() not in PLANE_NETS and len(layers) < 2:
-            board.Remove(v)
+            remove(board, v)
             gone += 1
     return gone
 
@@ -850,15 +1232,16 @@ def stitch(board, pitch=5.0):
 def drc_report(board):
     """Save a scratch copy next to the project (so its rules apply) and ask kicad-cli."""
     import json
-    scratch = os.path.join(BOARD_DIR, "_repair.kicad_pcb")
-    pro = os.path.join(BOARD_DIR, "_repair.kicad_pro")
+    scratch = os.path.join(SCRATCH, "_repair.kicad_pcb")
+    pro = os.path.join(SCRATCH, "_repair.kicad_pro")
     open(pro, "w").write(open(os.path.join(BOARD_DIR, "battler.kicad_pro")).read())
+    shutil.copy(os.path.join(BOARD_DIR, "battler.kicad_dru"), pro.replace(".kicad_pro", ".kicad_dru"))
     pcbnew.SaveBoard(scratch, board)
     with tempfile.TemporaryDirectory() as tmp:
         out = os.path.join(tmp, "d.json")
         subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "-o", out, scratch], capture_output=True)
         d = json.load(open(out))
-    for f in (scratch, pro, os.path.join(BOARD_DIR, "_repair.kicad_prl")):
+    for f in (scratch, pro, os.path.join(SCRATCH, "_repair.kicad_prl")):
         if os.path.exists(f):
             os.remove(f)
     return d
@@ -891,12 +1274,15 @@ def prune_dangling(board, rounds=5, locked_too=False):
         changed = 0
         for t in items:
             if isinstance(t, pcbnew.PCB_VIA):
-                board.Remove(t)
+                remove(board, t)
                 changed += 1
                 continue
-            span = joined_span(board, t)
+            try:
+                span = joined_span(board, t)
+            except AttributeError:
+                continue                    # an item the pass before took away (its SWIG proxy is stale)
             if span is None:
-                board.Remove(t)
+                remove(board, t)
                 changed += 1
             elif span != (xy(t.GetStart()), xy(t.GetEnd())):
                 t.SetStart(V(*span[0]))
@@ -915,38 +1301,45 @@ def split_at_joins(board):
     repeats another. Returns (splits, duplicates dropped)."""
     tracks = [t for t in board.GetTracks() if not isinstance(t, pcbnew.PCB_VIA)]
     splits = 0
-    changed = True
-    while changed:
-        changed = False
-        ends = {}
-        for t in tracks:
-            for q in (xy(t.GetStart()), xy(t.GetEnd())):
-                ends.setdefault((t.GetNetname(), t.GetLayer()), []).append(q)
-        for t in list(tracks):
-            a, b = xy(t.GetStart()), xy(t.GetEnd())
-            for q in ends.get((t.GetNetname(), t.GetLayer()), []):
-                if seg_dist(q, a, b) < 0.001 and math.dist(q, a) > 0.001 and math.dist(q, b) > 0.001:
-                    u = pcbnew.PCB_TRACK(board)
-                    u.SetStart(V(*q))
-                    u.SetEnd(V(*b))
-                    u.SetWidth(t.GetWidth())
-                    u.SetLayer(t.GetLayer())
-                    u.SetNet(t.GetNet())
-                    u.SetLocked(t.IsLocked())
-                    board.Add(u)
-                    t.SetEnd(V(*q))
-                    tracks.append(u)
-                    splits += 1
-                    changed = True
-                    break
-            if changed:
-                break
+    # One pass, with the same splits in the same order as rescanning from the first track after
+    # each split: a split adds no new end point (q was one already, b stays as the new track's
+    # end), so the tracks before the split one stay clean. ends keeps each net and layer's
+    # points in the order a rescan would list them; end_at, where in it each track's end is.
+    ends, end_at = {}, {}
+    for t in tracks:
+        pts = ends.setdefault((t.GetNetname(), t.GetLayer()), [])
+        pts += [xy(t.GetStart()), xy(t.GetEnd())]
+        end_at[id(t)] = len(pts) - 1
+    i = 0
+    while i < len(tracks):
+        t = tracks[i]
+        a, b = xy(t.GetStart()), xy(t.GetEnd())
+        pts = ends.get((t.GetNetname(), t.GetLayer()), [])
+        q = next((q for q in pts if seg_dist(q, a, b) < 0.001 and math.dist(q, a) > 0.001
+                  and math.dist(q, b) > 0.001), None)
+        if q is None:
+            i += 1
+            continue
+        u = pcbnew.PCB_TRACK(board)
+        u.SetStart(V(*q))
+        u.SetEnd(V(*b))
+        u.SetWidth(t.GetWidth())
+        u.SetLayer(t.GetLayer())
+        u.SetNet(t.GetNet())
+        u.SetLocked(t.IsLocked())
+        board.Add(u)
+        t.SetEnd(V(*q))
+        tracks.append(u)
+        pts[end_at[id(t)]] = xy(t.GetEnd())
+        pts += [xy(u.GetStart()), xy(u.GetEnd())]
+        end_at[id(u)] = len(pts) - 1
+        splits += 1                     # (t again: what is left of it may need another split)
     seen, dropped = set(), 0
     for t in tracks:
         a, b = tuple(round(v, 4) for v in xy(t.GetStart())), tuple(round(v, 4) for v in xy(t.GetEnd()))
         key = (t.GetNetname(), t.GetLayer(), frozenset((a, b)), t.GetWidth())
         if key in seen:
-            board.Remove(t)
+            remove(board, t)
             dropped += 1
         else:
             seen.add(key)
@@ -1077,20 +1470,23 @@ def repair(board, rounds=4):
         plane = [u for u in items if any(f"[{n}]" in i["description"] for i in u["items"] for n in PLANE_NETS)]
         for u in plane:
             for it in u["items"]:
-                m = re.match(r"Pad (\S+) \[([^\]]+)\] of (\S+)", it["description"])
+                # "Pad 3 [GND] of U1", or "PTH pad SH [GND] of J1" for a through-hole pad
+                m = re.match(r"(?:PTH )?[Pp]ad (\S+) \[([^\]]+)\] of (\S+)", it["description"])
                 if not m:
                     continue
                 num, net, ref = m.groups()
                 if net not in PLANE_NETS:
                     continue
                 fp = board.FindFootprintByReference(ref)
-                for pad in fp.Pads():
-                    if pad.GetNumber() == num:
-                        layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
-                        if via_near(board, space, xy(pad.GetPosition()), net, layer, None,
-                                    lambda q, pad=pad: pad.HitTest(V(*q)), pad):
-                            added += 1
-                        break
+                # the pad DRC means, by where it says it is: several pads can share a number (J1's SH)
+                same = [p for p in fp.Pads() if p.GetNumber() == num]
+                if same:
+                    at = (it["pos"]["x"], it["pos"]["y"]) if "pos" in it else xy(same[0].GetPosition())
+                    pad = min(same, key=lambda p: math.dist(xy(p.GetPosition()), at))
+                    layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
+                    if via_near(board, space, xy(pad.GetPosition()), net, layer, None,
+                                lambda q, pad=pad: pad.HitTest(V(*q)), pad):
+                        added += 1
                 break
         print(f"repair round {r + 1}: {len(items)} unconnected ({len(plane)} on planes), {added} vias added")
         if not plane or not added:
@@ -1122,6 +1518,56 @@ def restore_contact_stubs(board):
         print("contact stubs put back:", back)
 
 
+def drop_via_conflicts(board):
+    """A via (the core's copied ones are locked) that fails clearance against a pad of another net is taken away: the pours
+    carry its net, and repair() puts a via back where a pad or island still needs one. On this board the core's GND via beside
+    U3's NC pad 4 (2026-10-26) was the one DRC error all 8 seeds ended with. Returns how many."""
+    by_uuid = {t.m_Uuid.AsString(): t for t in board.GetTracks() if isinstance(t, pcbnew.PCB_VIA)}
+    gone = 0
+    for v in drc_report(board).get("violations", []):
+        if v["type"] != "clearance":
+            continue
+        vias = [i for i in v["items"] if i["description"].startswith("Via ") and i["uuid"] in by_uuid]
+        pads = [i for i in v["items"] if "pad" in i["description"].lower()]
+        if len(v["items"]) == 2 and len(vias) == 1 and len(pads) == 1:
+            via = by_uuid.pop(vias[0]["uuid"])
+            print(f"  via {via.GetNetname()} at ({via.GetPosition().x / 1e6:.2f}, {via.GetPosition().y / 1e6:.2f}) too close to "
+                  f"{pads[0]['description']}: removed")
+            remove(board, via)
+            gone += 1
+    return gone
+
+
+def gnd_rescue(board, rounds=2):
+    """A GND pad the pours don't reach (2026-10-27: C12.2 and C21.2 under U4, in some seeds: no room for a via beside them): the maze router
+    takes a short F.Cu stub from it to the nearest GND via within 8 mm, which stands in the pour. Returns the pads it joined."""
+    done = []
+    for _ in range(rounds):
+        pcbnew.ZONE_FILLER(board).Fill(board.Zones())
+        items = item_by_uuid(board)
+        vias = [xy(t.GetPosition()) for t in board.GetTracks() if t.GetClass() == "PCB_VIA" and t.GetNetname() == "GND"]
+        todo = []
+        for u in drc_unconnected(board):
+            if not any("[GND]" in i["description"] for i in u["items"]):
+                continue
+            for i in u["items"]:
+                it = items.get(i.get("uuid"))
+                if isinstance(it, pcbnew.PAD) and it.GetNetname() == "GND" and it not in todo:
+                    todo.append(it)
+        if not todo:
+            break
+        for pad in todo:
+            p = xy(pad.GetPosition())
+            layer = pcbnew.F_Cu if pad.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+            for v in sorted(vias, key=lambda v: math.dist(v, p)):
+                if math.dist(v, p) > 8.0:
+                    break
+                if maze_connect(board, "GND", p, layer, v, pcbnew.F_Cu, reach=4.0):
+                    done.append(f"{pad.GetParentFootprint().GetReference()}.{pad.GetNumber()}")
+                    break
+    return done
+
+
 def finish():
     """--finish: the routed, saved board again: stubs, open connections and repairs only,
     without routing it all again (the pours stay; the maze router looks past them)."""
@@ -1130,36 +1576,362 @@ def finish():
     restore_contact_stubs(board)
     finish_open(board)
     print("loose router copper removed:", prune_dangling(board))
+    print("vias too close to another net's pad removed:", drop_via_conflicts(board))
     repair(board)
+    print("GND pads joined to a via by a stub:", gnd_rescue(board))
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)
     print("saved", PCB)
 
 
+def drc_counts(path):
+    """(errors, unconnected) by check_pcb.py's rules (its cosmetic silkscreen kinds don't count;
+    schematic parity is left out: routing doesn't change it)."""
+    import json
+    from check_pcb import COSMETIC
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "drc.json")
+        subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all", "-o", out, path],
+                       capture_output=True, cwd=tmp)
+        try:
+            d = json.load(open(out))
+        except (OSError, ValueError):
+            return None
+    errors = [v for v in d.get("violations", []) if v["severity"] == "error" and v["type"] not in COSMETIC]
+    return len(errors), len(d.get("unconnected_items", []))
+
+
+def default_attempts():
+    """Attempts at once: a Freerouting run holds 1.5 cores and 1 GB (measured 2026-10-26: 134 cpu-s in 89 s on this board), so
+    half the cores' worth of attempts leaves the rest for the parent's DRC runs and whatever else the machine does. 8 at most."""
+    return max(1, min(8, (os.cpu_count() or 4) // 2))
+
+
+def kill_group(procs, grace=5.0):
+    """Stop each attempt's own session (route.py, its Freerouting and Xvfb) by process group id: SIGTERM, then SIGKILL."""
+    import signal
+    import time
+    for p in procs:
+        try:
+            os.killpg(p.pid, signal.SIGTERM)
+        except ProcessLookupError:
+            pass
+    end = time.time() + grace
+    for p in procs:
+        try:
+            p.wait(max(0.1, end - time.time()))
+        except subprocess.TimeoutExpired:
+            try:
+                os.killpg(p.pid, signal.SIGKILL)
+            except ProcessLookupError:
+                pass
+            p.wait()
+
+
+# an attempt that ends with at most this many connections open and this many DRC errors gets --finish tried on a copy of it
+FINISHABLE_OPEN = 2
+FINISHABLE_ERRORS = 3
+
+
+def finish_trial(src, work):
+    """--finish on a copy of an attempt's board (the project beside it, for the rules); (errors, unconnected) after it, or None.
+    The attempt itself is left as it was."""
+    import shutil
+    d = os.path.join(work, "finish_" + os.path.basename(os.path.dirname(src)))
+    os.makedirs(d, exist_ok=True)
+    for f in ("battler.kicad_pcb", "battler.kicad_pro", "battler.kicad_dru"):
+        shutil.copy(os.path.join(os.path.dirname(src), f), d)
+    r = subprocess.run([sys.executable, os.path.abspath(__file__), "--finish", f"--board={os.path.join(d, 'battler.kicad_pcb')}"],
+                       cwd=d, capture_output=True, text=True)
+    return drc_counts(os.path.join(d, "battler.kicad_pcb")) if r.returncode == 0 else None
+
+
+def attempts(passes, n, argv, tries=None, seed=0, exhaustive=False):
+    """Route copies of the board, n at once, and keep the best. Freerouting 1.9 has no seed and routes one file
+    the same way every time, so each attempt gives it the board in another order (--seed=, see dsn_shuffled):
+    attempt k gets seed + k - 1, and attempt 1 KiCad's own order (seed 0) as before. Each is this script on its
+    own copy of the board (--board=), with its own Xvfb, logs and session.
+
+    Early stop (default): all n start together. The first attempt that ends clean (0 errors, 0 open) is kept and the others are
+    killed. One that ends with at most FINISHABLE_OPEN open and FINISHABLE_ERRORS errors gets --finish on a copy of it while
+    the others keep running (finish_trial): if that comes out clean it is kept and the others are killed. An attempt still
+    running at twice the first finisher's time is killed too (seeds ran from 4 to 21 min on one board, 2026-10-26). If none
+    comes out clean, the one with the fewest problems is kept and --finish closes what it can.
+
+    --exhaustive: the old policy. n at a time (default 4), the next seed starts when one ends with something open, up to
+    `tries` in all (default 2n); only a clean DRC stops it, else the fewest problems wins. When the kept one isn't clean,
+    --finish closes what it can."""
+    import shutil
+    import time
+    tries = tries or (2 * n if exhaustive else n)
+    work = tempfile.mkdtemp(prefix="route_")
+    procs, start, launched = {}, time.time(), 0
+
+    def launch():
+        nonlocal launched
+        launched += 1
+        k = launched
+        d = os.path.join(work, f"attempt{k}")
+        os.makedirs(d)
+        for f in ("battler.kicad_pcb", "battler.kicad_pro", "battler.kicad_dru"):       # the board in its project (its rules)
+            shutil.copy(os.path.join(BOARD_DIR, f), d)
+        log = open(os.path.join(d, "route.log"), "w")
+        procs[k] = subprocess.Popen([sys.executable, os.path.abspath(__file__), str(passes), *argv,
+                                     f"--board={os.path.join(d, 'battler.kicad_pcb')}", f"--seed={seed + k - 1}"],
+                                    cwd=d, stdout=log, stderr=subprocess.STDOUT, start_new_session=True)
+    for _ in range(min(n, tries)):
+        launch()
+    print(f"routing {n} attempts at once, up to {tries} in all, {'exhaustive' if exhaustive else 'stopping early'} "
+          f"({work}; --attempts=, ROUTE_ATTEMPTS, --tries=, --exhaustive)", flush=True)
+    results, winner, first = {}, None, None       # first: the elapsed seconds of the first attempt that ended with a board
+    try:
+        while procs and winner is None:
+            time.sleep(1)
+            if first and not exhaustive and time.time() - start > 2 * first:
+                print(f"  {len(procs)} attempts still running at twice the first finisher's {first / 60:.1f} min: stopped "
+                      f"({', '.join(map(str, sorted(procs)))})", flush=True)
+                break
+            for k, p in sorted(procs.items()):
+                if p.poll() is None:
+                    continue
+                del procs[k]
+                d = os.path.join(work, f"attempt{k}")
+                results[k] = drc_counts(os.path.join(d, "battler.kicad_pcb")) if p.returncode == 0 else None
+                mins = (time.time() - start) / 60
+                if results[k] is None:
+                    print(f"  attempt {k} (seed {seed + k - 1}): route.py failed after {mins:.1f} min "
+                          f"(exit {p.returncode}), see {d}/route.log", flush=True)
+                else:
+                    first = first or time.time() - start
+                    print(f"  attempt {k} (seed {seed + k - 1}): {results[k][0]} DRC errors, {results[k][1]} "
+                          f"unconnected after {mins:.1f} min", flush=True)
+                if results[k] == (0, 0):
+                    winner = k
+                    break
+                if (not exhaustive and results[k] and results[k][1] <= FINISHABLE_OPEN
+                        and results[k][0] <= FINISHABLE_ERRORS):
+                    t = time.time()
+                    after = finish_trial(os.path.join(d, "battler.kicad_pcb"), work)
+                    print(f"  attempt {k}: --finish on a copy: {after[0]} DRC errors, {after[1]} unconnected ({time.time() - t:.0f} s)"
+                          if after else f"  attempt {k}: --finish on a copy failed", flush=True)
+                    if after == (0, 0):
+                        shutil.copy(os.path.join(work, f"finish_attempt{k}", "battler.kicad_pcb"), os.path.join(d, "battler.kicad_pcb"))
+                        results[k] = after
+                        winner = k
+                        break
+                if exhaustive and launched < tries:
+                    launch()
+    finally:
+        if procs:
+            print(f"stopping {len(procs)} attempts by process group: " + ", ".join(f"{k}={p.pid}" for k, p in sorted(procs.items())), flush=True)
+        kill_group(procs.values())
+    done = {k: v for k, v in results.items() if v is not None}
+    if winner is None:
+        if not done:
+            sys.exit(f"every attempt failed: see the logs in {work}")
+        winner = min(done, key=lambda k: (sum(done[k]), k))
+    d = os.path.join(work, f"attempt{winner}")
+    print(f"attempt {winner} kept; its output:")
+    print("    " + open(os.path.join(d, "route.log")).read().rstrip().replace("\n", "\n    "), flush=True)
+    shutil.copy(os.path.join(d, "battler.kicad_pcb"), PCB)
+    for f in ("last_route.ses", "last_route.dsn", "freerouting.log"):
+        if os.path.exists(os.path.join(d, f)):
+            shutil.copy(os.path.join(d, f), os.path.join(LOGS, f))
+    print("saved", PCB)
+    shutil.rmtree(work, ignore_errors=True)
+    if done[winner] != (0, 0):
+        print("not clean yet: closing what is left open (as route.py --finish)", flush=True)
+        finish()
+        left = drc_counts(PCB)
+        print(f"after --finish: {left[0]} DRC errors, {left[1]} unconnected" if left else "after --finish: no DRC report", flush=True)
+
+
+# USB D+/D- cross from the core's side (R21/R22, left of the cell's hole) to U1 in the right strip, under the hole, through the channel
+# between the hole and J3 that the panel's nets share. Freerouting left D- open in 4 of 4 rounds (2026-10-27): the run is long and
+# it loses it to everything else. So the pair goes first, one maze route each, as fixed wiring (0.2 wide like the rest of the USB
+# class); the router works round them. (All nine nets that cross were tried: that wrecked the panel bus.)
+CROSS_NETS = ("USB_DM", "USB_DP")
+
+
+def cross_nets(board):
+    hole = next(c["box"] for c in CUTOUTS if c.get("name") == "cell")
+    done = []
+    pads = [(p.GetNetname(), p) for fp in footprints(board) for p in pads_of(fp)]
+    for net in CROSS_NETS:
+        left = [p for n, p in pads if n.split("/")[-1] == net and xy(p.GetPosition())[0] < hole[0] - 0.5]
+        right = [p for n, p in pads if n.split("/")[-1] == net and xy(p.GetPosition())[0] > hole[2] + 0.5]
+        if not left or not right:
+            continue
+        _, a, b = min(((math.dist(xy(a.GetPosition()), xy(b.GetPosition())), a, b) for a in left for b in right), key=lambda t: t[0])
+        la = pcbnew.F_Cu if a.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        lb = pcbnew.F_Cu if b.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        if maze_connect(board, a.GetNetname(), xy(a.GetPosition()), la, xy(b.GetPosition()), lb, reach=12.0):
+            done.append(net)
+    print(f"crossing nets routed first: {', '.join(done) or 'none'}", flush=True)
+
+
+# Nets with a pad at the far end of the board: Freerouting leaves the long link to them open (PWR_BTN_RAW: the power button SW21 at seat 1's
+# end, the latch at seat 2's, 115 mm round the cell's hole, 2026-10-27, 8 of 8 rounds). The pad with no other pad of its net near it is joined
+# to the nearest other pad by the maze router first, as fixed wiring, the way USB D+/D- go; the router works round it. Slow, any length.
+LONG_NETS = ("PWR_BTN_RAW",)
+LONG_REACH = (40.0, 6.0)         # the maze's window round the two pads: x wide enough for a strip beside the hole
+# The nets between the core (left of the hole) and the charger group, the latch and the CC resistors (right of it) squeeze through the
+# 5 mm gap between the hole and J3 with the panel bus: 8 of 8 rounds left two to five of them open (2026-10-27). Option: the long way
+# round the seat-2 end, first, as fixed wiring (a wall down the board's middle below the hole keeps the maze out of the gap).
+# TRIED AND OFF (2026-10-27): of these seven the maze took three (PG_N, STAT_N, PWR_HOLD) round the top in 20 s each, and 20 seeds then ended with
+# 4 to 11 connections open (against 2 to 7 without): the three long runs and PWR_BTN_RAW's take the room Freerouting needs round the core.
+TOP_NETS = ()   # ("CHG_PG_N", "CHG_STAT_N", "CHG_OFF", "PWR_HOLD", "CC1_SENSE", "CC2_SENSE", "VBAT_SENSE")
+TOP_REACH = (40.0, 40.0)
+
+
+def top_wall():
+    """A wall (x 98 .. 102) from the cell hole's lower edge to the board's end: nothing crosses the middle below the hole."""
+    hole = next(c["box"] for c in CUTOUTS if c.get("name") == "cell")
+    return [(98.0, hole[3] - 1.0, 102.0, 100 + CASE["board"]["l"] / 2)]
+
+
+def long_nets(board):
+    import time
+    pads = [(p.GetNetname(), p) for fp in footprints(board) for p in pads_of(fp)]
+    done = []
+    for net, top in [(n, False) for n in LONG_NETS] + [(n, True) for n in TOP_NETS]:
+        mine = [p for n, p in pads if n.split("/")[-1] == net]
+        if len(mine) < 2:
+            continue
+        net = mine[0].GetNetname()
+        # the pad whose nearest neighbour on the net is farthest away
+        far = max(mine, key=lambda p: min(math.dist(xy(p.GetPosition()), xy(q.GetPosition())) for q in mine if q is not p))
+        near = min((q for q in mine if q is not far), key=lambda q: math.dist(xy(far.GetPosition()), xy(q.GetPosition())))
+        a, b = xy(far.GetPosition()), xy(near.GetPosition())
+        if math.dist(a, b) < 30.0:
+            continue
+        la = pcbnew.F_Cu if far.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        lb = pcbnew.F_Cu if near.IsOnLayer(pcbnew.F_Cu) else pcbnew.B_Cu
+        t = time.time()
+        runs = maze_connect(board, net, a, la, b, lb, reach=TOP_REACH if top else LONG_REACH, blocks=top_wall() if top else ())
+        print(f"long net {net}{' (round the top)' if top else ''}: {'routed' if runs else 'NOT routed'} {math.dist(a, b):.0f} mm apart ({time.time() - t:.0f} s)", flush=True)
+        if runs:
+            done.append(net)
+    return done
+
+
+def prepare(board):
+    """The pre-routes Freerouting is given as fixed wiring (everything before it in the run); returns the contacts."""
+    hide_bom_fields(board)
+    planes(board)
+    core_3v3_stubs(board)
+    contacts = contact_stubs(board)
+    dome_stubs(board)
+    fpc_ground_bar(board)
+    if os.environ.get("ROUTE_USB_PAIR") == "1":    # the hand-drawn pair fits the 2.4 in layout (J1 beside the hole); the 3.5 in one leaves it to Freerouting
+        usb_pair(board)
+    usb_shell_ground(board)
+    fanout(board)
+    cross_nets(board)
+    long_nets(board)
+    return contacts
+
+
+def drc_errors(path):
+    """(errors, dangling): the DRC errors of a board file (check_pcb.py's rules: its cosmetic silkscreen kinds don't count) as
+    [(text, uuids of its items)], and the uuids of the tracks and vias DRC calls dangling; None if kicad-cli gave no report."""
+    import json
+    from check_pcb import COSMETIC
+    with tempfile.TemporaryDirectory() as tmp:
+        out = os.path.join(tmp, "drc.json")
+        subprocess.run(["kicad-cli", "pcb", "drc", "--format", "json", "--severity-all", "-o", out, path],
+                       capture_output=True, cwd=tmp)
+        try:
+            d = json.load(open(out))
+        except (OSError, ValueError):
+            return None
+    errors = [(f"{v['type']}: " + "; ".join(i["description"] for i in v.get("items", [])[:2])
+               + (f" at ({v['items'][0]['pos']['x']:.2f}, {v['items'][0]['pos']['y']:.2f})" if v.get("items") else ""),
+               {i["uuid"] for i in v.get("items", [])})
+              for v in d.get("violations", []) if v["severity"] == "error" and v["type"] not in COSMETIC]
+    dangling = {i["uuid"] for v in d.get("violations", []) if v["type"] in ("track_dangling", "via_dangling") for i in v["items"]}
+    return errors, dangling
+
+
+def preflight():
+    """--preflight: the placed board with the pre-routes on it, through the DRC (about 5 s). An error among pads, zones, the
+    outline and the core's locked copper is the placement's, and no seed fixes it (2026-10-26: 8 seeds ran 23 min on 9 placement
+    errors): exits 1 with the list. An error that involves copper the run changes is only listed: unlocked tracks and vias
+    (Freerouting redoes them) and dangling ones (the last prune_dangling takes them away: the core's copied via by U3's NC pad,
+    2026-10-26, on a board that routes clean). The board on disk is not touched."""
+    board = pcbnew.LoadBoard(PCB)
+    prepare(board)
+    with tempfile.TemporaryDirectory() as tmp:
+        scratch = os.path.join(tmp, "pre.kicad_pcb")
+        open(os.path.join(tmp, "pre.kicad_pro"), "w").write(open(os.path.join(BOARD_DIR, "battler.kicad_pro")).read())
+        shutil.copy(os.path.join(BOARD_DIR, "battler.kicad_dru"), os.path.join(tmp, "pre.kicad_dru"))
+        pcbnew.SaveBoard(scratch, board)
+        report = drc_errors(scratch)
+    if report is None:
+        sys.exit("pre-flight: kicad-cli gave no DRC report")
+    errors, dangling = report
+    changes = {t.m_Uuid.AsString() for t in board.GetTracks() if not t.IsLocked()} | dangling
+    placement = [t for t, ids in errors if not ids & changes]
+    later = [t for t, ids in errors if ids & changes]
+    if later:
+        print(f"pre-flight: {len(later)} DRC errors involve copper the run changes (not stopping):")
+        for e in later[:5]:
+            print("  " + e)
+    if placement:
+        print(f"pre-flight: {len(placement)} DRC errors that the router did not make (placement, pours, core): fix those first, "
+              f"or --no-preflight:")
+        for e in placement[:20]:
+            print("  " + e)
+        sys.exit(1)
+    print("pre-flight: no DRC errors from the placement", flush=True)
+
+
 def main():
+    global PCB, SCRATCH, LOGS, SEED, OPTIMIZE
     if "--finish" in sys.argv:
+        for a in sys.argv[1:]:
+            if a.startswith("--board="):         # a copy of the board (finish_trial)
+                PCB = a[len("--board="):]
+                SCRATCH = LOGS = os.path.dirname(PCB)
         return finish()
     if not JAR:
         sys.exit("set FREEROUTING_JAR")
     if os.path.exists(os.path.join(BOARD_DIR, "~battler.kicad_pcb.lck")):
         sys.exit("the board is open in KiCad; close it first")
+    opts = dict(a[2:].split("=", 1) for a in sys.argv[1:] if a.startswith("--") and "=" in a)
     args = [a for a in sys.argv[1:] if not a.startswith("--")]
-    passes = int(args[0]) if args else 40
+    passes = int(args[0]) if args else 20
+    SEED = int(opts.get("seed", SEED))
+    OPTIMIZE = "--optimize" in sys.argv
+    if "board" in opts:                 # one of several attempts: a copy of the board in its own folder
+        PCB = opts["board"]
+        SCRATCH = LOGS = os.path.dirname(PCB)
+    else:
+        if "--preflight" in sys.argv:
+            return preflight()
+        exhaustive = "--exhaustive" in sys.argv
+        n = int(opts.get("attempts", os.environ.get("ROUTE_ATTEMPTS", "") or (4 if exhaustive else default_attempts())))
+        if "--reuse" not in sys.argv and "--no-preflight" not in sys.argv:
+            r = subprocess.run([sys.executable, os.path.abspath(__file__), "--preflight"])
+            if r.returncode:
+                sys.exit("aborted before routing: the DRC errors above are not the router's")
+        if n > 1 and "--reuse" not in sys.argv:
+            flags = [a for a in sys.argv[1:] if a.startswith("--") and "=" not in a
+                     and a not in ("--exhaustive", "--no-preflight")]
+            return attempts(passes, n, flags, int(opts["tries"]) if "tries" in opts else None, SEED, exhaustive)
     board = pcbnew.LoadBoard(PCB)
-    hide_bom_fields(board)
-    planes(board)
-    core_3v3_stubs(board)
-    contacts = contact_stubs(board)
-    fpc_ground_bar(board)
-    fanout(board)
-    freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
-    finish_open(board)
+    contacts = prepare(board)
+    known = freeroute(board, passes, contacts, reuse="--reuse" in sys.argv)
+    finish_open(board, known=known)
     print("loose router copper removed:", prune_dangling(board))
     pours(board)
     print("unused stub vias removed:", drop_unused_stub_vias(board, STUB_VIAS))
     print("stitching vias:", stitch(board))
+    print("stitching vias in the strips beside the cell's hole:", strip_stitch(board))
+    print("vias too close to another net's pad removed:", drop_via_conflicts(board))
     repair(board)
+    print("GND pads joined to a via by a stub:", gnd_rescue(board))
     print("tracks split where another meets them part-way, duplicates dropped:", split_at_joins(board))
     print("loose copper removed at the end:", prune_dangling(board, locked_too=True))
     pcbnew.SaveBoard(PCB, board)

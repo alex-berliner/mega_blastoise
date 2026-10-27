@@ -1,0 +1,5 @@
+(version 1)
+# copper keeps 0.30 mm from every non-plated hole (V&V REQ-FAB-03, DEF-56); JLCPCB's own minimum is 0.2 (NPTH to track)
+(rule "copper to NPTH"
+  (constraint hole_clearance (min 0.3mm))
+  (condition "A.Pad_Type == 'NPTH, mechanical'"))

@@ -1,60 +1,56 @@
 {
  "z": {
   "cell": [
-   1.5,
-   5.5
-  ],
-  "foam": [
-   5.5,
-   5.95
+   0.9,
+   4.9
   ],
   "speaker": [
-   1.5,
-   5.5
+   3.8,
+   7.3
   ],
   "panel": [
-   10.0,
-   12.45
+   6.2,
+   8.6
   ],
   "silicone": [
-   7.6,
-   9.35
+   3.8,
+   5.55
   ],
   "caps": [
-   7.8,
-   13.04
+   4.0,
+   9.24
   ],
   "screws": [
    0.0,
-   8.0
+   7.0
   ],
   "tub": [
-   -0.8,
-   13.4
+   0.0,
+   6.68
   ],
-  "lid": [
-   7.6,
-   13.4
+  "top": [
+   2.65,
+   9.55
   ],
   "board": [
-   6.0,
-   7.6
+   2.2,
+   3.8
   ]
  },
- "case_h": 13.4,
- "z_board": 6.0,
+ "case_h": 9.55,
+ "z_board": 2.2,
  "size": [
-  75.4,
-  156.2
+  77.1,
+  132.0
  ],
  "rev": 1,
- "commit": "f9488a7",
- "dirty": true,
- "built": "2026-10-20",
+ "commit": "f222589",
+ "dirty": false,
+ "built": "2026-10-25",
  "inputs": {
-  "board/battler.kicad_pcb": "HEAD:./board/battler.kicad_pcb",
-  "case/case.scad": "HEAD:./case/case.scad",
-  "viewer/pieces.scad": "HEAD:./viewer/pieces.scad",
-  "viewer/build.py": "HEAD:./viewer/build.py"
+  "board/battler.kicad_pcb": "eb810304f358999cc2d0f2491c0302bf70095ef5",
+  "case/case.scad": "926a0542a85932be30c97e8280aedf527b489b8e",
+  "viewer/pieces.scad": "cb3b97312271073b681af5097d6d36f638f0f773",
+  "viewer/build.py": "6b587a93c10bf9a2ea1064f66c5a1fe9b0753a82"
  }
 }

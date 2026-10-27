@@ -13,20 +13,20 @@ snapshot used for this design (July 2026).
 
 | | 10 boards | Per unit | Source |
 |---|---|---|---|
-| Bare boards: 2 layers, 70.5 x 151.34 mm (as quoted), 1.6 mm, ENIG, every hole >= 0.3 mm | $33.40 | $3.34 | quote (`tools/quotes/`) |
-| Parts: 49 part numbers, 117 placements a board | $47.70 | $4.77 | JLC parts database |
-| Assembly fees, Economic PCBA (below) | $53.29 | $5.33 | JLC's published rates |
+| Bare boards: 2 layers, 72.4 x 151.64 mm (72.5 x 151.74 over the outline), 1.6 mm, ENIG, every hole >= 0.3 mm | $33.40 | $3.34 | the quote for 70.5 x 151.34 (`tools/quotes/`): NOT re-quoted for the 3.5 in board, which is 3% more area |
+| Parts: 44 part numbers (14 extended), 118 placements a board | $57.80 | $5.78 | JLC parts database snapshot (`tools/cost.py`, run 2026-10-26 on the 3.5 in board's BOM; the earlier figure was $4.73 for 49 numbers) |
+| Assembly fees, Economic PCBA (below) | $53.35 | $5.34 | JLC's published rates |
 | USB-C through-hole tabs by hand, if JLC charges it | $4.24 | $0.42 | JLC's published rates |
 | Shipping, DHL Express with duties paid at checkout (DDP) | $29.45 | $2.95 | quote; the duty itself isn't known yet |
-| **Total** | **about $168** | **about $16.81** | |
+| **Total** | **about $168** | **about $16.78** | |
 
 | Assembly fee (Economic PCBA, 2-50 boards) | 10 boards |
 |---|---|
 | Setup | $8.18 |
 | Stencil | $1.53 |
-| Solder joints: about 421 a board (JLC's count was 386 before the 9 parts added 2026-10-05; the backlight sinks that replaced the AP3156 on 2026-10-07 add about 15), $0.0016 each | $6.74 |
-| Feeder loading: 12 extended part numbers (the thermistor, the 27 ohm USB resistors and, since ProTek's Preferred SRV05-4 ran out on 2026-10-07, the Semtech SRV05-4.TCT ESD array are three; the AP3156 went the same day, and the backlight sinks that replaced it are all Basic or Preferred), $3.07 each (basic and preferred parts: none) | $36.84 |
-| **Total** | **$53.29** |
+| Solder joints: about 425 a board (JLC's count was 386 before the 9 parts added 2026-10-05; the backlight sinks that replaced the AP3156 on 2026-10-07 add about 15, J4's header 4 more on 2026-10-20), $0.0016 each | $6.80 |
+| Feeder loading: 12 extended part numbers (the thermistor and the 27 ohm USB resistors among them; since 2026-10-22 U1, the ESD array, is Semtech's SRV05-4.TCT (C13612) and U3, the 3V3 LDO, Richtek's RT9013-33GB (C47773), both Extended and both stocked at JLC so a 30-board order needs no pre-order; J4 reuses J2's part number), $3.07 each (basic and preferred parts: none) | $36.84 |
+| **Total** | **$53.35** |
 
 The priciest parts: RP2354B $1.43, the panel's connector (Hirose FH12-50S) $0.81,
 the Abracon crystal and inductor $0.27 each, the backlight op-amp (MCP6002) $0.24, PicoBlade
@@ -38,8 +38,8 @@ The same board elsewhere, from each maker's instant quote: PCBWay is $65.09 for 
 bare boards and $165.33 for assembly labour, parts extra after their review. The
 quotes page tracks both makers.
 
-Not placed by JLC (no LCSC number): the 20 membrane contacts (bare gold), the
-speaker pads, test pads, locating holes and fiducials. The panel's ZIF connector
+Not placed by JLC (no LCSC number): the 20 membrane contacts (bare gold), test
+pads, locating holes and fiducials. The panel's ZIF connector
 (J3) is placed by JLC like any other part.
 
 ## You: bought separately, fitted before sale
@@ -48,13 +48,13 @@ speaker pads, test pads, locating holes and fiducials. The panel's ZIF connector
 |---|---|---|---|---|---|
 | EastRising ER-TFT035IPS-6 3.5in IPS panel | 1 | 12 (2 spares) | the "No Touch" option; ILI9488, 320x480, 54.50 x 83.00 x 2.30 mm, a 50-contact 0.5 mm FPC for a ZIF connector (J3 on the board; a connector bundled with the panel isn't needed) | AliExpress, buydisplay.com Store (the maker's own): $11.24 each, 5% off at 10 or more, $13.89 shipping for 12, so 12 for $142.03. The maker's own site: $9.10 each but $45.48 shipping, 12 for $154.68 | $14.20 |
 | Li-ion cell 403450, about 700 mAh | 1 | 12 (spares) | 4 x 34 x 50 mm (with its protection board), protection board, Molex PicoBlade (MX1.25, often listed as "JST 1.25") plug with red to J2's `+`: order the cells with that plug; a UN38.3 test summary to ship units to customers | AliExpress, MYWAY Digital Store: 10 for $19.33 + $1.95 shipping | about $2.13 |
-| Speaker, 15 mm round, 8 ohm, 0.5-1 W | 1 | 10 | 4 mm thick or less, wire leads | marketplace, not chosen yet | estimate $1-2 |
+| Speaker: INGHAi GSPK151035PN (LCSC C530539), 15 x 10 x 3.5 mm, 8 ohm, 0.5 W, 90 dB | 1 | 10 | its 35 mm leads with the 1.25 mm 2-pin plug (it plugs into J4, now a JST SH 2-pin header, SM02B-SRSS-TB, LCSC C160402, so the cell's PicoBlade plug cannot enter it: **the speaker's leads need a 1.0 mm SH plug, SHR-02V-S, fitted by hand; not yet ordered**, V&V round 3) | LCSC | about $0.42 |
 | DS Lite silicone pads (NDSL): D-pad and ABXY pieces | 2 sets | 20 sets | "For NDSL"; the Start/Select strip isn't used | AliExpress, HM Trading Store: 20 sets $2.45 + $5.84 shipping | $0.83 |
 | DS Lite button sets: cross and A/B/X/Y | 2 sets | 20 sets | DS Lite; the L/R and other pieces are spares | AliExpress, China Game Store: $0.88 a set + $12.23 shipping | $2.98 |
-| Screws: M2 x 8 self-tapping, wafer head (4 mm, about 1 mm thick), for plastic | 6 | 60 (spares) | | marketplace | estimate about $0.10 |
+| Screws: M2 x 6 self-tapping, wafer head (4 mm, about 1 mm thick), for plastic | 6 | 60 (spares) | | marketplace | estimate about $0.10 |
 | Thin double-sided tape for the panel, adhesive foam pad for the cell | | 1 roll, 1 sheet | | marketplace | estimate about $0.50 |
-| Case: tub and lid, printed at home | 1 | 10 | PETG or PLA, 47 cm3 (about 59 g) of filament | at $20-30 a kg | about $1.20-1.80 |
-| **Total** | | | | | **about $23-25** |
+| Case: tub and top, printed at home | 1 | 10 | PLA, 32 cm3 (about 50 g with the purge), and about 7 g of Bambu Support For PLA for the top's supports (a second filament) | PLA at $20-30 a kg, the support filament at about $40 a kg | about $1.20-1.70 |
+| **Total** | | | | | **about $22.5-23.5** |
 
 Gone from the 4-layer build's list: the cover lens, the six screws, the light pipes
 and the printed power-button cap.
@@ -63,13 +63,29 @@ Hand work per unit: [assembly.md](assembly.md).
 
 ## Per unit, into your hands
 
-About **$40-42** at 10 units: the factory's $16.81 and your $23-25. Not in it: import
+About **$39-40** at 10 units: the factory's $16.47 and your $22.5-23.5. Not in it: import
 duties (at the 25% rate an earlier review suggested, unverified, about $3 a unit
 on the board order)
 and JLC's new-account coupons ($30 and $20 on the quote page, up to $5 a unit off if
-they apply). The spread is the speaker, tape and filament, the last estimates.
+they apply). The spread is the tape and filament, the last estimates.
 
 The panel is the largest single item. At 50 panels the maker's own site is the
 cheapest source: $493.10 with shipping, $9.86 a panel (quotes from both shops'
 carts, 2026-09-24, shipping to the US by their standard methods, duties not
-included).
+included). The 2.4in ER-TFT024IPS-3 (2026-10-21 to 2026-10-26) would have been about $12.01 at 10 and
+$7.13 at 50, but a case that is 23.5 mm shorter; the 3.5in panel is back (Alex, 2026-10-26) with the case rebuilt round it. Its active area (48.96 x 73.44),
+its FPC's folded shape and its 2.35 +-0.1 thickness are the old design's numbers, not re-read from the datasheet (the maker's site was behind
+Cloudflare and the Wayback copy was down on 2026-10-26).
+
+
+## Changed in V&V round 3 (2026-10-27)
+
+| Ref | Was | Now | Decision |
+|---|---|---|---|
+| R61 | 3.9k (C51721) | 3.74k 1% (C15172, Extended) | DEC-31: worst-case backlight 117.7 mA against the panel's 120 |
+| R14 | 10k | 47k (C25792, Basic) | DEC-17 (no clamp: U3's EN stays inside 6 V up to about 9.1 V of VBUS) |
+| R43 | 100k | 220k (C25767, Preferred) | DEC-17 (EN1 safe to about 12.4 V) |
+| RN1 to RN4 | 10k x4 (C25725) | 47k x4 (C2028, 4D02WGJ0473TCE, Extended) | DEC-24 (membrane pill margin) |
+| TH1 | 10k B3950 | 10k B4460 0805 (C525375, TCTR0805F10K0F4460T) | charge window: 48.2 C hot edge worst case, 45 C not reachable with a stocked 10k NTC |
+| U10, C54 | none | MCP6001T-I/OT (C116490) buffer, 100n (C1525) | cutoff: GPIO47 leakage no longer flows through the divider (DEC-07) |
+| J4 | PicoBlade 2-pin | JST SM02B-SRSS-TB (C160402) | speaker plug cannot enter the cell's port |

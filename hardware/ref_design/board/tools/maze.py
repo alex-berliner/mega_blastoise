@@ -23,19 +23,31 @@ import math
 import pcbnew
 
 GRID = 0.05
+HOLE_RULE = 0.30         # copper to NPTH (battler.kicad_dru)
+EDGE_EXTRA = 0.15        # the cut-outs' blocks grow this much more: 0.15 clearance becomes the 0.30 copper-to-edge rule
 MARGIN = 0.04            # a straight line between two free cell centres can pass this much closer
+CONVEX_PADS = (pcbnew.PAD_SHAPE_RECTANGLE, pcbnew.PAD_SHAPE_ROUNDRECT, pcbnew.PAD_SHAPE_CIRCLE, pcbnew.PAD_SHAPE_OVAL,
+               pcbnew.PAD_SHAPE_TRAPEZOID, pcbnew.PAD_SHAPE_CHAMFERED_RECT)
+
+
+IU = 1e6                 # pcbnew.pcbIUScale.IU_PER_MM: pcbnew.FromMM/ToMM inlined (the same
+                         # arithmetic, without their type checks: they were a third of a grid's setup)
 
 
 def mm(v):
-    return pcbnew.FromMM(v)
+    return int(float(v) * IU)
+
+
+def to_mm(iu):
+    return iu / IU
 
 
 def V(x, y):
-    return pcbnew.VECTOR2I(mm(x), mm(y))
+    return pcbnew.VECTOR2I(int(float(x) * IU), int(float(y) * IU))
 
 
 def xy(v):
-    return pcbnew.ToMM(v.x), pcbnew.ToMM(v.y)
+    return v.x / IU, v.y / IU
 
 
 def seg_dist(p, a, b):
@@ -48,7 +60,7 @@ def seg_dist(p, a, b):
 
 class Maze:
     def __init__(self, board, net, box, layers, width, clear, via_d, via_drill, fences=(), blocks=(), edge=None,
-                 ignore=(), discs=()):
+                 ignore=(), discs=(), fence_layer=None):
         self.board, self.net, self.layers = board, net, list(layers)
         self.width, self.clear, self.via_d, self.via_drill = width, clear, via_d, via_drill
         self.x0, self.y0 = box[0], box[1]
@@ -65,16 +77,18 @@ class Maze:
         for fp in board.GetFootprints():
             for p in fp.Pads():
                 if p.GetAttribute() in (pcbnew.PAD_ATTRIB_PTH, pcbnew.PAD_ATTRIB_NPTH) and p.GetDrillSize().x > 0:
-                    self.holes.append((xy(p.GetPosition()), pcbnew.ToMM(max(p.GetDrillSize().x, p.GetDrillSize().y)) / 2))
+                    self.holes.append((xy(p.GetPosition()), to_mm(max(p.GetDrillSize().x, p.GetDrillSize().y)) / 2))
                 if p.GetNetname() == net and p.GetAttribute() != pcbnew.PAD_ATTRIB_NPTH:
                     continue
                 # a pad may ask for more than the net class (fiducials: 0.6 mm)
-                extra = max(0.0, pcbnew.ToMM(p.GetLocalClearance() or 0) - clear)
+                extra = max(0.0, to_mm(p.GetLocalClearance() or 0) - clear)
+                if p.GetAttribute() == pcbnew.PAD_ATTRIB_NPTH:
+                    extra = max(extra, HOLE_RULE - clear)         # copper keeps 0.30 from a non-plated hole (battler.kicad_dru)
                 self._item(p, grow_t + extra, grow_v + extra)
         for t in board.GetTracks():
             if t.GetClass() == "PCB_VIA":
                 # drill to drill, whatever the net
-                self.holes.append((xy(t.GetPosition()), pcbnew.ToMM(t.GetDrillValue()) / 2))
+                self.holes.append((xy(t.GetPosition()), to_mm(t.GetDrillValue()) / 2))
             if t.GetNetname() == net or t.m_Uuid.AsString() in ignore:
                 continue
             self._item(t, grow_t, grow_v)
@@ -93,10 +107,12 @@ class Maze:
                     if z.IsOnLayer(l):
                         self._zone(z, l, self.track[l], grow_t)
                         self._zone(z, l, self.via, grow_v)
-        for f in fences:                         # route.py's fences: top layer (and so no vias)
-            self._rect(f, self.track[self.layers[0]], grow_t)
+        fl = fence_layer if fence_layer in self.layers else self.layers[0]
+        for f in fences:                         # route.py's fences: the core's top layer (and so no vias)
+            self._rect(f, self.track[fl], grow_t)
             self._rect(f, self.via, grow_v)
-        for r in blocks:                         # cut-outs: every layer
+        for r in blocks:                         # cut-outs: every layer; copper keeps 0.30 from their edge (min_copper_edge_clearance)
+            r = (r[0] - EDGE_EXTRA, r[1] - EDGE_EXTRA, r[2] + EDGE_EXTRA, r[3] + EDGE_EXTRA)
             for l in self.layers:
                 self._rect(r, self.track[l], grow_t)
             self._rect(r, self.via, grow_v)
@@ -123,7 +139,7 @@ class Maze:
 
     def _item(self, item, grow_t, grow_v):
         b = item.GetBoundingBox()
-        bb = (pcbnew.ToMM(b.GetX()), pcbnew.ToMM(b.GetY()), pcbnew.ToMM(b.GetRight()), pcbnew.ToMM(b.GetBottom()))
+        bb = (to_mm(b.GetX()), to_mm(b.GetY()), to_mm(b.GetRight()), to_mm(b.GetBottom()))
         if bb[2] < self.x0 - 2 or bb[1] > self.y0 + self.ny * GRID + 2 or bb[0] > self.x0 + self.nx * GRID + 2 \
                 or bb[3] < self.y0 - 2:
             return
@@ -131,55 +147,84 @@ class Maze:
         for l in on:
             self.shapes[l].append((item, bb))
         if isinstance(item, pcbnew.PCB_VIA):
-            c, r = xy(item.GetPosition()), pcbnew.ToMM(item.GetWidth(pcbnew.F_Cu)) / 2
+            c, r = xy(item.GetPosition()), to_mm(item.GetWidth(pcbnew.F_Cu)) / 2
             for l in self.layers:
                 self._capsule(c, c, r + grow_t, self.track[l])
             self._capsule(c, c, r + grow_v, self.via)
             return
         if isinstance(item, pcbnew.PCB_TRACK):
             # long diagonal tracks have huge bounding boxes: mark along the track instead
-            a, b, r = xy(item.GetStart()), xy(item.GetEnd()), pcbnew.ToMM(item.GetWidth()) / 2
+            a, b, r = xy(item.GetStart()), xy(item.GetEnd()), to_mm(item.GetWidth()) / 2
             for l in on:
                 self._capsule(a, b, r + grow_t, self.track[l])
             if on:
                 self._capsule(a, b, r + grow_v, self.via)
             return
+        convex = item.GetShape(on[0]) in CONVEX_PADS if on else False
         for l in on:
-            grid = self.track[l]
-            for i, j in self._cells(bb, grow_t):
-                k = j * self.nx + i
-                if not grid[k] and self._hit(item, l, self.pos(i, j), grow_t):
-                    grid[k] = 1
+            self._pad(item, l, bb, grow_t, self.track[l], convex)
         if on:
-            for i, j in self._cells(bb, grow_v):
-                k = j * self.nx + i
-                if not self.via[k] and any(self._hit(item, l, self.pos(i, j), grow_v) for l in on):
-                    self.via[k] = 1
+            self._pad(item, on[0], bb, grow_v, self.via, convex)
+
+    def _pad(self, item, layer, bb, grow, grid, convex):
+        """Mark the cells within grow of a pad. A convex pad's cells on a row are one run: only
+        its ends are looked for (HitTest from either side), the cells between are marked."""
+        i0, j0 = self.cell(bb[0] - grow, bb[1] - grow)
+        i1, j1 = self.cell(bb[2] + grow, bb[3] + grow)
+        i0, i1 = max(i0, 0), min(i1, self.nx - 1)
+        for j in range(max(j0, 0), min(j1, self.ny - 1) + 1):
+            row = j * self.nx
+            if not convex:
+                for i in range(i0, i1 + 1):
+                    if not grid[row + i] and self._hit(item, layer, self.pos(i, j), grow):
+                        grid[row + i] = 1
+                continue
+            lo = next((i for i in range(i0, i1 + 1) if self._hit(item, layer, self.pos(i, j), grow)), None)
+            if lo is None:
+                continue
+            hi = next(i for i in range(i1, lo - 1, -1) if self._hit(item, layer, self.pos(i, j), grow))
+            grid[row + lo:row + hi + 1] = b"\x01" * (hi - lo + 1)
 
     def _capsule(self, a, b, r, grid):
-        """Mark the cells within r of segment a-b, row by row."""
+        """Mark the cells within r of segment a-b, row by row. A capsule meets a row in one run of
+        cells: its ends are worked out (the end discs and the band between them), the cells well
+        inside are marked as they are and the two at each end are measured."""
         (ax, ay), (bx, by) = a, b
         j0 = max(0, int(math.floor((min(ay, by) - r - self.y0) / GRID)))
         j1 = min(self.ny - 1, int(math.ceil((max(ay, by) + r - self.y0) / GRID)))
-        dy = by - ay
+        L = math.dist(a, b)
+        if L > 1e-12:
+            ux, uy = (bx - ax) / L, (by - ay) / L
         for j in range(j0, j1 + 1):
             y = self.y0 + j * GRID
-            if abs(dy) < 1e-9:
-                if abs(y - ay) > r:
-                    continue
-                lo, hi = min(ax, bx), max(ax, bx)
-            else:
-                t0, t1 = sorted(((y - r - ay) / dy, (y + r - ay) / dy))
-                t0, t1 = max(0.0, t0), min(1.0, t1)
-                if t0 > t1:
-                    continue
-                xa, xb = ax + (bx - ax) * t0, ax + (bx - ax) * t1
-                lo, hi = min(xa, xb), max(xa, xb)
-            i0 = max(0, int(math.floor((lo - r - self.x0) / GRID)))
-            i1 = min(self.nx - 1, int(math.ceil((hi + r - self.x0) / GRID)))
+            lo, hi = math.inf, -math.inf
+            for cx, cy in (a, b):
+                if abs(y - cy) <= r:
+                    h = math.sqrt(r * r - (y - cy) ** 2)
+                    lo, hi = min(lo, cx - h), max(hi, cx + h)
+            if L > 1e-12:
+                # along the segment: 0 <= (x - ax) ux + (y - ay) uy <= L; across: |-(x - ax) uy + (y - ay) ux| <= r
+                s_lo, s_hi = -math.inf, math.inf
+                for k, c0, c1 in ((ux, -(y - ay) * uy, L - (y - ay) * uy), (-uy, -r - (y - ay) * ux, r - (y - ay) * ux)):
+                    if abs(k) < 1e-12:
+                        if not c0 <= 0 <= c1:
+                            s_lo, s_hi = math.inf, -math.inf
+                        continue
+                    e0, e1 = sorted((c0 / k, c1 / k))
+                    s_lo, s_hi = max(s_lo, ax + e0), min(s_hi, ax + e1)
+                if s_lo <= s_hi:
+                    lo, hi = min(lo, s_lo), max(hi, s_hi)
+            if lo > hi:
+                continue
             row = j * self.nx
-            for i in range(i0, i1 + 1):
-                if not grid[row + i] and seg_dist((self.x0 + i * GRID, y), a, b) <= r:
+            i_lo = int(math.ceil((lo - self.x0) / GRID))
+            i_hi = int(math.floor((hi - self.x0) / GRID))
+            inner0, inner1 = max(i_lo + 1, 0), min(i_hi - 1, self.nx - 1)
+            if inner0 <= inner1:
+                grid[row + inner0:row + inner1 + 1] = b"\x01" * (inner1 - inner0 + 1)
+            for i in (i_lo - 1, i_lo, i_hi, i_hi + 1):
+                if 0 <= i < self.nx and not (inner0 <= i <= inner1) and not grid[row + i] \
+                        and seg_dist((self.x0 + i * GRID, y), a, b) <= r:
                     grid[row + i] = 1
 
     @staticmethod
@@ -190,7 +235,7 @@ class Maze:
     def _zone(self, z, layer, grid, grow):
         o = z.Outline()
         b = o.BBox()
-        bb = (pcbnew.ToMM(b.GetX()), pcbnew.ToMM(b.GetY()), pcbnew.ToMM(b.GetRight()), pcbnew.ToMM(b.GetBottom()))
+        bb = (to_mm(b.GetX()), to_mm(b.GetY()), to_mm(b.GetRight()), to_mm(b.GetBottom()))
         for i, j in self._cells(bb, grow):
             p = V(*self.pos(i, j))
             if o.Contains(p) or o.SquaredDistance(p) <= mm(grow) ** 2:
