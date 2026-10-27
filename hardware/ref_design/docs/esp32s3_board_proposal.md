@@ -20,7 +20,7 @@ full 307,200 B frame, so the shared core needs no band rendering.
 | Size | 25.5 x 18 mm, PCB antenna at one end |
 | Ambient limit | 65 C (the R8 PSRAM variant; `datasheets/esp32-s3-wroom-1.pdf`) |
 | JLC assembly | Standard only, X-ray inspection |
-| Radio | Wi-Fi and BLE on the module. Firmware leaves it off for now (no-radio decision stands); the board still needs the antenna keepout. |
+| Radio | Wi-Fi is used from this board on (Alex, 2026-10-27, replacing the earlier no-radio decision). BLE stays off. The module may become the WROOM-1U-N16R8 with an external antenna, pending Blastoise Schematic's antenna analysis; that changes the part number. |
 
 ## Board changes
 
@@ -91,7 +91,28 @@ SPI-mode SD instead of 4-bit would free 2 more pins (3 spare).
 3. USB series resistors and ESD on IO19/20: follow the design guidelines.
 4. Whether the panel bus holds 25 MHz through the GPIO matrix (firmware side; TRM LCD_CAM
    chapter).
-5. EMC: with the radio unused the board is still Part 15B; enabling Wi-Fi later means the
-   module's modular grant and its FCC ID on the label.
+5. EMC: Wi-Fi is on, so the board is an intentional radiator. It relies on the module's
+   modular grant (keep to its antenna conditions; a WROOM-1U with our own antenna must use
+   an antenna type the grant lists) and carries its FCC ID on the label, plus Part 15B for
+   the rest of the board.
 
-Last updated: 2026-10-27 17:36 EDT
+## Firmware with Wi-Fi
+
+Plan for the firmware port (mb sw session), from the feasibility research on 2026-10-27:
+
+1. Stack: esp-hal 1.2.2 (`unstable`), esp-rtos 0.4.0 with embassy, esp-radio 0.18.0 for
+   Wi-Fi, embassy-net, embedded-tls 0.19.0 (TLS 1.3; `sim3.psim.us` negotiates TLS 1.3 with
+   an ECDSA P-256 leaf and ISRG Root X2, so the `rustpki` and `p384` features). Xtensa needs
+   the espup toolchain.
+2. RAM: the frame (307,200 B) moves to PSRAM, which frees internal SRAM for the Wi-Fi heap
+   (about 100 KB) and TLS (about 35 to 40 KB).
+3. Showdown: the device opens `wss://sim3.psim.us/showdown/websocket` itself as a guest; the
+   WebUSB bridge (`next_revision_proposal.md` section 3) becomes the fallback for places
+   without Wi-Fi.
+4. Setup: an SSID and password entry screen in the shared core (system UI, not battle UX),
+   credentials saved in a flash data partition.
+5. Power: about 250 mA with Wi-Fi on and the backlight at a typical level, so about 2.8 hours
+   on the 700 mAh cell; use modem sleep between messages. Cap TX power if brownouts show near
+   the 3.5 V cutoff.
+
+Last updated: 2026-10-27 18:05 EDT

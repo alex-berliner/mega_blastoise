@@ -9,7 +9,9 @@ or a live source.
 RP2354B, for its 16 MB of flash. Its board changes and pin map are in
 `docs/esp32s3_board_proposal.md`, which wins where it conflicts with this file. The
 RP2350-specific parts here (bootrom partitions, PIO, the section 6 GPIO budget) are
-superseded; the launcher on the S3 uses a factory partition plus one OTA game slot.
+superseded; the launcher on the S3 uses a factory partition plus one OTA game slot. Wi-Fi
+is on from that board (Alex, 2026-10-27), so section 3's "no radio" no longer holds: the
+device talks to Showdown over Wi-Fi and the USB bridge is the fallback.
 
 Related: `docs/display_parallel_proposal.md` (the 60 fps display link, in full detail),
 `docs/bom.md`. The GPIO map this file uses is the 3.5 in board's `docs/pinmap.md`, merged
