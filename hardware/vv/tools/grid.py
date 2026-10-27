@@ -12,9 +12,13 @@ A cell is the checks of board ref_design or both, not CUT or RETIRED, tagged wit
 that subsystem (the tags are a cross product: tag a check only with classes it really targets for
 every subsystem it names). A cell is:
 
-  COVERED      a built check that can clear it targets it; it shows every check's id and the worst
-               status among them (FAIL, NOT_BUILT, NOT_RUN, PASS, worst first), and the earliest
-               phase when no clearing check is an ORDER check. Which checks can clear a cell:
+  COVERED      a built check that can clear it targets it; it shows the checks that can clear it and
+               the worst status among them (FAIL, NOT_BUILT, NOT_RUN, PASS, worst first), then the
+               later checks that measure it but cannot clear it, and the earliest phase when no
+               clearing check is an ORDER check (2026-10-27, the class 2-15 round: before, the worst
+               was taken over every check, so a bench test that cannot exist before the boards held
+               every cell at NOT_BUILT whatever its paper checks said). Classes 16-18 keep the worst
+               over every check. Which checks can clear a cell:
                  classes 1-14: a check of phase ORDER or an analysis (method A), built (PASS, FAIL
                    or NOT_RUN: written and runnable before the boards exist). A bench test, an
                    inspection or a demonstration of a later phase does not: before the boards
@@ -161,7 +165,7 @@ def cells(vers, reasons, signed=frozenset()):
             counts_ = [v for v in ids if can_clear(v, c)]
             built = [v for v in counts_ if v["last_result"] in (RESULTS if c == 15 else BUILT)]
             r = why.get((c, s))
-            cell = {"checks": ids, "built": built, "reason": r}
+            cell = {"checks": ids, "built": built, "reason": r, "c": c}
             if r and r["status"] == "NOT_NEEDED" and ids:
                 problems.append((r["_where"], f"class {c} {s} is NOT_NEEDED, but {' '.join(v['id'] for v in ids)} "
                                               "target it: drop the reason or the tag"))
@@ -177,7 +181,10 @@ def cells(vers, reasons, signed=frozenset()):
                 cell["state"] = "GAP"
             cell["counts"] = counts_
             cell["planned"] = [v for v in counts_ if v not in built]
-            cell["worst"] = min((v["last_result"] for v in ids), key=WORST.index) if ids else ""
+            # classes 1-15: the worst among the checks that can clear the cell (a later bench test cannot, and its
+            # NOT_BUILT says only that the boards do not exist yet); classes 16-18: among all of them
+            judged = counts_ if c in ORDER_CLASSES and counts_ else ids
+            cell["worst"] = min((v["last_result"] for v in judged), key=WORST.index) if judged else ""
             phases = [v["phase"] for v in built] or [v["phase"] for v in counts_] or [v["phase"] for v in ids]
             cell["earliest"] = min(phases, key=PHASES.index) if phases else ""
             out[(c, s)] = cell
@@ -205,6 +212,8 @@ def text_cell(cell):
     later = f"; measures, does not clear: {later}" if later else ""
     if st == "COVERED":
         late = f", earliest {cell['earliest']}" if cell["earliest"] != "ORDER" else ""
+        if cell["c"] in ORDER_CLASSES:
+            return f"COVERED, worst {cell['worst']}{late}: {' '.join(v['id'] for v in cell['counts'])}{later}"
         return f"COVERED, worst {cell['worst']}{late}: {ids}"
     if st == "planned":
         return f"planned ({cell['earliest']}): {' '.join(v['id'] for v in cell['counts'])}{later}"
@@ -229,8 +238,9 @@ def render(vers, reasons, grid):
          "Classes 16-18 belong to EVT, DVT and PVT and are shown, not gated by the order; 19 and 20 are "
          "whole-register classes, listed below. Only checks of board ref_design or both count; CUT and RETIRED "
          "checks never do.", "",
-         "A cell reads: COVERED, worst <status> among its checks (FAIL, NOT_BUILT, NOT_RUN, PASS) and, "
-         "when no clearing check is an ORDER check, the earliest phase; planned (the checks that could clear it "
+         "A cell reads: COVERED, worst <status> (FAIL, NOT_BUILT, NOT_RUN, PASS) among the checks that can "
+         "clear it (classes 16-18: among all its checks) and, when no clearing check is an ORDER check, the "
+         "earliest phase, then the later checks that measure it but cannot clear it; planned (the checks that could clear it "
          "once built or run, then the ones that measure it but cannot clear it: a GAP for the order gate); "
          "GAP; NOT_NEEDED (grid_reasons.csv says why).", ""]
     L.append("| Class | " + " | ".join(SUBSYSTEMS) + " |")

@@ -40,6 +40,10 @@ REG = os.path.join(ct.VV, "verification.csv")
 
 DN = "hardware/vv/tools/design_numbers.py"
 PC = "hardware/vv/tools/paper_checks.py"
+CC = "hardware/vv/tools/circuit_checks.py"
+CS = "hardware/vv/tools/case_checks.py"
+LC = "hardware/vv/tools/layout_checks.py"
+TH = "hardware/vv/tools/thermal.py"
 
 # VER id: (evidence name, command, uses kicad-cli)
 CHECKS = {
@@ -85,6 +89,9 @@ CHECKS = {
     "VER-162": ("check_placed_contacts", ["python3", "hardware/vv/tools/check_placed_contacts.py"], True),
     "VER-125": ("check_land", ["python3", "hardware/vv/tools/check_land.py"], True),
     "VER-130": ("check_bom_cpl", ["python3", "hardware/vv/tools/check_bom_cpl.py"], True),
+    # the checks of classes 2, 3, 5, 7, 10 and 12-15 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
+    "VER-198": ("appcircuit", ["python3", CC, "appcircuit"], True),
+    "VER-190": ("arch", ["python3", CS, "arch"], False),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }

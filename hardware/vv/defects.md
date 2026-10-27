@@ -631,7 +631,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: the panel's VCI and VDDI take 3V3, up to 3.366 V (the RT9013's +2%), against the module's 3.3 V maximum (er-tft035ips-6.txt:747-748; its absolute maximum is 4.6 V, line 734, and the ILI9488's own VCI range runs to 3.6 V); and the copied core has one 4.7 uF on +1V1 where Raspberry Pi's minimal design may have two (u4.json pin 10). Both are answered by a BOM change or a written acceptance, so they belong before the order, while DEF-26's tooling does not.
 - Root cause: the pin reviews recorded the findings and nothing made anyone answer them.
 - Why missed: check_pins.py does not read the ratings (DEF-26).
-- Check added or changed: VER-34 (the datasheet audit quotes the panel's table and answers VCI and VDDI in writing); VER-23 (the overlay against RP-010329 answers the +1V1 capacitor in writing).
+- Check added or changed: VER-34 (the datasheet audit quotes the panel's table and answers VCI and VDDI in writing); VER-23 (the overlay against RP-010329 answers the +1V1 capacitor in writing); VER-198 (2026-10-27: the application-circuit script reads er-tft035ips-6.txt:747 and fails on the 3.366 V until Alex accepts it or the supply changes).
 - Updated: REQ-PWR-14, DF-96
 - Gate: ORDER
 - Status: OPEN (unchanged at 71737ae: the panel's supply is still 3V3 through JP4, up to 3.366 V. Proposed: accept VCI and VDDI at 3.366 V, inside the absolute maximum and the controller's own range; the +1V1 capacitor follows RP-010329 as VER-23 finds it)
