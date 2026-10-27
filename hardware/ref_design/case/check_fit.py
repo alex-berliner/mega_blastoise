@@ -206,6 +206,74 @@ def near_speaker(box):
         inside_rect(box, ((cx - r, cy - half), (cx + r, cy + half)))
 
 
+def check_part(ref, box, is_flipped, echoed, problems, under):
+    """One part's box against the case (appends to problems, and to under for the ends' strip)."""
+    ceilings = echoed["TOP"]
+    glass = POS["glass"]
+    top = box[5]
+    if is_flipped:
+        height = -box[4] - PCB_T          # below the board
+        for s in POS["pins"]:
+            if near_circle(box, s, POS["boss_d"] / 2 + 0.5):
+                problems.append(f"{ref} (back) sits on a tub pin boss")
+        if height > POS["back_limit"] - 0.1:
+            problems.append(f"{ref} (back) is {height:.2f} mm tall; the floor's ribs leave {POS['back_limit']} mm")
+        return
+    for i, c in enumerate(POS["pieces"]):
+        if near_circle(box, c, POS["piece_d"] / 2):
+            problems.append(f"{ref} is under a silicone piece (cluster {i})")
+    for i, r in enumerate(POS["ss_pieces"]):
+        if inside_rect(box, r):
+            problems.append(f"{ref} is under a Start/Select membrane (seat {i + 1})")
+    for s in POS["pins"]:
+        if near_circle(box, s, POS["boss_d"] / 2 + 0.3):
+            problems.append(f"{ref} collides with the screw boss at {s}")
+    for c in POS["crush"]:
+        if near_circle(box, c, 1.0):
+            problems.append(f"{ref} is at a crush rib at {c}")
+    if inside_rect(box, POS["cell_hole"]):
+        problems.append(f"{ref} reaches over the cell's hole")
+    if near_speaker(box):
+        problems.append(f"{ref} is in the speaker's hole (or within its keep-out)")
+    isl = echoed["ISLAND"]
+    limit, where = box_ceiling(isl, ceilings, box) - isl["z_top_cu"] - 0.3, "island's slope, ear or the ends' ceiling"
+    if inside_rect(box, glass):
+        limit, where = POS["glass_limit"], "glass"
+    elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]) or \
+            any(inside_rect(box, r, 1.5) for r in POS["ss_pieces"]):
+        limit, where = min(limit, POS["retainer_limit"]), "retainer"
+    if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
+        limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
+        if ceilings and any(within(box, p) for p in ceilings["pockets"]):
+            limit, where = ceilings["pocket_limit"], "button deck, in a pocket"
+    frame = POS["frame"]                    # the top's panel frame hangs lower than the rest of it
+    notched = any(inside_rect(box, n) for n in frame["notches"])
+    if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit and not notched:
+        limit, where = frame["limit"], "top's panel frame"
+    if top > limit + 1e-3:
+        problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
+    if ceilings and any(inside_rect(box, z) for z in ceilings["strips"]):      # the strip between the clusters
+        pocket = any(within(box, p) for p in ceilings["pockets"])               # (U6 has its pocket)
+        cap = ceilings["pocket_limit"] if pocket else ceilings["limit"]
+        under.append((ref, top))
+        if top > cap + 1e-3:
+            problems.append(f"{ref} is {top:.2f} mm tall in the strip between the clusters under the top's ends, which allows {cap:.2f}"
+                            + (" (in a pocket)" if pocket else ""))
+    tail, body = POS["fpc_zones"]
+    if ref.startswith("J3"):
+        pass
+    elif inside_rect(box, tail, -0.2) and top > 0.3:
+        problems.append(f"{ref} is under the display's folded FPC (its tail: nothing but J3)")
+    elif inside_rect(box, body, -0.2):
+        neck = inside_rect(box, ((body[0][0], POS["fpc_neck_y"]), (body[1][0], body[1][1])), -0.2)
+        if neck and top > 0.3:
+            problems.append(f"{ref} is under the display's FPC neck (the fold round the glass's edge)")
+        elif top > POS["fpc_low"] + 1e-3:
+            problems.append(f"{ref} is {top:.2f} mm tall under the display's folded FPC, which lies on the glass's back: {POS['fpc_low']} at most")
+    if ref.startswith("J3") and not within(box, POS["j3_zone"]):
+        problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
+
+
 def main():
     parts = refs()
     boxes = extents([r[0] for r in parts])
@@ -229,68 +297,7 @@ def main():
         if box is None:
             notes.append(f"{ref}: no 3D model exported")
             continue
-        top = box[5]
-        if flipped[ref]:
-            height = -box[4] - PCB_T          # below the board
-            for s in POS["pins"]:
-                if near_circle(box, s, POS["boss_d"] / 2 + 0.5):
-                    problems.append(f"{ref} (back) sits on a tub pin boss")
-            if height > POS["back_limit"] - 0.1:
-                problems.append(f"{ref} (back) is {height:.2f} mm tall; the floor's ribs leave {POS['back_limit']} mm")
-            continue
-        for i, c in enumerate(POS["pieces"]):
-            if near_circle(box, c, POS["piece_d"] / 2):
-                problems.append(f"{ref} is under a silicone piece (cluster {i})")
-        for i, r in enumerate(POS["ss_pieces"]):
-            if inside_rect(box, r):
-                problems.append(f"{ref} is under a Start/Select membrane (seat {i + 1})")
-        for s in POS["pins"]:
-            if near_circle(box, s, POS["boss_d"] / 2 + 0.3):
-                problems.append(f"{ref} collides with the screw boss at {s}")
-        for c in POS["crush"]:
-            if near_circle(box, c, 1.0):
-                problems.append(f"{ref} is at a crush rib at {c}")
-        if inside_rect(box, POS["cell_hole"]):
-            problems.append(f"{ref} reaches over the cell's hole")
-        if near_speaker(box):
-            problems.append(f"{ref} is in the speaker's hole (or within its keep-out)")
-        isl = echoed["ISLAND"]
-        limit, where = box_ceiling(isl, ceilings, box) - isl["z_top_cu"] - 0.3, "island's slope, ear or the ends' ceiling"
-        if inside_rect(box, glass):
-            limit, where = POS["glass_limit"], "glass"
-        elif any(near_circle(box, c, POS["piece_d"] / 2 + 1.5) for c in POS["pieces"]) or \
-                any(inside_rect(box, r, 1.5) for r in POS["ss_pieces"]):
-            limit, where = min(limit, POS["retainer_limit"]), "retainer"
-        if any(inside_rect(box, d) for d in POS["decks"]) and POS["deck_limit"] < limit:
-            limit, where = POS["deck_limit"], "button deck"      # the stepped-down ends
-            if ceilings and any(within(box, p) for p in ceilings["pockets"]):
-                limit, where = ceilings["pocket_limit"], "button deck, in a pocket"
-        frame = POS["frame"]                    # the top's panel frame hangs lower than the rest of it
-        notched = any(inside_rect(box, n) for n in frame["notches"])
-        if inside_rect(box, frame["outer"]) and not within(box, frame["inner"]) and frame["limit"] < limit and not notched:
-            limit, where = frame["limit"], "top's panel frame"
-        if top > limit + 1e-3:
-            problems.append(f"{ref} is {top:.2f} mm tall; the {where} allows {limit:.2f}")
-        if ceilings and any(inside_rect(box, z) for z in ceilings["strips"]):      # the strip between the clusters
-            pocket = any(within(box, p) for p in ceilings["pockets"])               # (U6 has its pocket)
-            cap = ceilings["pocket_limit"] if pocket else ceilings["limit"]
-            under.append((ref, top))
-            if top > cap + 1e-3:
-                problems.append(f"{ref} is {top:.2f} mm tall in the strip between the clusters under the top's ends, which allows {cap:.2f}"
-                                + (" (in a pocket)" if pocket else ""))
-        tail, body = POS["fpc_zones"]
-        if ref.startswith("J3"):
-            pass
-        elif inside_rect(box, tail, -0.2) and top > 0.3:
-            problems.append(f"{ref} is under the display's folded FPC (its tail: nothing but J3)")
-        elif inside_rect(box, body, -0.2):
-            neck = inside_rect(box, ((body[0][0], POS["fpc_neck_y"]), (body[1][0], body[1][1])), -0.2)
-            if neck and top > 0.3:
-                problems.append(f"{ref} is under the display's FPC neck (the fold round the glass's edge)")
-            elif top > POS["fpc_low"] + 1e-3:
-                problems.append(f"{ref} is {top:.2f} mm tall under the display's folded FPC, which lies on the glass's back: {POS['fpc_low']} at most")
-        if ref.startswith("J3") and not within(box, POS["j3_zone"]):
-            problems.append(f"J3 lies outside the range the case keeps for it ({POS['j3_zone']})")
+        check_part(ref, box, flipped[ref], echoed, problems, under)
     if ceilings:
         notes.append(f"the strip between the clusters under the top's ends: {len({u[0] for u in under})} parts in it, the tallest "
                      f"{max((u[1] for u in under), default=0):.2f} (it allows {ceilings['limit']:.2f}; {ceilings['pocket_limit']:.2f} in a pocket)")

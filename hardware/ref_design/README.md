@@ -77,6 +77,36 @@ leaves `positions.json` as it was doesn't reroute the board. The end-of-round st
 simulation, `route.py --finish` and `sync_pcb.py` only when named with `--only`.
 `tools/build.py`'s docstring has the details.
 
+## Placement search (2026-10-27)
+
+`board/tools/place_search.py` looks for a placement that routes clean without routing every candidate: zones first, nudges second, a quick
+score instead of Freerouting, then the best candidates routed on several machines. The zones, which group may use which, the turns, the
+speaker's grid and the nudge limits are data in `board/placement_zones.py`; `placement.py`'s own table is each group's home. The search's
+result is `board/picks.json` (explicit poses, the core's centre and turn, the cell hole's and the speaker hole's shifts, J1's slide along
+the right wall); `placement.py` applies it on top of its table, so without that file (or `PLACE_PICKS`) a build is the committed placement.
+
+```sh
+cd hardware/ref_design/board
+python3 tools/place_search.py zones-png OUT.png                  # the zones and which groups may use each
+python3 tools/place_search.py score ['{"poses": {...}}']       # one placement: validity and score (home by default)
+python3 tools/place_search.py stage1 --out=DIR --jobs=15       # beam over the groups' zones (about 12 min on 15 cores); DIR/assign.json
+python3 tools/place_search.py stage2 --out=DIR --top=40        # nudges of 0.5 to 2 mm and quarter turns; DIR/candidates.json
+python3 tools/place_search.py route DIR --hosts=il:8,desktop-ubuntu:8,xps13:4 --run=NAME --prefix=P_   # route.py once per candidate, in parallel
+python3 tools/place_search.py collect DIR; python3 tools/place_search.py report DIR   # re-measure the boards, list them by score
+python3 tools/place_search.py stop                             # kill every run, by PID, on every host
+```
+
+Validity (a candidate is built in memory with pcbnew, no board per candidate): new courtyard overlaps (a footprint's box covers its pads),
+copper 0.31 mm from the outline, the cutouts and NPTH holes, nothing in the speaker's keep-out or the cell hole, the core's escape tracks
+(4.4 mm round U4's pads) inside the edge, and the case's height/zone rules (`case/check_fit.py`'s `check_part` on each moved part's cached
+3D extent). `route` runs `route.py --preflight` on each candidate first and drops the ones with a placement error.
+Score (lower is better): the nets that must cross each bottleneck (the gap between the hole and J3, the strips beside the hole, the board's
+top end) against what fits there; the ratsnest length weighted by track width; a separate term for the power nets (VBUS, VBAT, VSYS, the LDO's
+output, the backlight, the speaker); a soft penalty when U2 is more than 15 mm from J1 or J2 or the LDO more than 20 mm from the core; a
+congestion count. Hosts: a host without KiCad's footprint libraries, a full JRE (Freerouting's GUI needs AWT) or xdotool gets a copy of il's
+under `~/mb_route` (no install, no sudo). The case is not changed by the search itself: a candidate that moves the speaker, J1 along its wall,
+the cell hole or BOOT/RESET needs a case respin (`case/case.scad`) before it is adopted.
+
 Speed: `tools/scad.py` picks OpenSCAD. With an OpenSCAD development snapshot AppImage
 in `~/Applications` (openscad.org, Development Snapshots) it renders with the Manifold
 backend, minutes down to seconds; otherwise the system `openscad` (CGAL). `OPENSCAD=...`

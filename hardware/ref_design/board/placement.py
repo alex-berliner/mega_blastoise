@@ -21,6 +21,8 @@ import os
 
 HERE = os.path.dirname(os.path.abspath(__file__))
 CASE = json.load(open(os.path.join(HERE, "..", "case", "positions.json")))
+import placement_zones  # noqa: E402  (the search's result, board/picks.json or PLACE_PICKS; a no-op without them)
+PICKS = placement_zones.load_picks()
 
 # ---- the board 2 mm wider than the case had it (2026-10-22, Alex: up to 72.4 mm) ----------------
 # 1 mm more on each side, still centred on the case, which grows to match: the USB-C and its tab
@@ -57,6 +59,7 @@ CUTOUTS = [
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
+CUTOUTS = placement_zones.shift_hole(CUTOUTS, PICKS)
 
 # ---- the speaker, lying on the board's top (2026-10-22, Alex) --------------------------------
 # The INGHAi GSPK151035PN (15 x 10 x 3.5 mm racetrack, 8 ohm, 35 mm leads to a 1.25 mm plug) lies
@@ -70,6 +73,7 @@ CUTOUTS = [
 # 2026-10-22, the side screws back inward: 2.1 mm up, its top 0.1 below the hole's edge (J1 went up
 # its wall to make room), so the screw H3 fits between it and J4
 SPEAKER = dict(at=(129.7, 124.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x by y, mm (the hole's outline: CUTOUTS)
+CUTOUTS, SPEAKER = placement_zones.shift_speaker(CUTOUTS, SPEAKER, PICKS)    # the search may have moved it
 
 # ---- RP2350B core: copied from the reference board ------------------------------
 # In the left bezel since the cell took the middle of the board (2026-10-21), as Raspberry Pi drew
@@ -77,10 +81,10 @@ SPEAKER = dict(at=(129.7, 124.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x
 # cross is below. The decouplers on its long sides would land on the side screw, J2 or the folded
 # FPC: they are placed by hand below, as close to their pins as that allows.
 CORE_SIDE = "F"
-CORE_AT = (73.8, 114.0)
+CORE_HOME = (73.8, 114.0, 0)                  # x, y of the RP2350B's centre, turn (degrees CCW on screen)
+CORE_AT, CORE_ROT = placement_zones.core_pose(CORE_HOME, PICKS)
 CORE_Y = CORE_AT[1]
 CORE_ESCAPES = True         # Raspberry Pi's pin escapes (False: straight stubs, build_pcb.straight_escapes)
-CORE_ROT = 0                 # the reference as drawn: GPIO4-19 face the left bezel, GPIO33-47 J3
 CORE = {                     # reference designator -> ours (same nets, same job); the RP2354B
     "U1": "U4", "X1": "X1", "L1": "L2",    # has its flash inside, so the reference's U3 and R10 stay behind,
     "C12": "C11", "C13": "C12", "C10": "C21",   # and its C2, R1 and R6 (C10, R23, R25 here) sat out by
@@ -178,7 +182,8 @@ at("J5", -32.1, -5.0, 270)                  # SWD, its mouth towards the left ed
 
 # ---- USB-C on the right wall, its ESD array and the CC resistors
 USB_Y = CASE["usb"]["y"]
-USB_TAB = CASE["usb"]["tab"]
+USB_DY = PICKS.get("usb_dy", 0.0)       # J1 stays on the right wall; the search may slide it along it (the case's usb_y follows)
+USB_TAB = [[x, y + USB_DY] for x, y in CASE["usb"]["tab"]]
 usb_x = CASE["usb"]["front_x"] - 3.65       # footprint front is 3.65 ahead of its origin
 put("J1", usb_x, USB_Y, 90)
 at("U1", 24.5, 1.5, 0)
@@ -274,3 +279,6 @@ at("R13", 24.5, 45.0, 90)
 at("R14", 25.7, 45.0, 90)
 at("R38", 33.0, 44.0, 90)
 at("R42", 34.2, 44.0, 90)
+
+# ---- the placement search's result (tools/place_search.py): a no-op unless picks.json or PLACE_PICKS says otherwise ----------------
+placement_zones.apply(P, PICKS)
