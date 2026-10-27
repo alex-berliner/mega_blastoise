@@ -13,7 +13,8 @@ part change in design.py makes the evidence stale through the row's part: covers
   inrush     VER-99   VBUS capacitance and what charges VSYS at a plug-in
   backlight  VER-137  worst-case LED current and the halves' match at the minimum duty
   cutoff     VER-138  where the 3.50 V cutoff fires after the gain calibration pinmap.md describes
-  screws     VER-147  M2 screw engagement in the case's pilots, the side ones and the end ones apart
+  screws     VER-147  M2 screw engagement in the case's pilots, the side ones and the end ones apart;
+                      bom.md's screw length against case.scad's
   mlcc       VER-142  MLCCs against the case's screw bosses (pcbnew)
   th1        VER-164  TH1 against the cell's hole; bare copper facing the cell (pcbnew)
   cellgap    VER-181  a worst-case cell to the routed FR4 edge on every side, after tolerances
@@ -288,7 +289,13 @@ def screws():
         print("case.scad: could not read " + " ".join(miss))
         return result(False)
     z_top, cb = e["z_top_cu"], e["screw_cb"][1]
-    ok = True
+    # the screws bought are bom.md's: its Screws line must name every length case.scad uses (the audit, 2026-10-27)
+    used = {float(e.get("screw_l_side", e["screw_l"])), float(e.get("screw_l_end", e["screw_l"]))}
+    line = next((ln for ln in open(os.path.join(REF, "docs", "bom.md")) if re.match(r"\|\s*Screws\b", ln)), "")
+    named = {float(x) for x in re.findall(r"M2 x (\d+(?:\.\d+)?)", line)}
+    ok = bool(named) and used <= named
+    print(f"bom.md's Screws line names M2 x {', '.join(f'{n:g}' for n in sorted(named)) or 'nothing'}; case.scad uses "
+          f"M2 x {', '.join(f'{n:g}' for n in sorted(used))}: {'ok' if ok else 'fails'}")
     for label, length, pilot, want, short in (
             ("side (H1-H4)", e.get("screw_l_side", e["screw_l"]), e["side_engage"], 4.0, 0.5),
             ("end (H5, H6)", e.get("screw_l_end", e["screw_l"]), e["deck_engage"], 3.0, 0.1)):

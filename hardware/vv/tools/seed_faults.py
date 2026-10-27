@@ -50,6 +50,9 @@ The coverage grid and the stale-names scan add theirs (2026-10-27):
         fails; a NOT_NEEDED reason dropped, an ACCEPTED_GAP Alex has not signed and a grid.md
         edited by hand each fail the order gate (R9); the default mode reports the GAP count; a
         control: a gap Alex accepts in a signed GRID-<class>-<subsystem> line leaves R9.
+  audit a NOT_RUN bench test of phase EVT re-tagged into an empty cell leaves it a GAP at R9; a
+        class 15 analysis that has not run leaves its cells planned; a ref no design.py ever had
+        (R666) fails the default mode.
 
 Python 3 standard library and git.
 """
@@ -273,6 +276,16 @@ FAULTS = [
      lambda d: text_edit(d, "grid.md", "| A1 Requirements |", "| A1 Requirement |")),
     ("grid: the default mode reports the GAP count", "report", "(1 with no check,",
      lambda d: drop_line(d, "grid_reasons.csv", "3,case,")),
+    # the grid audit (2026-10-27)
+    ("grid R9: a NOT_RUN bench test of phase EVT re-tagged into an empty cell does not clear it", "gate",
+     "3 case no check",
+     lambda d: (drop_line(d, "grid_reasons.csv", "3,case,"),
+                csv_edit(d, "verification.csv", "VER-70", classes="3", subsystems="case"))),
+    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 8",
+     lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN")),
+    ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
+     "R666 (part, never in design.py)",
+     lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", R666")),
 ]
 
 

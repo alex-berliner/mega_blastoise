@@ -53,10 +53,11 @@ only when positions.json regenerated at that commit (case/export.py without --st
 sha256 as positions.json regenerated at the baseline commit; both hashes are printed and go
 into the release record (O-R4). R9 (order gate, 2026-10-27) the coverage grid (grid.md, made by
 tools/grid.py from verification.csv's classes and subsystems and grid_reasons.csv) has no GAP
-in classes 1-15: each subsystem has a built check for each class (for class 15, a built
-analysis), a NOT_NEEDED reason, or a gap Alex accepted with a signed
-'GRID-<class>-<subsystem>' line; a cell with only NOT_BUILT checks is planned and still a gap,
-and a grid.md that is not what the register gives fails it too. Two more gate results, both reported and never structural:
+in classes 1-15: each subsystem has, for each class, a built check that runs before the boards
+exist (classes 1-14: an ORDER check or an analysis; class 15: an analysis that has run, PASS
+or FAIL), a NOT_NEEDED reason, or a gap Alex accepted with a signed
+'GRID-<class>-<subsystem>' line; a cell with only later bench checks or NOT_BUILT checks is
+planned and still a gap, and a grid.md that is not what the register gives fails it too. Two more gate results, both reported and never structural:
 G1 "the gate state Alex froze": a signed GATE@<commit> line in releases/APPROVALS.md freezes
 each check's phase, each defect's Gate, each criterion's Needs and each requirement's Phase
 and Verified-by; a check, defect, criterion or requirement moved later without a newer signed
@@ -109,7 +110,7 @@ order; 14 onwards are this register's.
 | G-ORD-24 | the trace gate is shown to fail on seeded faults (the design checkers' seeded faults moved to G-DVT-05); no live row names a part, part number or net the baseline's design.py lacks (2026-10-27) | VER-129 VER-188 | ref_design |
 | G-ORD-25 | prod_board: its own round trip and contacts (as library footprints, as placed, where prod_case says) | VER-10 VER-163 VER-119 VER-120 VER-121 VER-122 | prod_board |
 | G-ORD-26 | the claims script (moved to G-CASE-06 on 2026-10-26: it keeps the register's quoted values honest, it does not freeze copper; this re-seed read every row against be437f8 instead) | ADVISORY VER-161 | ref_design |
-| G-ORD-27 | the coverage grid's pre-order checks (2026-10-27, grid.md): each subsystem's requirements read against its functions, the case's architecture against its requirements, the USB data path's values at their corners. R9 holds every other cell of classes 1-15 that only a NOT_BUILT check covers | VER-189 VER-190 VER-191 | ref_design |
+| G-ORD-27 | the coverage grid's pre-order checks (2026-10-27, grid.md): each subsystem's requirements read against its functions, the case's architecture against its requirements, the USB data path's values at their corners, the USB connector's fault reach, the amplifier's states, and the paper heat estimate run to a number (the grid's audit). R9 holds every other cell of classes 1-15 that no built pre-order check clears | VER-189 VER-190 VER-191 VER-195 VER-196 VER-144 VER-193 | ref_design |
 
 ## Case gate: before the printed case is released and the EVT units are assembled
 

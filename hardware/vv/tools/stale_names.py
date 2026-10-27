@@ -10,7 +10,10 @@ the baseline's does not. Three kinds of name, read from every design.py on the h
 
   ref     a reference designator (Q2, D5, J6, R48-R51 as a range). R6, R7 and R8 written as
           'R6 at', 'R8 fails' and so on are check_trace's gate rules, and D0-D7 after "U8's" or
-          "U9's" are the 74HC165's inputs: neither is a part.
+          "U9's" are the 74HC165's inputs: neither is a part. A ref no design.py on the history
+          ever had (a typo: R66, TP17) fails too when its letters are a prefix the baseline uses
+          (R, C, U, Q, D, J, JP, TP, SW, H, RN, L, X, TH, FID); a range's ends are read, not the
+          numbers between, and a number 0 is a pin name (the 74HC165's 'D0 11'), not a ref.
   net     a net name with an underscore or a digit (LS_GATE, CHG_PROG, REV0). Bare words (TS, ILIM,
           ISET) are also the BQ24073's pin names, so they are not read.
   mpn     a part number's stem, its leading letters and digits (TP4056 from TP4056-42-ESOP8,
@@ -92,12 +95,26 @@ def names(sha):
     return refs, nets, stems
 
 
+def history(base):
+    """The commits on base's history that changed design.py, newest first."""
+    rc, out = git("log", "--format=%H", base, "--", DESIGN_PY)
+    return out.split()
+
+
+def ever_refs(base):
+    """(every reference designator any design.py on base's history had, the letter prefixes base uses)."""
+    refs = set(names(base)[0])
+    for sha in history(base):
+        refs |= names(sha)[0]
+    prefixes = {m.group(1) for m in (re.fullmatch(r"([A-Z]+)\d+", r) for r in names(base)[0]) if m}
+    return refs, prefixes
+
+
 def gone(base):
     """{name: (kind, the newest commit that had it)} for names earlier design.py files had and base has not."""
     refs, nets, stems = names(base)
-    rc, out = git("log", "--format=%H", base, "--", DESIGN_PY)
     out_ = {}
-    for sha in out.split():
+    for sha in history(base):
         r, n, s = names(sha)
         for x in r - refs:
             out_.setdefault(x, ("ref", sha[:7]))
@@ -147,6 +164,7 @@ def findings(vv):
         if nets else None
     mpn_rx = re.compile(r"(?<![\w-])(" + "|".join(sorted(map(re.escape, mpns), key=len, reverse=True)) + r")\w*") \
         if mpns else None
+    ever, prefixes = ever_refs(base)
     out = []
     for where, rid, text in rows(vv):
         t = WAS.sub(" ", text)
@@ -156,9 +174,15 @@ def findings(vv):
             a, n1, b, n2 = m.groups()
             if n2 and b in (None, a) and int(n1) <= int(n2):
                 named = {f"{a}{i}" for i in range(int(n1), int(n2) + 1)}
+                ends = {a + n1, a + n2}
             else:
-                named = {a + n1} | ({b + n2} if n2 and b else set())
+                named = ends = {a + n1} | ({b + n2} if n2 and b else set())
             hit |= {f"{x} (part, last in {old[x][1]})" for x in named & refs}
+            # a ref no design.py ever had (a typo such as R66 or TP17), with a prefix the baseline uses: only a
+            # range's ends are read, so a range over a gap in the numbering (C10-C22) is not a typo; a number 0
+            # is a pin name, never a ref (the 74HC165's 'D0 11' in a pin list)
+            hit |= {f"{x} (part, never in design.py)" for x in ends - ever
+                    if (lambda p: p.group(1) in prefixes and int(p.group(2)) > 0)(re.fullmatch(r"([A-Z]+)(\d+)", x))}
         if net_rx:
             hit |= {f"{m.group(1)} (net, last in {old[m.group(1)][1]})" for m in net_rx.finditer(t)}
         if mpn_rx:

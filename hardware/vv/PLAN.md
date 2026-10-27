@@ -79,7 +79,8 @@ pins. The counts are in section (i).
   and names the designator (F-R4).
 - The coverage grid (section o, [grid.md](grid.md)): every live check names the classes and
   subsystems it targets; at the order gate R9 fails while a cell of classes 1-15 has no built
-  check, no NOT_NEEDED reason and no acceptance Alex signed. No live row may name a part, part
+  check that runs before the boards exist (class 15: an analysis that has run), no NOT_NEEDED
+  reason and no acceptance Alex signed. No live row may name a part, part
   number or net that design.py at the baseline no longer has, outside 'Was: ...' (VER-188).
 
 `tools/seed_faults.py` seeds faults one at a time and catches every one (VER-129; the count is
@@ -163,7 +164,7 @@ below (check_trace fails otherwise). Effort is Claude's unless it says Alex.
 | 7 | **The board against the case**: the XY chain from positions.json (the comb's 1.60 mm spot is copper, and the chain needs no parts: O-R9); placement drift; the MLCC keep-out and TH1 (both pass); the ESTIMATE ledger, the panel's numbers first, read off the drawing on disk. The heights, the pill print on the fit kit and the connector mouths are the case gate's (VER-112, VER-51, VER-165 at G-CASE-02: F-R9). | VER-174, VER-06, VER-19, VER-142, VER-164, VER-152 | 1 day plus calipers |
 | 8 | **The panel and the cell, parts in hand**: the ER-TFT035IPS-6 lit through the breakout, the breakout's header numbering found by diode and continuity tests and the dev board wired by the panel's own pin names (F-R1); ID4 read on SDO, or on SDA if SDO is silent (F-R8); its redraw timed at an in-spec clock (18.75 MHz from 150 MHz, or 20 MHz from a 120 MHz clk_peri: O-R1); the FPC folded into a breakout in J3's place (assembly.md section 5 step 6); the tail's thickness; the cell's spec sheet and cell.json. The cell's incoming inspection (VER-49) is EVT's, before the first cell is plugged (G-EVT-02, F-R9). | VER-43, VER-136, VER-44, VER-37, VER-160 | Alex and Claude: an evening each once parts arrive |
 | 9 | **Test access and firmware size**: every bring-up probe point has copper (the probes table and its script); the game's llvm-size inside 2 MB (the flash map and the check.sh step are VER-185, EVT). | VER-158, VER-151 | 2 hours |
-| 9.5 | **The coverage grid's gaps** ([grid.md](grid.md), R9): write and run the three pre-order checks the grid planned for cells nothing covered: each subsystem's requirements read against its functions (VER-189), the case's architecture against its requirements (VER-190), the USB data path's values at their corners (VER-191). R9 also holds every cell whose only checks are NOT_BUILT: build them (written and runnable; they still run in their own phase) or ask Alex to accept the gap with a signed GRID-<class>-<subsystem> line. Section (o) lists them. | VER-189, VER-190, VER-191 | 1 day; building the later-phase checks R9 holds, about 3 days more, or Alex's acceptances: 30 min |
+| 9.5 | **The coverage grid's gaps** ([grid.md](grid.md), R9): write and run the pre-order checks the grid planned for cells nothing covered: each subsystem's requirements read against its functions (VER-189), the case's architecture against its requirements (VER-190), the USB data path's values at their corners (VER-191), the USB connector's fault reach (VER-195), the amplifier's states (VER-196), and the paper heat estimate, run to a number (VER-144 for U2, U3, U7, Q5 and Q6; VER-193 for every other part, the cell and the case's inner surface). R9 also holds every cell whose only clearing checks are NOT_BUILT: build them (an analysis is written and runnable; it still runs in its own phase) or ask Alex to accept the gap with a signed GRID-<class>-<subsystem> line. A bench test of a later phase never clears a cell of classes 1-14 (section o). | VER-189, VER-190, VER-191, VER-195, VER-196, VER-144, VER-193 | 2 days; building the later-phase analyses R9 holds, about 3 days more, or Alex's acceptances: 30 min |
 | 10 | **Reviews** (all advisory here): the DFMEA review by Alex and two models binds at G-EVT-16 (VER-98, O-R9); the clean-room, return-path and gerbv reviews if time allows (VER-40, VER-21, VER-27). | VER-98 | Alex: half a day, optional before the order |
 | 11 | **Alex's decisions** in APPROVALS.md, in signed commits: one `REQ-ALL@<commit>` line for the requirements he agrees with (round 2: not 130 lines), deferrals by ID; the H rows that only built units can detect, accepted for ORDER (`--gate order --verbose` lists them; one `DF-H@<commit>` line or one per row); the BOM values he accepts for EVT (DF-130, DF-147, DF-164, DF-101); u4 pin 58's waiver (DEC-29); one `GATE@<commit>` line that freezes the phases he agrees with (O-R5). | R1, R3, G1 | Alex: 1 h |
 | 12 | **Release and order**: the release record; the dry run (valid 7 days); stock on order day (valid 1 day); `check_trace.py --gate order` exits 0; order 5 assembled and 5 bare boards. | VER-42, VER-28, VER-41 | 1 day |
@@ -200,6 +201,7 @@ is VER-185 at EVT). The order gate's counts are in section (i).
 | VER-151 the game image | ORDER | ORDER, cut to the llvm-size figure | the flash map and the check.sh step are VER-185's, at EVT (F-R2(f)) |
 | VER-36 the pin gate's tooling | ORDER | EVT | it changes no copper; the two findings that set the BOM are DEF-61, at ORDER (F-R2(d)) |
 | VER-174 the XY chain | ORDER | ORDER (kept) | the comb's spot is copper and the chain needs no parts (O-R9; F-R9 wanted it at CASE) |
+| VER-144 heat per mode, VER-193 board-wide heat (2026-10-27) | EVT | ORDER | Alex's grid rule puts class 15's paper estimate before the order, and an estimate exists only once it has run, so G-ORD-22 now needs their result; VER-13 (copper IR drop) stays at EVT: VER-144 and VER-193 together reach all eight subsystems |
 
 ## (e) The case gate, EVT, DVT and PVT
 
@@ -857,32 +859,29 @@ not be run; they are run below.
 `tools/grid.py` generates it from each check's `classes` and `subsystems` in verification.csv
 and from grid_reasons.csv; nothing in it is typed. A check is tagged only with the classes it
 targets for every subsystem it names (the tags are a cross product). The order gate's R9 fails
-while a cell of classes 1-15 has no built check (class 15: a built analysis), no NOT_NEEDED
-reason and no `GRID-<class>-<subsystem>` acceptance Alex signed; a cell with only NOT_BUILT
-checks is "planned" and still a gap. `check_trace.py` reports the count; run_checks.py
+while a cell of classes 1-15 has no built check that can clear it (below), no NOT_NEEDED
+reason and no `GRID-<class>-<subsystem>` acceptance Alex signed; a cell whose clearing checks
+are all NOT_BUILT (or, for class 15, not yet run) is "planned" and still a gap. `check_trace.py` reports the count; run_checks.py
 rewrites grid.md after each run. On the reworked board: re-tag the rows the rework touches,
 then run `python3 hardware/vv/tools/grid.py`.
 
-At be437f8, classes 1-15 (120 cells): 84 covered, 10 not needed, 0 accepted, and 26 held by R9,
-all planned; classes 16-18: 16 covered, 8 planned. Before this round 22 cells had no check: 10 are NOT_NEEDED with a reason in
-grid_reasons.csv (8 case cells, and class 12 for power and the cell), and 12 are planned through
-six new NOT_BUILT rows, VER-189 to VER-194.
+Which check can clear a cell (tools/grid.py, after the audit below): for classes 1-14 a built
+check that runs before the boards exist, an ORDER check or an analysis (A); for class 15 an
+analysis that has run (PASS or FAIL), since a paper estimate exists only once it has a number. A
+bench test, inspection or demonstration of a later phase still shows in its cell, marked
+"measures, does not clear". The counts per class and each held cell with the checks that would
+clear it are grid.md's own sections ("Counts per class", "Gaps"), generated from the register;
+read them there, not here.
 
-| Class | Held by R9 | Where | What clears it (build one) |
-|---|---|---|---|
-| 1 Requirements | 5 | power, mcu, display, usb_debug, case | VER-189 |
-| 2 Architecture fit | 1 | case | VER-190 |
-| 4 Values and worst case | 4 | mcu, audio, buttons, usb_debug | VER-23; VER-100 or VER-30; VER-33; VER-191 |
-| 5 Ratings and derating | 1 | case | VER-192 |
-| 6 States and sequencing | 1 | usb_debug | VER-159 or VER-127 |
-| 12 Signals and timing | 4 | mcu, audio, buttons, usb_debug | VER-23; VER-21; VER-179; VER-108 or VER-21 |
-| 14 Mating | 2 | power, usb_debug | VER-165 or VER-80 |
-| 15 Thermal (paper) | 8 | every subsystem | VER-144, VER-13, VER-193 |
-| 3, 7-11, 13 | 0 | | |
-
-Classes 16-18 are not gated here: 1 planned cell in 16 (case: VER-90) and 7 in 17. The checks
-R9 waits for that belong to a later phase (VER-100, VER-159, VER-179, VER-165, VER-144, VER-13,
-VER-192, VER-193) only have to be built before the order; they still run in their own phase.
+The first build, at be437f8: 84 cells of classes 1-15 covered, 10 not needed, 26 held by R9.
+Before it 22 cells had no check: 10 are NOT_NEEDED with a reason in grid_reasons.csv (8 case
+cells, and class 12 for power and the cell), and 12 were planned through six new NOT_BUILT rows,
+VER-189 to VER-194. After the audit, at the same baseline: 77 covered, 10 not needed, 33 held
+by R9 (all planned); classes 16-18: 16 covered, 8 planned. The analyses R9 waits for that belong
+to a later phase (VER-30, VER-100, VER-103, VER-140, VER-148, VER-159, VER-165, VER-187,
+VER-192) have to be built before the order (written and runnable); they still run in their own
+phase. The class 15 estimates (VER-144, VER-193) have to run before the order: they are ORDER
+checks now (VER-13, at EVT, would also clear 15/power and 15/cell once it has run).
 
 False coverage removed first: 12 live rows named a part or part number design.py no longer has
 (TP4056, D5, J6, C9, AP3156, BQ24074, and SW17 inside DF-82's and DF-100's 'SW1-SW23'). None
@@ -893,3 +892,24 @@ RESET switches, not contacts); DF-144 names the BQ24074 as a wrong variant, "a '
 `tools/stale_names.py` (VER-188) now fails on any such row, and check_trace's default mode
 runs it. The order branch moved again while this ran (307eefd, 64ef18d): the refresh round
 tags the new commit.
+
+### The grid's audit (2026-10-27)
+
+Another model audited the grid: 10 findings. Each was checked against the register.
+
+| # | Finding | Landed |
+|---|---|---|
+| 1 | a NOT_RUN bench test of a later phase cleared a cell of classes 1-14 (1/audio, 1/buttons, 6/cell, 6/audio, 6/buttons, 7/usb_debug, 14/mcu) | applied: grid.py's can_clear(); all seven now read planned, and 6/audio had no clearing check at all, so VER-196 (the amplifier's states on paper, ORDER) was added for it; seeded (VER-70 re-tagged into 3/case still leaves R9 holding it) |
+| 2 | 7/usb_debug rested on VER-98, and no check analyses VBUS on J1's CC and data pins | applied in part: VER-195 (A, ORDER, NOT_BUILT) is the USB connector's fault reach, a new row and not an extension of VER-177, because the SRV05-4's datasheet is not on disk, so its limits cannot be quoted yet; VER-195 adds the step to design_numbers.py once it is |
+| 3 | VER-144's pass limit named no number for U7, Q5 and Q6 | applied: VER-144's limit now holds U2, U3, U7, Q5 and Q6 to their junction maximum less 20 C at 40 C ambient, each thermal resistance quoted; VER-193 keeps its own parts (it extends VER-144's table, so tagging it display and audio would claim parts it leaves to VER-144) |
+| 4 | the class 15 estimates were EVT checks, so nothing needed their number before the order | applied: VER-144 and VER-193 are ORDER (G-ORD-22 needs them, step 9.5 names them); class 15 clears only on a PASS or FAIL, seeded; VER-192 says VER-193 runs first; VER-13 stays EVT (section d's table) |
+| 5 | no paper check on the shift-register chain's signals | applied: VER-21 names SR_CLK, SR_PL and SR_DATA and is tagged buttons; 12/buttons is planned on it. The optional edge-time step (R65 into U8 and U9) is not added: VER-21 and VER-179 cover the cell between them |
+| 6 | 11/case's reason said VER-147 checks bom.md, which it did not | applied both ways: the reason names VER-167, VER-147 and VER-173 for what each checks, and design_numbers.py screws now reads the length bom.md's Screws line names and fails when it is not case.scad's (M2 x 6 on both today); VER-147 covers bom.md |
+| 7 | VER-191's capacitance limit had no number | applied: 100 pF on D+ and D- (CINUB, USB 2.0 Table 7-7), with the README's note on clauses quoted from memory |
+| 8 | stale_names.py passed a ref that never existed (a typo) | applied: a ref with a baseline prefix that no design.py on the history had fails; a range's ends are read and a number 0 is a pin name (the 74HC165's 'D0 11' in DF-163, the one hit); seeded with R666 |
+| 9 | 6/mcu rests on VER-104, a documentation check | rejected: VER-104 is an ORDER inspection of the mcu's reset after a hang (the watchdog releases PWR_HOLD), which is class 6 for the mcu, so it clears the cell; tagging it power only would hide what it targets. The depth (power-up, brown-out, E9) is VER-16, VER-77, VER-105 and VER-159's, which round 3 moved to EVT on purpose |
+| 10 | a planned cell printed bench tests as if they could clear it | applied: a planned or GAP cell prints the checks that can clear it first, then "measures, does not clear:" and the rest |
+
+Rejected in part, finding 2: VER-98 keeps class 7. Its pass limit reads every subsystem's fault
+rows, which is what class 7 is; class 19 is the right-baseline class, which it does not check.
+After finding 1 it no longer clears any cell before the order (it is an EVT inspection).

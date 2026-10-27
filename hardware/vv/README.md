@@ -171,7 +171,8 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   subsystems (power, cell, mcu, display, audio, buttons, usb_debug, case; 'register' for 19 and
   20), tagged by what its procedure and pass limit really target. A cell no check covers needs a
   NOT_NEEDED reason in grid_reasons.csv or a NOT_BUILT check, and the order gate (R9) holds every
-  cell of classes 1-15 until a built check covers it (2026-10-27).
+  cell of classes 1-15 until a built check that runs before the boards exist clears it: an ORDER
+  check or an analysis, and for class 15 an analysis that has run (2026-10-27; tools/grid.py).
 - **Nothing hides behind a later gate.** Every check is reached by a gate criterion, a
   requirement or an H-priority risk no later than its own phase.
 - **A check that can be a script is a script that can fail.** Show it failing once (VER-22,

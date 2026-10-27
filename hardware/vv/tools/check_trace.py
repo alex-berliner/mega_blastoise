@@ -44,8 +44,8 @@ names a part, part number or net that design.py at the baseline commit no longer
 it targets, grid_reasons.csv is well formed and no NOT_NEEDED cell has a check (tools/grid.py).
 Everything else is a report, with warnings for evidence not committed, for design commits on
 the order branch after the baseline and for a grid.md that is not what the register gives.
-The report gives the coverage grid's GAP count: cells of classes 1-15 with no built check
-(planned ones, with only NOT_BUILT checks, count as GAP).
+The report gives the coverage grid's GAP count: cells of classes 1-15 with no built check that
+can clear them (planned ones count as GAP; tools/grid.py says which checks can clear a cell).
 
 --gate PHASE exits 1 unless every criterion of that gate in gates.md is met for the board
 (default ref_design), plus these rules at every gate:
@@ -74,10 +74,12 @@ The report gives the coverage grid's GAP count: cells of classes 1-15 with no bu
       regenerated at the baseline commit must hash the same (O-R4; both sha256s are printed
       and go into the release record).
   R9  (order gate, 2026-10-27) the coverage grid (grid.md, tools/grid.py) has no GAP in classes
-      1-15: each subsystem has a built check (PASS, FAIL or NOT_RUN; for class 15 an analysis)
-      for each class, a NOT_NEEDED reason in grid_reasons.csv, or a gap Alex accepted with a
-      signed 'GRID-<class>-<subsystem>' line in releases/APPROVALS.md; a cell with only
-      NOT_BUILT checks is planned and still a GAP; grid.md must be what the register gives.
+      1-15: each subsystem has, for each class, a built check that runs before the boards exist
+      (classes 1-14: an ORDER check or an analysis, PASS, FAIL or NOT_RUN; class 15: an analysis
+      with a PASS or FAIL), a NOT_NEEDED reason in grid_reasons.csv, or a gap Alex accepted with
+      a signed 'GRID-<class>-<subsystem>' line in releases/APPROVALS.md; a cell with only later
+      bench checks or NOT_BUILT checks is planned and still a GAP; grid.md must be what the
+      register gives.
 Two more results at the order gate:
   G1  the gate state Alex froze with a signed 'GATE@<commit>' line in releases/APPROVALS.md
       (every check's phase, every defect's Gate, every criterion's Needs, every requirement's
@@ -1870,7 +1872,8 @@ def report(db, verbose):
     k = Counter(c["state"] for (cl, _), c in grid.items() if cl in cgrid.ORDER_CLASSES)
     print(f"  coverage grid (grid.md), classes 1-15 by {len(cgrid.SUBSYSTEMS)} subsystems: {k['COVERED']} covered, "
           f"{k['NOT_NEEDED']} not needed, {k['ACCEPTED_GAP']} accepted; GAP {len(held)} "
-          f"({k['GAP']} with no check, {k['planned']} planned: only NOT_BUILT checks), which the order gate holds (R9)")
+          f"({k['GAP']} with no check, {k['planned']} planned: no check that can clear them built or run), "
+          "which the order gate holds (R9)")
     per = Counter(cl for cl, _, _ in held)
     if per:
         print("    GAP per class: " + ", ".join(f"{cl} {cgrid.CLASSES[cl]} {n}" for cl, n in sorted(per.items())))

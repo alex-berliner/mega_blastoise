@@ -12,19 +12,28 @@ A cell is the checks of board ref_design or both, not CUT or RETIRED, tagged wit
 that subsystem (the tags are a cross product: tag a check only with classes it really targets for
 every subsystem it names). A cell is:
 
-  COVERED      a built check targets it (PASS, FAIL or NOT_RUN); it shows every check's id and the
-               worst status among them (FAIL, NOT_BUILT, NOT_RUN, PASS, worst first), and the
-               earliest phase when no built check is an ORDER check. Class 15 before the order is
-               a paper estimate: it is COVERED only by a built analysis (method A).
-  planned      only NOT_BUILT checks target it: a work item, still a GAP for the order gate.
-  GAP          nothing targets it and grid_reasons.csv gives no reason.
+  COVERED      a built check that can clear it targets it; it shows every check's id and the worst
+               status among them (FAIL, NOT_BUILT, NOT_RUN, PASS, worst first), and the earliest
+               phase when no clearing check is an ORDER check. Which checks can clear a cell:
+                 classes 1-14: a check of phase ORDER or an analysis (method A), built (PASS, FAIL
+                   or NOT_RUN: written and runnable before the boards exist). A bench test, an
+                   inspection or a demonstration of a later phase does not: before the boards
+                   arrive its NOT_RUN means only that its procedure is written.
+                 class 15: a paper estimate, an analysis (A) with a result (PASS or FAIL): until
+                   it has run no estimate exists.
+                 classes 16-18: any built check (they are shown, not gated by the order).
+  planned      only checks that cannot clear it yet target it (NOT_BUILT, or class 15 not run):
+               a work item, still a GAP for the order gate.
+  GAP          nothing that could clear it targets it and grid_reasons.csv gives no reason; the
+               cell names the later checks that measure it but cannot clear it.
   NOT_NEEDED   grid_reasons.csv says why the class cannot apply to the subsystem.
   ACCEPTED_GAP grid_reasons.csv proposes it; it counts only when Alex has signed the line
                'GRID-<class>-<subsystem>' ACCEPTED in releases/APPROVALS.md (check_trace passes the
                signed ones in). Until then it is a GAP.
 
 The order gate (check_trace.py --gate order, rule R9) fails while any cell of classes 1-15 is
-GAP, planned or an unsigned ACCEPTED_GAP. Classes 16-18 belong to EVT, DVT and PVT and are shown,
+GAP, planned or an unsigned ACCEPTED_GAP (the audit of 2026-10-27: a NOT_RUN bench test of a later
+phase no longer clears a cell of classes 1-14, and a class 15 analysis clears only once it has run). Classes 16-18 belong to EVT, DVT and PVT and are shown,
 not gated here; 19 and 20 are whole-register classes, listed under the table (subsystem
 'register').
 
@@ -55,8 +64,20 @@ REASON_COLS = ["class", "subsystem", "status", "reason"]
 REASON_STATUS = ("NOT_NEEDED", "ACCEPTED_GAP")
 WORST = ["FAIL", "NOT_BUILT", "NOT_RUN", "PASS"]
 BUILT = ("PASS", "FAIL", "NOT_RUN")
+RESULTS = ("PASS", "FAIL")
 PHASES = ["ORDER", "CASE", "EVT", "DVT", "PVT", "SALE"]
 LIVE_BOARDS = ("ref_design", "both")
+
+
+def can_clear(v, c):
+    """Whether check v can clear a cell of class c (the module docstring): before the order only what runs
+    before the boards exist, an ORDER check or an analysis; class 15 only an analysis."""
+    analysis = "A" in v["method"].split("/")
+    if c == 15:
+        return analysis
+    if c in ORDER_CLASSES:
+        return analysis or v["phase"] == "ORDER"
+    return True
 
 
 def read(vv):
@@ -137,9 +158,8 @@ def cells(vers, reasons, signed=frozenset()):
             continue
         for s in SUBSYSTEMS:
             ids = [v for v in live if c in v["cls"] and s in v["subs"]]
-            # class 15 before the order is a paper estimate: only an analysis covers it or plans it
-            counts_ = [v for v in ids if c != 15 or "A" in v["method"].split("/")]
-            built = [v for v in counts_ if v["last_result"] in BUILT]
+            counts_ = [v for v in ids if can_clear(v, c)]
+            built = [v for v in counts_ if v["last_result"] in (RESULTS if c == 15 else BUILT)]
             r = why.get((c, s))
             cell = {"checks": ids, "built": built, "reason": r}
             if r and r["status"] == "NOT_NEEDED" and ids:
@@ -155,7 +175,8 @@ def cells(vers, reasons, signed=frozenset()):
                 cell["state"] = "planned"
             else:
                 cell["state"] = "GAP"
-            cell["planned"] = [v for v in counts_ if v["last_result"] == "NOT_BUILT"]
+            cell["counts"] = counts_
+            cell["planned"] = [v for v in counts_ if v not in built]
             cell["worst"] = min((v["last_result"] for v in ids), key=WORST.index) if ids else ""
             phases = [v["phase"] for v in built] or [v["phase"] for v in counts_] or [v["phase"] for v in ids]
             cell["earliest"] = min(phases, key=PHASES.index) if phases else ""
@@ -179,18 +200,21 @@ def counts(grid, c):
 def text_cell(cell):
     ids = " ".join(v["id"] for v in cell["checks"])
     st = cell["state"]
+    # a planned or GAP cell names first the checks that can clear it, then the ones that cannot
+    later = " ".join(v["id"] for v in cell["checks"] if v not in cell["counts"])
+    later = f"; measures, does not clear: {later}" if later else ""
     if st == "COVERED":
         late = f", earliest {cell['earliest']}" if cell["earliest"] != "ORDER" else ""
         return f"COVERED, worst {cell['worst']}{late}: {ids}"
     if st == "planned":
-        return f"planned ({cell['earliest']}): {ids}"
+        return f"planned ({cell['earliest']}): {' '.join(v['id'] for v in cell['counts'])}{later}"
     if st == "NOT_NEEDED":
         return "NOT_NEEDED"
     if st == "ACCEPTED_GAP":
         return "ACCEPTED_GAP (signed)"
     if cell["reason"]:
         return "GAP (acceptance not signed)"
-    return f"GAP{(' (measured only, no paper analysis): ' + ids) if ids else ''}"
+    return f"GAP{later}"
 
 
 def render(vers, reasons, grid):
@@ -199,12 +223,16 @@ def render(vers, reasons, grid):
          "Generated by `python3 hardware/vv/tools/grid.py` from verification.csv (each check's `classes` and "
          "`subsystems`) and grid_reasons.csv. Do not edit by hand: change those files and re-run it. "
          "`check_trace.py --gate order` fails (R9) while any cell of classes 1-15 is GAP or planned. "
-         "Class 15 counts before the order only through a built analysis (A). Classes 16-18 belong to EVT, DVT "
-         "and PVT and are shown, not gated by the order; 19 and 20 are whole-register classes, listed below. "
-         "Only checks of board ref_design or both count; CUT and RETIRED checks never do.", "",
+         "A cell of classes 1-14 is cleared only by a built check that runs before the boards exist: an ORDER "
+         "check or an analysis (A); a later bench test, inspection or demonstration measures it but does not "
+         "clear it. Class 15 is cleared only by a paper estimate that has run: an analysis with a PASS or FAIL. "
+         "Classes 16-18 belong to EVT, DVT and PVT and are shown, not gated by the order; 19 and 20 are "
+         "whole-register classes, listed below. Only checks of board ref_design or both count; CUT and RETIRED "
+         "checks never do.", "",
          "A cell reads: COVERED, worst <status> among its checks (FAIL, NOT_BUILT, NOT_RUN, PASS) and, "
-         "when no built check is an ORDER check, the earliest phase; planned (only NOT_BUILT checks: a GAP for "
-         "the order gate until one is built); GAP; NOT_NEEDED (grid_reasons.csv says why).", ""]
+         "when no clearing check is an ORDER check, the earliest phase; planned (the checks that could clear it "
+         "once built or run, then the ones that measure it but cannot clear it: a GAP for the order gate); "
+         "GAP; NOT_NEEDED (grid_reasons.csv says why).", ""]
     L.append("| Class | " + " | ".join(SUBSYSTEMS) + " |")
     L.append("|---|" + "---|" * len(SUBSYSTEMS))
     for c in CLASSES:
@@ -240,15 +268,15 @@ def render(vers, reasons, grid):
           f"The order gate holds {len(gaps)} cells of classes 1-15 "
           f"({sum(1 for *_, x in gaps if x['state'] == 'GAP')} GAP, "
           f"{sum(1 for *_, x in gaps if x['state'] == 'planned')} planned); classes 16-18 have {len(later)} GAP, "
-          "for their own phases. A planned cell names the NOT_BUILT checks that would cover it, with what each "
-          "computes or measures and its pass limit, from verification.csv; a bare GAP has none yet: add one as "
-          "a NOT_BUILT row.", ""]
+          "for their own phases. A planned cell names the checks that would clear it once built (or, for class "
+          "15, once run), with what each computes or measures and its pass limit, from verification.csv; a bare "
+          "GAP has none yet: add one as a NOT_BUILT row.", ""]
     for c, s, cell in gaps + later:
         held = "" if c in ORDER_CLASSES else f" ({LATER[c]}, not the order gate)"
         if not cell["planned"]:
             L.append(f"- {c} {CLASSES[c]} / {s}{held}: GAP, no check proposed yet")
         for v in cell["planned"]:
-            L.append(f"- {c} {CLASSES[c]} / {s}{held}: {v['id']} {v['title']} ({v['method']}, NOT_BUILT, "
+            L.append(f"- {c} {CLASSES[c]} / {s}{held}: {v['id']} {v['title']} ({v['method']}, {v['last_result']}, "
                      f"{v['phase']}). Pass: {v['pass_limit']}")
     fails = [v for v in live if v["last_result"] == "FAIL"]
     L += ["", f"## FAIL ({len(fails)})", ""]
