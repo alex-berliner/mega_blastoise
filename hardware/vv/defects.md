@@ -30,7 +30,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-159 (check_backpower.py over design.nets(), at the order gate, seeded with this very fault: U1 pin 5 back on VBUS must fail it); VER-127 (the off test with the Debug Probe attached, unit 1).
 - Updated: REQ-PWR-07, DF-98
 - Gate: ORDER
-- Status: FIXED (REF on 3V3); VER-159 not built
+- Status: FIXED (REF on 3V3); VER-159 built and passing 2026-10-27 (its seeded DEF-01 fails); VER-127 on unit 1
 
 ### DEF-02: R15 cut to 10k removed the Start contact's pill margin
 - Found: model audit, round 2, design phase (d049b35, 2026-09-25)
@@ -40,7 +40,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: none yet; VER-33 (latch state table: the largest series resistance that still turns on) and VER-78 (1 kohm in series with either Start dome on the real board, F-R11).
 - Updated: REQ-PWR-08, REQ-PWR-11, DF-27
 - Gate: ORDER
-- Status: FIXED (R15 back to 100k, R38 bleeder added); VER-33 and VER-78 not built
+- Status: FIXED (R15 back to 100k, R38 bleeder added); VER-33 built and passing 2026-10-27 (sure on to 9.1 kohm at VSYS 3.42 V); VER-78 on unit 1
 
 ### DEF-03: The unplug hand-over took tens of ms, not microseconds
 - Found: model audit, round 3, design phase (5095356, 2026-09-25)
@@ -120,7 +120,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-02 checks R42's value; VER-77 (release on real silicon; not built); VER-16 (errata table; not built).
 - Updated: REQ-PWR-09, REQ-MCU-07, DF-25
 - Gate: ORDER
-- Status: FIXED (R42 4.7k); VER-77 and VER-16 not built
+- Status: FIXED (R42 4.7k); VER-16 done 2026-10-27 (analysis/errata_rp2350.md: E9 applies on A2, fixed by R42 and R44); VER-77 on unit 1
 
 ### DEF-11: Charge current too high for the 403450
 - Found: validation plan (#28, #128), design phase (fixed in 4c4d846, 2026-10-05)

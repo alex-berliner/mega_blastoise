@@ -78,6 +78,10 @@ CHECKS = {
     "VER-103": ("shelf", ["python3", PC, "shelf"], False),
     "VER-30": ("mlccbias", ["python3", PC, "mlccbias"], False),
     "VER-197": ("core", ["python3", PC, "core"], True),
+    "VER-12": ("hotplug", ["python3", PC, "hotplug"], False),
+    "VER-196": ("ampstate", ["python3", PC, "ampstate"], False),
+    "VER-140": ("mating", ["python3", PC, "mating"], False),
+    "VER-159": ("check_backpower", ["python3", "hardware/vv/tools/check_backpower.py"], False),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
