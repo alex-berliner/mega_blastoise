@@ -122,7 +122,7 @@ def setup(board):
     # pcb-capabilities, read 2026-10-27) is 0.2 from routed edges and slots and 0.2 NPTH to track; a via's drill keeps the 0.2
     # via-hole-to-track minimum (not 0.3: Freerouting doesn't model hole clearance and 0.3 made 199 errors on ordinary vias)
     ds.m_HoleClearance = mm(0.2)
-    ds.m_CopperEdgeClearance = mm(0.3)
+    ds.m_CopperEdgeClearance = mm(0.31)      # 0.30 asked; a pour's fill edge lands 0.002 short of its setting
     with open(os.path.join(BOARD_DIR, "battler.kicad_dru"), "w") as f:
         f.write(DRU)
     ds.m_MinResolvedSpokes = 1               # small pads in the pours may have one thermal spoke

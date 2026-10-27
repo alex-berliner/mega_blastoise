@@ -133,13 +133,19 @@ def main():
     back = pcbnew.B_SilkS
     # (since 2026-10-27 the cell's hole runs the whole middle: the name goes on the back at seat 2's end, on the first spot where
     # all three lines clear every pad, via and hole)
-    for y0 in (44.0, 40.0, 36.0, 47.0, 33.0, 52.0):
-        lines = [("TWO-PLAYER HANDHELD  REF-A", y0, 1.2, 12.5), (f"REV {design.BOARD_REV}", y0 + 3.0, 2.0, 5.0), ("2 LAYERS  1.6 MM  ENIG", y0 + 5.6, 0.8, 8.5)]
-        boxes = [(100 - w, y - h / 2 - 0.1, 100 + w, y + h / 2 + 0.1) for _, y, h, w in lines]
-        if all(not any(overlap(b, o) for o in obstacles[back]) for b in boxes):
-            break
-    for s_, y, h, _ in lines:
-        text(s_, 100, y, back, h=h)
+    # each line takes the clear spot nearest (100, 40) on the back, anywhere on the board, outside every hole
+    grid = sorted(((x, y) for x in [66 + 1.0 * i for i in range(69)] for y in [26 + 0.5 * k for k in range(250)]),
+                  key=lambda t: (t[0] - 100.0) ** 2 + (t[1] - 40.0) ** 2)
+    for s_, h, w in (("TWO-PLAYER HANDHELD  REF-A", 1.2, 16.5), (f"REV {design.BOARD_REV}", 2.0, 6.5), ("2 LAYERS  1.6 MM  ENIG", 0.8, 10.0)):
+        for x, y in grid:
+            bx = (x - w, y - h / 2 - 0.1, x + w, y + h / 2 + 0.1)
+            if inner[0] <= bx[0] and bx[2] <= inner[2] and inner[1] <= bx[1] and bx[3] <= inner[3] and \
+                    not any(overlap(bx, o) for o in obstacles[back]):
+                text(s_, x, y, back, h=h)
+                obstacles[back].append(bx)
+                break
+        else:
+            print("no clear spot on the back for", s_)
     # test pads (back, between seat 2's clusters), one name under each
     for i, name in enumerate(["VBUS", "VSYS", "VBAT", "3V3", "GND"]):
         tp = board.FindFootprintByReference(f"TP{i + 1}")

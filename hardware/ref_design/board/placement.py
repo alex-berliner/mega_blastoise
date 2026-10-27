@@ -192,7 +192,7 @@ at("C42", 25.0, -45.5, 0)                    # CC1/CC2 spares, DNP
 at("C43", 30.5, -45.5, 0)
 
 # ---- the cell: J2 at the hole's seat-1 corner (mouth into it), the charger, the load sharing
-at("J2", 31.6, 30.0, 180)
+at("J2", 31.55, 30.0, 180)
 at("JP5", 24.0, 29.0, 0)                     # cell -> VBAT
 at("U2", 25.0, 13.0, 0)                      # BQ24073: its thermal pad spreads into the GND pours
 at("C3", 20.4, 16.6, 90)                      # VBAT
@@ -259,7 +259,7 @@ at("U9", 0.0, 55.0, 90)
 at("RN3", -5.8, 51.5, 90)
 at("RN4", -5.8, 55.0, 90)
 at("C53", 5.5, 51.5, 0)
-at("Q1", -7.6, 48.6, 0)
+at("Q1", -7.6, 48.75, 0)
 at("R16", -4.0, 48.6, 90)
 at("Q7", 4.5, 49.0, 0)
 at("D8", 8.3, 49.0, 0)

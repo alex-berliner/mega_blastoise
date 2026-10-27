@@ -406,11 +406,11 @@ swd_pos = [-32.1, -5.0];
 debug_h = 2.9;
 // J2, the cell's plug (PicoBlade 53261, 3.4 tall), in the right strip beside the hole's lead (seat-2) end, its mouth towards
 // +y: the mated plug stands 4 mm out along the strip (placement.py), the cell's leads come out of the hole's top end and
-// run to it (0.1 in from 31.7 so its mount pads keep 0.3 from the board's edge, V&V DEF-56)
-j2_pos = [31.6, 30.0];  j2_h = 3.4;
+// run to it (0.15 in from 31.7: its mount pads keep 0.3 from the edge; its courtyard is 0.125 past it, the glass frame keeps the rest, V&V DEF-56)
+j2_pos = [31.55, 30.0];  j2_h = 3.4;
 // the panel frame's notches where a tall connector (3.4, over the frame's limit) lies beside the glass: [side, y0, y1]
 frame_notches = [[1, -15.3, -5.1], [1, 26.9, 37.1]];
-j2_plug = [[27.85, 32.6], [35.45, 36.6]];               // the mated plug's outline, corners
+j2_plug = [[27.95, 32.6], [35.4, 36.6]];               // the mated plug's outline, corners
 // the spine (between each seat's clusters) keeps its length for positions.json's decks zones: seat 1's covers U6 (the
 // backlight's op-amp, 1.75 tall, at y -36.4, over the ends' 1.6; the top has a pocket for it, u6_box) and seat 2's only
 // U9 (1.2)
