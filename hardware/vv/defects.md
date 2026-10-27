@@ -327,7 +327,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: since the case got 3.8 mm thinner (2026-10-22) the screws are M2 x 6 from a 1 mm counterbore: the tip at z 7.0, 3.2 mm of thread above the board (1.6 x d) in the side pilots under the screen band (5.00 mm deep) and the end pilots (3.30 mm). Self-tapping screws in printed plastic want 4-5 mm where the pilot allows it. bom.md buys M2 x 6 since 03df0f2.
 - Root cause: the stack changed and the fastener and pilot were not recomputed (DEF-19's class).
 - Why missed: no assert ties the screw length to the stack; bom.md's "M2 x 8" is prose.
-- Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles.
+- Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles; VER-190 (the case's architecture, 2026-10-27) maps REQ-MEC-09 to screw_l and fails on the same 3.2 mm.
 - Updated: REQ-MEC-09, DF-119
 - Gate: CASE
 - Status: OPEN (M2 x 7 in the four side pilots engages 4.2 mm with the tip 0.8 mm short; the end pilots cap at 3.3 mm, and REQ-MEC-09 now asks 3.0 mm of them: DEC-18)
