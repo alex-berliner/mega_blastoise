@@ -1,0 +1,13 @@
+# VER-167 bom
+DATE: 2026-10-27
+COMMIT: c1c61f0ad8dbca47fc07c30a68d29171673ff8da
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py bom
+battler:DSL_button_4ring (SW1-SW16): bought
+battler:Dome_4mm_Round (SW20-SW23): missing from bom.md: 600-415S-260; Start/Select cap
+bom.md says the Start/Select strip isn't used, but SW20-SW23 sit under it
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

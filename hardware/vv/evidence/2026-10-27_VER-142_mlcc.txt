@@ -1,0 +1,23 @@
+# VER-142 mlcc
+DATE: 2026-10-27
+COMMIT: c1c61f0ad8dbca47fc07c30a68d29171673ff8da
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py mlcc
+6 screw holes, boss radius 3 mm (the tub's largest); rule: an MLCC pad centre 4 mm or more from a hole centre, a 0603 or larger 6 mm or more
+  C53 100n (C_0402_1005Metric) 11.40 mm from H5
+  C52 100n (C_0402_1005Metric) 12.95 mm from H6
+  C6 10u (C_0603_1608Metric) 13.24 mm from H4
+  C5 10u (C_0603_1608Metric) 13.31 mm from H4
+  C7 10u (C_0603_1608Metric) 13.54 mm from H4
+  C38 4.7n (C_0402_1005Metric) 15.44 mm from H3
+too near: none
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

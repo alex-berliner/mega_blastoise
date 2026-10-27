@@ -1,0 +1,19 @@
+# VER-32 tempwin
+DATE: 2026-10-27
+COMMIT: c1c61f0ad8dbca47fc07c30a68d29171673ff8da
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py tempwin
+SLUS810N: V_HOT 0.27-0.33 V, V_COLD 2.0-2.2 V, INTC 72-78 uA (bq24074.txt:823-826); TH1 10k +-1%, B3950 +-1% (design.py)
+the trip resistances: hot 3462 ohm (nominal 4000), cold 30556 ohm (nominal 28000)
+  nominal (0.300 V and 2.100 V at 75 uA, TH1 nominal): charging runs from 3.5 C to 47.2 C
+  the charger's limits, TH1 nominal: charging runs from 1.8 C to 51.0 C
+  the worst corner (the charger's limits, R25 and B at TH1's tolerance): charging runs from 1.4 C to 51.5 C
+a 45 C hot edge: B 5032 with TH1 exactly nominal; B 5130 or more for a 10k 1% part with B +-1% at the worst corner, whose cold edge is then 6.5 C
+  B4250 1%: the hot edge 49.5 C at the worst corner (45.5 C nominal)
+  B4350 1%: the hot edge 48.9 C at the worst corner (45.0 C nominal)
+REQ-BAT-03 (0-45 C, or the cell's own limits once VER-37 has its spec sheet): the window is 1.4 C to 51.5 C at the worst corner: NOT met
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

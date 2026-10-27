@@ -371,7 +371,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
 - Gate: ORDER
-- Status: CLOSED (reopened 2026-10-25 by the second review, O-R2, with its holes logged as DEF-52; VER-129 PASS 2026-10-27 at a8e2c6c, after the coverage grid: 92 of 92 seeded faults caught)
+- Status: FIXED (the grid's audit changed check_trace.py, seed_faults.py and design_numbers.py, so VER-129's evidence is stale until it is re-run)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -451,7 +451,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073).
 - Updated: REQ-PWR-13
 - Gate: ORDER
-- Status: CLOSED (VER-99 re-run 2026-10-26 at fec2fc4 after round 3 changed design_numbers.py: PASS; first PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
+- Status: CLOSED (VER-99 re-run 2026-10-27 at c1c61f0 after the grid's audit changed design_numbers.py: PASS, the same output as at fec2fc4; first PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -533,7 +533,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-182 (design_numbers.py swell, rewritten 2026-10-26 to read what case.scad puts over the tub's pocket instead of assuming a deck: PASS, 0.80 mm).
 - Updated: REQ-BAT-07, DF-84
 - Gate: CASE
-- Status: CLOSED (VER-182 PASS 2026-10-26 at fec2fc4 on be437f8's case.scad: 0.80 mm under the panel's back)
+- Status: CLOSED (VER-182 PASS 2026-10-27 at c1c61f0 on be437f8's case.scad: 0.80 mm under the panel's back, the same output as at fec2fc4)
 
 ### DEF-52: The trace gate and the fab checks still passed on words, typed results and unsigned approvals
 - Board: both
@@ -544,7 +544,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a live row citing a RETIRED id, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole). The drill and CPL checks (design_numbers.py drill and cpl) now run fab.py's own export into a temp dir and read what it writes; they fail on the board's real output, which DEF-32 and DEF-33 hold, not this defect.
 - Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-27 at a8e2c6c after the coverage grid: 92 of 92 seeded faults caught, 16 of them this defect's, 8 from round 2's objections, 11 from round 3's findings and 10 for the grid and VER-188; the claims script's fault waits for VER-161, DEF-54)
+- Status: FIXED (the grid's audit changed check_trace.py, seed_faults.py and design_numbers.py, so VER-129's evidence is stale until it is re-run)
 
 ### DEF-53: A worst-case cell sits 0.25 mm from the routed FR4 edge on every side
 - Found: two-model review (O-R7), 2026-10-25, from case.scad and assembly.md step 5; restated on every side by round 2's sign-off objections (O, F), 2026-10-26
