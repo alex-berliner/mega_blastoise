@@ -41,6 +41,16 @@ Round 3's six findings add the faults that keep the new rules honest (2026-10-26
   O-R12 a software signing key fails the order gate (K1); --accept-software-key passes it and
         says so; a line in APPROVALS.md that tries to grant the exception does not count.
 
+The coverage grid and the stale-names scan add theirs (2026-10-27):
+
+  VER-188 a live DFMEA row, check and requirement naming a part number (TP4056), a net (LS_GATE)
+        and a reference designator (J6) that left design.py, outside 'Was: ...': the default mode
+        fails on each.
+  grid  a live check with no classes, and a NOT_NEEDED cell a check targets: the default mode
+        fails; a NOT_NEEDED reason dropped, an ACCEPTED_GAP Alex has not signed and a grid.md
+        edited by hand each fail the order gate (R9); the default mode reports the GAP count; a
+        control: a gap Alex accepts in a signed GRID-<class>-<subsystem> line leaves R9.
+
 Python 3 standard library and git.
 """
 import csv
@@ -241,7 +251,39 @@ FAULTS = [
     ("round 2 (F): detection rating 2 on a single 'detects' check", "structure",
      "DF-95: detection_rating 2 needs two or more independent 'detects' checks",
      lambda d: csv_edit(d, "dfmea.csv", "DF-95", detection_rating="2", action_priority="L")),
+    # the coverage grid and the stale-names scan (2026-10-27)
+    ("VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')", "structure",
+     "DF-147: names what design.py at be437f8 does not have: TP4056",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-147", cause=lambda x: x.replace("(Was: the TP4056's,", "(the TP4056's,"))),
+    ("VER-188: a live check names a net that left design.py (LS_GATE)", "structure",
+     "VER-21: names what design.py at be437f8 does not have: LS_GATE (net",
+     lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", LS_GATE")),
+    ("VER-188: a live requirement names a part that left design.py (J6 outside 'Was:')", "structure",
+     "REQ-MCU-04: names what design.py at be437f8 does not have: J6 (part",
+     lambda d: text_edit(d, "requirements.md", "since 86bf694 (Was: J6).", "since 86bf694 (J6).")),
+    ("grid: a live check that names no classes", "structure", "VER-99: a live check names its classes and subsystems",
+     lambda d: csv_edit(d, "verification.csv", "VER-99", classes="")),
+    ("grid: a NOT_NEEDED cell that a check targets", "structure", "class 4 case is NOT_NEEDED, but VER-99",
+     lambda d: csv_edit(d, "verification.csv", "VER-99", subsystems="power case")),
+    ("grid R9: a NOT_NEEDED reason dropped leaves a GAP the order gate holds", "gate", "3 case no check",
+     lambda d: drop_line(d, "grid_reasons.csv", "3,case,")),
+    ("grid R9: an ACCEPTED_GAP Alex has not signed is still a GAP", "gate", "3 case no check",
+     lambda d: text_edit(d, "grid_reasons.csv", "3,case,NOT_NEEDED,", "3,case,ACCEPTED_GAP,")),
+    ("grid R9: a grid.md edited by hand fails the order gate", "gate", "grid.md is not what the register gives",
+     lambda d: text_edit(d, "grid.md", "| A1 Requirements |", "| A1 Requirement |")),
+    ("grid: the default mode reports the GAP count", "report", "(1 with no check,",
+     lambda d: drop_line(d, "grid_reasons.csv", "3,case,")),
 ]
+
+
+def drop_line(d, name, prefix):
+    """Delete the one line of a file that starts with prefix."""
+    path = os.path.join(d, name)
+    lines = open(path, encoding="utf-8").read().splitlines(keepends=True)
+    keep = [ln for ln in lines if not ln.startswith(prefix)]
+    if len(keep) != len(lines) - 1:
+        raise SystemExit(f"seed_faults: no single line starting {prefix!r} in {name}")
+    open(path, "w", encoding="utf-8").write("".join(keep))
 
 
 def plan_d_drop(d, vid):
@@ -742,6 +784,16 @@ def g_jlc_fixed_uncommitted(repo, base):
     return None
 
 
+def g_grid_accepted(repo, base):
+    """A gap Alex accepts with a signed GRID-<class>-<subsystem> line leaves the order gate's R9 (a control: the
+    unsigned acceptance is a FAULTS entry)."""
+    vv = os.path.join(repo, "hardware/vv")
+    text_edit(vv, "grid_reasons.csv", "3,case,NOT_NEEDED,", "3,case,ACCEPTED_GAP,")
+    approve(vv, "| A-001 | GRID-3-case | ACCEPTED | ORDER | the case has no wiring | Alex | 2026-10-27 |")
+    commit(repo, "accept the case's class 3 gap")
+    return "order"
+
+
 GIT_FAULTS = [
     ("row result disagrees with its evidence", "structure", "the row says FAIL", g_result_disagrees),
     ("evidence past its valid_days", "report", "expired", g_expired),
@@ -801,6 +853,9 @@ GIT_FAULTS = [
      "PASS  K1 the pinned signing key is a hardware key", g_software_key_accept),
     ("O-R12: a line in APPROVALS.md that grants the exception does not count", "gate",
      "FAIL  K1 the pinned signing key is a hardware key", g_key_exception),
+    # the coverage grid (2026-10-27)
+    ("grid R9: a gap Alex accepts in a signed GRID line leaves R9", "gate_no",
+     "R9 the coverage grid", g_grid_accepted, "3 case no check"),
 ]
 
 

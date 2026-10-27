@@ -8,7 +8,8 @@
 For each check it runs the command from the repository root, writes
 hardware/vv/evidence/<date>_<VER>_<name>.txt with the header check_trace.py demands
 (COMMIT, TOOLS, the command, its output, its exit code, RESULT), and writes PASS or FAIL,
-the evidence path, the commit and the date into verification.csv. It refuses a check whose
+the evidence path, the commit and the date into verification.csv, then rewrites grid.md (tools/grid.py)
+so the coverage grid shows the new results. It refuses a check whose
 covered files have uncommitted changes: evidence describes a commit, so commit first.
 
 Only quick, read-only checks belong here. The long pipelines (route.py, check_buttons.py,
@@ -66,6 +67,7 @@ CHECKS = {
     "VER-177": ("vbus", ["python3", DN, "vbus"], False),
     "VER-18": ("edge", ["python3", DN, "edge"], True),
     "VER-184": ("plugs", ["python3", DN, "plugs"], True),
+    "VER-188": ("stale_names", ["python3", "hardware/vv/tools/stale_names.py"], False),
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
@@ -136,6 +138,9 @@ def main():
         buf = io.StringIO()
         csv.writer(buf, lineterminator="\n").writerows(rows)
         open(REG, "w", encoding="utf-8").write(buf.getvalue())
+        # grid.md shows each cell's worst status: it is generated, so rewrite it with the new results
+        g = subprocess.run([sys.executable, os.path.join(HERE, "grid.py")], capture_output=True, text=True)
+        print(g.stdout.strip() or g.stderr.strip())
     print(f"{len(want)} checks, {bad} not passing or refused")
     return 1 if bad else 0
 

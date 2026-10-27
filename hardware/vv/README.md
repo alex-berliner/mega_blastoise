@@ -17,7 +17,9 @@ the case, survives use.
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
 | [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.R / .P |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
-| [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, and what still has to be bought | VER-NN |
+| [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, and the check classes and subsystems it targets | VER-NN |
+| [grid.md](grid.md) | the coverage grid, generated (never typed): check classes 1-18 by subsystem, each cell COVERED with its checks and worst status, planned, GAP or NOT_NEEDED; the gaps with their proposed checks; the FAILs | |
+| [grid_reasons.csv](grid_reasons.csv) | the cells that need no check: class, subsystem, NOT_NEEDED (or ACCEPTED_GAP, which counts only once Alex signs GRID-<class>-<subsystem>) and why | |
 | [vp_map.csv](vp_map.csv) | a one-time map of the archived validation_plan.md's 218 methods to IDs, or CUT with a reason | plan #n |
 | [gates.md](gates.md) | the order, case, EVT, DVT and PVT gates, each criterion naming IDs and a board; the unit allocation; proposed waivers | G-ORD-NN, G-CASE-NN, G-EVT-NN, G-DVT-NN, G-PVT-NN, W-NN |
 | [defects.md](defects.md) | the corrective-action log (design defects; per-unit findings go in evidence/findings.csv) | DEF-NN |
@@ -28,6 +30,8 @@ the case, survives use.
 | [tools/run_checks.py](tools/run_checks.py) | runs the quick scripted checks, writes their evidence with a header and records the result | |
 | [tools/seed_faults.py](tools/seed_faults.py) | proves check_trace can fail: seeds one fault at a time into a copy, and the faults that need git history into a scratch clone (VER-129) | |
 | [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws per pilot, MLCC keep-out, TH1, the cell's gap on every side, VBUS fault reach, BOM coverage, holes, swelling, copper and silk against the routed edges, the cell's plug against J4, the charge window TH1 gives against U2's TS limits) and prints two bench numbers (the TS band at an ambient, and the CV load that holds the charge without terminating: there is no resistive window); the CPL and drill checks run fab.py's own export into a temp dir and read what it writes | |
+| [tools/grid.py](tools/grid.py) | writes grid.md from verification.csv and grid_reasons.csv; check_trace's R9 reads the same grid | |
+| [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188); check_trace's default mode runs it | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
 
 ## How they link
@@ -55,6 +59,8 @@ python3 hardware/vv/tools/check_trace.py --gate evt --board prod_board
 python3 hardware/vv/tools/check_trace.py --shopping --gate evt   # what is still to buy, longest lead first
 python3 hardware/vv/tools/run_checks.py                   # re-run the quick scripted checks, save evidence
 python3 hardware/vv/tools/seed_faults.py                  # prove the trace gate fails on seeded faults
+python3 hardware/vv/tools/grid.py                         # rewrite grid.md from the register (--check: is it current?)
+python3 hardware/vv/tools/stale_names.py                  # live rows naming a part or net design.py lost
 python3 hardware/vv/tools/design_numbers.py --list        # the scripted pre-order numbers
 ```
 
@@ -161,6 +167,11 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   while every one is NOT_BUILT. An occurrence of 3 needs `Similar: <the board and part>` in its
   prevention (O-R8); 2 or less needs a passing test on built hardware; 1 needs `Excluded:` and
   the reason in its prevention.
+- **Every check says what it covers in the grid.** A live check names its classes (1-20) and
+  subsystems (power, cell, mcu, display, audio, buttons, usb_debug, case; 'register' for 19 and
+  20), tagged by what its procedure and pass limit really target. A cell no check covers needs a
+  NOT_NEEDED reason in grid_reasons.csv or a NOT_BUILT check, and the order gate (R9) holds every
+  cell of classes 1-15 until a built check covers it (2026-10-27).
 - **Nothing hides behind a later gate.** Every check is reached by a gate criterion, a
   requirement or an H-priority risk no later than its own phase.
 - **A check that can be a script is a script that can fail.** Show it failing once (VER-22,

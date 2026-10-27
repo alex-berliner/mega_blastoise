@@ -51,7 +51,12 @@ files, the board's at the order gate and the case's at the case gate, as R7 (O-R
 order gate R8 also holds the board's positions: a case-only commit on the order branch passes
 only when positions.json regenerated at that commit (case/export.py without --stl) has the same
 sha256 as positions.json regenerated at the baseline commit; both hashes are printed and go
-into the release record (O-R4). Two more gate results, both reported and never structural:
+into the release record (O-R4). R9 (order gate, 2026-10-27) the coverage grid (grid.md, made by
+tools/grid.py from verification.csv's classes and subsystems and grid_reasons.csv) has no GAP
+in classes 1-15: each subsystem has a built check for each class (for class 15, a built
+analysis), a NOT_NEEDED reason, or a gap Alex accepted with a signed
+'GRID-<class>-<subsystem>' line; a cell with only NOT_BUILT checks is planned and still a gap,
+and a grid.md that is not what the register gives fails it too. Two more gate results, both reported and never structural:
 G1 "the gate state Alex froze": a signed GATE@<commit> line in releases/APPROVALS.md freezes
 each check's phase, each defect's Gate, each criterion's Needs and each requirement's Phase
 and Verified-by; a check, defect, criterion or requirement moved later without a newer signed
@@ -101,9 +106,10 @@ order; 14 onwards are this register's.
 | G-ORD-21 | order contents recorded: 5 assembled, 5 bare boards from the same order, rework spares, every order option (vp order size, #72, #189, #193) | VER-42 | ref_design |
 | G-ORD-22 | every ORDER-phase check of the board passes, fresh (O-1: nothing the order needs can hide behind a later gate; advisory-only checks excluded) | PHASE:ORDER | both |
 | G-ORD-23 | firmware: the game image fits the RP2354B's 2 MB (the llvm-size figure; the flash map and the check.sh step are VER-185's at EVT: F-R2(f)); the generated pins and the rp235xb self-test moved to G-EVT-08 | VER-151 | ref_design |
-| G-ORD-24 | the trace gate is shown to fail on seeded faults (the design checkers' seeded faults moved to G-DVT-05) | VER-129 | ref_design |
+| G-ORD-24 | the trace gate is shown to fail on seeded faults (the design checkers' seeded faults moved to G-DVT-05); no live row names a part, part number or net the baseline's design.py lacks (2026-10-27) | VER-129 VER-188 | ref_design |
 | G-ORD-25 | prod_board: its own round trip and contacts (as library footprints, as placed, where prod_case says) | VER-10 VER-163 VER-119 VER-120 VER-121 VER-122 | prod_board |
 | G-ORD-26 | the claims script (moved to G-CASE-06 on 2026-10-26: it keeps the register's quoted values honest, it does not freeze copper; this re-seed read every row against be437f8 instead) | ADVISORY VER-161 | ref_design |
+| G-ORD-27 | the coverage grid's pre-order checks (2026-10-27, grid.md): each subsystem's requirements read against its functions, the case's architecture against its requirements, the USB data path's values at their corners. R9 holds every other cell of classes 1-15 that only a NOT_BUILT check covers | VER-189 VER-190 VER-191 | ref_design |
 
 ## Case gate: before the printed case is released and the EVT units are assembled
 
@@ -113,7 +119,7 @@ here too (G-CASE-06), so they do not hold the order back.
 
 | ID | Criterion | Needs | Board |
 |---|---|---|---|
-| G-CASE-01 | the Z stack closes with swelling, the buttons work under the shell, no unintended openings, the screws engage per pilot, the Start/Select strip clears the domes | VER-20 VER-182 VER-07 VER-113 VER-147 VER-180 | ref_design |
+| G-CASE-01 | the Z stack closes with swelling, the buttons work under the shell, no unintended openings, the screws engage per pilot, the Start/Select strip clears the domes, the case's material is rated for its hottest surface | VER-20 VER-182 VER-07 VER-113 VER-147 VER-180 VER-192 | ref_design |
 | G-CASE-02 | the printed case with real parts, its feel against a genuine DS Lite, incoming silicone, caps and domes; the pill-to-comb registration on the fit kit (VER-51), the part heights from drawings (VER-112) and the connector mouths (VER-165) moved here from the order gate (F-R9) | VER-48 VER-50 VER-126 VER-51 VER-112 VER-165 | ref_design |
 | G-CASE-03 | the case is released: case.scad commit, STL hashes, material, slicer profile, tape part number | VER-173 | ref_design |
 | G-CASE-04 | case-level requirements: size, keyed assembly, no openings, room to swell, the domes | REQ-PRD-06 REQ-MEC-04 REQ-MEC-08 REQ-BAT-07 REQ-BTN-08 | ref_design |
@@ -146,7 +152,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 | G-EVT-03 | bring-up steps 1-6 pass on every unit | VER-55 VER-56 VER-57 VER-58 VER-60 VER-61 VER-62 VER-63 VER-64 VER-65 VER-66 VER-67 VER-68 VER-69 VER-73 | ref_design |
 | G-EVT-04 | power-path margins analysed and measured: the hot-plug simulation and the MLCCs' DC bias (from G-ORD-08), copper IR drop, ratings and the 3V3 budget, the unplug at a held 3.50 V, hot plug, U3's EN at a live plug-in, 3V3 regulation and budget, 1V1; from the order gate (O-R9, F-R2(c)): the back-power paths (VER-159), the cutoff accuracy (VER-138), the cell mating peak (VER-140), the charge window (VER-32) and the VBUS fault reach (VER-177) | VER-12 VER-30 VER-13 VER-31 VER-70 VER-71 VER-72 VER-83 VER-84 VER-138 VER-140 VER-159 VER-32 VER-177 | ref_design |
 | G-EVT-05 | cell safety on built units, the bench charging rules kept first: per-unit CV, TS and cell-current screens; temperature pause; cell temperature in a full charge; TH1 tracking; PCM trip; cell mating; the charge timer; off current warm; cutoff accuracy and calibration; PWR_HOLD release; hang test | VER-172 VER-134 VER-135 VER-169 VER-82 VER-69 VER-85 VER-87 VER-88 VER-141 VER-145 VER-146 VER-139 VER-155 VER-156 VER-77 VER-105 | ref_design |
-| G-EVT-06 | touch temperature within the IEC 62368-1 TS1 limit, with the heat table and its firmware rule in the image | VER-144 VER-86 | ref_design |
+| G-EVT-06 | touch temperature within the IEC 62368-1 TS1 limit, with the heat table (every part, the cell's own heat and the case's inner surface) and its firmware rule in the image | VER-144 VER-193 VER-86 | ref_design |
 | G-EVT-07 | latch and USB margins: both Starts (SW21, SW23) through 1 kohm, leakage immunity on both, sources and cables (with the 4.40-4.75 V characterisation), input current, back-power with a probe attached | VER-78 VER-79 VER-80 VER-81 VER-127 | ref_design |
 | G-EVT-08 | the self-test image on the generated pin file, built for rp235xb, runs on every unit with the bridge table it tests; chip ID and stepping logged against the errata table; the button chain's clock is clean; the flash map and the size check in scripts/check.sh (VER-185, from the order gate: F-R2(f)) | VER-149 VER-150 VER-148 VER-16 VER-76 VER-75 VER-179 VER-185 | ref_design |
 | G-EVT-09 | mechanics with real parts: FPC and ZIF, recovery through the pinholes, assembly and opening demo in the safe order, flatness, microscope inspection, panel bond | VER-106 VER-107 VER-91 VER-90 VER-89 VER-154 | ref_design |
@@ -163,7 +169,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 | ID | Criterion | Needs | Board |
 |---|---|---|---|
 | G-DVT-01 | every check up to DVT passes on fresh evidence; every test of phase EVT or later re-run on the DVT spin (its result covers a REL-...-DVT record) | PHASE:DVT | both |
-| G-DVT-02 | durability on the DVT spin: open/close, drop, button life, margins and abuse | VER-92 VER-93 VER-94 VER-97 | ref_design |
+| G-DVT-02 | durability on the DVT spin: open/close, drop, button life, margins and abuse; the flash's endurance for the settings and the battle log | VER-92 VER-93 VER-94 VER-97 VER-194 | ref_design |
 | G-DVT-03 | ESD to IEC 61000-4-2 with a real gun, and the EMC pre-scan | VER-170 VER-96 | ref_design |
 | G-DVT-04 | every defect CLOSED, each with a passing check | DEFECTS:CLOSED | both |
 | G-DVT-05 | the checkers are shown to fail on seeded faults | VER-22 VER-129 | ref_design |

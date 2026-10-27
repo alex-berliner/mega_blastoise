@@ -147,7 +147,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Statement: Switched off with a full cell and no USB, the board shall drain the cell by no more than 30 uA, so that the board alone takes 2 years or more to empty it.
 - Rationale: 700 mAh / 30 uA is about 2.7 years; the cell's own self-discharge dominates.
-- Source: design_review.md's Off state (18-22 uA) still counts D5's reverse leakage, and D5 left in 2d1124d: VER-103 re-derives the budget for the BQ24073 board (O-R23); validation_plan #33.
+- Source: design_review.md's Off state (18-22 uA) predates the BQ24073 (Was: it counts D5's reverse leakage, and D5 left in 2d1124d); VER-103 re-derives the budget for the BQ24073 board (O-R23); validation_plan #33.
 - Method: T, A
 - Verified by: VER-65, VER-103
 - Phase: EVT
@@ -474,7 +474,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-12, VER-71
 - Phase: EVT
 - Status: PROPOSED
-- Notes: bringup.md 5.6 still describes the TP4056 design's simulation (DEF-21). u2.json quotes only OVP's 6.6 V nominal: VER-34 takes SLUS810N's minimum into it (pin_review is outside hardware/vv) before VER-12 is built.
+- Notes: bringup.md 5.6 still describes the old charger's simulation (DEF-21; Was: the TP4056 design's). u2.json quotes only OVP's 6.6 V nominal: VER-34 takes SLUS810N's minimum into it (pin_review is outside hardware/vv) before VER-12 is built.
 
 ### REQ-PWR-03: LDO enable never above its input
 - Level: subsystem
@@ -593,7 +593,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The board shall present 10 uF or less on VBUS (C1, 50 uC at 5.0 V), and nothing but U2's input switch shall join VBUS to VSYS, so the VSYS bulk is charged inside U2's input limit, not by the plug.
-- Rationale: USB 2.0's inrush limit is 10 uF or 50 uC at the plug; the TP4056 design's 265 uC came from D5 charging VSYS, which left in 2d1124d.
+- Rationale: USB 2.0's inrush limit is 10 uF or 50 uC at the plug; the old power path's 265 uC came from its diode charging VSYS (Was: the TP4056 design's D5, which left in 2d1124d).
 - Source: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, U2.
 - Method: A
 - Verified by: VER-99
@@ -675,7 +675,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: SWD shall attach through J5 and through J7, and firmware logs shall reach the host over USB CDC or RTT at 1 line or more a second.
-- Rationale: bring-up and recovery; the UART connector J6 left in 86bf694.
+- Rationale: bring-up and recovery; there is no UART connector since 86bf694 (Was: J6).
 - Source: RP-003139-SP (pin_review/j5.json); design.py J5, J7.
 - Method: T
 - Verified by: VER-58, VER-02
@@ -1175,7 +1175,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: Every connector's mouth (J1 with a mated plug, J2's plug and wires, J3's FPC lead-in, J4 with the speaker's plug and its 35 mm leads, J5 with a JST SH cable) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and no pinhole shall fall inside a boss.
-- Rationale: J6 once faced J5's back (DEF-20), the pinholes once met a side screw (2f43660) and the USB-C opening was fixed twice.
+- Rationale: the pinholes once met a side screw (2f43660), the USB-C opening was fixed twice, and a UART connector once faced J5's back (DEF-20; Was: J6).
 - Source: Claude's review (F-28).
 - Method: A
 - Verified by: VER-165
@@ -1187,7 +1187,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: Every MLCC's pad centre shall be 4.0 mm or more from a screw hole's centre (the tub's 6.0 mm boss plus 1 mm), and 6.0 mm or more for an 0603 or larger.
-- Rationale: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (C9 sat 0.9 mm from a boss at 76955d2).
+- Rationale: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9).
 - Source: Claude's review (O-43); case.scad tub_boss_d.
 - Method: A
 - Verified by: VER-142
@@ -1386,7 +1386,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: both
 - Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; RP2354B and L2 shall never be substituted.
-- Rationale: RP2354B and L2 were out at JLC and LCSC on 2026-10-21; U1 and U3 were changed on 2026-10-22 to parts JLC stocks; the AP3156 and a ProTek SRV05-4 ran out before.
+- Rationale: RP2354B and L2 were out at JLC and LCSC on 2026-10-21; U1 and U3 were changed on 2026-10-22 to parts JLC stocks; a backlight driver and a ProTek SRV05-4 ran out before (Was: the AP3156).
 - Source: DEF-12, DEF-13, DEF-29.
 - Method: I
 - Verified by: VER-41

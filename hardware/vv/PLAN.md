@@ -16,7 +16,7 @@ case gate, EVT, DVT and PVT; (f) decisions for Alex; (g) round 2's sign-off obje
 where each landed; (h) what this plan still cannot catch; (i) the gate today; (j) past bugs and
 what catches them; (k) the ID ledger of the first run's debate; (l) the second review's ID
 ledger; (m) the first run's sign-off objections; (n) round 3's 23 findings and where each
-landed.
+landed; (o) the coverage grid: check classes by subsystem, and its gaps.
 
 ## (a) The system on one page
 
@@ -77,6 +77,10 @@ pins. The counts are in section (i).
   baseline; both hashes print (O-R4).
 - A CPL row off its pads passes only through a JLC_FIXED entry whose evidence file is committed
   and names the designator (F-R4).
+- The coverage grid (section o, [grid.md](grid.md)): every live check names the classes and
+  subsystems it targets; at the order gate R9 fails while a cell of classes 1-15 has no built
+  check, no NOT_NEEDED reason and no acceptance Alex signed. No live row may name a part, part
+  number or net that design.py at the baseline no longer has, outside 'Was: ...' (VER-188).
 
 `tools/seed_faults.py` seeds faults one at a time and catches every one (VER-129; the count is
 in section i). `tools/design_numbers.py` recomputes the pre-order numbers this plan quotes; its
@@ -151,7 +155,7 @@ below (check_trace fails otherwise). Effort is Claude's unless it says Alex.
 | 0.4 | **Alex pins a signing key** (README, 'Approvals': a hardware key or a passphrase key never in an agent). Until then no APPROVALS.md line counts (DEC-30). | | Alex: 15 min |
 | 0.5 | **prod_board's own order list** (`--gate order --board prod_board`, Alex's board, evaluated apart): its netlist, pin gate, ERC, holes and probe table. | VER-10, VER-119, VER-120, VER-121, VER-122, VER-163 | Alex: 1 h |
 | 1 | **Copper, silk and BOM decisions**, then one design pass in ref_design (outside this register) and a re-route where copper moves: DEC-28 silk.py (the board's name, BOARD_REV and labels out of the holes, the JLC marker), DEC-32 the pours' edge clearance to 0.3 mm and J2 0.1 mm in, DEC-27 the cell's gap (a cell spec and the pocket, with the pocket's lead-end wall as the stop, or the hole), DEC-31 the backlight's full scale, DEC-05 TH1's B (B 5130 or more, after a JLC stock check), DEC-17 the VBUS reach, DEC-24 the pull-ups, DEC-09 the panel's VCI and VDDI (DEF-61), DEC-22 the fuse and DEC-33 J4 (copper now, or accepted for EVT and done at DVT); DEC-13 the display bus (SPI at 220 ms a frame, or the 8080 bus on J3's pins 19-26 with a local re-route and PIO firmware: a copper decision, not a firmware tweak); and DEF-60's generator fix (7d35933 may be it), so no hand edit survives the next rebuild. Each BOM value either goes into design.py (its defect FIXED) or Alex accepts it for EVT (its defect's Gate moves). | VER-18, VER-181, VER-137 | Alex: 1 h; the design pass half a day, a re-route about 2 h if J2, J4, J3's bus or a fuse move |
-| 2 | **Re-run the scripted checks** after step 1 (`run_checks.py`, about 10 min, then VER-129 on its own): netlist, pin gate, ERC, DRC with every warning type and count read by hand (DEF-36), contact footprints, inrush, holes, MLCC, TH1, CPL, drill, VBUS, cutoff, backlight, charge window, cell gap, edges. | VER-01, VER-02, VER-03, VER-04, VER-08, VER-99, VER-114, VER-142, VER-164, VER-176, VER-131, VER-137, VER-181, VER-18, VER-129 | 30 min |
+| 2 | **Re-run the scripted checks** after step 1 (`run_checks.py`, about 10 min, then VER-129 on its own): netlist, pin gate, ERC, DRC with every warning type and count read by hand (DEF-36), contact footprints, inrush, holes, MLCC, TH1, CPL, drill, VBUS, cutoff, backlight, charge window, cell gap, edges, and the stale-names scan (VER-188: no live row names a part or net design.py at the baseline lacks). | VER-01, VER-02, VER-03, VER-04, VER-08, VER-99, VER-114, VER-142, VER-164, VER-176, VER-131, VER-137, VER-181, VER-18, VER-129, VER-188 | 30 min |
 | 3 | **Fab outputs** (VER-131 and VER-176 read fab.py's real output and fail today): separate drill files; no CPL row moves before the dry run's placement preview, which is the reference for J1-J4's origin offsets (O-R7), and fab.py's per-ref correction table is filled only from JLC_FIXED entries that name the committed preview evidence (F-R4); the fab content check over the exported files (the combs' paste, mask and keep-outs, the plated slots, the vents, the JLC marker, every silk text on the board); JLC's dated limits; BOM, CPL and PCB fields against design.py; land patterns; contacts as placed; the dome footprint against its drawing; the release run that rebuilds the board, re-runs the DRC, diffs the copper and makes the files twice (VER-143). The order sends no netlist; VER-26 (the merged netlist) and VER-29 (the rotation script) are advisory here and bind at G-DVT-01. | VER-131, VER-176, VER-132, VER-17, VER-130, VER-125, VER-162, VER-178, VER-143 | 1.5 days |
 | 4 | **Layout reviews**: the copied core laid over Raspberry Pi's RP2350B minimal design by hand, answering the second 4.7 uF on +1V1 in writing (the script is VER-187, DVT); the USB pair's stubs; the GPIO mux and PWM slices, its evidence printing the whole slice table (F-R11). | VER-23, VER-108, VER-15 | half a day |
 | 5 | **Power-path analyses that can move copper or the BOM**: the latch table over both Starts (it decides whether any unit turns on); the backlight; inrush. Alex reads by hand the four back-power paths DF-98 names (VBAT_SENSE, SWD, the panel's SPI with JP4 cut, D+); the script is VER-159, at EVT. The charge window (VER-32), the cutoff (VER-138), the mating peak (VER-140) and the VBUS reach (VER-177) are built or scripted and bind at EVT (G-EVT-04); their decisions (DEC-05, DEC-07, DEC-17) are made in step 1. | VER-33, VER-137, VER-99 | half a day |
@@ -159,6 +163,7 @@ below (check_trace fails otherwise). Effort is Claude's unless it says Alex.
 | 7 | **The board against the case**: the XY chain from positions.json (the comb's 1.60 mm spot is copper, and the chain needs no parts: O-R9); placement drift; the MLCC keep-out and TH1 (both pass); the ESTIMATE ledger, the panel's numbers first, read off the drawing on disk. The heights, the pill print on the fit kit and the connector mouths are the case gate's (VER-112, VER-51, VER-165 at G-CASE-02: F-R9). | VER-174, VER-06, VER-19, VER-142, VER-164, VER-152 | 1 day plus calipers |
 | 8 | **The panel and the cell, parts in hand**: the ER-TFT035IPS-6 lit through the breakout, the breakout's header numbering found by diode and continuity tests and the dev board wired by the panel's own pin names (F-R1); ID4 read on SDO, or on SDA if SDO is silent (F-R8); its redraw timed at an in-spec clock (18.75 MHz from 150 MHz, or 20 MHz from a 120 MHz clk_peri: O-R1); the FPC folded into a breakout in J3's place (assembly.md section 5 step 6); the tail's thickness; the cell's spec sheet and cell.json. The cell's incoming inspection (VER-49) is EVT's, before the first cell is plugged (G-EVT-02, F-R9). | VER-43, VER-136, VER-44, VER-37, VER-160 | Alex and Claude: an evening each once parts arrive |
 | 9 | **Test access and firmware size**: every bring-up probe point has copper (the probes table and its script); the game's llvm-size inside 2 MB (the flash map and the check.sh step are VER-185, EVT). | VER-158, VER-151 | 2 hours |
+| 9.5 | **The coverage grid's gaps** ([grid.md](grid.md), R9): write and run the three pre-order checks the grid planned for cells nothing covered: each subsystem's requirements read against its functions (VER-189), the case's architecture against its requirements (VER-190), the USB data path's values at their corners (VER-191). R9 also holds every cell whose only checks are NOT_BUILT: build them (written and runnable; they still run in their own phase) or ask Alex to accept the gap with a signed GRID-<class>-<subsystem> line. Section (o) lists them. | VER-189, VER-190, VER-191 | 1 day; building the later-phase checks R9 holds, about 3 days more, or Alex's acceptances: 30 min |
 | 10 | **Reviews** (all advisory here): the DFMEA review by Alex and two models binds at G-EVT-16 (VER-98, O-R9); the clean-room, return-path and gerbv reviews if time allows (VER-40, VER-21, VER-27). | VER-98 | Alex: half a day, optional before the order |
 | 11 | **Alex's decisions** in APPROVALS.md, in signed commits: one `REQ-ALL@<commit>` line for the requirements he agrees with (round 2: not 130 lines), deferrals by ID; the H rows that only built units can detect, accepted for ORDER (`--gate order --verbose` lists them; one `DF-H@<commit>` line or one per row); the BOM values he accepts for EVT (DF-130, DF-147, DF-164, DF-101); u4 pin 58's waiver (DEC-29); one `GATE@<commit>` line that freezes the phases he agrees with (O-R5). | R1, R3, G1 | Alex: 1 h |
 | 12 | **Release and order**: the release record; the dry run (valid 7 days); stock on order day (valid 1 day); `check_trace.py --gate order` exits 0; order 5 assembled and 5 bare boards. | VER-42, VER-28, VER-41 | 1 day |
@@ -845,3 +850,46 @@ the rule that a moved criterion stays as ADVISORY, and VER-36's phase left REQ-P
 ORDER check; the seeded faults' release record lacked the case-positions fields, and their
 rebaseline helper did not move the baseline commit. PLAN (d) and (i) claimed the counts could
 not be run; they are run below.
+
+## (o) The coverage grid (2026-10-27)
+
+[grid.md](grid.md) is the check classes (rows) by the subsystems (columns) for ref_design.
+`tools/grid.py` generates it from each check's `classes` and `subsystems` in verification.csv
+and from grid_reasons.csv; nothing in it is typed. A check is tagged only with the classes it
+targets for every subsystem it names (the tags are a cross product). The order gate's R9 fails
+while a cell of classes 1-15 has no built check (class 15: a built analysis), no NOT_NEEDED
+reason and no `GRID-<class>-<subsystem>` acceptance Alex signed; a cell with only NOT_BUILT
+checks is "planned" and still a gap. `check_trace.py` reports the count; run_checks.py
+rewrites grid.md after each run. On the reworked board: re-tag the rows the rework touches,
+then run `python3 hardware/vv/tools/grid.py`.
+
+At be437f8, classes 1-15 (120 cells): 84 covered, 10 not needed, 0 accepted, and 26 held by R9,
+all planned; classes 16-18: 16 covered, 8 planned. Before this round 22 cells had no check: 10 are NOT_NEEDED with a reason in
+grid_reasons.csv (8 case cells, and class 12 for power and the cell), and 12 are planned through
+six new NOT_BUILT rows, VER-189 to VER-194.
+
+| Class | Held by R9 | Where | What clears it (build one) |
+|---|---|---|---|
+| 1 Requirements | 5 | power, mcu, display, usb_debug, case | VER-189 |
+| 2 Architecture fit | 1 | case | VER-190 |
+| 4 Values and worst case | 4 | mcu, audio, buttons, usb_debug | VER-23; VER-100 or VER-30; VER-33; VER-191 |
+| 5 Ratings and derating | 1 | case | VER-192 |
+| 6 States and sequencing | 1 | usb_debug | VER-159 or VER-127 |
+| 12 Signals and timing | 4 | mcu, audio, buttons, usb_debug | VER-23; VER-21; VER-179; VER-108 or VER-21 |
+| 14 Mating | 2 | power, usb_debug | VER-165 or VER-80 |
+| 15 Thermal (paper) | 8 | every subsystem | VER-144, VER-13, VER-193 |
+| 3, 7-11, 13 | 0 | | |
+
+Classes 16-18 are not gated here: 1 planned cell in 16 (case: VER-90) and 7 in 17. The checks
+R9 waits for that belong to a later phase (VER-100, VER-159, VER-179, VER-165, VER-144, VER-13,
+VER-192, VER-193) only have to be built before the order; they still run in their own phase.
+
+False coverage removed first: 12 live rows named a part or part number design.py no longer has
+(TP4056, D5, J6, C9, AP3156, BQ24074, and SW17 inside DF-82's and DF-100's 'SW1-SW23'). None
+claimed a check of a part that left, so none was retired: REQ-PRD-05, REQ-PWR-02, REQ-PWR-13,
+REQ-MCU-04, REQ-MEC-11, REQ-MEC-12, REQ-FAB-10, DF-147 and VER-103 keep that history inside
+'Was: ...'; DF-82 and DF-100 now name SW1-SW16 and SW20-SW23 (SW18 and SW19 are the BOOTSEL and
+RESET switches, not contacts); DF-144 names the BQ24074 as a wrong variant, "a '74".
+`tools/stale_names.py` (VER-188) now fails on any such row, and check_trace's default mode
+runs it. The order branch moved again while this ran (307eefd, 64ef18d): the refresh round
+tags the new commit.
