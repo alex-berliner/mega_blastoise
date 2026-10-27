@@ -6,7 +6,10 @@ before the 5-board JLC order. Items marked "unverified" were not checked against
 or a live source.
 
 Related: `docs/display_parallel_proposal.md` (the 60 fps display link, in full detail),
-`docs/pinmap.md` (current GPIO map), `docs/bom.md`.
+`docs/bom.md`. The current board is on branch `ref-design-35in` (worktree
+`mega_blastoise_35in`, commit a8ead6a when this was written); its `docs/pinmap.md` is the
+GPIO map this proposal uses. Main's `docs/pinmap.md` is stale (direct-GPIO buttons and
+revision straps, both gone).
 
 ## 1. Direction
 
@@ -83,7 +86,7 @@ Option C costs about the same or more per unit than A and far more engineering. 
 wanted later, A is the pick. Consequences of any Wi-Fi option: an SSID and password entry UI
 in the shared core, about 100 to 200 mA while the radio is on (cell is 700 mAh), antenna
 keepout and case review, and a respin. Cheap hedge for this revision: an unpopulated UART
-header footprint (3 GPIOs; see section 6).
+header footprint (3 GPIOs; section 6 has room).
 
 ## 5. Display: 60 fps
 
@@ -98,29 +101,30 @@ Full detail in `docs/display_parallel_proposal.md`. Summary:
   whole blocks stay free.
 - Fallback with no respin: keep SPI and redraw only changed regions.
 
-## 6. GPIO budget (the constraint that ties it together)
+## 6. GPIO budget
 
-The RP2354B has 48 GPIOs. Today: 36 are used by non-display functions, 7 by the SPI panel
-link, 5 are spare.
+From `ref-design-35in`'s `docs/pinmap.md` (a8ead6a): 16 buttons already go through two
+chained 74HC165s (SR_PL GPIO 19, SR_CLK 29, SR_DATA 30); the 4 Start and Select buttons are
+on direct GPIOs (2, 3, 4, 35); the revision straps were removed on 2026-10-24. Of 48 GPIOs, 24
+are used (7 of them the SPI panel link: 32, 33, 36 to 40) and 24 are spare: 0, 1, 5 to 18,
+20 to 27.
 
-| Change | Pins | Running total free |
+| Change | New pins | Spare after |
 |---|---|---|
-| Start (5 spare, 7 freed SPI pins) | | 12 |
-| 8-bit parallel panel (8 data, WR, DC, RST, TE; CS tied low, RD tied high) | 12 | 0 |
-| SD card in SPI mode (MOSI, MISO, SCK, CS) | 4 | short by 4 |
-| SD card detect, or SDIO 4-bit instead of SPI mode (6 pins), or a radio UART header (3 pins) | 1 to 3 more | short by 5 to 7 |
+| Today | | 24 |
+| 8-bit parallel panel: 12 pins (8 data, WR, DC, RST, TE; CS tied low, RD tied high), 7 reused from the SPI link | 5 | 19 |
+| SD over SDIO 4-bit (CLK, CMD, D0 to D3) plus card detect | 7 | 12 |
+| Unpopulated radio UART header (TX, RX, enable) | 3 | 9 |
 
-Ways to free pins:
+Everything discussed fits with about 9 GPIOs to spare. SD in SPI mode instead of SDIO would
+save 2 more.
 
-1. Drop the 4 revision-strap pins (GPIO 22 to 25): code the revision with one ADC resistor
-   ladder or fit-time straps. Frees 4, exactly enough for SD in SPI mode.
-2. Read the 20 buttons through a matrix or a shift register or I/O expander. Frees up to
-   about 14 pins but breaks the "direct GPIO, no matrix" decision in `PLAN.md`.
-3. Share the debug UART (GPIO 20, 21) with a radio header if one is added.
-
-Without option 1 or 2, the parallel panel and the SD slot do not both fit. Pin constraints
-from the RP2350: the 8 data pins must be consecutive and inside one PIO GPIO window (GPIOBASE
-picks which 32; check rp2350.txt line 72117 for the options), and WR must be inside it too.
+- 8 consecutive spares already exist for the data bus: GPIO 20 to 27 (or any 8 of 5 to 18).
+  WR must be in the same PIO window (GPIOBASE picks which 32; check rp2350.txt line 72117).
+  Which run is best depends on routing from J3, not checked.
+- A 16-bit panel bus (about 20 pins, about 6.1 ms a frame) would also fit, with about 1
+  spare, but needs 16 consecutive pins: moving SR_PL off GPIO 19 opens 5 to 27 as one run.
+  8-bit is still the pick: half the traces and enough margin for 60 fps.
 
 ## 7. Compliance and selling
 
@@ -143,8 +147,7 @@ picks which 32; check rp2350.txt line 72117 for the options), and WR must be ins
 1. Games baked into firmware, or loadable from SD (decides whether a runtime is needed)?
 2. Respin before the 5-board JLC order for the parallel display and the SD slot, or keep SPI
    and redraw only changed regions for now?
-3. How to free GPIOs: revision pins only (SD in SPI mode, no card detect), or a button
-   matrix or expander?
+3. SD over SDIO 4-bit (faster, 6 pins plus card detect) or SPI mode (4 pins)? Both fit.
 4. Is the 30-board run for yourself and friends, or for sale (decides whether EMC testing is
    on the critical path)?
 5. Add an unpopulated UART header for a later Wi-Fi module, or leave it out?
@@ -160,4 +163,4 @@ picks which 32; check rp2350.txt line 72117 for the options), and WR must be ins
 - That the EastRising module's 8080 mode works on the bench (set IM `011`, read the ID).
 - Chrome on Android WebUSB with this device (plug-in test above).
 
-Last updated: 2026-10-26 16:24 EDT
+Last updated: 2026-10-27 07:48 EDT
