@@ -583,7 +583,46 @@ BLOCKED (an input not on disk): run_checks.py records nothing for it.
   the minimums that do not need Samsung's curves.
 
 Grid after this round, classes 1-15 by the worst status in each cell (120 cells): PASS 2, FAIL 37,
-NOT_RUN 10, NOT_BUILT 38, planned 23, not needed 10. Class 4: buttons and usb_debug PASS; power,
+NOT_RUN 10, NOT_BUILT 38, planned 23, not needed 10.
+
+Classes 2, 3, 5, 7, 8, 10 and 12-15 built and run (2026-10-27, at 71737ae): four new scripts and a
+helper. `tools/ds.py` reads every datasheet number from the PDF itself (a quote not on its cited line
+fails the check). `tools/circuit_checks.py` (appcircuit VER-198 (new), gpio VER-15, pinreview VER-36,
+fwpins VER-149, ratings VER-31, usbfault VER-195, timing VER-199 (new)), `tools/layout_checks.py`
+(bridges VER-148 with `bridges.csv`, fab VER-132, jlc VER-17, ret VER-21, usbpair VER-108),
+`tools/case_checks.py` (arch VER-190, fit VER-06, placement VER-19, stack VER-20, estimates VER-152,
+mouths VER-165, xy VER-174; the ones that need positions.json run in a temp copy of hardware/ref_design)
+and `tools/thermal.py` (modes VER-144, board VER-193, amp VER-200 (new)). Each has a `--seed` that was
+run once and fails (a check that already fails needs none).
+
+- PASS: VER-15 (every GPIO's job on a pin that has it; 48 of 48 PWM slices agree with the table and
+  embassy-rp), VER-31 (every part inside its rating in every mode; 3V3 65 mA on stand-ins, U3 0.08 W),
+  VER-148 (167 close net pairs all listed, 20 dangerous with a live DF row), VER-06 (check_fit: no
+  collisions), VER-19 (158 parts where placement.py puts them), VER-20 (0.27 mm under the glass, 0.20 mm
+  under the ends at worst case), VER-174 (pill to comb 0.48 mm worst case against 0.9), VER-144 (U2
+  0.80 W reaches 90.8 C at 40 C ambient against 105; it fails above 62 C/W, so VER-68 matters), VER-193
+  (the cell 40.3 C charging while playing at 25 C ambient, against 45).
+- FAIL, each a defect: VER-198 (the panel at 3.366 V, DEF-61), VER-190 (M2 x 6 engages 3.2 mm, DEF-31),
+  VER-36 (37 pin-review items: orphans, stale bases, open questions, DEF-26), VER-149 (no REF-A pin file,
+  DEF-34), VER-195 (VBUS on CC or D+/D-: the pads from 3.9 V, R1/R2 at 17.9 V, the 3V3 domain from 4 V,
+  DEF-73), VER-132 (the GND pour 2.875 mm from every comb against 2.9, DEF-74; no JLC marker, DEF-55),
+  VER-21 and VER-108 (the USB pair 38.7 mm over no ground and 3.64 mm apart; SR_CLK 6.9 mm, DEF-75),
+  VER-199 (the timing closes at 18.75 MHz; pinmap.md states no clock limits, DEF-76), VER-152 (seven
+  copper-setting ESTIMATEs and the cell unmeasured, DEF-78), VER-165 (J5's mouth at the wall, DEF-77).
+- BLOCKED (exit 2 or not runnable here, nothing recorded): VER-17 (JLC's dated capability page),
+  VER-200 (fm8002a.pdf), VER-192 (the case material's datasheet), VER-151 (the battler submodule is not
+  checked out), VER-150 and VER-185 (firmware changes outside hardware/vv), VER-143 (route.py --reuse),
+  VER-27 (gerbv not installed), VER-07 (check_buttons.py, a long pipeline), VER-113 (the case's STLs),
+  VER-112, VER-178, VER-180 and VER-44 (drawings, calipers, the panel), VER-23 and VER-187 (RP-010329),
+  VER-34 (U10, TH1, J4 and the other off-disk datasheets), VER-37 (the cell's spec sheet), VER-40 (a
+  human reviewer), VER-43 and VER-136 (the panel in hand), VER-28 (Alex's dry run).
+
+The grid now judges a cell of classes 1-15 by the checks that can clear it (tools/grid.py): a bench test
+that cannot exist before the boards no longer holds a cell at NOT_BUILT, and it is listed as "measures,
+does not clear". Classes 1-15 after this round (120 cells): PASS 15, FAIL 80, NOT_RUN 4, NOT_BUILT 2,
+planned 9, not needed 10. R9 holds 9 cells: class 1's seven (VER-189, Alex's), 5/case (VER-192) and
+15/audio (VER-200). The order gate fails 23 of 29 criteria; G-ORD-22 counts 31 ORDER checks not passing
+and R4 16 OPEN defects due at ORDER (DEF-74, DEF-75 and DEF-78 new). Class 4: buttons and usb_debug PASS; power,
 cell, mcu and audio FAIL; display NOT_RUN (VER-05). Class 6: power and cell FAIL (VER-103); the
 others show their bench tests (NOT_RUN or NOT_BUILT), their paper checks all pass. Classes 9 and 11
 read FAIL in every subsystem because VER-125 and VER-130 name all seven. VER-13's run also clears
