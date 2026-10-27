@@ -52,7 +52,7 @@ A cell reads: COVERED, worst <status> among its checks (FAIL, NOT_BUILT, NOT_RUN
 ## Whole-register classes
 
 - E19 Right baseline: FAIL: VER-35 VER-39 VER-42 VER-143 VER-161 VER-173 VER-188
-- E20 Can the check fail: NOT_BUILT: VER-22 VER-129
+- E20 Can the check fail: FAIL: VER-22 VER-129
 
 ## Gaps, each with its proposed check
 
@@ -101,10 +101,11 @@ The order gate holds 33 cells of classes 1-15 (0 GAP, 33 planned); classes 16-18
 - 15 Thermal / power: VER-144 Dissipation per mode with positions; the firmware heat rule (A, NOT_BUILT, ORDER). Pass: the table written with each mode's total; U2's junction under its thermal regulation point in a 40 C case; U2, U3, U7, Q5 and Q6 each at or under its junction maximum less 20 C at 40 C ambient in the worst mode, each thermal resistance quoted from a datasheet with its line; the firmware rule in pinmap.md before VER-86 runs
 - 15 Thermal / usb_debug: VER-193 Board-wide dissipation on paper: every part, the cell's own heat and the case's inner surface (A, NOT_BUILT, ORDER). Pass: every part's junction at or under its maximum less 20 C at 40 C ambient in the worst mode; the cell's surface at or under 45 C charging while playing at 25 C ambient; each thermal resistance quoted from a datasheet with its line
 
-## FAIL (8)
+## FAIL (9)
 
 - VER-32 Charge-temperature window at the datasheet's limits (TH1 against U2's TS thresholds) (EVT): classes 4 7; cell power
 - VER-39 Docs match the design (stale-doc sweep) (CASE): classes 19; register
+- VER-129 Seeded faults: check_trace.py fails on each structural fault (ORDER): classes 20; register
 - VER-138 Cutoff accuracy analysis: the calibrated reading against the true cell voltage (EVT): classes 4; cell power
 - VER-147 Screw engagement in the case's pilots (CASE): classes 13 14; case
 - VER-164 TH1 against the cell's hole; bare copper facing the cell (ORDER): classes 7 13; cell
@@ -125,4 +126,4 @@ The order gate holds 33 cells of classes 1-15 (0 GAP, 33 planned); classes 16-18
 - 12 Signals and timing / cell: The cell's subsystem carries DC only: VBAT_DIV is filtered by C8 (100 nF) and copied to VBAT_SENSE by U10, a unity buffer, at DC (since 71737ae), and TH1's TS node is a DC level. No clock or data passes through it; how U10 settles the ADC's sample charge is read on unit 1 by VER-67 (the ADC against a meter).
 - 12 Signals and timing / case: The case carries no signal: there is no radio, antenna or cable through it. Static through its seams is class 7 (VER-95, VER-170).
 
-Last updated: 2026-10-27 17:09 EDT (generated)
+Last updated: 2026-10-27 17:14 EDT (generated)
