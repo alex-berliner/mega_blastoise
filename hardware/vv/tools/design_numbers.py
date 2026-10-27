@@ -25,10 +25,12 @@ part change in design.py makes the evidence stale through the row's part: covers
   swell      VER-182  free height above a worst-case cell, under whatever lies over its pocket
   edge       VER-18   copper to every routed edge, part courtyards inside the outline (pcbnew)
   plugs      VER-184  J2 (the cell) and J4 (the speaker) keyed apart, and how far apart they sit
+  tempwin    VER-32   the charge window TH1 gives against U2's TS thresholds, from SLUS810N
 
 Helpers (they print numbers a bench procedure uses and always exit 0):
   tsband [C] the TS voltage band VER-133, VER-135 and VER-68 accept at the measured ambient
-  cvload     the load resistor window that holds U2 in CV without terminating (VER-134, VER-145)
+  cvload     the load that holds U2 in CV without terminating (VER-134, VER-145): there is no
+             resistive window, so it checks the TL431 shunt load at its corners (O-R2)
 
 cpl and drill import board/tools/fab.py, point its OUT at a temp dir and run its own export
 (kicad-cli, a second or two), so they read the files that would be uploaded, never fab.py's
@@ -63,15 +65,32 @@ PANEL_MAX_MA = 120.0     # ER-TFT035IPS-6 backlight, 6 LEDs in parallel, 120 mA 
                          # read as the limit since the table prints '110 120' without columns)
 LED_MAX_MA = 20.0        # one LED: 120 mA over the six (pin_review/panel.json)
 LEDS_PER_PIN = 3         # the drawing's LED-K1 and LED-K2 carry three LEDs each (pin_review/panel.json pins 2, 3)
-# The charger's pre-charge, termination and TS bias, from memory of SLUS810N until VER-34 quotes its
-# Electrical Characteristics into pin_review/u2.json (u2.json holds only 75 uA, 0.30 V and 2.1 V)
-K_PRE, K_TERM = 0.10, 0.10           # pre-charge and termination currents as a share of the fast-charge current
-V_LOWV = (2.9, 3.1)                  # V: the pre-charge to fast-charge threshold, its band
-I_TS, I_TS_TOL = 75e-6, 0.10         # A: TS bias current; its tolerance taken wide (+-10%) until VER-34
+# The charger's pre-charge, termination and TS bias, from SLUS810N (the BQ24073's datasheet, on disk as
+# bq24074.txt): VER-34 quotes the lines and tools/datasheet_hashes.py records the file's sha256, size
+# and date.  Pre-charge has a factor of its own in A-ohm (KPRECHG), not a share of ISET, so the
+# pre-charge current is KPRECHG / R5 and does not track ICHG (O-R2).  Termination is a share of the
+# unit's own ICHG (ITERM), so it does.
+KPRECHG = (70.0, 106.0)      # A-ohm: SLUS810N's KPRECHG, 70 / 88 / 106 (bq24074.txt:787)
+KISET = (797.0, 975.0)       # A-ohm: SLUS810N's KISET, 797 / 890 / 975, so ICHG = KISET / R5 (bq24074.txt:785)
+ITERM = (0.09, 0.11)         # share of ICHG: SLUS810N's ITERM with (EN1, EN2) not (LO, LO) (bq24074.txt:789)
+V_LOWV = (2.9, 3.1)          # V: the pre-charge to fast-charge threshold, its band (bq24074.txt:776)
+VBAT_REG = (4.16, 4.23)      # V: SLUS810N's VBAT(REG) for the '73 (bq24074.txt:773)
+V_HOT = (0.270, 0.330)       # V: SLUS810N's TS hot threshold, VTS falling (bq24074.txt:824)
+V_COLD = (2.0, 2.2)          # V: SLUS810N's TS cold threshold, VTS rising (bq24074.txt:826)
+I_TS, I_TS_TOL = 75e-6, 0.04 # A: TS bias current 72-78 uA (SLUS810N's INTC, bq24074.txt:823): 75 uA +-3 uA
 TH1_B, TH1_R25, TH1_TOL = 3950.0, 10e3, 0.01   # design.py TH1: 10k B3950 1% (SDNT1005X103F3950FTF)
-CV_LOAD = 133.0                      # ohm: the per-unit CV screen's load (VER-134), E96, inside cvload's window
-# RP2350 GPIO input leakage, maximum over the chip's temperature range: the datasheet's IO
-# electrical characteristics table, quoted from memory (+-1 uA, as the RP2040's): VER-34 cites it
+TH1_B_TOL = 0.01             # TH1's B tolerance (the part number's second F: 1%)
+# The per-unit CV screen's load (VER-134, VER-145): a resistor alone cannot do it (cvload), so the
+# load is a resistor in parallel with a shunt branch that conducts only above a set voltage: a TL431
+# (cathode-to-anode set to 3.5 V by 10k over 24.9k, 1%) in series with 22 ohm.  A low-voltage zener
+# is too soft for this branch (about 90 ohm of dynamic resistance at a few mA), and three diodes
+# conduct at about 2 V, under V_LOWV.
+CV_LOAD_R = 160.0            # ohm, 1%: the load's resistor
+CV_SHUNT_V = (3.43, 3.57)    # V: the TL431 branch's set point, 3.5 V +-2% (Vref 2.495 V x (1 + 10k / 24.9k): a plain
+                             # TL431's reference and the divider's 1% resistors)
+CV_SHUNT_R = 22.0            # ohm, 1%: in series with the TL431
+# RP2350 GPIO input leakage, maximum: the datasheet's pad table, 'Pin Input Leakage Current IIN 1 uA'
+# (rp2350.txt:101199, quoted by VER-34)
 I_LEAK = 1e-6
 # Fab and print tolerances for the cell's gap (VER-181): JLC's standard outline tolerance (+-0.2 mm,
 # to confirm on the dated capability page, VER-17); an FDM wall's position (+-0.1 mm, an estimate
@@ -79,8 +98,13 @@ I_LEAK = 1e-6
 ROUTE_TOL, PRINT_TOL, SCREW_FLOAT = 0.2, 0.1, 0.1
 JLC_MIN_PLATED_SLOT = 0.50   # mm, JLC's minimum plated slot width (to confirm on the dated page, VER-17)
 # A CPL row more than 0.10 mm off its pads passes only if JLC's correction for that ref is recorded
-# here, with the dry run's screenshot named (VER-28). None today.
-JLC_FIXED = {}
+# here, with the dry run's screenshot named (VER-28).  An entry counts only when its evidence file
+# exists, is committed and names the designator in an ARTEFACT line (O-R7, F-R4); otherwise the row
+# fails as before.  None today.
+JLC_FIXED = {
+    # "J1": {"evidence": "hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt",
+    #         "offset": "JLC's library puts J1's origin 1.50 mm behind its pads' centre"},
+}
 EN1_INTERNAL = 285e3     # BQ24073 EN1 internal pull-down (pin_review/u2.json pin 6)
 D3_VF = 0.3              # BAT54WS at a few hundred uA
 ABS = {"U2 IN": 28.0, "U2 EN1": 7.0, "U3 EN": 6.0}    # absolute maxima (u2.json, u3.json)
@@ -246,7 +270,7 @@ def cutoff():
     gain = (r17 + r18) / r18                             # VBAT per volt at the pin
     band = I_LEAK * rth * gain                           # the pin's error, scaled back to VBAT
     fit = 0.05 / 2 / (rth * gain)
-    print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (RP2350 input leakage, maximum over temperature; from memory, VER-34) "
+    print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (the RP2350's IIN maximum, rp2350.txt:101199, quoted by VER-34) "
           f"through {rth / 1e3:.0f} kohm moves VBAT's reading +-{band:.3f} V; REQ-BAT-12's 50 mV window allows "
           f"+-{fit * 1e9:.0f} nA of leakage that changes with temperature, before any other error")
     ok &= 2 * band <= 0.05
@@ -365,7 +389,8 @@ def cellgap():
             ok = False
             continue
         sides = {"right end (pushed, at TH1)": fit,
-                 "left end (its leads, J2)": hl - fit - cl,
+                 "left end (its leads, J2), the cell pushed right": hl - fit - cl,
+                 "left end (its leads, J2), the cell NOT pushed (against the pocket's left wall)": fit,
                  "each long side (at worst against the pocket's wall)": fit}
         for side, nom in sides.items():
             need = 1.5 if "left" in side else 0.5
@@ -376,12 +401,37 @@ def cellgap():
                   f"(REQ-BAT-08: {need:g}): {'ok' if good else 'too close'}")
     f_need = 0.5 + tol
     cl, cw = e["cell"][0], e["cell"][1]
-    print(f"what passes: the pocket {f_need:.2f} mm inside the hole on every side; then")
-    print(f"  with this hole ({hl:.1f} x {hw:.1f}): a cell of at most {hl - f_need - 1.5 - tol:.2f} x "
+    print("the pushed cell is held there by assembly.md step 5's tape; an unpushed cell rests against the "
+          "pocket's left wall, so its lead end has only the pocket's fit (O-R8: a printed stop at the pocket's "
+          "left end is the case-side option)")
+    l_need = 1.5 + tol
+    print(f"what passes: the pocket {f_need:.2f} mm inside the hole at the right end and on both long sides, and "
+          f"{l_need:.2f} mm inside it at the lead end, so the pocket itself holds every cell off the lead end (that "
+          f"wall is the printed stop DEF-58 asks for, and no tape is needed); then")
+    print(f"  with this hole ({hl:.1f} x {hw:.1f}): a cell of at most {hl - f_need - l_need:.2f} x "
           f"{hw - 2 * f_need:.2f} mm (its spec sheet, VER-37, and incoming inspection, VER-49)")
-    print(f"  with the worst-case {cl:g} x {cw:g} cell: a hole of at least {cl + f_need + 1.5 + tol:.2f} x "
-          f"{cw + 2 * f_need:.2f} mm (+{cl + f_need + 1.5 + tol - hl:.2f} in x, +{cw + 2 * f_need - hw:.2f} in y: copper)")
+    print(f"  with the worst-case {cl:g} x {cw:g} cell: a hole of at least {cl + f_need + l_need:.2f} x "
+          f"{cw + 2 * f_need:.2f} mm (+{cl + f_need + l_need - hl:.2f} in x, +{cw + 2 * f_need - hw:.2f} in y: copper)")
     return result(ok)
+
+
+def jlc_fixed_ok(ref):
+    """F-R4: a JLC_FIXED entry counts only when its evidence file exists, is committed and names the
+    designator.  Returns (ok, why)."""
+    e = JLC_FIXED.get(ref)
+    if not e:
+        return False, "no entry"
+    path = e.get("evidence", "")
+    if not path:
+        return False, "the entry names no evidence file"
+    if not os.path.isfile(os.path.join(ROOT, path)):
+        return False, f"the evidence file {path} does not exist"
+    tr = subprocess.run(["git", "-C", ROOT, "ls-files", "--error-unmatch", path], capture_output=True, text=True)
+    if tr.returncode != 0:
+        return False, f"the evidence file {path} is not committed"
+    if ref not in open(os.path.join(ROOT, path), encoding="utf-8").read():
+        return False, f"the evidence file {path} does not name {ref}"
+    return True, e.get("note") or e.get("offset", "")
 
 
 def cpl():
@@ -392,7 +442,7 @@ def cpl():
     n_lines, n_parts, _ = fab.bom_cpl()
     path = os.path.join(fab.OUT, "battler_cpl_jlc.csv")
     fps = {f.GetReference(): f for f in b.GetFootprints()}
-    off, rows = [], list(csv.DictReader(open(path)))
+    off, fixed, rows = [], [], list(csv.DictReader(open(path)))
     for r in rows:
         f = fps.get(r["Designator"])
         if f is None:
@@ -403,10 +453,20 @@ def cpl():
         cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
         mx, my = float(r["Mid X"].rstrip("m")), -float(r["Mid Y"].rstrip("m"))
         d = math.hypot(mx - cx, my - cy)
-        if d > 0.10 and r["Designator"] not in JLC_FIXED:
-            off.append((r["Designator"], d))
+        if d > 0.10:
+            ok, why = jlc_fixed_ok(r["Designator"])
+            if ok:
+                fixed.append((r["Designator"], d, why))
+            else:
+                off.append((r["Designator"], d))
     print(f"fab.py's bom_cpl() wrote {n_lines} BOM lines and {n_parts} CPL rows (read from {os.path.basename(path)})")
     print("CPL row more than 0.10 mm off its pads' centre: " + (", ".join(f"{r} {d:.2f} mm" for r, d in off) or "none"))
+    for r, d, why in fixed:
+        print(f"  {r} {d:.2f} mm: accepted by a JLC_FIXED entry: {why}")
+    for r, d in off:
+        ok, why = jlc_fixed_ok(r)
+        if why not in ("no entry",):
+            print(f"  {r} {d:.2f} mm: a JLC_FIXED entry does not count: {why}")
     return result(not off and len(rows) == n_parts)
 
 
@@ -770,7 +830,7 @@ def tsband():
     """The TS voltage a good unit shows at the measured ambient: I_TS into TH1, with I_TS's tolerance, TH1's 1%
     R25 and B, and the ambient reading +-2 C (the meter and the board's own warmth)."""
     amb = [float(a) for a in sys.argv[2:]] or [18.0, 20.0, 22.0, 25.0, 28.0]
-    print(f"TS = I_TS x TH1: I_TS {I_TS * 1e6:g} uA +-{I_TS_TOL:.0%} (from memory until VER-34), TH1 {TH1_R25 / 1e3:g}k "
+    print(f"TS = I_TS x TH1: I_TS {I_TS * 1e6:g} uA +-{I_TS_TOL:.0%} (SLUS810N's INTC, 72-78 uA), TH1 {TH1_R25 / 1e3:g}k "
           f"B{TH1_B:g} +-{TH1_TOL:.0%}, the ambient +-2 C")
     for t in amb:
         lo = I_TS * (1 - I_TS_TOL) * ntc(t + 2, TH1_R25 * (1 - TH1_TOL), TH1_B * (1 + TH1_TOL))
@@ -781,30 +841,133 @@ def tsband():
 
 
 def cvload():
-    """The load in J2's place that keeps U2 in CV without terminating, on any unit: above the pre-charge
-    threshold at the pre-charge current (it leaves pre-charge), and drawing more than the termination current
-    at the regulated voltage (it never terminates). Both currents scale with the unit's own ISET current."""
+    """The load in J2's place that keeps U2 in CV without terminating, on any unit (O-R2).
+
+    SLUS810N gives pre-charge a factor of its own (KPRECHG, 70-106 A-ohm), so the pre-charge current is
+    KPRECHG / R5 and does not track the unit's ICHG; termination is 0.09-0.11 of the unit's own ICHG.
+    Leaving pre-charge needs the load's voltage at the smallest pre-charge current to clear V_LOWV's
+    maximum (a resistor above a low bound); never terminating needs the load to draw more than the
+    largest termination current at VBAT(REG)'s minimum (a resistor below a high bound).  The two
+    bounds cross, so no resistor does both.  The load that does is CV_LOAD_R in parallel with a TL431
+    shunt set to 3.5 V in series with CV_SHUNT_R: off in pre-charge, on in CV.  Both bounds are
+    checked at the load's own worst corners (1% resistors, the TL431's set point at +-2%)."""
     parts, _ = design()
     r5 = ohms(parts["R5"]["value"])
-    ichg = (242e-3, 295e-3)           # REQ-BAT-02.R: 890 / R5 with KISET's tolerance (pin_review/u2.json pin 16)
-    vreg = (4.2 * (1 - CV_TOL), 4.2 * (1 + CV_TOL))
-    lo = max(V_LOWV[1] / (K_PRE * i) for i in ichg)          # must leave pre-charge on the lowest-current unit
-    hi = min(vreg[0] / (K_TERM * i) for i in ichg)           # must not terminate on the highest-current unit
-    print(f"R5 {r5:g}: fast charge {ichg[0] * 1e3:.0f}-{ichg[1] * 1e3:.0f} mA; pre-charge and termination "
-          f"{K_PRE:.0%} and {K_TERM:.0%} of it (from memory until VER-34); V_LOWV {V_LOWV[0]}-{V_LOWV[1]} V; "
-          f"VREG {vreg[0]:.3f}-{vreg[1]:.3f} V")
-    print(f"window: {lo:.1f} ohm (leaves pre-charge) to {hi:.1f} ohm (never terminates); its geometric middle "
-          f"{math.sqrt(lo * hi):.1f} ohm")
-    for r in (130.0, CV_LOAD):
-        print(f"  {r:g} ohm 1%: {r * 0.99 - lo:+.1f} ohm over the low end, {hi - r * 1.01:+.1f} ohm under the high end")
-    print("the window holds only if pre-charge and termination track ISET within a few %: VER-34 quotes SLUS810N's "
-          "KPRECHG and KTERM limits")
+    ichg = (KISET[0] / (r5 * 1.01), KISET[1] / (r5 * 0.99))      # A: ICHG = KISET / R5, R5 1%
+    pre = (KPRECHG[0] / (r5 * 1.01), KPRECHG[1] / (r5 * 0.99))   # A: the pre-charge current, KPRECHG / R5
+    term = (ITERM[0] * ichg[0], ITERM[1] * ichg[1])               # A: the termination current band
+    lo = V_LOWV[1] / pre[0]            # ohm: above this a resistor leaves pre-charge on every unit
+    hi = VBAT_REG[0] / term[1]         # ohm: below this a resistor never terminates on every unit
+    print(f"R5 {r5:g} 1%: fast charge {ichg[0] * 1e3:.0f}-{ichg[1] * 1e3:.0f} mA (KISET {KISET[0]:g}-{KISET[1]:g} A-ohm "
+          f"over R5); pre-charge {pre[0] * 1e3:.1f}-{pre[1] * 1e3:.1f} mA (KPRECHG {KPRECHG[0]:g}-{KPRECHG[1]:g} A-ohm "
+          f"over R5: its own factor, not a share of ICHG); termination {term[0] * 1e3:.1f}-{term[1] * 1e3:.1f} mA "
+          f"({ITERM[0]:.0%}-{ITERM[1]:.0%} of the unit's own ICHG); V_LOWV {V_LOWV[0]}-{V_LOWV[1]} V; "
+          f"VBAT(REG) {VBAT_REG[0]}-{VBAT_REG[1]} V (SLUS810N)")
+    print(f"a resistor alone: above {lo:.1f} ohm it leaves pre-charge on every unit, below {hi:.1f} ohm it never "
+          f"terminates on every unit")
+    if lo > hi:
+        print(f"no resistive window: {lo:.1f} ohm is above {hi:.1f} ohm, so no single resistor holds CV and refuses "
+              f"to terminate at the same time (O-R2); a two-step load does not help either: pre-charge ends after a "
+              f"25 ms deglitch and termination follows after another 25 ms (tDGL1(LOWV), tDGL(TERM))")
+    else:
+        print(f"the resistive window is {lo:.1f}-{hi:.1f} ohm; its geometric middle {math.sqrt(lo * hi):.1f} ohm")
+
+    div = 10e3 + 24.9e3                # ohm: the TL431's set-point divider, always across the shunt
+
+    def amps(v, r, vs, rs):
+        """The load's current at a cell voltage v: the resistor, the divider and the shunt branch."""
+        return v / r + v / div + max(0.0, (v - vs) / rs)
+
+    def volts(i, r, vs, rs):
+        lo_v, hi_v = 0.0, 10.0
+        for _ in range(60):
+            mid = (lo_v + hi_v) / 2
+            lo_v, hi_v = (mid, hi_v) if amps(mid, r, vs, rs) < i else (lo_v, mid)
+        return lo_v
+
+    r_lo, r_hi = CV_LOAD_R * (1 - R_TOL), CV_LOAD_R * (1 + R_TOL)
+    s_lo, s_hi = CV_SHUNT_R * (1 - R_TOL), CV_SHUNT_R * (1 + R_TOL)
+    v_pre = volts(pre[0], r_lo, CV_SHUNT_V[0], s_lo)                       # the lowest voltage in pre-charge
+    i_cv = amps(VBAT_REG[0], r_hi, CV_SHUNT_V[1], s_hi)                    # the least current in CV
+    i_max = amps(VBAT_REG[1], r_lo, CV_SHUNT_V[0], s_lo)                   # the most current in CV
+    i_sh = max(0.0, (VBAT_REG[1] - CV_SHUNT_V[0]) / s_lo)
+    print(f"the load: {CV_LOAD_R:g} ohm 1% in parallel with a TL431 set to {sum(CV_SHUNT_V) / 2:g} V "
+          f"({CV_SHUNT_V[0]}-{CV_SHUNT_V[1]} V: 10k over 24.9k, 1%, any TL431 grade) in series with {CV_SHUNT_R:g} ohm 1%")
+    ok_pre = v_pre > V_LOWV[1]
+    ok_cv = i_cv > term[1]
+    ok_max = i_max < ichg[0]
+    print(f"  pre-charge: at the smallest pre-charge current ({pre[0] * 1e3:.1f} mA) the load sits at {v_pre:.3f} V "
+          f"against V_LOWV's {V_LOWV[1]} V maximum: {'it leaves pre-charge' if ok_pre else 'STUCK in pre-charge'} "
+          f"({v_pre - V_LOWV[1]:+.3f} V)")
+    print(f"  CV: at VBAT(REG) {VBAT_REG[0]} V the load draws at least {i_cv * 1e3:.1f} mA against the largest "
+          f"termination current {term[1] * 1e3:.1f} mA: {'it never terminates' if ok_cv else 'it TERMINATES'} "
+          f"({(i_cv - term[1]) * 1e3:+.1f} mA)")
+    print(f"  at most {i_max * 1e3:.1f} mA at {VBAT_REG[1]} V, under the smallest fast-charge current "
+          f"{ichg[0] * 1e3:.0f} mA, so the unit reaches CV: {'ok' if ok_max else 'NOT in CV'}; the TL431 then "
+          f"dissipates {CV_SHUNT_V[1] * i_sh * 1e3:.0f} mW (a TO-92 part), the 22 ohm {s_lo * i_sh ** 2 * 1e3:.0f} mW "
+          f"and the {CV_LOAD_R:g} ohm {VBAT_REG[1] ** 2 / r_lo * 1e3:.0f} mW (0.25 W parts)")
+    print("not this load: a low-voltage zener (about 90 ohm of dynamic resistance at a few mA, so it starves the CV "
+          "current) or three silicon diodes (they conduct at about 2 V, so the cell never leaves pre-charge)")
+    print("the other loads that work: a real cell at 4.0-4.1 V, read at TP3 while its taper current is over "
+          f"{term[1] * 1e3:.0f} mA; an electronic load only with its turn-on voltage set over V_LOWV, since a constant "
+          "current faces the same two bounds as a resistor")
+    print("the load " + ("works on every unit" if ok_pre and ok_cv and ok_max else "does NOT work on every unit"))
     return 0
+
+
+def tempwin():
+    """O-R3: the charge window TH1 gives against U2's fixed TS thresholds, from SLUS810N's limits.
+
+    U2 drives I_TS (72-78 uA) into TH1, an NTC to ground, and watches TS: charging pauses when TS falls
+    under V_HOT (hot) or rises over V_COLD (cold).  The hot edge is the highest temperature at which
+    charging can still run: the trip resistance is smallest (V_HOT's minimum over I_TS's maximum) and
+    TH1 falls slowest above 25 C (R25 high, B low).  The cold edge is the lowest temperature at which
+    charging can still run: the trip resistance is largest (V_COLD's maximum over I_TS's minimum) and
+    TH1 rises slowest below 25 C (R25 low, B low).  Every limit here is a datasheet minimum or maximum,
+    so the worst corner bounds every unit: it is the one-sided 99.9% figure REQ-BAT-03 asks for, without
+    assuming a distribution inside the limits."""
+    def temp_at(r, beta, r25):
+        return 1 / (1 / 298.15 + math.log(r / r25) / beta) - 273.15
+
+    def b_for(t_c, r, r25):
+        return math.log(r / r25) / (1 / (t_c + 273.15) - 1 / 298.15)
+
+    i_lo, i_hi = I_TS * (1 - I_TS_TOL), I_TS * (1 + I_TS_TOL)
+    hot_nom_r, cold_nom_r = sum(V_HOT) / 2 / I_TS, sum(V_COLD) / 2 / I_TS
+    hot_r, cold_r = V_HOT[0] / i_hi, V_COLD[1] / i_lo
+    r25_hot, r25_cold = TH1_R25 * (1 + TH1_TOL), TH1_R25 * (1 - TH1_TOL)
+    print(f"SLUS810N: V_HOT {V_HOT[0]}-{V_HOT[1]} V, V_COLD {V_COLD[0]}-{V_COLD[1]} V, INTC {i_lo * 1e6:.0f}-"
+          f"{i_hi * 1e6:.0f} uA (bq24074.txt:823-826); TH1 {TH1_R25 / 1e3:g}k +-{TH1_TOL:.0%}, B{TH1_B:g} "
+          f"+-{TH1_B_TOL:.0%} (design.py)")
+    rows = [("nominal (0.300 V and 2.100 V at 75 uA, TH1 nominal)",
+             temp_at(cold_nom_r, TH1_B, TH1_R25), temp_at(hot_nom_r, TH1_B, TH1_R25)),
+            ("the charger's limits, TH1 nominal",
+             temp_at(cold_r, TH1_B, TH1_R25), temp_at(hot_r, TH1_B, TH1_R25)),
+            (f"the worst corner (the charger's limits, R25 and B at TH1's tolerance)",
+             temp_at(cold_r, TH1_B * (1 - TH1_B_TOL), r25_cold), temp_at(hot_r, TH1_B * (1 - TH1_B_TOL), r25_hot))]
+    print(f"the trip resistances: hot {hot_r:.0f} ohm (nominal {hot_nom_r:.0f}), cold {cold_r:.0f} ohm "
+          f"(nominal {cold_nom_r:.0f})")
+    for name, cold, hot in rows:
+        print(f"  {name}: charging runs from {cold:.1f} C to {hot:.1f} C")
+    cold, hot = rows[-1][1], rows[-1][2]
+    # the B that holds the hot edge at 45 C at the worst corner, and what it does to the cold edge
+    b_nom = b_for(45.0, hot_r, TH1_R25)
+    b_worst = b_for(45.0, hot_r, r25_hot) / (1 - TH1_B_TOL)
+    cold_at = temp_at(cold_r, b_worst * (1 - TH1_B_TOL), r25_cold)
+    print(f"a 45 C hot edge: B {b_nom:.0f} with TH1 exactly nominal; B {b_worst:.0f} or more for a 10k 1% part "
+          f"with B +-1% at the worst corner, whose cold edge is then {cold_at:.1f} C")
+    for b in (4250.0, 4350.0):
+        print(f"  B{b:g} 1%: the hot edge {temp_at(hot_r, b * (1 - TH1_B_TOL), r25_hot):.1f} C at the worst corner "
+              f"({temp_at(hot_nom_r, b, TH1_R25):.1f} C nominal)")
+    ok = hot <= 45.0 and cold >= 0.0
+    print(f"REQ-BAT-03 (0-45 C, or the cell's own limits once VER-37 has its spec sheet): the window is {cold:.1f} C "
+          f"to {hot:.1f} C at the worst corner: " + ("met" if ok else "NOT met"))
+    return result(ok)
 
 
 CHECKS = {"holes": holes, "swell": swell, "inrush": inrush, "backlight": backlight, "cutoff": cutoff, "screws": screws,
           "mlcc": mlcc, "th1": th1, "cellgap": cellgap, "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom,
-          "edge": edge, "plugs": plugs, "tsband": tsband, "cvload": cvload}
+          "edge": edge, "plugs": plugs, "tsband": tsband, "cvload": cvload, "tempwin": tempwin}
 
 
 def main():

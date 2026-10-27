@@ -26,6 +26,20 @@ number fault must print RESULT: FAIL. The clean
 copy and the clean clone must exit 0. This is VER-129: the trace gate's own seeded-fault test
 (DEF-35, DEF-47).
 
+Round 3's six findings add the faults that keep the new rules honest (2026-10-26):
+
+  F-R3  README's baseline hash rewritten from HEAD after a design.py edit: the default mode fails
+        (the register describes another design than the baseline commit holds).
+  F-R4  a JLC_FIXED entry with no evidence file, and one whose evidence file is not committed:
+        neither counts, so the CPL check still fails on the row.
+  O-R4  a case.scad commit that moves a button position fails the order gate (R8, the case's
+        positions), while a case-only commit that moves no position (2ddb7fe's engraved labels)
+        passes that part of R8.
+  O-R5  a check moved after Alex's signed GATE@ line fails the order gate (G1).
+  O-R11 an ORDER check named only in the plan's 'what moved where' table is not a step.
+  O-R12 a software signing key fails the order gate (K1); --accept-software-key passes it and
+        says so; a line in APPROVALS.md that tries to grant the exception does not count.
+
 Python 3 standard library and git.
 """
 import csv
@@ -44,6 +58,7 @@ VV = os.path.dirname(HERE)
 TRACE = os.path.join(HERE, "check_trace.py")
 ROOT = subprocess.run(["git", "-C", HERE, "rev-parse", "--show-toplevel"], capture_output=True, text=True).stdout.strip()
 HEAD7 = subprocess.run(["git", "-C", ROOT, "rev-parse", "--short=7", "HEAD"], capture_output=True, text=True).stdout.strip()
+HEAD_SHA = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD"], capture_output=True, text=True).stdout.strip()
 TODAY = datetime.date.today().isoformat()
 DESIGN_BLOB = subprocess.run(["git", "-C", ROOT, "rev-parse", "HEAD:hardware/ref_design/board/design.py"],
                              capture_output=True, text=True).stdout.strip()
@@ -102,6 +117,8 @@ REL = """# {id}
 - BOARD_REV: 1
 - BOM sha256: {bom}
 - Commit (full hash): {commit}
+- Case positions sha256: {case}
+- Case positions sha256 at the baseline: {case}
 """
 
 # (name, mode, expected text, mutation). mode: 'structure' wants exit 1 and the text;
@@ -111,7 +128,7 @@ FAULTS = [
     ("duplicate VER id", "structure", "duplicate ID VER-01",
      lambda d: csv_edit(d, "verification.csv", "VER-01", _dup=True)),
     ("dangling DF id in a gate", "structure", "DF-999 is referenced but not defined",
-     lambda d: text_edit(d, "gates.md", "| VER-98 DFMEA:COVERAGE |", "| VER-98 DFMEA:COVERAGE DF-999 |")),
+     lambda d: text_edit(d, "gates.md", "| ADVISORY:VER-98 DFMEA:COVERAGE |", "| ADVISORY:VER-98 DFMEA:COVERAGE DF-999 |")),
     ("action priority off the AIAG-VDA table", "structure", "(AIAG-VDA table)",
      lambda d: csv_edit(d, "dfmea.csv", "DF-04", action_priority="L")),
     ("PASS without a commit", "structure", "PASS needs commit",
@@ -149,8 +166,7 @@ FAULTS = [
     ("a live risk detected by a retired check", "structure", "DF-35: detects VER-11, which is RETIRED",
      lambda d: csv_edit(d, "dfmea.csv", "DF-35", detects=lambda x: x + " VER-11", detection=lambda x: x + "; VER-11")),
     ("a gate criterion naming a retired check", "structure", "G-EVT-04: needs VER-11, which is RETIRED",
-     lambda d: text_edit(d, "gates.md", "| VER-12 VER-30 VER-13 VER-31 VER-70 VER-71 VER-72 VER-83 VER-84 |",
-                         "| VER-12 VER-30 VER-13 VER-31 VER-70 VER-71 VER-72 VER-83 VER-84 VER-11 |")),
+     lambda d: text_edit(d, "gates.md", "| VER-12 VER-30 VER-13 VER-31 ", "| VER-11 VER-12 VER-30 VER-13 VER-31 ")),
     ("vp_map status changed with no evidence", "structure", "with no evidence",
      lambda d: csv_edit(d, "vp_map.csv", "4", status_now="no")),
     ("requirement with no Verified by", "structure", "field 'Verified by' missing or empty",
@@ -182,8 +198,8 @@ FAULTS = [
     ("criterion with a bad board", "structure", "board 'nowhere' not in",
      lambda d: text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| PHASE:ORDER | nowhere |")),
     ("new BOM under an old BOARD_REV", "structure", "BOARD_REV is still",
-     lambda d: (write(d, "releases/REL-REFA-R1-EVT.md", REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit="")),
-                write(d, "releases/REL-REFA-R2-DVT.md", REL.format(id="REL-REFA-R2-DVT", bom="b" * 64, commit="")))),
+     lambda d: (write(d, "releases/REL-REFA-R1-EVT.md", REL.format(case="b" * 64, id="REL-REFA-R1-EVT", bom="a" * 64, commit="")),
+                write(d, "releases/REL-REFA-R2-DVT.md", REL.format(case="b" * 64, id="REL-REFA-R2-DVT", bom="b" * 64, commit="")))),
     ("design baseline differs from HEAD", "structure", "design baseline differs from HEAD",
      lambda d: text_edit(d, "README.md", DESIGN_BLOB, "0" * 40)),
     ("design baseline leaves out the routed board", "structure",
@@ -207,8 +223,15 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-148", pass_limit=lambda x: x + " (as DF-106)")),
     # round 2's sign-off objections (2026-10-26)
     ("round 2 (O): an ORDER check that no step of PLAN.md section (d) names", "structure",
-     "VER-131: an ORDER check that no step of PLAN.md section (d) names",
+     "VER-131: an ORDER check that no numbered step of PLAN.md section (d) names",
      lambda d: plan_d_drop(d, "VER-131")),
+    # round 3's findings (2026-10-26)
+    ("O-R11: an ORDER check named only in the plan's 'what moved where' table is not a step", "structure",
+     "VER-174: an ORDER check that no numbered step of PLAN.md section (d) names",
+     lambda d: plan_d_table_only(d, "VER-174")),
+    ("F-R4: a JLC_FIXED entry with no evidence file does not count", "structure",
+     "JLC_FIXED[J1]: the evidence file hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt does not exist",
+     lambda d: jlc_fixed_entry(d)),
     ("round 2 (F): a requirement whose only check moved to a later phase", "structure",
      "REQ-PWR-13: Phase ORDER, but its earliest live check (VER-99) is EVT",
      lambda d: csv_edit(d, "verification.csv", "VER-99", phase="EVT")),
@@ -229,6 +252,45 @@ def plan_d_drop(d, vid):
         raise SystemExit(f"seed_faults: {vid} not in PLAN.md section (d)")
     sect = re.sub(r"(?<![\w-])" + re.escape(vid) + r"(?![\w-])", vid.replace("-", " "), m.group(0))
     open(path, "w", encoding="utf-8").write(s[:m.start()] + sect + s[m.end():])
+
+
+def plan_d_table_only(d, vid):
+    """O-R11: take one check out of the numbered step rows of PLAN.md section (d) and leave it in the
+    'what moved where' table: the old rule counted any VER id in the section, so the table passed for a
+    step; only a numbered row counts now."""
+    path = os.path.join(d, "PLAN.md")
+    s = open(path, encoding="utf-8").read()
+    m = re.search(r"^## \(d\).*?(?=^## )", s, re.M | re.S)
+    if not m or vid not in m.group(0):
+        raise SystemExit(f"seed_faults: {vid} not in PLAN.md section (d)")
+    out = []
+    for line in m.group(0).splitlines():
+        cells = [c.strip() for c in line.strip().strip("|").split("|")] if line.startswith("|") else []
+        if cells and re.fullmatch(r"\d+(\.\d+)?", cells[0]):
+            line = re.sub(r"(?<![\w-])" + re.escape(vid) + r"(?![\w-])", vid.replace("-", " "), line)
+        out.append(line)
+    # put the check back into the 'what moved where' table, so it is named only there
+    hdr = [i for i, l in enumerate(out) if l.strip().startswith("| Check |")]
+    if not hdr:
+        raise SystemExit("seed_faults: PLAN.md section (d) has no 'what moved where' table")
+    i = hdr[0]
+    while i + 1 < len(out) and out[i + 1].startswith("|"):
+        i += 1
+    out.insert(i + 1, f"| {vid} | ORDER | ORDER | named only in this table, not in a numbered step (O-R11's seeded fault) |")
+    open(path, "w", encoding="utf-8").write(s[:m.start()] + "\n".join(out) + "\n" + s[m.end():])
+
+
+def jlc_fixed_entry(d):
+    """F-R4: a JLC_FIXED entry that names an evidence file nobody committed: it must not silence the CPL
+    check (the file does not exist)."""
+    p = os.path.join(d, "tools", "design_numbers.py")
+    s = open(p, encoding="utf-8").read()
+    old = "JLC_FIXED = {\n"
+    if old not in s:
+        raise SystemExit("seed_faults: design_numbers.py's JLC_FIXED moved")
+    new = (old + "    \"J1\": {\"evidence\": \"hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt\",\n"
+           "           \"offset\": \"JLC's library puts J1's origin 1.50 mm behind its pads' centre\"},\n")
+    open(p, "w", encoding="utf-8").write(s.replace(old, new, 1))
 
 
 def borrow_evidence(d, vid, donor):
@@ -283,13 +345,19 @@ def pin_key(repo):
               f"- Signing key: `{fp}`\n\nPinned key (Alex writes the line")
 
 
-def rebaseline(repo):
-    """Write HEAD's object hashes into the clone's README baseline (after a design commit)."""
+def rebaseline(repo, move_base=True):
+    """Write HEAD's object hashes into the clone's README baseline (after a design commit).  A real re-seed
+    also names HEAD as the baseline commit (F-R3: the hashes must equal that commit's blobs), so move_base
+    does too; the F-R3 fault leaves the old baseline commit in place, as a hash rewritten from HEAD would."""
     p = os.path.join(repo, "hardware/vv/README.md")
     s = open(p, encoding="utf-8").read()
     for path in re.findall(r"^- `(hardware/\S+)` [0-9a-f]{40}\s*$", s, re.M):
         s = re.sub(r"^- `" + re.escape(path) + r"` [0-9a-f]{40}", f"- `{path}` " + git(repo, "rev-parse", f"HEAD:{path}"),
                    s, flags=re.M)
+    if move_base:
+        head = git(repo, "rev-parse", "--short=7", "HEAD")
+        s = re.sub(r"^(- Order branch: `[^`]+` from `)[0-9a-f]+(`)", lambda m: m.group(1) + head + m.group(2), s,
+                   count=1, flags=re.M)
     open(p, "w", encoding="utf-8").write(s)
 
 
@@ -311,7 +379,7 @@ def reopen_closed(repo):
 
 def g_r6(repo, base):
     open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
-        REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base))
+        REL.format(case="b" * 64, id="REL-REFA-R1-EVT", bom="a" * 64, commit=base))
     commit(repo, "release record")
     with open(os.path.join(repo, "hardware/ref_design/board/tools/silk.py"), "a") as f:
         f.write("# a silk change after the release\n")
@@ -341,6 +409,10 @@ def g_claude_waiver(repo, base):
 
 
 def g_part_stale(repo, base):
+    """A design.py part changed after the evidence: the evidence is stale (the part: cover).
+
+    The baseline names the design as it stands at the new commit (F-R3: the register may not be rebaselined
+    from HEAD to hide a design change), so the register itself is sound and only the evidence is stale."""
     reopen_closed(repo)
     fake_pass(repo, "VER-99", base)
     commit(repo, "VER-99 passes")
@@ -350,7 +422,7 @@ def g_part_stale(repo, base):
     open(p, "w").write(s)
     commit(repo, "C1 to 22u")
     rebaseline(repo)
-    commit(repo, "baseline")
+    commit(repo, "the baseline names the design as it stands at this commit")
     return None
 
 
@@ -372,7 +444,7 @@ def g_deferral_ends(repo, base):
 def g_dvt_release(repo, base):
     sha = hashlib.sha256(b"seeded fab zip").hexdigest()
     open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
-        REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base) + f"- Fab zip sha256: {sha}\n")
+        REL.format(case="b" * 64, id="REL-REFA-R1-EVT", bom="a" * 64, commit=base) + f"- Fab zip sha256: {sha}\n")
     fake_pass(repo, "VER-93", base, extra=f"RELEASE: REL-REFA-R1-EVT\nUNITS: 4\nFAB: {sha}\n")
     commit(repo, "VER-93 on an EVT unit")
     return "dvt"
@@ -460,7 +532,7 @@ def g_edited_evidence(repo, base):
 def g_evt_fai_at_pvt(repo, base):
     sha = hashlib.sha256(b"seeded fab zip").hexdigest()
     open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
-        REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base) + f"- Fab zip sha256: {sha}\n")
+        REL.format(case="b" * 64, id="REL-REFA-R1-EVT", bom="a" * 64, commit=base) + f"- Fab zip sha256: {sha}\n")
     fake_pass(repo, "VER-109", base, extra=f"RELEASE: REL-REFA-R1-EVT\nUNITS: 1\nFAB: {sha}\nWHO: Alex\n"
                                            "ARTEFACT: the FAI sheet of unit 1\n")
     commit(repo, "VER-109 on EVT unit 1")
@@ -500,7 +572,7 @@ def g_order_branch_case(repo, base):
 def g_chg_omits(repo, base):
     """O-R21: a change record whose 'What to re-run' leaves out a bench test tied to the part."""
     open(os.path.join(repo, "hardware/vv/releases/REL-REFA-R1-EVT.md"), "w").write(
-        REL.format(id="REL-REFA-R1-EVT", bom="a" * 64, commit=base))
+        REL.format(case="b" * 64, id="REL-REFA-R1-EVT", bom="a" * 64, commit=base))
     commit(repo, "release record")
     p = os.path.join(repo, "hardware/ref_design/board/design.py")
     s = open(p).read()
@@ -565,6 +637,99 @@ def g_cellgap_right_end(repo, base):
     return ("dn", [["cellgap"]])
 
 
+def g_case_move(repo, base):
+    """O-R4: a case.scad commit on the order branch that moves a button position fails the order gate: the
+    positions.json regenerated at that commit differs from the one at the baseline commit."""
+    b = re.search(r"^- Order branch: `[^`]+` from `([0-9a-f]+)`", open(os.path.join(repo, "hardware/vv/README.md")).read(),
+                  re.M).group(1)
+    wt = os.path.join(os.path.dirname(repo), "order_wt_move")
+    git(repo, "worktree", "add", "-q", "-b", "seeded-case-move", wt, b)
+    p = os.path.join(wt, "hardware/ref_design/case/case.scad")
+    s = open(p).read()
+    old = "ss_pitch = 7.5;"
+    if old not in s:
+        raise SystemExit("seed_faults: case.scad's ss_pitch line moved")
+    open(p, "w").write(s.replace(old, "ss_pitch = 7.4;", 1))
+    commit(wt, "the Start/Select pills 0.05 mm closer together")
+    text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
+              "- Order branch: `seeded-case-move`")
+    commit(repo, "README names the seeded case branch")
+    return "order"
+
+
+def g_case_labels(repo, base):
+    """O-R4 (control): a case-only commit that moves no position (2ddb7fe's engraved labels) passes that
+    part of R8 at the order gate: the two positions.json files hash the same."""
+    try:
+        git(repo, "branch", "-q", "seeded-case-labels", "2ddb7fe")
+        text_edit(os.path.join(repo, "hardware/vv"), "README.md", "- Order branch: `ref-design-35in`",
+                  "- Order branch: `seeded-case-labels`")
+        commit(repo, "README names the labels-only branch")
+    except SystemExit:
+        pass          # that commit is not in this clone: the order branch itself is the control
+    return "order"
+
+
+def g_gate_freeze(repo, base):
+    """O-R5: a check moved after Alex's signed GATE@ line fails the order gate (G1)."""
+    approve(os.path.join(repo, "hardware/vv"),
+            f"| A-001 | GATE@{base} | FROZEN | ORDER | the order gate state at this commit | Alex | {TODAY} |")
+    commit(repo, "freeze the gate state")
+    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-138", phase="DVT")
+    commit(repo, "VER-138 moves to DVT")
+    return "order"
+
+
+def g_software_key(repo, base):
+    """O-R12: the clone's pinned key is a plain software key, so the order gate fails K1."""
+    return "order"
+
+
+def g_software_key_accept(repo, base):
+    """O-R12: --accept-software-key lets the gate pass K1 and prints the choice for the release record."""
+    return {"gate": "order", "args": ["--accept-software-key", "--verbose"]}
+
+
+def g_key_exception(repo, base):
+    """O-R12: a line in APPROVALS.md that tries to grant the software-key exception does not count."""
+    fp = re.search(r"^- Signing key: `(SHA256:[A-Za-z0-9+/]+)`",
+                   open(os.path.join(repo, "hardware/vv/README.md")).read(), re.M).group(1)
+    approve(os.path.join(repo, "hardware/vv"),
+            f"| A-001 | KEY@{fp} | ACCEPTED | ORDER | a software key is fine for this order | Alex | {TODAY} |")
+    commit(repo, "a line that tries to grant the software-key exception")
+    return "order"
+
+
+def g_baseline_rewritten(repo, base):
+    """F-R3: README's baseline hash rewritten from HEAD after a design.py edit must fail: the register
+    describes a design the baseline commit does not hold."""
+    p = os.path.join(repo, "hardware/ref_design/board/design.py")
+    s = open(p).read()
+    if "SEEDED_FAULT" in s:
+        raise SystemExit("seed_faults: design.py already carries the seeded marker")
+    open(p, "w").write(s + "\n# SEEDED_FAULT: a design.py edit after the baseline commit\n")
+    commit(repo, "a design.py edit after the baseline")
+    rebaseline(repo, move_base=False)
+    commit(repo, "README's baseline rewritten from HEAD")
+    return None
+
+
+def g_jlc_fixed_uncommitted(repo, base):
+    """F-R4: a JLC_FIXED entry whose evidence file is not committed does not count."""
+    p = os.path.join(repo, "hardware/vv/tools/design_numbers.py")
+    s = open(p).read()
+    old = "JLC_FIXED = {\n"
+    if old not in s:
+        raise SystemExit("seed_faults: design_numbers.py's JLC_FIXED moved")
+    new = (old + "    \"J1\": {\"evidence\": \"hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt\",\n"
+           "           \"offset\": \"JLC's library puts J1's origin 1.50 mm behind its pads' centre\"},\n")
+    open(p, "w").write(s.replace(old, new, 1))
+    commit(repo, "JLC_FIXED names the dry run's preview")
+    open(os.path.join(repo, "hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt"), "w").write(
+        "# VER-28's placement preview\nARTEFACT: the dry run's screenshot of J1 on its pads\n")
+    return None
+
+
 GIT_FAULTS = [
     ("row result disagrees with its evidence", "structure", "the row says FAIL", g_result_disagrees),
     ("evidence past its valid_days", "report", "expired", g_expired),
@@ -604,6 +769,24 @@ GIT_FAULTS = [
      g_cellgap_right_end),
     ("R8: a case.scad commit on the order branch holds the case gate", "gate",
      "seeded-order-case has design commits after", g_order_branch_case),
+    # round 3's findings (2026-10-26)
+    ("F-R3: README's baseline hash rewritten from HEAD after a design.py edit", "structure",
+     "design baseline differs from the baseline commit", g_baseline_rewritten),
+    ("F-R4: a JLC_FIXED entry whose evidence file is not committed does not count", "structure",
+     "JLC_FIXED[J1]: the evidence file hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt is not committed",
+     g_jlc_fixed_uncommitted),
+    ("O-R4: a case.scad commit that moves a button position fails the order gate", "gate",
+     "case commit moves board positions", g_case_move),
+    ("O-R4: a case-only commit that moves no position passes that part of R8", "gate_no",
+     "the same, so the case did not move the board", g_case_labels, "case commit moves board positions"),
+    ("O-R5: a check moved after Alex's signed GATE@ line fails the order gate", "gate",
+     "moved after A-001", g_gate_freeze),
+    ("O-R12: a software signing key fails the order gate", "gate",
+     "FAIL  K1 the pinned signing key is a hardware key", g_software_key),
+    ("O-R12: --accept-software-key passes K1 and prints the choice", "gate_line",
+     "PASS  K1 the pinned signing key is a hardware key", g_software_key_accept),
+    ("O-R12: a line in APPROVALS.md that grants the exception does not count", "gate",
+     "FAIL  K1 the pinned signing key is a hardware key", g_key_exception),
 ]
 
 
@@ -619,19 +802,26 @@ def fresh_copy(tmp, name):
     return d
 
 
-def judge(mode, rc, out, want):
+def judge(mode, rc, out, want, forbid=""):
     if mode == "dn":
         return rc != 0 and want in out
     if mode == "structure":
         return rc == 1 and want in out
     if mode == "report":
         return rc == 0 and want in out
+    if mode == "gate_no":
+        # a control: the text must be there and the fault's own message must not be
+        return want in out and forbid not in out
+    if mode == "gate_line":
+        # a line's state in the gate's output (the gate fails for other reasons)
+        return want in out
     return rc == 1 and want in out
 
 
 def main():
     if "--list" in sys.argv:
-        for name, mode, want, _ in FAULTS + GIT_FAULTS:
+        for f in FAULTS + GIT_FAULTS:
+            name, mode, want = f[0], f[1], f[2]
             print(f"{mode:9} {name}: expects {want!r}")
         return 0
     missed = []
@@ -643,12 +833,14 @@ def main():
         if not clean_ok:
             print(out[-2000:])
             missed.append("clean")
-        for name, mode, want, mutate in FAULTS:
+        for f in FAULTS:
             n += 1
+            name, mode, want, mutate = f[:4]
+            forbid = f[4] if len(f) > 4 else ""
             d = fresh_copy(tmp, name)
             mutate(d)
-            rc, out = run(d, "--gate", "order") if mode == "gate" else run(d)
-            ok = judge(mode, rc, out, want)
+            rc, out = run(d, "--gate", "order") if mode in ("gate", "gate_no", "gate_line") else run(d)
+            ok = judge(mode, rc, out, want, forbid)
             print(f"{'ok' if ok else 'MISSED'}  {mode:9} {name}")
             if not ok:
                 missed.append(name)
@@ -657,6 +849,10 @@ def main():
         # the git-history faults, in a scratch clone of this repository
         repo = os.path.join(tmp, "clone")
         subprocess.run(["git", "clone", "-q", "--shared", ROOT, repo], check=True)
+        # a clone checks out the repository's default branch, which may not be the branch this register
+        # lives on: put the clone's tree on this worktree's HEAD, so every seeded fault sees the same
+        # design files the register describes
+        git(repo, "reset", "-q", "--hard", HEAD_SHA)
         git(repo, "config", "user.name", "Alex")
         git(repo, "config", "user.email", "alex@example.invalid")
         setup_signing(repo, tmp)
@@ -671,11 +867,17 @@ def main():
         if not clone_ok:
             print(out[-2000:])
             missed.append("clean clone")
-        for name, mode, want, mutate in GIT_FAULTS:
+        for f in GIT_FAULTS:
             n += 1
+            name, mode, want, mutate = f[:4]
+            forbid = f[4] if len(f) > 4 else ""
             git(repo, "reset", "-q", "--hard", base)
             git(repo, "clean", "-q", "-fdx", "--", "hardware")
             gate = mutate(repo, base)
+            extra = []
+            if isinstance(gate, dict):
+                extra = gate.get("args", [])
+                gate = gate.get("gate", "order")
             if isinstance(gate, tuple):
                 ok, out, rc = True, "", 0
                 runs = ([[sys.executable, os.path.join(repo, "hardware/vv/tools/design_numbers.py")] + a for a in gate[1]]
@@ -686,8 +888,8 @@ def main():
                     rc = r.returncode
                     ok &= judge(mode, r.returncode, r.stdout + r.stderr, want)
             else:
-                rc, out = run(None, *(["--gate", gate] if gate else []), trace=trace)
-                ok = judge(mode, rc, out, want)
+                rc, out = run(None, *(["--gate", gate] if gate else []), *extra, trace=trace)
+                ok = judge(mode, rc, out, want, forbid)
             print(f"{'ok' if ok else 'MISSED'}  {mode:9} {name} (git)")
             if not ok:
                 missed.append(name)

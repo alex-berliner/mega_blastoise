@@ -56,6 +56,7 @@ CHECKS = {
     "VER-114": ("holes", ["python3", DN, "holes"], True),
     "VER-131": ("drill", ["python3", DN, "drill"], True),
     "VER-137": ("backlight", ["python3", DN, "backlight"], False),
+    "VER-32": ("tempwin", ["python3", DN, "tempwin"], False),
     "VER-138": ("cutoff", ["python3", DN, "cutoff"], False),
     "VER-142": ("mlcc", ["python3", DN, "mlcc"], True),
     "VER-147": ("screws", ["python3", DN, "screws"], False),

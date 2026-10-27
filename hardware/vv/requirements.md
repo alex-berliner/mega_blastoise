@@ -173,8 +173,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: IEC 62368-1 Annex B.4 (single fault conditions) and clause 9 (to confirm); validation_plan #89, #151.
 - Method: A, T
 - Verified by: VER-98, VER-97, VER-168
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
+- Notes: the phase moved to EVT with VER-98 (O-R9: the DFMEA review is advisory at ORDER and binding at G-EVT-16); nothing proves a single-fault limit before that.
 
 ### REQ-PRD-08: Recoverable firmware
 - Level: product
@@ -272,12 +273,12 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Statement: At 99.9% of units, charging shall pause when the cell is above 45 C or below 0 C, or outside the cell maker's charge range if that is narrower: the hot edge at or under 45 C and the cold edge at or over 0 C (one-sided limits), and resume when back in range.
 - Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot).
-- Source: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds, 0.30 V hot and 2.1 V cold at 75 uA (pin_review/u2.json pin 1); validation_plan #30.
+- Source: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
 - Method: A, T
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
-- Notes: with TH1 (B3950 10k) the window is 3.5-47.2 C nominal, so the hot edge fails before any tolerance. No series or parallel resistor fixes both edges (a parallel one that brings the hot edge to 45 C drags the cold edge to -11.6 C). PLAN.md decision DEC-05: a BOM-only TH1 with a higher B (B 4250: 4.9-45.5 C; B 4350: about 5.3-45.0 C nominal) if JLC stocks one, or accept 47.2 C against the cell's datasheet (DF-147).
+- Notes: with TH1 (B3950 10k 1%) charging runs from 3.5 C to 47.2 C at nominal values, 1.8 C to 51.0 C at SLUS810N's limits (the hot trip 3.46 kohm: V_HOT 0.270 V over I_TS 78 uA) and 1.4 C to 51.5 C at the worst corner with TH1's own 1% (`design_numbers.py tempwin`, VER-32). The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more (B 5032 with TH1 exactly nominal); its cold edge is then 6.5 C. B4250 gives 49.5 C and B4350 48.9 C at the worst corner (O-R3). No series or parallel resistor fixes both edges (a parallel one that brings the hot edge to 45 C drags the cold edge to -11.6 C). PLAN.md decision DEC-05: a BOM-only TH1 with a higher B if JLC stocks one, or accept the hot edge against the cell's datasheet (DF-147).
 
 ### REQ-BAT-04: Cell temperature during charge
 - Level: subsystem
@@ -345,7 +346,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Not met on any side at be437f8: the tub's pocket sits 0.25 mm inside the hole's outline on every side (case.scad cell_pocket_fit), so a worst-case 52 x 36 cell against any wall of it is 0.25 mm from the routed edge, -0.15 mm after tolerances, and its lead end 1.35 mm (VER-181 FAIL). Widening one end cannot help while the pocket follows the hole. What passes (design_numbers.py cellgap): the pocket 0.9 mm inside the hole and a cell of at most 51.2 x 35.2 mm (case and cell spec), or a 54.8 x 37.8 mm hole (copper). PLAN.md decision DEC-27 before the order.
+- Notes: Not met on any side at be437f8: the tub's pocket sits 0.25 mm inside the hole's outline on every side (case.scad cell_pocket_fit), so a worst-case 52 x 36 cell against any wall of it is 0.25 mm from the routed edge, -0.15 mm after tolerances, and its lead end 1.35 mm (VER-181 FAIL). An unpushed cell rests against the pocket's left wall, so its lead end has only the pocket's fit (0.25 mm, -0.15 mm after tolerances) against the 1.5 mm this requirement asks for: assembly.md step 5's tape is the only thing that holds the cell pushed (O-R8). Widening one end cannot help while the pocket follows the hole. What passes (design_numbers.py cellgap): the pocket 0.9 mm inside the hole and a cell of at most 51.2 x 35.2 mm (case and cell spec), or a 54.8 x 37.8 mm hole (copper), or a printed stop at the pocket's left end (case-side). PLAN.md decision DEC-27 before the order, with DEC-25.
 
 
 ### REQ-BAT-09: Charge path single faults
@@ -356,8 +357,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan #89; IEC 62368-1 Annex B.4; IEC 62133-2.
 - Method: A, T
 - Verified by: VER-98, VER-133, VER-134, VER-135, VER-169, VER-82, VER-88, VER-168
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
+- Notes: the phase moved to EVT with VER-98 (O-R9).
 
 ### REQ-BAT-10: Deep discharge
 - Level: subsystem
@@ -384,14 +386,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BAT-12: Cutoff accuracy
 - Level: subsystem
 - Board: ref_design
-- Statement: The firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration (REQ-TST-06), at the highest 3V3 load the firmware draws, including units whose 3V3 plus the RT9013's dropout exceeds 3.50 x CV/4.2.
-- Rationale: the ADC reads VBAT/2 against 3V3 itself: in regulation a gain set at charge-done is only as good as the charger's +-1% CV (a cutoff anywhere from 3.465 to 3.535 V), and in dropout the reading rises as the cell falls, so on a unit with 3V3 +2% and 120 mV of dropout it never reaches 3.50 V (3.521 V, VER-138: DF-116). GPIO47 also reads through R17/R18's 235 kohm: every 100 nA of pad leakage moves the pin 23.5 mV, 47 mV of VBAT, the whole +0.05 V window, and it changes with temperature, which a one-point calibration does not remove (O-R15).
-- Source: design.py R17/R18; pinmap.md Battery voltage; pin_review/u3.json; Claude's analysis (O-23, O-49).
+- Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest 3V3 load the firmware draws, including units whose 3V3 plus the RT9013's dropout exceeds 3.50 x CV/4.2.
+- Rationale: the ADC reads VBAT/2 against 3V3 itself: in regulation a gain set at charge-done is only as good as the charger's +-1% CV (a cutoff anywhere from 3.465 to 3.535 V), and in dropout the reading rises as the cell falls, so on a unit with 3V3 +2% and 120 mV of dropout it never reaches 3.50 V (3.521 V, VER-138: DF-116). GPIO47 also reads through R17/R18's 235 kohm: every 100 nA of pad leakage moves the pin 23.5 mV, 47 mV of VBAT, the whole +0.05 V window, and it changes with temperature, which a one-point calibration does not remove (O-R15). The leakage term: the RP2350's IIN is at most 1 uA (rp2350.txt:101199), so up to 0.235 V at the pin and 0.47 V of VBAT, nine times the window. A calibration at 25 C takes in the leakage at 25 C, so the statement is held at 25 C (O-R6), and VER-139 measures the drift with temperature on unit 1.
+- Source: design.py R17/R18; pinmap.md Battery voltage; pin_review/u3.json; the RP2350 datasheet's IIN (rp2350.txt:101199); Claude's analysis (O-23, O-49).
 - Method: A, T
 - Verified by: VER-138, VER-139, VER-67
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
-- Notes: decide before the order (PLAN.md decision DEC-07, with R18): a bench calibration at 3.50 V and a firmware dropout rule, or a 3.6 V cutoff; a voltage reference needs copper.
+- Notes: the phase moved to EVT with VER-138 (F-R2(b)): at ORDER Alex records DEC-07, "470k/470k for EVT, no copper reference, firmware calibration at 25 C", and the copper route (a voltage reference, a lower divider or a buffer) waits for VER-139's drift on unit 1. If the drift over the case's temperature range is more than the window, the divider changes at DVT. The dropout case (3.521 V at the worst corner, VER-138) needs a firmware rule either way.
 
 ### REQ-BAT-13: Charge timeout
 - Level: subsystem
@@ -607,9 +609,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan #5, #123; Claude's proposal, revised (O-22).
 - Method: A
 - Verified by: VER-31, VER-36
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
-- Notes: named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (pin_review/u4.json pin 58, waived there by the design session; DF-95), unless Alex takes R18 = 56k (PLAN.md decision DEC-07); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
+- Notes: the phase moved to EVT with VER-36 (F-R2(d): check_pins' tooling changes no copper); the two findings that set the BOM, exception (2) and the second 4.7 uF on +1V1, are answered by hand before the order (DEF-61, through VER-34 and VER-23). Named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (pin_review/u4.json pin 58, waived there by the design session; DF-95), unless Alex takes R18 = 56k (PLAN.md decision DEC-07); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
 
 ### REQ-PWR-15: 3V3 budget
 - Level: subsystem
@@ -630,9 +632,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: pin_review/u2.json, u3.json; Claude's analysis (O's sign-off objection on the cell path, DF-101).
 - Method: A, T
 - Verified by: VER-177, VER-97
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
-- Notes: PLAN.md decision DEC-17: R14 47k and R43 220k (BOM only) raise it to about 9.1 V; 20 V needs a clamp (copper); or accept for EVT.
+- Notes: PLAN.md decision DEC-17: R14 47k and R43 220k (BOM only) raise it to about 9.1 V; 20 V needs a clamp (copper); or accept for EVT. The decision is made before the order, because DEF-50 keeps Gate ORDER and closes on it; the check (VER-177) binds at G-EVT-04, so an acceptance for EVT does not leave a failing ORDER check behind (O-R9; F-R2(f) wanted VER-177 at ORDER, but DEF-50's Gate already holds the BOM decision there).
 
 ## Subsystem: core (MCU)
 
@@ -734,7 +736,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the copied core is the most layout-sensitive part; the datasheet recommends a second 4.7 uF that design.py lacks.
 - Source: RP2350 datasheet 6.3.8.1, Table 1688 (pin_review/u4.json pin 10).
 - Method: A, T
-- Verified by: VER-23, VER-84
+- Verified by: VER-23, VER-187, VER-84
 - Phase: EVT
 - Status: PROPOSED
 - Notes: write the DVDD minimum and maximum into VER-84 from Table 1688 on first use.
@@ -746,9 +748,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the firmware already fills about 1.37 MB; Gen 3 data and flash logging are still to land (DF-121).
 - Source: crates/mega_blastoise_fw/memory-rp2350.x; Claude's proposal (O-53).
 - Method: A
-- Verified by: VER-151, VER-150
+- Verified by: VER-151, VER-185, VER-150
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: the llvm-size figure is VER-151's (ORDER); the flash map and the scripts/check.sh step are VER-185's (EVT) (F-R2(f)).
 
 ### REQ-MCU-11: A bring-up image for the ordered chip
 - Level: subsystem
@@ -767,8 +770,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The panel shall run 4-wire 8-bit SPI (IM2-0 = 111, as design.py straps them) and return 0x94 0x88 for ID4 (0xD3) at a read clock of 5 MHz or less.
-- Rationale: proves the interface straps and the read path.
-- Source: ER-TFT035IPS-6 datasheet section 4.1 (pin_review/panel.json); the ILI9488's serial read cycle (VER-34 quotes it); bringup.md display step 2.
+- Rationale: proves the interface straps and the read path. The read is expected on SDO (panel pin 33); VER-43 reads ID4 there first and, if nothing answers, on SDA with a turnaround, and records which pin answered (F-R8: this statement is restated only if the read turns out to be on SDA, and no order action follows from it).
+- Source: ER-TFT035IPS-6 datasheet section 4.1 (pin_review/panel.json); the ILI9488's serial read cycle (trc 150 ns, so 6.7 MHz at most; VER-34 quotes it); bringup.md display step 2.
 - Method: T
 - Verified by: VER-43, VER-60
 - Phase: ORDER
@@ -778,7 +781,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: SPI writes at 20 MHz shall draw 10 full 320 x 480 frames (461 kB each in 18-bit colour) of a checker pattern with 0 corrupted pixels.
-- Rationale: the ILI9488 takes only 18-bit colour over SPI; 20 MHz is a conservative clock until VER-34 quotes its serial write cycle.
+- Rationale: the ILI9488 takes only 18-bit colour over SPI; 20 MHz is the in-spec clock: the serial write cycle is 50 ns (twc, 4-line SPI, ili9488.txt:16258, quoted by VER-34), so 20 MHz is at the limit and a clock over 20 MHz is out of spec (O-R1). A 150 MHz clk_peri gives 18.75 MHz (or exactly 20 MHz with a 120 MHz clk_peri and CPSDVSR 6).
 - Source: ILI9488 datasheet; bringup.md display step 4; validation_plan #16, #143.
 - Method: T
 - Verified by: VER-61
@@ -795,6 +798,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-02, VER-43, VER-136
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: the map is a fold, not a mirror: once the contacts face the connector's contacts, the tail's contact strip can meet a bottom-contact FH12-50S in only one way, and the product's and the loose breakout's panel-side pairing stays 51-j (F-R1). What is not proved is the bought breakout's header numbering: VER-43 finds it by diode test (which header pin is panel 1), checks the GND pins' continuity, records the header pin each panel pin lands on and wires the dev board by the panel's own pin names (1 LEDA, 2-3 LEDK, 7-9 IM, 10 RESET, 33 SDO, 34 SDA, 36 SCL, 37 D/CX, 38 CSX, 40-42 VDDI/VCI, 11-32 GND). VER-136 adds the fold's reach and seating, not a different map.
 
 ### REQ-DSP-04: FPC fit
 - Level: subsystem
@@ -876,13 +880,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-11: Redraw time
 - Level: subsystem
 - Board: ref_design
-- Statement: A full-screen 320 x 480 redraw, sent to the ILI9488 as 18-bit colour, shall complete in 120 ms or less (Alex sets the number: DEC-13), and a battle-text update in 50 ms or less, with the frame held in 320 KB of RAM or less.
-- Rationale: the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 92 ms at 40 MHz and 184 ms at 20 MHz, and an 18-bit frame does not fit beside the game; the RGB565 frame is expanded on the fly (DF-180). The 2.4 in panel's RGB565 that took this risk away left again in 79de1f7.
+- Statement: A full-screen 320 x 480 redraw, sent to the ILI9488 as 18-bit colour, shall complete in 220 ms or less (Alex sets the number: DEC-13), and a battle-text update in 50 ms or less, with the frame held in 320 KB of RAM or less, the battle screens redrawn in parts.
+- Rationale: the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 184 ms at 20 MHz and 197 ms at 18.75 MHz from a 150 MHz clk_peri; the serial write cycle is 50 ns (twc) and the read cycle 150 ns (trc, 6.7 MHz; ili9488.txt:16258, :16262), so a clock over 20 MHz is out of spec and the 40 MHz figure this requirement used to quote was never in spec (O-R1). 220 ms leaves 23 ms over the bytes at 18.75 MHz for the commands and the colour expansion; 200 ms would leave 3 ms. An 18-bit frame does not fit beside the game; the RGB565 frame is expanded on the fly (DF-180). The 2.4 in panel's RGB565 that took this risk away left again in 79de1f7.
 - Source: ILI9488 datasheet (18-bit only over serial); crates/mega_blastoise_fw; validation_plan #180.
 - Method: A, T
 - Verified by: VER-43, VER-61
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: PLAN.md decision DEC-13 is a copper decision in step 1, with three options: (a) keep SPI, this requirement at 220 ms a full frame and 50 ms a text update, the screens redrawn in parts (no copper); (b) the 8080 8-bit bus on J3 pins 19-26 plus WRX, RGB565 at about 12 ms a frame (copper: a local re-route by J3, PIO firmware); (c) is not offered: clocks over 20 MHz are out of spec.
 
 ### REQ-DSP-12: Backlight halves match at low duty
 - Level: subsystem
@@ -1174,8 +1179,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: Claude's review (F-28).
 - Method: A
 - Verified by: VER-165
-- Phase: ORDER
+- Phase: CASE
 - Status: PROPOSED
+- Notes: the phase moved to CASE with VER-165 (F-R9: the connector mouths are a case matter; a case defect does not hold the order back).
 
 ### REQ-MEC-12: MLCCs clear of the screw bosses
 - Level: subsystem
@@ -1326,9 +1332,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the right family in the wrong variant passes every other check.
 - Source: validation_plan #2, #122.
 - Method: A, I
-- Verified by: VER-14, VER-130, VER-28, VER-41
+- Verified by: VER-14, VER-186, VER-130, VER-28, VER-41
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: VER-14 is the by-hand pass at ORDER (every line of JLC's matched-parts page against design.py, saved in VER-28's evidence); the script over the parts database is VER-186's, at PVT (F-R9).
 
 ### REQ-FAB-07: Orientation
 - Level: board
@@ -1344,8 +1351,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-07.R: Orientation and centroids (ref_design)
 - Level: board
 - Board: ref_design
-- Statement: Every polarised part's pin 1 in JLC's placement preview shall match the board's pin 1, U1, U2, U3, U4, U8, U9 and J3's pin-1 end included, and every CPL position shall be within 0.1 mm of the part's pad centre (J1, J2, J3 and J4 corrected), with 0 unexplained differences.
-- Rationale: KiCad's footprint zero differs from JLC's for some parts (DEF-14), and J1's origin is 1.50 mm, J2's and J4's 0.95 mm and J3's 0.23 mm off their pads' centre (VER-176, DEF-33).
+- Statement: Every polarised part's pin 1 in JLC's placement preview shall match the board's pin 1, U1, U2, U3, U4, U8, U9 and J3's pin-1 end included, and every CPL position shall be within 0.1 mm of the part's pad centre, or the reference's origin offset shall be recorded in a JLC_FIXED entry that names the placement preview screenshot and the offset JLC's library applies (J1, J2, J3 and J4: 1.50, 0.95, 0.95 and 0.23 mm, which may be zero), with 0 unexplained differences.
+- Rationale: KiCad's footprint zero differs from JLC's for some parts (DEF-14), and J1's origin is 1.50 mm, J2's and J4's 0.95 mm and J3's 0.23 mm off their pads' centre (VER-176, DEF-33). Whether JLC's own library places them off their pads is unknown until the placement preview (O-R7): no CPL row moves before the dry run, and a per-reference correction table in fab.py is filled only from a JLC_FIXED entry that names the preview screenshot and the offset JLC's library applies, which may be zero. Such an entry counts only when its evidence file is committed and names the designator (F-R4).
 - Source: validation_plan #9, #116; 1fd0956.
 - Method: I, A
 - Verified by: VER-28, VER-29, VER-176
@@ -1371,8 +1378,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Source: validation_plan #103.
 - Method: I
 - Verified by: VER-26
-- Phase: ORDER
+- Phase: DVT
 - Status: PROPOSED
+- Notes: the phase moved to DVT with VER-26 (O-R9: the e-test is advisory at ORDER, with the default "send no netlist", and binding at G-DVT-01). JLC e-tests against its own Gerber netlist, and an IPC-356 file without merged net ties would only trigger false shorts (F-R9).
 
 ### REQ-FAB-10: Stock
 - Level: board
