@@ -913,3 +913,8 @@ Another model audited the grid: 10 findings. Each was checked against the regist
 Rejected in part, finding 2: VER-98 keeps class 7. Its pass limit reads every subsystem's fault
 rows, which is what class 7 is; class 19 is the right-baseline class, which it does not check.
 After finding 1 it no longer clears any cell before the order (it is an EVT inspection).
+
+The run after the audit: the scripted checks re-run at c1c61f0 give the same numbers as at
+fec2fc4 (VER-147 adds its bom.md line: M2 x 6 on both sides), VER-188 passes with the new
+never-existed rule, and VER-129 at 6289d2a catches 95 of 95 seeded faults, so DEF-35 and DEF-52
+are CLOSED again. The default mode exits 0; the order gate fails, R9 among its criteria.

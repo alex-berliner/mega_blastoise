@@ -1,14 +1,10 @@
 # VER-129 seed_faults
 DATE: 2026-10-27
-COMMIT: c1c61f0ad8dbca47fc07c30a68d29171673ff8da
+COMMIT: 6289d2a8ea83938e220f8ec72bc2ff6d28d33f6e
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
-FAIL      clean copy exits 0 (exit 1)
-STRUCTURE: 2 error(s)
-  defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-  defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-
+ok      clean copy exits 0
 ok  structure duplicate VER id
 ok  structure dangling DF id in a gate
 ok  structure action priority off the AIAG-VDA table
@@ -43,190 +39,70 @@ ok  structure criterion with a bad board
 ok  structure new BOM under an old BOARD_REV
 ok  structure design baseline differs from HEAD
 ok  structure design baseline leaves out the routed board
-MISSED  gate      an advisory-only check made binding
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      an advisory-only check made binding
 ok  structure O-R3: an inspection PASS on a design file it does not cover
 ok  structure O-R3: an inspection's evidence with no WHO or ARTEFACT
 ok  structure O-R5: a defect with no Gate
-MISSED  gate      O-R5: a CASE defect moved to the order gate blocks it
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      O-R5: a CASE defect moved to the order gate blocks it
 ok  structure O-R8: occurrence 3 with no 'Similar:'
 ok  structure F-R14: a live check cites a RETIRED row
 ok  structure round 2 (O): an ORDER check that no step of PLAN.md section (d) names
 ok  structure O-R11: an ORDER check named only in the plan's 'what moved where' table is not a step
 ok  structure F-R4: a JLC_FIXED entry with no evidence file does not count
 ok  structure round 2 (F): a requirement whose only check moved to a later phase
-MISSED  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
 ok  structure round 2 (F): detection rating 2 on a single 'detects' check
 ok  structure VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')
 ok  structure VER-188: a live check names a net that left design.py (LS_GATE)
 ok  structure VER-188: a live requirement names a part that left design.py (J6 outside 'Was:')
 ok  structure grid: a live check that names no classes
 ok  structure grid: a NOT_NEEDED cell that a check targets
-MISSED  gate      grid R9: a NOT_NEEDED reason dropped leaves a GAP the order gate holds
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      grid R9: an ACCEPTED_GAP Alex has not signed is still a GAP
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      grid R9: a grid.md edited by hand fails the order gate
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  report    grid: the default mode reports the GAP count
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      grid R9: a NOT_RUN bench test of phase EVT re-tagged into an empty cell does not clear it
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  report    grid: a class 15 analysis that has not run is no paper estimate
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      grid R9: a NOT_NEEDED reason dropped leaves a GAP the order gate holds
+ok  gate      grid R9: an ACCEPTED_GAP Alex has not signed is still a GAP
+ok  gate      grid R9: a grid.md edited by hand fails the order gate
+ok  report    grid: the default mode reports the GAP count
+ok  gate      grid R9: a NOT_RUN bench test of phase EVT re-tagged into an empty cell does not clear it
+ok  report    grid: a class 15 analysis that has not run is no paper estimate
 ok  structure VER-188: a live check names a ref no design.py ever had (R666, a typo)
-FAIL      clean clone exits 0 (exit 1)
-STRUCTURE: 2 error(s)
-  defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-  defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-
+ok      clean clone exits 0
 ok  structure row result disagrees with its evidence (git)
 ok  report    evidence past its valid_days (git)
-MISSED  gate      R6: a routed-board script changed after a release with no change record (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      an acceptance used past its scope (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      a waiver Alex signed meets its criterion (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      R6: a routed-board script changed after a release with no change record (git)
+ok  gate      an acceptance used past its scope (git)
+ok  gate      a waiver Alex signed meets its criterion (git)
 ok  structure a waiver signed in a commit with a Claude trailer (git)
 ok  report    staleness through a part: cover (git)
-MISSED  gate      R5: an uncommitted change under passed evidence (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      a deferral used past its scope (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      an EVT unit's result at the DVT gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      R5: an uncommitted change under passed evidence (git)
+ok  gate      a deferral used past its scope (git)
+ok  gate      an EVT unit's result at the DVT gate (git)
 ok  structure a covers glob met only by an untracked file (git)
 ok  structure a statement edited after its approval (git)
 ok  structure O-R4: an approval line in an unsigned plain commit (git)
 ok  structure O-R4: an approval line written in a merge commit (git)
-MISSED  gate      O-R2: uncommitted register and evidence edits (VER-138 FAIL to PASS) (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R2: a PASS whose evidence was never committed (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R2: a PASS whose evidence was edited after its commit (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R11: an EVT first article at the PVT gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R13: a design commit on the order branch after the baseline (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      O-R2: uncommitted register and evidence edits (VER-138 FAIL to PASS) (git)
+ok  gate      O-R2: a PASS whose evidence was never committed (git)
+ok  gate      O-R2: a PASS whose evidence was edited after its commit (git)
+ok  gate      O-R11: an EVT first article at the PVT gate (git)
+ok  gate      O-R13: a design commit on the order branch after the baseline (git)
 ok  structure O-R21: a change record that omits a bench test of the changed part (git)
 ok  dn        O-R1: a comment in fab.py does not pass the CPL or drill check (git)
 ok  dn        O-R14: a back-side test point next to the cell's hole fails th1 (git)
 ok  structure round 2 (O): an approval signed by another key in the allowed-signers file (git)
 ok  structure round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it (git)
 ok  dn        round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing (git)
-MISSED  gate      R8: a case.scad commit on the order branch holds the case gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
+ok  gate      R8: a case.scad commit on the order branch holds the case gate (git)
 ok  structure F-R3: README's baseline hash rewritten from HEAD after a design.py edit (git)
 ok  structure F-R4: a JLC_FIXED entry whose evidence file is not committed does not count (git)
-MISSED  gate      O-R4: a case.scad commit that moves a button position fails the order gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate_no   O-R4: a case-only commit that moves no position passes that part of R8 (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R5: a check moved after Alex's signed GATE@ line fails the order gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R5: a check made advisory after Alex's signed GATE@ line fails the order gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R12: a software signing key fails the order gate (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-MISSED  gate_no   grid R9: a gap Alex accepts in a signed GRID line leaves R9 (git)
-          exit 1 ; output tail: STRUCTURE: 2 error(s)
-            defects.md:365: DEF-35: CLOSED but VER-129 has not passed on fresh evidence
-            defects.md:538: DEF-52: CLOSED but VER-129 has not passed on fresh evidence
-          
-95 seeded faults, 66 caught
-RESULT: FAIL
+ok  gate      O-R4: a case.scad commit that moves a button position fails the order gate (git)
+ok  gate_no   O-R4: a case-only commit that moves no position passes that part of R8 (git)
+ok  gate      O-R5: a check moved after Alex's signed GATE@ line fails the order gate (git)
+ok  gate      O-R5: a check made advisory after Alex's signed GATE@ line fails the order gate (git)
+ok  gate      O-R12: a software signing key fails the order gate (git)
+ok  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
+ok  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
+ok  gate_no   grid R9: a gap Alex accepts in a signed GRID line leaves R9 (git)
+95 seeded faults, 95 caught
+RESULT: PASS
 
-exit 1
-RESULT: FAIL
+exit 0
+RESULT: PASS
