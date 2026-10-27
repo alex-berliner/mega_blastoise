@@ -16,9 +16,50 @@ revision straps, both gone).
 Pokemon may become one game of many instead of the first-class game. That raises the value of
 removable storage and a way to load teams, saves and data without reflashing.
 
-Open design question that drives most of this: are games baked into the firmware (SD holds
-saves, teams and data only), or loadable from the card (the device needs a runtime such as
-WASM, Lua or an emulator core)? Decide this before the board spin.
+Decision (Alex, 2026-10-27): both. Some games are built into the firmware, others are game
+files, and the launcher finds game files on both the SD card and an internal flash
+filesystem.
+
+### Game catalog
+
+The launcher builds one list from three sources:
+
+1. Built-in games, compiled into the firmware (Pokemon today).
+2. Game files on an internal flash filesystem (a littlefs partition in the 2 MB; its size
+   depends on how big the firmware ends up, not checked).
+3. Game files on the SD card, under one folder (for example `/games`).
+
+Rules:
+
+- Each game file carries a manifest with an id and a version. If the same id is in more than
+  one place, the launcher shows it once and runs the newest.
+- A game on SD is listed only while the card is in. An "install" action copies it to
+  internal flash so it works without the card.
+- Saves go next to where the game runs from, or to internal flash if the card might be
+  removed (to decide).
+- Mass storage mode (section 2) exposes the SD card only; the internal filesystem is reached
+  through the device's own UI or the USB bridge.
+
+### Game file format: WASM (proposed)
+
+A game file is a `.wasm` module plus its manifest. The firmware runs it in a WASM
+interpreter (for example `wasmi`, which supports `no_std`; fit in 520 kB of RAM not
+checked). The web build runs the same file in the browser's own WASM engine.
+
+Why WASM over native code or Lua:
+
+- One file runs on both the device and the web build. That carries the zero-drift rule over
+  to loaded games: the device and the browser run the same game file, not two ports.
+- Sandboxed: a broken or hostile game file cannot corrupt the firmware or the flash.
+- Speed: an interpreter is much slower than native code (roughly 10 to 50 times, not
+  measured), so the host does the heavy work. Games call host functions to draw (blit, fill,
+  text), read input, play audio and read or write saves. Turn-based and simple 2D games fit;
+  fast full-screen games may need a native built-in instead.
+
+Alternative kept in reserve: native position-independent Cortex-M33 code installed to
+internal flash and run in place (XIP). Fast, but no sandbox and no web-build parity.
+
+Host API, manifest format and RAM budget are not designed yet.
 
 ## 2. Storage
 
@@ -144,7 +185,8 @@ save 2 more.
 
 ## 8. Decisions needed
 
-1. Games baked into firmware, or loadable from SD (decides whether a runtime is needed)?
+1. Decided 2026-10-27: both, with game files found on SD and internal flash. Still open: WASM
+   as the game file format (section 1)?
 2. Respin before the 5-board JLC order for the parallel display and the SD slot, or keep SPI
    and redraw only changed regions for now?
 3. SD over SDIO 4-bit (faster, 6 pins plus card detect) or SPI mode (4 pins)? Both fit.
@@ -163,4 +205,4 @@ save 2 more.
 - That the EastRising module's 8080 mode works on the bench (set IM `011`, read the ID).
 - Chrome on Android WebUSB with this device (plug-in test above).
 
-Last updated: 2026-10-27 07:48 EDT
+Last updated: 2026-10-27 07:52 EDT
