@@ -5,12 +5,12 @@
    4.9
   ],
   "speaker": [
-   3.8,
-   7.3
+   0.9,
+   4.4
   ],
   "panel": [
    6.2,
-   8.6
+   8.65
   ],
   "silicone": [
    3.8,
@@ -30,26 +30,26 @@
   ],
   "top": [
    2.65,
-   9.55
+   9.6
   ],
   "board": [
    2.2,
    3.8
   ]
  },
- "case_h": 9.55,
+ "case_h": 9.6,
  "z_board": 2.2,
  "size": [
   77.1,
-  132.0
+  155.8
  ],
  "rev": 1,
- "commit": "f222589",
+ "commit": "16e358c",
  "dirty": false,
- "built": "2026-10-25",
+ "built": "2026-10-27",
  "inputs": {
-  "board/battler.kicad_pcb": "eb810304f358999cc2d0f2491c0302bf70095ef5",
-  "case/case.scad": "926a0542a85932be30c97e8280aedf527b489b8e",
+  "board/battler.kicad_pcb": "8ae5446e6bfecde96b576d6afa99babae7305603",
+  "case/case.scad": "07cae29bb29ce02439fdf8b2b0bf3314d3118646",
   "viewer/pieces.scad": "cb3b97312271073b681af5097d6d36f638f0f773",
   "viewer/build.py": "6b587a93c10bf9a2ea1064f66c5a1fe9b0753a82"
  }
