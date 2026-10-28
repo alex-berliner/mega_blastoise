@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-28
-COMMIT: 5bf317a96babf44a1f7b35ca71466ad7f6b8e18d
+COMMIT: 35f1ab81408e3c439dc8bb51cebdb0988ffdf4eb
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -69,12 +69,7 @@ ok  structure F-R1: a defect marked FIXED while its own Status text says it stay
 ok  structure F-R3: an analysis that reads pinmap.md without naming it in covers
 ok  structure F-R5: a live row pairs J4 with the PicoBlade family (DF-48 before its rewrite)
 ok  structure O-R8: a live check names a gone net in KiCad's path form (/USB_Charger/VBUS_D5)
-MISSED  gate      O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)
-          exit 1 ; output tail: AIL  R9 the coverage grid has no GAP in classes 1-15 (grid.md)
-                    12 cells of classes 1-15 are GAP (1 audio planned: VER-189; 1 buttons planned: VER-189; 1 case planned: VER-189; 1 cell planned: VER-37 VER-160 VER-189; 1 display planned: VER-189; 1 mcu planned: VER-189; 1 power planned: VER-189; 1 storage planned: VER-189; 1 usb_debug planned: VER-189; 2 audio planned: VER-34 VER-40; 2 cell planned: VER-37 VER-40; 5 case planned: VER-192)
-                    grid.md is not what the register gives: run python3 hardware/vv/tools/grid.py
-          RESULT: FAIL (23 of 28 not met); 1 N/A, 6 advisory, 2 retired
-          
+ok  gate      O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)
 ok  structure accept: a defect ACCEPTED with no DF-ACCEPT line at all
 ok  gate      sources: a PASS whose datasheet is not on disk is BLOCKED at the order gate
 ok  report    sources: the default mode reports a PASS on a datasheet not on disk as BLOCKED
@@ -128,8 +123,8 @@ ok  gate_no   accept: a check outside the accepted defect's list stays FAIL (DEF
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
-117 seeded faults, 116 caught
-RESULT: FAIL
+117 seeded faults, 117 caught
+RESULT: PASS
 
-exit 1
-RESULT: FAIL
+exit 0
+RESULT: PASS
