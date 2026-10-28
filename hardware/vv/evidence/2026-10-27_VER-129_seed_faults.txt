@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-27
-COMMIT: 0b7400e58ad4a4aedda0d7bc57c6b52c61ecb427
+COMMIT: 69e9c0ccdaac0f838974a3a6f8f15a7f82c5ff2e
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -69,10 +69,7 @@ ok  structure F-R1: a defect marked FIXED while its own Status text says it stay
 ok  structure F-R3: an analysis that reads pinmap.md without naming it in covers
 ok  structure F-R5: a live row pairs J4 with the PicoBlade family (DF-48 before its rewrite)
 ok  structure O-R8: a live check names a gone net in KiCad's path form (/USB_Charger/VBUS_D5)
-MISSED  gate      O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)
-          exit 1 ; output tail: STRUCTURE: 1 error(s)
-            defects.md:406: DEF-39: CLOSED but VER-137 has not passed on fresh evidence
-          
+ok  gate      O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)
 ok      clean clone exits 0
 ok  structure row result disagrees with its evidence (git)
 ok  report    evidence past its valid_days (git)
@@ -116,8 +113,8 @@ ok  gate_line O-S5: a check moved later with no GATE@ line is listed by the orde
 ok  dn        VER-18: a connector's pad past the board's outline fails edge (a courtyard alone does not) (git)
 ok  gate_line O-R1: a defect taken from OPEN to FIXED with no GATE@ line is listed by the order gate (G0) (git)
 ok  gate      O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1) (git)
-107 seeded faults, 106 caught
-RESULT: FAIL
+107 seeded faults, 107 caught
+RESULT: PASS
 
-exit 1
-RESULT: FAIL
+exit 0
+RESULT: PASS

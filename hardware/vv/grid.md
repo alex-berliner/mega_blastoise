@@ -52,7 +52,7 @@ A cell reads: COVERED, worst <status> (FAIL, NOT_BUILT, NOT_RUN, PASS) among the
 ## Whole-register classes
 
 - E19 Right baseline: FAIL: VER-35 VER-39 VER-42 VER-143 VER-161 VER-173 VER-188
-- E20 Can the check fail: FAIL: VER-22 VER-129
+- E20 Can the check fail: NOT_BUILT: VER-22 VER-129
 
 ## Gaps, each with its proposed check
 
@@ -75,7 +75,7 @@ The order gate holds 12 cells of classes 1-15 (0 GAP, 12 planned); classes 16-18
 - 5 Ratings and derating / case: VER-192 Case material temperature rating against its hottest inner surface (A, NOT_BUILT, CASE). Pass: the heat deflection temperature at least 15 C above the hottest inner surface; the material's datasheet saved with its sha256
 - 15 Thermal / audio: VER-200 The amplifier's heat on paper: U7 at its worst dissipation against its junction maximum (A, NOT_RUN, ORDER). Pass: U7's junction at or under its junction maximum less 20 C at 40 C ambient in USB play, its thermal resistance and junction maximum quoted from fm8002a.pdf with its line; else the volume cap VER-144's firmware rule proposes, sized from those numbers
 
-## FAIL (28)
+## FAIL (27)
 
 - VER-13 Copper resistance and IR drop on the power paths (IPC-2152) (EVT): classes 4 5 15; power cell
 - VER-21 Return paths: SPI, USB, PWM and shift-register tracks over B.Cu pour gaps (ORDER): classes 12; display usb_debug audio buttons
@@ -86,7 +86,6 @@ The order gate holds 12 cells of classes 1-15 (0 GAP, 12 planned); classes 16-18
 - VER-103 Shelf and deep-discharge estimate (EVT): classes 4 6; cell power
 - VER-108 USB D+/D- stub and pair length (ORDER): classes 12; usb_debug
 - VER-125 Footprints against the manufacturers' land patterns (ORDER): classes 9; power cell mcu display audio buttons usb_debug
-- VER-129 Seeded faults: check_trace.py fails on each structural fault (ORDER): classes 20; register
 - VER-130 BOM, CPL and PCB fields against design.py (check_bom_cpl.py) (EVT): classes 8 11; power cell mcu display audio buttons usb_debug
 - VER-132 Fab file content (check_fab_content.py, reusing membrane/tools/gerb.py) (ORDER): classes 10; power cell mcu display audio buttons usb_debug
 - VER-138 Cutoff accuracy analysis: the calibrated reading against the true cell voltage (EVT): classes 4; cell power
@@ -119,4 +118,4 @@ The order gate holds 12 cells of classes 1-15 (0 GAP, 12 planned); classes 16-18
 - 12 Signals and timing / cell: The cell's subsystem carries DC only: VBAT_DIV is filtered by C8 (100 nF) and copied to VBAT_SENSE by U10, a unity buffer, at DC (since 71737ae), and TH1's TS node is a DC level. No clock or data passes through it; how U10 settles the ADC's sample charge is read on unit 1 by VER-67 (the ADC against a meter).
 - 12 Signals and timing / case: The case carries no signal: there is no radio, antenna or cable through it. Static through its seams is class 7 (VER-95, VER-170).
 
-Last updated: 2026-10-27 22:10 EDT (generated)
+Last updated: 2026-10-27 22:16 EDT (generated)
