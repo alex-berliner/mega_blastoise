@@ -125,7 +125,20 @@ at their tags; none carries, since each named that board's parts.
 
 ## (i) The gate today
 
-Filled in by the run at the end of this re-seed (below).
+**Run at a2e364e (2026-10-28, step 2 of the F1C200s re-target).** Default mode: STRUCTURE OK, 4
+warnings (the DMM pass bands), the register at NM-01 (NM-02 met out of order). run_checks.py ran the
+register's own checks only: VER-188 and VER-220 PASS at 1f7d492, VER-129 PASS at 8fbda5c (140 of 140
+seeded faults caught, 23 of them new for this re-target); every F1C200s check was left unrun, since the
+baseline is the ESP32-S3 board's files. DEF-35 and DEF-52 went FIXED while VER-129 was stale and are
+CLOSED again on its PASS. Counts: requirements 175 (134 PROPOSED, 33 DROPPED, 8 RETIRED); checks 248
+(3 PASS, 58 NOT_RUN, 133 NOT_BUILT, 25 DROPPED, 24 RETIRED, 5 CUT); DFMEA rows 247 (45 live, 31 of
+them H); defects 102 (85 DROPPED, 13 RETIRED, 2 CLOSED, 1 FIXED, 1 OPEN). The grid: 126 cells of
+classes 1-15 planned, 0 bare GAP, 9 NOT_NEEDED.
+
+Order gate: FAIL, 25 of 29 not met once this section is committed (G-ORD-24, R5, R6 and R8 pass). It
+fails as it should: there is no F1C200s design yet, so every F1C200s check is unrun (G-ORD-22, R2,
+R9), R7 fails on the dropped board's baseline, the chip gate has not run (G-ORD-28), no requirement is
+approved (R1) and DEF-47 is open (R4).
 
 ## (k) The coverage grid
 
