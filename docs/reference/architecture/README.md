@@ -41,7 +41,6 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 | `patches/once_cell/` | A patched dependency for `no_std` targets |
 | tools/showdown-parity/ | Node harness around the real Showdown |
 | `scripts/` | The gate, UI probe, console, build and publish helpers |
-| `firmware/bringup/` | Standalone bring-up crates |
 | `site/` | The Pages front page |
 | [hardware/README.md](../../../hardware/README.md) | Hardware index |
 | [hardware/stripboard_v2/](../../../hardware/stripboard_v2/BUILD.md) | The built board: generator, build guide, assembly stages, models |

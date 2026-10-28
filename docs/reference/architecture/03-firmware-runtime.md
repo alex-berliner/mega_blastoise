@@ -51,5 +51,3 @@ survives a reset. Features: `input-debug` (held-key overlay), `mem-profile`, `tr
 
 There is no firmware yet for the reference design: it needs the `rp235xb` chip feature, its pin
 map, an ILI9488 panel driver (18-bit colour over SPI, unlike the ST7796), audio and power control.
-Bring-up tools (an RP2350 blink and a recovery-reset helper) are in
-[firmware/bringup/](../../../firmware/bringup/rp2350_blink/README.md).

@@ -8,7 +8,6 @@ Layout:
 - `crates/`: the Rust workspace. `ps_sim`, `ps_client`, `ps_dex`, `ps_protocol` (the Showdown
   port: server, client, dex and protocol), `ps_harness` (the protocol diff), `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (firmware), `mega_blastoise_test` (PC),
   and `mega_blastoise_web` (its own wasm workspace, the browser build).
-- `firmware/bringup/`: standalone bring-up tools (`rp2350_blink`, `esp32_reset`).
 - `hardware/`: the boards and cases ([index](hardware/README.md)). `docs/`: notes, including `docs/reference/architecture/`. `scripts/`: dev scripts.
 
 Architecture overview: see [docs/reference/architecture/README.md](docs/reference/architecture/README.md).
