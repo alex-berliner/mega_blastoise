@@ -384,6 +384,20 @@ HISTORY.md section (o); the IDs it shares with this board keep their numbers.
 
 ## (i) The gate today
 
+**Run at 44451c0 (2026-10-28)**, after the class 4, 6, 9 and 11 round: the NOT_BUILT and planned
+checks of those classes were built and run against 39cc07f. VER-05 runs on paper (paper_checks.py
+backlight: PASS, 51.9 deg worst phase margin, 4.27 us over 120 mA at a plug-in; DEF-45 CLOSED, DEF-96
+the glow at BL_PWM low); VER-178 (check_dome.py) FAIL, DEF-97; VER-163 (check_placed_contacts.py
+--prod) PASS; VER-186 (check_lcsc.py over Konnect's JLC snapshot of 2026-07-13) FAIL, DEF-98;
+VER-160 (design_numbers.py cellspec) built, BLOCKED with VER-140 on the cell's spec sheet (VER-37).
+VER-14, VER-28, VER-29, VER-41 and VER-117 wait on Alex's upload, order day or web quotes; VER-214 on
+the ESP32-S3 errata PDF; the bench checks stay at EVT. Every quick check was re-run; VER-129 117 of
+117. Default mode: STRUCTURE OK, 5 warnings. Order gate: 21 of 28 not met, as below, with R4 now 25
+OPEN defects (DEF-97 added) and G-ORD-22 29 ORDER checks. Checks 216 (33 PASS, 35 FAIL, 51 NOT_RUN,
+75 NOT_BUILT, 5 CUT, 17 RETIRED); defects 98 (45 OPEN, 23 FIXED, 17 CLOSED, 13 RETIRED). The grid,
+classes 1-15: PASS 12, FAIL 94, NOT_RUN 8, planned 12, not needed 9; every cell of classes 4, 6, 9 and
+11 is PASS or FAIL.
+
 **Run at c564e99 (2026-10-28)**, the re-seed for 39cc07f. Every scripted check ran against
 39cc07f's files (evidence `evidence/2026-10-28_*`), the 9 PASSes BLOCKED at fd1f6e8 among them: with
 the datasheets on disk none is BLOCKED now. VER-33, VER-137, VER-124 and VER-196 pass; VER-31, VER-100,
@@ -479,4 +493,4 @@ opening), each cell COVERED with its checks and worst status, planned, GAP or NO
 order gate R9 holds every cell of classes 1-15 that no built pre-order check has cleared. The counts
 of 2026-10-28 are in section (i); the earlier grid's audit and its history are HISTORY.md's.
 
-Last updated: 2026-10-28 13:30 EDT
+Last updated: 2026-10-28 10:16 EDT (the class 4, 6, 9 and 11 round)
