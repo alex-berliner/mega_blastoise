@@ -56,6 +56,10 @@ Goals (reviewed by Alex on 2026-10-28; queue issue
    the game is developed and tested; the device is the source of truth when they disagree.
 5. **The hardware should become something that could be batch-produced and sold:** a
    factory-assembled [PCB](#g-pcb), a printed case, and a low price.
+6. **It stays pocketable, and its whole physical design language follows the DS Lite:** curves,
+   buttons and feel. It must fit in a pocket; the absolute maximum is the size of a smartphone in its
+   case. Every spin includes a size-minimization pass. (Today's case is 78.9 x 156.48 mm in plan on the
+   ESP32-S3 spin, and 9.6 mm thick at the screen on the 3.5 in case.)
 
 ### Feature set for the next spin
 
@@ -65,6 +69,7 @@ Goals (reviewed by Alex on 2026-10-28; queue issue
 | Random teams from Showdown's random battle sets (Gen 1 or 3, 3v3 or 6v6), the only team mode | have | runs the `no_std` Rust core (about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today) |
 | Open information, the battle log on `?`, taking back a locked choice | have | none beyond the core |
 | GBA emulation at 60 fps (Pokemon FireRed as the test) | must-have, new | an ARM9 at about 400 MHz or more with 32 MB+ of RAM (F1C200s class); the ESP32-S3 reaches about 20 fps |
+| GBA link play between two consoles over a USB-C to USB-C cable | must-have, new | a USB port that can be host or device, with USB-C role detection, so one console hosts the other; an emulator with link-cable support (not yet checked) |
 | Online play against Showdown as a guest, no login | must-have, new | a network: Wi-Fi only if nearly free, else USB host for a phone tether or a Wi-Fi dongle |
 | Load games and saves from a computer, over USB or SD | must-have, new | USB mass storage or an SD card, and room for a 16 MB ROM plus saves |
 | Fast boot: Linux allowed if tuned, bare-metal Rust boot required | must-have, new | a Rust target and documented boot ROM and RAM init |
@@ -73,10 +78,6 @@ How Pokemon and GBA share the chip is open, and is decided with the chip (queue 
 [#4](https://github.com/alex-berliner/claude-queue/issues/4)): either a boot select (the bare-metal battler by default, Linux with the emulator
 selectable) or everything on Linux. It replaces the 2026-10-27 plan of a launcher of RP2350
 binaries.
-
-Out of scope for now: doubles battles and per-move attack animations beyond a small shared
-vocabulary. Out of scope for good: shipping Pokemon assets, ROMs or a GBA BIOS on the product
-(players supply their own).
 
 ## 2. Product concept and player experience
 
