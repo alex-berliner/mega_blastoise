@@ -7,6 +7,8 @@
 
   arch      VER-190  each case-side requirement mapped to the case.scad feature and the nominal number that
                      meets it; each part of assembly.md's order named with what holds it in the closed case
+  heights   VER-112  check_fit's part heights against the drawings on disk that print one (at their maximum), each
+                     drawn part re-checked by check_fit's own rule at that height
 
 positions() is case/positions.json as case/export.py makes it (the JSON line of case.scad's echo block), but
 run into a temp dir: positions.json is gitignored and nothing is written under hardware/ref_design. scad() is
@@ -586,8 +588,83 @@ def mouths(seed=None):
     return dn.result(not row.bad)
 
 
+# ---- VER-112: part heights from the drawings on disk against the ones check_fit uses (2026-10-28) -------------------------
+# a part's height over the board at its drawing's maximum, where a drawing on disk prints it in text: (mm, file, line, tokens)
+DRAWN = {
+    "U4": (3.2 + 0.15, "esp32-s3-wroom-1", 3130, ("18±0.2", "3.2±0.15"), "the WROOM-1U's side view, 3.2 +-0.15 (Figure 10-2)"),
+    "U2": (1.0, "bq24074", 3062, ("RGT0016C", "1 mm max height"), "RGT0016C, 1 mm max height"),
+    "U8": (1.2, "sn74hc165", 1809, ("1.2 MAX",), "PW0016A, 1.2 MAX"),
+    "U9": (1.2, "sn74hc165", 1809, ("1.2 MAX",), "as U8"),
+    "U11": (1.2, "sn74hc165", 1809, ("1.2 MAX",), "as U8"),
+    "J3": (2.0, "hirose_fh12", 220, ("Standard type connector height: 2 mm",), "the FH12's standard type, 2 mm"),
+    "SW24": (1.4, "rocpu_tps850", 33, ("TPS850 J14K V SMTR LFS", "1.4"), "TPS850 J14K, height 1.4"),
+    "J8": (1.68, "hirose_dm3_catalog_C114218", 154, ("1.68",), "the DM3AT drawing's 1.68 beside its card-detect view"),
+}
+SEED_HEIGHTS = {"U4": 3.6}       # a taller module drawing than check_fit's 3.2: must fail
+
+
+def heights(seed=None):
+    import ds
+    row = Rows()
+    drawn = dict(DRAWN)
+    if seed:
+        for k, v in seed.items():
+            drawn[k] = (v,) + drawn[k][1:]
+    with ref_copy() as (dst, pos, _):
+        cf = load_module(os.path.join(dst, "case", "check_fit.py"), "check_fit_heights")
+        parts = cf.refs()
+        ext = cf.extents([r[0] for r in parts])
+        echoed = cf.case_echo()
+        # each drawn part's box re-checked by check_fit's own rule at the drawing's height: does it still clear the case?
+        flipped = {r[0]: r[1] for r in parts}
+        clash = {}
+        for ref, d in drawn.items():
+            box = ext.get(ref) or (cf.body_box(ref) if ref in cf.BODY_LOCAL else None)
+            if box is None:
+                court = next(c for q, _, _, c in parts if q == ref)
+                box = (court[0], court[1], court[2], court[3], 0.0, d[0])
+            probs = []
+            cf.check_part(ref, box[:5] + (d[0],), flipped[ref], echoed, probs, [])
+            clash[ref] = probs
+    used, how = {}, {}
+    for ref, _, name, _ in parts:
+        e = ext.get(ref)
+        if e and ref in cf.KNOWN_HEIGHT:
+            used[ref], how[ref] = cf.KNOWN_HEIGHT[ref], "check_fit.KNOWN_HEIGHT"
+        elif e:
+            used[ref], how[ref] = e[5], "its 3D model"
+        elif ref in cf.BODY_LOCAL:
+            used[ref], how[ref] = cf.BODY_LOCAL[ref][1], "check_fit.BODY_LOCAL"
+        else:
+            key = next((k for k in cf.PACKAGE_HEIGHT if k in name), None)
+            used[ref] = cf.PACKAGE_HEIGHT[key] if key else 1.5
+            how[ref] = f"a courtyard at PACKAGE_HEIGHT['{key}']" if key else "a courtyard at the 1.5 mm default"
+    print(f"check_fit's {len(used)} parts: " + ", ".join(f"{n} from {k}" for k, n in sorted(
+        {h.split("[")[0].split(" at ")[0]: sum(1 for x in how.values() if x.split("[")[0].split(" at ")[0] ==
+                                               h.split("[")[0].split(" at ")[0]) for h in how.values()}.items())))
+    for ref, (h, f, line, toks, what) in sorted(drawn.items()):
+        if ref not in used:
+            row(False, f"{ref}: drawn ({what}) but not among check_fit's parts")
+            continue
+        ds.quote(f, line, *toks)
+        row(used[ref] >= h - 0.02, f"{ref}: check_fit uses {used[ref]:.2f} mm ({how[ref]}) against {h:.2f} mm, {what} "
+            f"({f}.txt:{line})" + ("" if used[ref] >= h - 0.02 else f": {h - used[ref]:.2f} mm understated"))
+        row(not clash[ref], f"{ref} at {h:.2f} mm through check_fit's own rule: " + ("clears the case" if not clash[ref]
+                                                                                     else "; ".join(clash[ref])))
+    guess = sorted(r for r, x in how.items() if x.startswith("a courtyard") and r not in drawn and "SolderJumper" not in
+                   next(n for q, _, n, _ in parts if q == r))
+    row(not guess, f"no part on a package guess without a drawing behind it" + (f": {', '.join(guess)}" if guess else
+        " (the solder jumpers JP1-JP6 are copper only)"))
+    rest = sorted(r for r in used if r not in drawn and how[r] == "its 3D model")
+    print(f"  {len(rest)} parts stand on their KiCad 3D models: no drawing on disk prints their height in text (the SOT-23s, "
+          "SOICs and passives' drawings are figures; J1's, J2's and J4's sheets have no text layer for it); VER-48 measures "
+          "the printed case with the real parts")
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
 CHECKS = {"arch": (arch, SEED_ARCH), "fit": (fit, True), "placement": (placement, True), "stack": (stack, True),
-          "xy": (xy, True), "estimates": (estimates, True), "mouths": (mouths, True)}
+          "xy": (xy, True), "estimates": (estimates, True), "mouths": (mouths, True), "heights": (heights, SEED_HEIGHTS)}
 
 
 def main():

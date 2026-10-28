@@ -1033,3 +1033,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-08, DF-149
 - Gate: ORDER
 - Status: OPEN (fix in fp_u2.py: skip the unnumbered paste pads, or delete them and add TI's single 1.55 x 1.55 mm window at the centre (85%, bq24074.txt:3176-3180); regenerate the library footprint and the board, then VER-27, VER-125, VER-04 and VER-132; copper and paste, so before the order)
+
+### DEF-101: At its drawing's 3.35 mm the module breaks the glass's 0.2 mm clearance; check_fit checks it at the nominal 3.2
+- Found: VER-112 (case_checks.py heights) at 39cc07f, 2026-10-28, its first run
+- Symptom: the ESP32-S3-WROOM-1U is 3.2 +-0.15 mm tall (esp32-s3-wroom-1.txt:3130, Figure 10-2), so up to 3.35 mm. check_fit checks it at BODY_LOCAL's 3.2 (case/check_fit.py), under case.scad's glass_limit of 3.30 (glass_gap 3.5 less 0.2). At 3.35 mm check_fit's own rule fails: 0.15 mm to the panel's back against REQ-MEC-01's 0.2, before the board's and the print's tolerances (VER-20). check_fit also takes the three SN74HC165s at their 3D model's 1.09 mm against the drawing's 1.2 MAX (sn74hc165.txt:1809); at 1.2 mm they still clear.
+- Root cause: check_fit's stand-in body for the module took the drawing's nominal height, not its maximum; the comment at case.scad:222 counts 0.1 mm of room over a 3.2 mm module.
+- Why missed: VER-112 was NOT_BUILT; check_fit takes a model's or a stand-in's height as true.
+- Check added or changed: VER-112 (built: case_checks.py heights)
+- Updated: DF-91, REQ-MEC-01
+- Gate: CASE
+- Status: OPEN (case only: glass_gap 3.55 mm or more, with check_fit's BODY_LOCAL height at 3.35 and KNOWN_HEIGHT entries for U8, U9 and U11 at 1.2; VER-20's stack re-run after it)
