@@ -5,6 +5,8 @@
     python3 hardware/vv/tools/layout_checks.py <check> --seed    # the same check on a seeded fault: must exit 1
     python3 hardware/vv/tools/layout_checks.py --list
 
+  gerbers   VER-27   fab.py's gerbers and drill files read without pcbnew: every paste aperture on copper, each
+                     exposed pad's paste, plated holes on both layers' copper, copper inside the outline
   bridges   VER-148  every pair of pads on different nets closer than 0.35 mm against hardware/vv/bridges.csv, the
                      reviewed table that classes each net pair benign, self-test or dangerous (a dangerous pair names
                      a live DFMEA row); --write-table rewrites the table's proposal from the rules below
@@ -23,6 +25,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 VV = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 import design_numbers as dn  # noqa: E402
+import ds  # noqa: E402
 
 
 class Rows:
@@ -800,8 +803,139 @@ def antenna(seed=None):
     return dn.result(not row.bad)
 
 
+# ---- VER-27: the gerbers and drill files read on their own (2026-10-28: was gerbv by eye) -------------------------------
+SEED_GERB = "offcopper"     # a paste flash in memory midway between U8's pins 1 and 2: (b) must fail
+EP_PASTE = (0.50, 0.80)     # share of an exposed pad printed: IPC-7525's usual 50-80% (from memory), VER-27's limit
+EP_MAKER = {"U2": (0.85, "bq24074.txt:3180", "85% PRINTED SOLDER COVERAGE")}   # a maker's own stencil example wins
+WEB_MIN = 0.10              # mm: the stencil web printed for the decision (no limit: the paste-over-copper rule binds)
+
+
+def ap_box(aps, a):
+    """(half width, half height, area) of a flashed aperture: C, R, O and KiCad's RoundRect macro (r, then four corners)."""
+    shp, p = aps.get(a, ("", []))
+    if shp == "C":
+        return p[0] / 2, p[0] / 2, math.pi * p[0] ** 2 / 4
+    if shp in ("R", "O"):
+        w, h = p[0], p[1]
+        return w / 2, h / 2, w * h - ((4 - math.pi) * min(w, h) ** 2 / 4 if shp == "O" else 0.0)
+    if shp == "RoundRect":
+        r, xs, ys = p[0], p[1:9:2], p[2:9:2]
+        poly = list(zip(xs, ys))
+        area = abs(sum(poly[i][0] * poly[(i + 1) % 4][1] - poly[(i + 1) % 4][0] * poly[i][1] for i in range(4))) / 2
+        per = sum(math.hypot(poly[(i + 1) % 4][0] - poly[i][0], poly[(i + 1) % 4][1] - poly[i][1]) for i in range(4))
+        return max(abs(v) for v in xs) + r, max(abs(v) for v in ys) + r, area + per * r + math.pi * r * r
+    return 0.0, 0.0, 0.0
+
+
+def gerbers(seed=None):
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    row = Rows()
+    f = dn.fab_module()
+    files = f.gerbers()
+    g = os.path.join(f.OUT, "gerbers")
+    print(f"fab.py's own export into {f.OUT}, read here by this script's RS-274X and Excellon readers (not pcbnew's)")
+    need = [f"battler-{x}" for x in LAYER_FILES] + ["battler-PTH.drl", "battler-NPTH.drl"]
+    miss = [x for x in need if not os.path.isfile(os.path.join(g, x))]
+    row(not miss, f"(a) {len(need)} files: 9 layers and the plated and unplated drill files apart: "
+        + (f"missing {miss}" if miss else "present"))
+    L = {k: gerber(os.path.join(g, f"battler-{v}")) for k, v in
+         (("fcu", "F_Cu.gtl"), ("bcu", "B_Cu.gbl"), ("fp", "F_Paste.gtp"), ("bp", "B_Paste.gbp"), ("edge", "Edge_Cuts.gm1"))}
+    if seed == "offcopper":
+        u8 = {p.GetNumber(): p for fp in b.GetFootprints() if fp.GetReference() == "U8" for p in fp.Pads()}
+        a, c = u8["1"].GetPosition(), u8["2"].GetPosition()
+        L["fp"][1].append((mm((a.x + c.x) // 2), mm((a.y + c.y) // 2), L["fp"][1][0][2]))
+
+    def boxes(layer):
+        aps, fl = L[layer][0], L[layer][1]
+        out = []
+        for x, y, a in fl:
+            hw, hh, area = ap_box(aps, a)
+            out.append((x - hw, y - hh, x + hw, y + hh, area, x, y))
+        return out
+    cu = boxes("fcu")
+    paste = boxes("fp")
+    # (b) every paste aperture over copper: a stencil window that lands between pads prints solder where no pad is
+    tol = 0.02
+    off = []
+    for x0, y0, x1, y1, _, x, y in paste:
+        if not any(c[0] - tol <= x0 and c[1] - tol <= y0 and x1 <= c[2] + tol and y1 <= c[3] + tol for c in cu):
+            near = sorted((math.hypot(p.GetPosition().x - pcb.FromMM(x), p.GetPosition().y - pcb.FromMM(y)), fp.GetReference(),
+                           p.GetNumber()) for fp in b.GetFootprints() for p in fp.Pads() if p.IsOnLayer(pcb.F_Cu))[:2]
+            off.append(f"({x:.2f}, {y:.2f}) {x1 - x0:.2f} x {y1 - y0:.2f} between {near[0][1]} pad {near[0][2]} and "
+                       f"{near[1][1]} pad {near[1][2]}")
+    row(not off, f"(b) every one of {len(paste)} F.Paste apertures inside an F.Cu pad of the gerber (+-{tol} mm)"
+        + (f": {len(off)} not: " + "; ".join(off) if off else ""))
+    bp = L["bp"]
+    row(not (bp[1] or bp[2] or bp[3]), f"(b) B.Paste empty ({len(bp[1])} flashes): nothing is placed on the back")
+    # (c) the exposed pads' paste
+    eps = []
+    for fp in b.GetFootprints():
+        for p in fp.Pads():
+            s = p.GetSize(pcb.F_Cu)
+            # an IC's exposed (thermal) pad: the only pads over 2 mm2 on a U part (U2's 17, U4's 41 at 39cc07f)
+            if p.IsOnLayer(pcb.F_Cu) and p.GetAttribute() == pcb.PAD_ATTRIB_SMD and mm(s.x) * mm(s.y) > 2.0 and \
+                    re.fullmatch(r"U\d+", fp.GetReference()):
+                eps.append((fp.GetReference(), p))
+    for ref, p in eps:
+        px, py = mm(p.GetPosition().x), mm(p.GetPosition().y)
+        bb = p.GetBoundingBox()
+        x0, y0, x1, y1 = mm(bb.GetLeft()), mm(bb.GetTop()), mm(bb.GetRight()), mm(bb.GetBottom())
+        printed = sum(q[4] for q in paste if x0 - tol <= q[0] and q[2] <= x1 + tol and y0 - tol <= q[1] and q[3] <= y1 + tol)
+        share = printed / ((x1 - x0) * (y1 - y0))
+        lo, hi = EP_PASTE
+        why = "IPC-7525's usual range, from memory"
+        if ref in EP_MAKER:
+            v, cite, tok = EP_MAKER[ref]
+            ds.quote(cite.split(".txt")[0], int(cite.split(":")[1]), tok)
+            lo, hi, why = v - 0.10, v + 0.05, f"the maker's own stencil example, {v:.0%} ({cite})"
+        row(lo <= share <= hi, f"(c) {ref} pad {p.GetNumber()} ({x1 - x0:.2f} x {y1 - y0:.2f} mm at {px:.2f}, {py:.2f}): "
+            f"{share:.1%} printed ({printed:.2f} mm2 of paste inside it) against {lo:.0%}-{hi:.0%} ({why})")
+    # the narrowest stencil web between two apertures
+    webs = []
+    stray = {(round(q[5], 2), round(q[6], 2)) for q in paste
+             if not any(c[0] - tol <= q[0] and c[1] - tol <= q[1] and q[2] <= c[2] + tol and q[3] <= c[3] + tol for c in cu)}
+    for i, a in enumerate(paste):
+        for c in paste[i + 1:]:
+            if abs(a[5] - c[5]) > 3 or abs(a[6] - c[6]) > 3 or math.hypot(a[5] - c[5], a[6] - c[6]) < 0.01:
+                continue                        # far apart, or one pad flashed twice (J1's A12 and B1 share a pad)
+            gx = max(c[0] - a[2], a[0] - c[2], 0.0)
+            gy = max(c[1] - a[3], a[1] - c[3], 0.0)
+            if (round(a[5], 2), round(a[6], 2)) in stray or (round(c[5], 2), round(c[6], 2)) in stray:
+                continue                        # the windows (b) already fails
+            webs.append((math.hypot(gx, gy), a[5], a[6], c[5], c[6]))
+    webs.sort()
+    thin = [w for w in webs if w[0] < WEB_MIN]
+    print(f"  the narrowest stencil webs between the other apertures (their boxes, corners squared): " + ", ".join(
+        f"{w[0]:.3f} mm at ({w[1]:.2f}, {w[2]:.2f})" for w in webs[:4]) + f"; {len(thin)} under {WEB_MIN} mm")
+    # (d) the drill files against the copper layers: registration read from the files alone
+    pth_t, pth = excellon(os.path.join(g, "battler-PTH.drl"))
+    npth_t, npth = excellon(os.path.join(g, "battler-NPTH.drl"))
+    bcu = boxes("bcu")
+
+    def on(layer, x, y):
+        return any(c[0] <= x <= c[2] and c[1] <= y <= c[3] for c in layer)
+    lone = [(x, y) for x, y, d in pth if not (on(cu, x, y) and on(bcu, x, y))]
+    # J1's slots are drawn as copper regions, not flashes: a slot whose centre the copper's draws cover counts
+    regions = L["fcu"][3] + L["bcu"][3]
+    lone = [(x, y) for x, y in lone if not any(inside((x, y), poly) for poly in regions)]
+    row(not lone, f"(d) every one of {len(pth)} plated holes (PTH file, {len(pth_t)} tools) on copper of both layers' "
+        "gerbers" + (f": {len(lone)} not, e.g. {lone[:3]}" if lone else ""))
+    wet = [(x, y, d) for x, y, d in npth if any(c[0] < x < c[2] and c[1] < y < c[3] and (c[2] - c[0]) > d + 0.05
+                                                  for c in cu + bcu)]
+    row(not wet, f"(d) none of {len(npth)} unplated holes (NPTH file) inside a copper pad" + (f": {wet[:3]}" if wet else ""))
+    # (e) the outline: every copper flash inside the Edge.Cuts gerber's extent
+    ex = [v for d in L["edge"][2] for v in (d[0], d[2])]
+    ey = [v for d in L["edge"][2] for v in (d[1], d[3])]
+    out = [c for c in cu + bcu if not (min(ex) - tol <= c[5] <= max(ex) + tol and min(ey) - tol <= c[6] <= max(ey) + tol)]
+    row(bool(ex) and not out, f"(e) Edge.Cuts' extent {max(ex) - min(ex):.2f} x {max(ey) - min(ey):.2f} mm; every copper flash "
+        "centre inside it" + (f": {len(out)} outside" if out else ""))
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
 CHECKS = {"bridges": (bridges, SEED_BRIDGES), "fab": (fab, SEED_FAB), "jlc": (jlc, None), "ret": (ret, SEED_RET),
-          "usbpair": (usbpair, SEED_USB), "antenna": (antenna, SEED_ANT)}
+          "usbpair": (usbpair, SEED_USB), "antenna": (antenna, SEED_ANT), "gerbers": (gerbers, SEED_GERB)}
 
 
 def main():

@@ -111,6 +111,7 @@ CHECKS = {
     "VER-148": ("bridges", ["python3", LC, "bridges"], True),
     "VER-132": ("fab", ["python3", LC, "fab"], True),
     "VER-17": ("jlc", ["python3", LC, "jlc"], True),
+    "VER-27": ("gerbers", ["python3", LC, "gerbers"], True),       # 2026-10-28: the gerbers read on their own (was gerbv)
     "VER-21": ("ret", ["python3", LC, "ret"], True),
     "VER-108": ("usbpair", ["python3", LC, "usbpair"], True),
     "VER-205": ("antenna", ["python3", LC, "antenna"], True),

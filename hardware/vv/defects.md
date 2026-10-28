@@ -869,7 +869,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: fp_esp32.py draws the WROOM-1U's GND pad 3.90 x 3.90 mm; Figure 11-2's text gives 3.7 (esp32-s3-wroom-1.txt:3422-3471). The 40 pads (1.5 x 0.9 at 1.27, the columns 17.5 apart) match.
 - Root cause: the footprint written by script without the land pattern's numbers read off the drawing.
 - Why missed: no land-pattern check for the module.
-- Check added or changed: VER-125 (a 'module' land row; its seed is U2's)
+- Check added or changed: VER-125 (a 'module' land row; its seed is U2's); VER-27 (2026-10-28: the pad's paste, nine 0.9 mm windows, prints 47.9% of the 3.90 mm pad against VER-27's 50-80%; it would be 53% of a 3.7 mm pad; Espressif asks only for 'the correct amount', esp32-s3-wroom-1.txt:2972-2974)
 - Updated: DF-185
 - Gate: ORDER
 - Status: OPEN (the board session reads Figure 11-2 by eye: if 3.7 mm is the pad, the footprint changes (copper), or its paste is windowed to the module's pad)
@@ -1023,3 +1023,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-202
 - Gate: CASE
 - Status: OPEN (options: PETG or ASA for the top over U2 (a heat deflection near 70 C and 95 C, from memory: the sheet decides), or the firmware heat rule of DEF-87 (CHG_OFF while hot, a lower charge current with the game running), or both; VER-86 measures the skin on unit 1)
+
+### DEF-100: U2's exposed pad gets no paste, and its four paste windows sit between U2's pins
+- Found: VER-27 (layout_checks.py gerbers) at 39cc07f, 2026-10-28, its first run
+- Symptom: in the F.Paste gerber fab.py writes, U2's exposed pad 17 (1.68 x 1.68 mm, GND) has no paste at all (0%, against the 85% of TI's own stencil example, bq24074.txt:3180), and four 0.24 x 0.60 mm paste windows lie on U2's pin rows where no pad is: at (124.58, 85.60) between pins 15 (TD, GND) and 16 (ISET), at (125.42, 85.60) between 14 (TMR, open) and 13 (IN, VBUS), at (124.58, 88.40) between 6 (EN1) and 5 (EN2, GND), at (125.42, 88.40) between 7 (PGOOD) and 8 (VSS). Each window overlaps one neighbour's window by 0.07 mm and leaves 0.09 mm of stencil to the other's. Paste on the mask between 0.5 mm pins makes bridges: ISET to GND stops all charging (bq24074.txt:709, the start-up short check), EN1 to EN2 gives USB100 (a 100 mA input), PGOOD to VSS a stuck status, TMR to IN undefined timers. The unsoldered exposed pad loses TI's 44.5 C/W (it assumes the pad soldered), so U2's 0.80 W runs it into thermal regulation or past VER-144's limit.
+- Root cause: board/tools/fp_u2.py builds battler:VQFN-16-1EP_3x3mm_RGT0016C from KiCad's VQFN-16 and moves every pad but '17' onto TI's pin rows; KiCad's footprint carries the exposed pad's paste as four unnumbered paste-only pads (0.68 mm at +-0.42, +-0.42), so the script resized them to 0.24 x 0.60 and moved them to y +-1.4 with the pins.
+- Why missed: VER-125 (check_land.py) compares copper, not paste; VER-132 reads paste only over the button contacts; VER-27, which reads the exposed pads' paste, was not built (gerbv by eye) and only advisory.
+- Check added or changed: VER-27 (built: layout_checks.py gerbers; binding at G-ORD-09 since 2026-10-28)
+- Updated: DF-08, DF-149
+- Gate: ORDER
+- Status: OPEN (fix in fp_u2.py: skip the unnumbered paste pads, or delete them and add TI's single 1.55 x 1.55 mm window at the centre (85%, bq24074.txt:3176-3180); regenerate the library footprint and the board, then VER-27, VER-125, VER-04 and VER-132; copper and paste, so before the order)
