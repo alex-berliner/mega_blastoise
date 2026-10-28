@@ -1,12 +1,15 @@
-# Carry-over from the RP2354B rounds
+# Carry-over from the RP2354B and ESP32-S3 rounds
 
-The 5-board order is the ESP32-S3 board at 39cc07f (branch ref-design-esp32s3: an
-ESP32-S3-WROOM-1U-N16R8, Alex, 2026-10-28). The RP2354B register is frozen at tag
-`vv-rp2354b-final` (c8ac9dd). This file keeps what its rounds found that applies to any board
-that shares the cell, the charger, the case, the panel, the buttons, the audio or the connectors,
-or that is built by the same scripts at JLC. When the register is re-seeded for the new board,
-each row becomes a requirement and a check (or a reason it no longer applies), and its number is
-recomputed from the new design. check_trace does not read this file.
+**2026-10-28: the register targets the F1C200s board.** The ESP32-S3 board (39cc07f) and the RP2354B
+board (71737ae) are both dropped; their registers are at tags `vv-esp32s3-final` and `vv-rp2354b-final`.
+This file keeps what their rounds found that applies to any board that shares the cell, the charger, the
+case, the panel, the buttons, the audio or the connectors, or that is built by the same scripts at JLC.
+Each group now carries as the F1C200s board's DFMEA rows (dfmea.csv) and the checks they name, all
+NOT_RUN or NOT_BUILT until an F1C200s design exists: the cell and its pocket (C rows) as DF-214, DF-215,
+DF-216 and DF-231; the charger and the power path (P rows) as DF-217 to DF-226 and DF-213 (heat); the
+panel (D rows) as DF-227 to DF-229; the buttons (B rows) as DF-230; the case (K rows) as DF-232 to
+DF-234; the fab outputs (F rows) as DF-235 to DF-239; ESD as DF-240. The verdicts in the tables below
+are the ESP32-S3 board's at 39cc07f, history now; check_trace does not read this file.
 
 Each row: the finding, its number on the RP2354B board (71737ae), the check that found it, and
 what the new design must satisfy. The IDs are the frozen register's.

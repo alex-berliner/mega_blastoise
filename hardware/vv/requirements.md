@@ -6,44 +6,46 @@ proven (T test, A analysis, I inspection, D demonstration), the checks in
 [verification.csv](verification.csv) that prove it, the phase by which it must be proven
 first, and a status.
 
-**Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 from
-`docs/living/validation_plan.md` (archived), the datasheet reviews in
-`hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1, revised
-them the same day from the two-model review, re-seeded them on 2026-10-25 for 684a609, and
-re-seeded them on 2026-10-26 for be437f8, on 2026-10-27 for the RP2354B board (71737ae), and on
-2026-10-28 for the board being ordered, the ESP32-S3 board at 39cc07f (branch ref-design-esp32s3:
-the ESP32-S3-WROOM-1U-N16R8 module with an external flex antenna on a U.FL cable and Wi-Fi on, the
-TLV75733P for 3V3, the BQ24073 charger, the 3.5 in ER-TFT035IPS-6 panel (ILI9488) on its 8-bit 8080
-bus, a microSD slot, three 74HC165s, a dedicated power key SW24, TH1 a 10k B4460 0805, U10 buffering
-VBAT/2, the cell along the board in a 38.2 x 55.2 mm hole, J4 a JST SH header, the speaker sunk in a
-hole, a 73.9 x 151.48 mm board in a one-piece top 1.5 mm wider on the left). The radio (RF) and
-storage (STO) sections are new with it. A requirement whose subject left
-the design is RETIRED with the commit that removed it; it keeps its ID. None is binding until
-Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md): APPROVED, REJECTED, or
-DEFERRED with a reason. A Status here that has no matching line he committed there is a
-structure error, and a statement edited after he approved it needs his approval again.
+**Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 and re-seeded them for each
+board since (684a609, be437f8, the RP2354B board at 71737ae, the ESP32-S3 board at 39cc07f). On
+2026-10-28 both of those boards were dropped and the register was re-seeded for the next spin, the
+Allwinner F1C200s board (board `f1c200s`; docs/static/DESIGN.md:77, docs/static/next_spin_requirements.md):
+REQ-PRD-12 to -17 state DESIGN.md's goals for it, each quoting its DESIGN.md line; the chip (SOC) and
+USB-C roles (USB) sections are new; the ESP32-S3 board's own requirements (the module, its radio, its
+allocations `.R`, its power key, its backlight sinks, its PWM audio, its 74HC165 chain) are DROPPED with
+it and name its tag, `vv-esp32s3-final`. A carried requirement whose rationale or source still reasons
+from the ESP32-S3 board's parts says so ('Was: on the ESP32-S3 board ..., to redo for the F1C200s
+board'): the statement is what binds. Where DESIGN.md gives no number, the number is Claude's proposal
+and says so. A requirement whose subject left the design is RETIRED with the commit that removed it; it
+keeps its ID. None is binding until Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md):
+APPROVED, REJECTED, or DEFERRED with a reason. A Status here that has no matching line he committed
+there is a structure error, and a statement edited after he approved it needs his approval again.
 `check_trace.py --gate` fails while any requirement in scope is PROPOSED.
 
 How to read a block:
 
 - Level: product (what a player or Alex sees), subsystem (a block of the design), or
   board (one board's make and test).
-- Board: both or ref_design (`hardware/ref_design`, REF-A). 'both' is the product level: the
-  need stated without one board's parts or numbers. A product requirement that names the
-  board's parts or numbers is split: the parent (Board: both) states the need, and its
-  allocation `REQ-X.R` (Board: ref_design) holds the board's numbers. The gate evaluates
-  ref_design and both. A second board, prod_board (Alex's `hardware/prod_board@611ebe3` and
-  `hardware/prod_case@611ebe3`), had its own .P allocations and REQ-PBD-* until
-  574c94c deleted it from the repository (Alex: not needed): REQ-PBD-* are RETIRED.
+- Board: both or f1c200s (the F1C200s board, the next design of `hardware/ref_design`, REF-A).
+  'both' is the product level: the need stated without one board's parts or numbers. A product
+  requirement that names the board's parts or numbers is split: the parent (Board: both) states
+  the need, and its allocation `REQ-X.F` (Board: f1c200s) holds the board's numbers. The gate
+  evaluates f1c200s and both. `esp32s3` marks a DROPPED row (its `.R` allocations among them);
+  `prod_board` (Alex's `hardware/prod_board@611ebe3` and `hardware/prod_case@611ebe3`, deleted in
+  574c94c, Alex: not needed) marks REQ-PBD-*, RETIRED.
+- Subsystem: the F1C200s board's subsystems the requirement is allocated to (grid.md's power,
+  cell, soc, storage, usbc, display, audio, buttons, case), or 'all'.
 - Source: a datasheet page (the review file that quotes it is named), a standard clause, a
-  validation_plan method (#n), or Alex's use. "Claude's estimate" means nobody has set the
-  number yet: Alex should.
+  validation_plan method (#n), a line of DESIGN.md (Alex's spec) or next_spin_requirements.md,
+  or Alex's use. "Claude's estimate" or "Claude's proposal" means nobody has set the number yet:
+  Alex should.
 - Phase: ORDER (before the 5-board order: what the copper and the BOM freeze), CASE (before
   the printed case is released and the EVT units are assembled), EVT (the 5 boards), DVT (the
   revised spin), PVT (the 30-board run), SALE (before any unit is sold or given away).
 - Status: PROPOSED until Alex decides; DEFERRED holds only up to the phase his line in
   APPROVALS.md names, then the requirement is PROPOSED again; RETIRED (with a 'Retired:' line
-  naming the commit) when its subject left the design.
+  naming the commit) when its subject left the design; DROPPED (with a 'Dropped:' line naming the
+  board and its tag) when it belonged to a dropped board.
 
 The standards' clause numbers below are from memory of IEC 62368-1:2018, IEC 62133-2:2017,
 USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text before relying on it.

@@ -1,29 +1,28 @@
 # Verification and validation
 
-**2026-10-28, later: the ESP32-S3 board and the RP2354B board are both dropped.** The next spin is
-the Allwinner F1C200s board (docs/static/next_spin_requirements.md); it has no schematic or layout
-yet, and this register is being re-targeted to it. Until then the design baseline names the files on
-main at fd66be9: the ESP32-S3 board's last copper (c8d5744) and case (e872140) with main's comment
-and path edits. The ESP32-S3 register is frozen at tag `vv-esp32s3-final` (c556556). The text below
-describes the ESP32-S3 board as it stood.
+**This register targets the next spin: the Allwinner F1C200s board** (board `f1c200s`;
+docs/static/DESIGN.md:77 and docs/static/next_spin_requirements.md, Alex, 2026-10-28): the F1C200s
+with 64 MB of DRAM in its package, microSD only, the FUSB303B for the USB-C roles, today's ILI9488
+panel on its 8-bit 8080 bus, no Wi-Fi, a bare-metal battler by default and Linux on a held button.
+The V3s is the fallback if a dev board cannot hold FireRed at about 60 fps (gates.md NM-03).
 
-**The order candidate was the ESP32-S3 board at 39cc07f** (branch `ref-design-esp32s3`, 2026-10-28):
-an ESP32-S3-WROOM-1U-N16R8 module (U.FL, an external flex antenna, Wi-Fi on), the TLV75733P for 3V3,
-the panel on its 8-bit 8080 bus, a microSD slot, a third 74HC165, a dedicated power button SW24, the
-cell in a 38.2 x 55.2 mm hole and a case 1.5 mm wider on the left. Alex chose it on 2026-10-28 over the
-RP2354B board (71737ae), whose register is frozen at tag `vv-rp2354b-final` (c8ac9dd). On 2026-10-28
-this register was re-seeded for 39cc07f: the baseline below is that commit, the rows for parts and nets
-that left are RETIRED with it, the new parts have their requirements, DFMEA rows and checks, every
-row of [carryover.md](carryover.md) has its verdict at 39cc07f, and every scripted check was re-run
-(PLAN.md sections b, c and i). The baseline implements docs/living/esp32s3_board_proposal.md, so R8's
-warning on its proposal commits (dcb6a76, e79f251) is gone: they are ancestors of the baseline.
+**The KiCad files on main are still the ESP32-S3 board's.** There is no F1C200s schematic or layout
+yet. The design baseline below names those files (main at fd66be9) and says so (`- Baseline board:
+esp32s3`), so no F1C200s check may PASS or FAIL on them: every one is NOT_RUN or NOT_BUILT until an
+F1C200s design replaces them and the baseline moves.
+
+**Both earlier boards are dropped**, and their registers are frozen at tags: the ESP32-S3 board's at
+`vv-esp32s3-final` (c556556; its last results after main's path moves at 30131db), the RP2354B
+board's at `vv-rp2354b-final` (c8ac9dd). Their rows here are DROPPED (Rules, below): neither PASS
+nor CLOSED, each naming its board and tag, out of every gate of the next spin. Their lessons that
+apply to any chip carry as the F1C200s board's DFMEA rows and checks ([carryover.md](carryover.md)).
 
 How we know a board works before and after we order it. [PLAN.md](PLAN.md) is the single
 plan: what must be true before the order, then EVT, DVT and PVT. This page is the system.
-It covers `hardware/ref_design` (REF-A, Claude's). Alex's board and case
-(`hardware/prod_board@611ebe3`, `hardware/prod_case@611ebe3`) were deleted from the repository in
-574c94c (Alex: not needed): their requirements, DFMEA rows, checks and gate criteria are RETIRED
-with that commit and keep their IDs. Nothing here edits the board.
+It covers `hardware/ref_design` (REF-A, Claude's), whose next design is the F1C200s board's.
+Alex's board and case (`hardware/prod_board@611ebe3`, `hardware/prod_case@611ebe3`) were deleted
+from the repository in 574c94c (Alex: not needed): their rows are RETIRED with that commit and keep
+their IDs. Nothing here edits the board.
 
 "Works" means all of: built as designed (verified), the right design for the numbers
 (validated), safe (the Li-ion cell, touch temperature), made by JLC without surprises, fits
@@ -36,14 +35,14 @@ the case, survives use.
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
 | [HISTORY.md](HISTORY.md) | the earlier rounds' ledgers and findings, moved out of PLAN.md (O-S9); check_trace does not read it | |
 | [carryover.md](carryover.md) | what the RP2354B rounds found that the ESP32-S3 board must also satisfy: one row a finding, its number, the check that found it and the rule; its first table gives each row's requirement, check and verdict at 39cc07f with the number; check_trace does not read it | |
-| [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.R / .P |
+| [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source, the subsystems it is allocated to and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.F (.R was the ESP32-S3 board's) |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
 | [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, the check classes and subsystems it targets, and the datasheet files it relies on ('sources') | VER-NN |
 | [grid.md](grid.md) | the coverage grid, generated (never typed): check classes 1-18 by subsystem, each cell COVERED with its checks and worst status, planned, GAP or NOT_NEEDED; the gaps with their proposed checks; the FAILs; the ACCEPTED and BLOCKED checks | |
 | [grid_reasons.csv](grid_reasons.csv) | the cells that need no check: class, subsystem, NOT_NEEDED (or ACCEPTED_GAP, which counts only once Alex signs GRID-<class>-<subsystem>) and why | |
 | [vp_map.csv](vp_map.csv) | a one-time map of the archived validation_plan.md's 218 methods to IDs, or CUT with a reason | plan #n |
-| [gates.md](gates.md) | the order, case, EVT, DVT and PVT gates, each criterion naming IDs and a board; the unit allocation; proposed waivers | G-ORD-NN, G-CASE-NN, G-EVT-NN, G-DVT-NN, G-PVT-NN, W-NN |
-| [defects.md](defects.md) | the corrective-action log (design defects; per-unit findings go in evidence/findings.csv); Status OPEN, FIXED, CLOSED, ACCEPTED or RETIRED | DEF-NN |
+| [gates.md](gates.md) | the new-MCU path (its stages, each with entry and exit needs); the order, case, EVT, DVT and PVT gates, each criterion naming IDs and a board; the unit allocation; proposed waivers | NM-NN, G-ORD-NN, G-CASE-NN, G-EVT-NN, G-DVT-NN, G-PVT-NN, W-NN |
+| [defects.md](defects.md) | the corrective-action log (design defects; per-unit findings go in evidence/findings.csv); Status OPEN, FIXED, CLOSED, ACCEPTED, RETIRED or DROPPED | DEF-NN |
 | [releases/APPROVALS.md](releases/APPROVALS.md) | Alex's decisions: approvals, acceptances (with the last phase they hold for), defects moved to a later gate (DF-ACCEPT) and waivers | A-NNN |
 | [releases/](releases/) | release and change records, from the two templates | REL-<BOARD>-R<rev>-<PHASE>, CHG-NN |
 | [evidence/](evidence/) | the saved output of each check run, named `<date>_<VER>_<check>.txt`; units.csv and findings.csv for built units | |
@@ -225,8 +224,8 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   prevention (O-R8); 2 or less needs a passing test on built hardware; 1 needs `Excluded:` and
   the reason in its prevention.
 - **Every check says what it covers in the grid.** A live check names its classes (1-20) and
-  subsystems (power, cell, mcu, display, audio, buttons, usb_debug, case; 'register' for 19 and
-  20), tagged by what its procedure and pass limit really target. A cell no check covers needs a
+  subsystems (power, cell, soc, storage, usbc, display, audio, buttons, case; 'register' for 19
+  and 20; Was: mcu and usb_debug, the ESP32-S3 board's), tagged by what its procedure and pass limit really target. A cell no check covers needs a
   NOT_NEEDED reason in grid_reasons.csv or a NOT_BUILT check, and the order gate (R9) holds every
   cell of classes 1-15 until a built check that runs before the boards exist clears it: an ORDER
   check or an analysis, and for class 15 an analysis that has run (2026-10-27; tools/grid.py).
@@ -245,12 +244,31 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   board/tools tree, case.scad and case/export.py: the copper, its rules and the scripts that
   make the fab files, not only the data. A BOM-only change bumps BOARD_REV (on the silkscreen).
   A change to the design files also updates the design baseline below.
-- **One board since 574c94c.** prod_board and prod_case left the repository (Alex: not needed);
-  their rows are RETIRED and keep `prod_board` in their board column. `both` now means the
-  product level: a requirement stated without the board's parts (its `.R` allocation holds
-  the board's numbers), or a check of the register itself, which covers a file under
-  hardware/ref_design or hardware/vv. KiCad files are never written by hand; ref_design's are
+- **One live board: f1c200s** (2026-10-28). prod_board and prod_case left the repository in
+  574c94c (Alex: not needed); their rows are RETIRED and keep `prod_board` in their board column.
+  `both` means the product level: a requirement stated without the board's parts (its `.F`
+  allocation holds the F1C200s board's numbers), or a check of the register itself, which covers
+  a file under hardware/ref_design or hardware/vv. A RETIRED or CUT row may keep `ref_design`,
+  REF-A as it was when the row left. KiCad files are never written by hand; ref_design's are
   generated from design.py.
+- **A dropped board's rows are DROPPED, never PASS or CLOSED** (2026-10-28). A requirement, DFMEA
+  row, check, defect or gate criterion that belonged to the ESP32-S3 board or the RP2354B board
+  names that board (`esp32s3`, `rp2354b`) in its board column and says `DROPPED with <board> (tag
+  <tag>): <why>`, the tag holding that board's register (`vv-esp32s3-final`, `vv-rp2354b-final`);
+  a dropped defect says what it was there (OPEN, FIXED, CLOSED) and the DF row its lesson carries
+  to. No gate counts a DROPPED row, no live row may lean on one, and a live row cites one only
+  inside 'Was: ...'. A live row may not name a dropped board.
+- **The baseline names its board** (2026-10-28). README's `- Baseline board:` says whose design
+  files the baseline is. While it is a dropped board, no check of the live board may PASS or FAIL
+  (the default mode fails), run_checks.py does not run them, R7 fails at every gate and
+  DFMEA:COVERAGE fails: the register describes no F1C200s design yet.
+- **Every live requirement is allocated to subsystems** (2026-10-28): a `- Subsystem:` line names
+  grid.md's subsystems (power, cell, soc, storage, usbc, display, audio, buttons, case) or `all`;
+  grid.md lists the requirements per subsystem.
+- **The new-MCU path** (gates.md, 2026-10-28): stages NM-01 to NM-10 from the requirements to
+  DVT and PVT, each with entry and exit needs; the default mode prints the stage the register is
+  at (the first whose exit is not met). Stage 3 is the chip gate on a dev board; a fail there
+  sends the project to the fallback chip before any copper.
 - **A path the register names exists** (2026-10-28, VER-220). Every repository path in a file
   under hardware/vv, the saved outputs aside, is in HEAD's tree, or is written
   `path@<commit>` as history and is in that commit. A move or a delete on main fails the
@@ -296,7 +314,8 @@ module's pin and the re-route) and main's comment and path edits in 012254b, 574
 fd66be9 (design.py, placement.py, case.scad and board/tools name the moved docs). The scripted
 checks were re-run against these files the same day (run_checks.py); a hand check that covers them
 is stale until it is re-run. The ESP32-S3 board is dropped, so this baseline only lets the register
-see when an F1C200s design replaces these files. Before that, re-seeded on 2026-10-28 at 39cc07f (branch ref-design-esp32s3), the ESP32-S3
+see when an F1C200s design replaces these files; the '- Baseline board:' line says whose files they
+are (`esp32s3`), and it becomes `f1c200s` in the commit that moves the baseline to the F1C200s design. Before that, re-seeded on 2026-10-28 at 39cc07f (branch ref-design-esp32s3), the ESP32-S3
 board Alex is ordering: the routed board (seed 144 of batch 7) and its fab outputs. The RP2354B
 board's register (71737ae) is tag `vv-rp2354b-final`; the earlier seeds are kept on branches
 vv-plan-36403e3 (this branch before the rebase onto 39cc07f), vv-plan-f0ab637, vv-plan-684a609 and
@@ -387,15 +406,11 @@ them against the purchased standards.
 
 ## Status on 2026-10-28
 
-Seeded by Claude at 76955d2 on 2026-10-24 and re-seeded four times for the RP2354B board (684a609,
-be437f8, 71737ae; HISTORY.md), whose register is tag `vv-rp2354b-final`. On 2026-10-28 Alex chose the
-ESP32-S3 board, and the register was re-seeded for it at 39cc07f: 14 checks, 15 DFMEA rows, 2
-requirements, 6 defects and G-ORD-23 RETIRED with that commit; new requirements for the module, its
-strapping, the antenna, the radio, the TLV75733P, the 8080 bus, the microSD slot, U11 and SW24;
-new checks VER-203 to VER-217; new rows DF-185 to DF-200; new defects DEF-80 to DEF-95. Every
-scripted check was re-run against 39cc07f, the 9 PASSes BLOCKED at fd1f6e8 among them (the
-datasheets are on disk now). VER-36 counts A-numbers from APPROVALS.md's table only. Every
-requirement is PROPOSED and APPROVALS.md is empty; the order gate fails, as it should (PLAN.md
-section i). The rounds after it built the paper checks of classes 2-15 that could run before the boards exist:
-classes 4, 6, 9 and 11, then 2, 5, 10, 13 and 14 (VER-34 scripted, VER-218, VER-192, VER-27, VER-112,
-VER-219; DEF-99 to DEF-102). Every cell of classes 2-15 is PASS or FAIL; class 1 waits on Alex.
+Seeded by Claude at 76955d2 on 2026-10-24, re-seeded for the RP2354B board (684a609, be437f8, 71737ae;
+tag `vv-rp2354b-final`) and for the ESP32-S3 board (39cc07f; tag `vv-esp32s3-final`), then, the same
+day both were dropped, re-seeded for the F1C200s board (step 2 of the re-target): REQ-PRD-12 to -17
+from DESIGN.md and the chip's, the USB-C roles' and the rails' requirements; DF-203 to DF-247; checks
+VER-221 to VER-250, the chip gate's on a dev board among them; the ESP32-S3 board's rows DROPPED.
+Every requirement is PROPOSED and APPROVALS.md is empty. No F1C200s check has run: there is no
+F1C200s design. The register is at stage NM-01 of the new-MCU path; the order gate fails, as it
+should (PLAN.md section i).
