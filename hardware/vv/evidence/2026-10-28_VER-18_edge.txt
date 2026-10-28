@@ -1,6 +1,6 @@
 # VER-18 edge
 DATE: 2026-10-28
-COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+COMMIT: 664f3b51cab86e8ffe029ca7e688a51532fb857b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/design_numbers.py edge

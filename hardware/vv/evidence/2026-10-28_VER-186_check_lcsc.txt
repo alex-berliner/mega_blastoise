@@ -1,6 +1,6 @@
 # VER-186 check_lcsc
 DATE: 2026-10-28
-COMMIT: 76571282af4ffb2a42bae6ee30f484c0a6b20658
+COMMIT: 664f3b51cab86e8ffe029ca7e688a51532fb857b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/check_lcsc.py

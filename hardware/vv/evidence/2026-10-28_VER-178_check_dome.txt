@@ -1,6 +1,6 @@
 # VER-178 check_dome
 DATE: 2026-10-28
-COMMIT: 36ca0b5454a23101a0a76323ddf8bdfcdf144fbb
+COMMIT: 664f3b51cab86e8ffe029ca7e688a51532fb857b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/check_dome.py

@@ -1,6 +1,6 @@
 # VER-198 appcircuit
 DATE: 2026-10-28
-COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+COMMIT: 664f3b51cab86e8ffe029ca7e688a51532fb857b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/circuit_checks.py appcircuit
@@ -75,59 +75,77 @@ constants the vv tools cite by line, against the extract's line:
   ok    circuit_checks.py:629 STAND_OPAMP_IQ = 0.00017 on mcp6001.txt:160
 [srv05-4.pdf sha256 a164eb7954004c1b9d6c6fe5047dcca89db686b1270c8f534fc724e3e2764ec5; its pdftotext -layout text sha256 8fc17c36e618bcbf..., 616 lines]
   ok    circuit_checks.py:841 U1_VC = 17.5 on srv05-4.txt:102
-  ok    design_numbers.py:64 VREG_TOL = 0.015 on tlv757p.txt:255
-  ok    design_numbers.py:65 VREG_TOL_85 = 0.01 on tlv757p.txt:252
-  ok    design_numbers.py:66 U3_VDO_1A = 0.425 on tlv757p.txt:298
+  ok    design_numbers.py:66 VREG_TOL = 0.015 on tlv757p.txt:255
+  ok    design_numbers.py:67 VREG_TOL_85 = 0.01 on tlv757p.txt:252
+  ok    design_numbers.py:68 U3_VDO_1A = 0.425 on tlv757p.txt:298
 [esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
-  ok    design_numbers.py:70 ADC_ATTEN3_ERR = 0.05 on esp32-s3.txt:3804
-  ok    design_numbers.py:82 KPRECHG = 70 on bq24074.txt:787
-  ok    design_numbers.py:82 KPRECHG = 106 on bq24074.txt:787
-  ok    design_numbers.py:83 KISET = 797 on bq24074.txt:785
-  ok    design_numbers.py:83 KISET = 975 on bq24074.txt:785
-  ok    design_numbers.py:84 ITERM = 0.09 on bq24074.txt:789
-  ok    design_numbers.py:84 ITERM = 0.11 on bq24074.txt:789
-  ok    design_numbers.py:85 V_LOWV = 2.9 on bq24074.txt:776
-  ok    design_numbers.py:85 V_LOWV = 3.1 on bq24074.txt:776
-  ok    design_numbers.py:86 VBAT_REG = 4.16 on bq24074.txt:773
-  ok    design_numbers.py:86 VBAT_REG = 4.23 on bq24074.txt:773
-  ok    design_numbers.py:87 V_HOT = 0.27 on bq24074.txt:824
-  ok    design_numbers.py:87 V_HOT = 0.33 on bq24074.txt:824
-  ok    design_numbers.py:88 V_COLD = 2 on bq24074.txt:826
-  ok    design_numbers.py:88 V_COLD = 2.2 on bq24074.txt:826
-  ok    design_numbers.py:89 I_TS = 7.5e-05 on bq24074.txt:823
-  ok    design_numbers.py:100 OPAMP_VOS_BUF = 0.0045 on mcp6001.txt:135
+  ok    design_numbers.py:72 ADC_ATTEN3_ERR = 0.05 on esp32-s3.txt:3804
+  ok    design_numbers.py:84 KPRECHG = 70 on bq24074.txt:787
+  ok    design_numbers.py:84 KPRECHG = 106 on bq24074.txt:787
+  ok    design_numbers.py:85 KISET = 797 on bq24074.txt:785
+  ok    design_numbers.py:85 KISET = 975 on bq24074.txt:785
+  ok    design_numbers.py:86 ITERM = 0.09 on bq24074.txt:789
+  ok    design_numbers.py:86 ITERM = 0.11 on bq24074.txt:789
+  ok    design_numbers.py:87 V_LOWV = 2.9 on bq24074.txt:776
+  ok    design_numbers.py:87 V_LOWV = 3.1 on bq24074.txt:776
+  ok    design_numbers.py:88 VBAT_REG = 4.16 on bq24074.txt:773
+  ok    design_numbers.py:88 VBAT_REG = 4.23 on bq24074.txt:773
+  ok    design_numbers.py:89 V_HOT = 0.27 on bq24074.txt:824
+  ok    design_numbers.py:89 V_HOT = 0.33 on bq24074.txt:824
+  ok    design_numbers.py:90 V_COLD = 2 on bq24074.txt:826
+  ok    design_numbers.py:90 V_COLD = 2.2 on bq24074.txt:826
+  ok    design_numbers.py:91 I_TS = 7.5e-05 on bq24074.txt:823
+  ok    design_numbers.py:102 OPAMP_VOS_BUF = 0.0045 on mcp6001.txt:135
   ok    layout_checks.py:696 ANT_CLEAR = 15 on esp32-s3-hw-design-guidelines.txt:1299
-  ok    paper_checks.py:42 U3_VIH = 1 on tlv757p.txt:328
-  ok    paper_checks.py:43 U3_VIL = 0.3 on tlv757p.txt:331
-  ok    paper_checks.py:45 U3_ISHDN = 1e-06 on tlv757p.txt:265
-  ok    paper_checks.py:46 U3_EN_ABS = 6 on tlv757p.txt:179
-  ok    paper_checks.py:47 U3_EN_REC = 5.5 on tlv757p.txt:208
-  ok    paper_checks.py:48 U3_TSTR = 0.00055 on tlv757p.txt:326
-  ok    paper_checks.py:50 U2_IBAT_PDWN = 6.5e-06 on bq24074.txt:714
-  ok    paper_checks.py:51 U2_OVP_MIN = 6.4 on bq24074.txt:699
-  ok    paper_checks.py:52 U2_EN_ABS = 7 on bq24074.txt:598,599
-  ok    paper_checks.py:53 U2_EN_PD = 285000 on bq24074.txt:512
-  ok    paper_checks.py:54 U2_VO_REG = 4.3 on bq24074.txt:729
-  ok    paper_checks.py:54 U2_VO_REG = 4.5 on bq24074.txt:729
-  ok    paper_checks.py:55 U2_BAT_OUT_R = 0.1 on bq24074.txt:724
-  ok    paper_checks.py:57 ESP_IIN = 5e-08 on esp32-s3.txt:3748,3749
-  ok    paper_checks.py:59 ESP_VDD_MIN = 3 on esp32-s3-wroom-1.txt:1596
-  ok    paper_checks.py:60 ESP_TX_PEAK = 0.355 on esp32-s3-wroom-1.txt:1662
-  ok    paper_checks.py:61 ESP_EN_RC = 10000 on esp32-s3-hw-design-guidelines.txt:338
-  ok    paper_checks.py:61 ESP_EN_RC = 1e-06 on esp32-s3-hw-design-guidelines.txt:338
-  ok    paper_checks.py:62 ESP_USB_R = 22 on esp32-s3-hw-design-guidelines.txt:874
-  ok    paper_checks.py:62 ESP_USB_R = 33 on esp32-s3-hw-design-guidelines.txt:874
-  ok    paper_checks.py:63 ESP_3V3_C = 2.2e-05 on esp32-s3-wroom-1.txt:2875
-  ok    paper_checks.py:63 ESP_3V3_C = 1e-07 on esp32-s3-wroom-1.txt:2875
+  ok    paper_checks.py:44 U3_VIH = 1 on tlv757p.txt:328
+  ok    paper_checks.py:45 U3_VIL = 0.3 on tlv757p.txt:331
+  ok    paper_checks.py:47 U3_ISHDN = 1e-06 on tlv757p.txt:265
+  ok    paper_checks.py:48 U3_EN_ABS = 6 on tlv757p.txt:179
+  ok    paper_checks.py:49 U3_EN_REC = 5.5 on tlv757p.txt:208
+  ok    paper_checks.py:50 U3_TSTR = 0.00055 on tlv757p.txt:326
+  ok    paper_checks.py:52 U2_IBAT_PDWN = 6.5e-06 on bq24074.txt:714
+  ok    paper_checks.py:53 U2_OVP_MIN = 6.4 on bq24074.txt:699
+  ok    paper_checks.py:54 U2_EN_ABS = 7 on bq24074.txt:598,599
+  ok    paper_checks.py:55 U2_EN_PD = 285000 on bq24074.txt:512
+  ok    paper_checks.py:56 U2_VO_REG = 4.3 on bq24074.txt:729
+  ok    paper_checks.py:56 U2_VO_REG = 4.5 on bq24074.txt:729
+  ok    paper_checks.py:57 U2_BAT_OUT_R = 0.1 on bq24074.txt:724
+  ok    paper_checks.py:59 ESP_IIN = 5e-08 on esp32-s3.txt:3748,3749
+  ok    paper_checks.py:61 ESP_VDD_MIN = 3 on esp32-s3-wroom-1.txt:1596
+  ok    paper_checks.py:62 ESP_TX_PEAK = 0.355 on esp32-s3-wroom-1.txt:1662
+  ok    paper_checks.py:63 ESP_EN_RC = 10000 on esp32-s3-hw-design-guidelines.txt:338
+  ok    paper_checks.py:63 ESP_EN_RC = 1e-06 on esp32-s3-hw-design-guidelines.txt:338
+  ok    paper_checks.py:64 ESP_USB_R = 22 on esp32-s3-hw-design-guidelines.txt:874
+  ok    paper_checks.py:64 ESP_USB_R = 33 on esp32-s3-hw-design-guidelines.txt:874
+  ok    paper_checks.py:65 ESP_3V3_C = 2.2e-05 on esp32-s3-wroom-1.txt:2875
+  ok    paper_checks.py:65 ESP_3V3_C = 1e-07 on esp32-s3-wroom-1.txt:2875
 [2n7002_cj.pdf sha256 7941fb423af7c6c6c8979063a7e8819bb19217ece275efcce18948950a41d9f6; its pdftotext -layout text sha256 8f457be6865e4d72..., 356 lines]
-  ok    paper_checks.py:66 Q_VTH = 1 on 2n7002_cj.txt:55
-  ok    paper_checks.py:66 Q_VTH = 2.5 on 2n7002_cj.txt:55
+  ok    paper_checks.py:68 Q_VTH = 1 on 2n7002_cj.txt:55
+  ok    paper_checks.py:68 Q_VTH = 2.5 on 2n7002_cj.txt:55
 [bat54c.pdf sha256 38d4cf5982dcaaa3dadba4eac506917de6798ef565062ef2abbecbb6023071ce; its pdftotext -layout text sha256 19006bad8f38df1c..., 500 lines]
-  ok    paper_checks.py:67 VF_01MA = 0.24 on bat54c.txt:113,114,115
-  ok    paper_checks.py:68 U1_C = 5e-12 on srv05-4.txt:105
+  ok    paper_checks.py:69 VF_01MA = 0.24 on bat54c.txt:113,114,115
+  ok    paper_checks.py:70 U1_C = 5e-12 on srv05-4.txt:105
 [rocpu_tps850.pdf sha256 085a2be0e64467bd9a929cc944267dfde6d1fb578840786e57bc438690048a18; its pdftotext -layout text sha256 5bd9d28cf3fb0dde..., 156 lines]
-  ok    paper_checks.py:70 SW24_R = 0.1 on rocpu_tps850.txt:20,137
-  ok    paper_checks.py:70 SW24_R = 0.5 on rocpu_tps850.txt:20,137
+  ok    paper_checks.py:72 SW24_R = 0.1 on rocpu_tps850.txt:20,137
+  ok    paper_checks.py:72 SW24_R = 0.5 on rocpu_tps850.txt:20,137
+  ok    paper_checks.py:74 U6_GBW = 1e+06 on mcp6001.txt:176
+  FAIL  paper_checks.py:75 U6_AOL = 25118.9 on mcp6001.txt:151: NOT on the cited line
+  ok    paper_checks.py:76 U6_VOS = 0.0045 on mcp6001.txt:135
+  ok    paper_checks.py:77 U6_SWING = 0.025 on mcp6001.txt:154
+  FAIL  paper_checks.py:78 U6_CIN = 9e-12 on mcp6001.txt:145,146: NOT on the cited line
+  ok    paper_checks.py:79 U6_VDD_MIN = 1.8 on mcp6001.txt:159
+[ao3400a.pdf sha256 9c60d0b6c1ddc7609a4b788a91181468d8ffe6c3e9ba425c3d8ffc5ba88c5033; its pdftotext -layout text sha256 39f205116896b7e2..., 392 lines]
+  ok    paper_checks.py:80 Q_CISS = 6.3e-10 on ao3400a.txt:85,86,87
+  ok    paper_checks.py:80 Q_COSS = 7.5e-11 on ao3400a.txt:85,86,87
+  ok    paper_checks.py:80 Q_CRSS = 5e-11 on ao3400a.txt:85,86,87
+  ok    paper_checks.py:81 Q_RG_INT = 4.5 on ao3400a.txt:88
+  ok    paper_checks.py:82 AO_VTH = 0.65 on ao3400a.txt:73
+  ok    paper_checks.py:82 AO_VTH = 1.45 on ao3400a.txt:73
+  ok    paper_checks.py:83 AO_RDS_25 = 0.048 on ao3400a.txt:80
+  ok    paper_checks.py:84 LED_VF_MAX = 3.2 on er-tft035ips-6.txt:758
+[hirose_fh12.pdf sha256 28aca07025cc3b602ab828d1ca972ca6b83c8bac53ead1807bf66cf0074b2a8a; its pdftotext -layout text sha256 e99ced47bb08fb0b..., 1398 lines]
+  ok    paper_checks.py:85 FH12_R = 0.05 on hirose_fh12.txt:56
+  ok    paper_checks.py:929 U2_IIN_MAX = 1.5 on bq24074.txt:738
   skipped I_TS_TOL: the tolerance (78 - 72) / 2 / 75 of the cited band, not a printed number
   skipped I_PATH: VER-13's own test current; the cite is for the 475 mA USB500 limit it sits above
   skipped I_LEAK: a stand-in, 20 x the cited 50 nA
@@ -142,8 +160,8 @@ constants the vv tools cite by line, against the extract's line:
   skipped V3V3: 3.3 V x (1 + the cited 1.5%), a product
   skipped VF_DECADE: 320 - 240 mV, the difference of the two cited lines
   skipped STAND_ESP_USB_C: a stand-in; the cited line gives a GPIO's 2 pF
-  55 cited numbers read
-1 failing
+  71 cited numbers read
+3 failing
 RESULT: FAIL
 
 --- stderr

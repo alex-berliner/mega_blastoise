@@ -1,6 +1,6 @@
 # VER-21 ret
 DATE: 2026-10-28
-COMMIT: 82eddf5d29daf0134e2427cf04a991f7271724c1
+COMMIT: 664f3b51cab86e8ffe029ca7e688a51532fb857b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/layout_checks.py ret

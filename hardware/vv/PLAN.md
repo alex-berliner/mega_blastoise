@@ -158,7 +158,10 @@ report', still fail.
 | **J7's 3V3 pad back-feeds U3** | design.py's note invites powering 3V3 there with VSYS at 0 V: over U3's VIN + 0.3 V | DEF-92, VER-159 |
 | **The audio bandwidth** | 9.7 kHz nominal, 8.2 kHz at the worst corner against 10 kHz | DEF-93, VER-100 |
 | **USB's resistors 11.5 mm from the module** | 18.2 and 20.9 mm of track before them | DEF-94, VER-191 |
-| **The new parts' stock and class unverified** | the module, the TLV75733P, the DM3AT, the TPS850 | DEF-81, VER-41 |
+| **The new parts' stock and class unverified** | the module, the TLV75733P, the DM3AT, the TPS850; Konnect's JLC snapshot of 2026-07-13 has all four as designed, Extended, stock 18078, 30038, 9158 and 2979 (VER-186's evidence): order day still decides | DEF-81, VER-41 |
+| **BL_PWM low leaves the backlight glowing** | U6's +4.5 mV offset holds 2.07 mA a sink, 4.13 mA in all (0.69 mA an LED) with BL_REF at 0 V; under VER-05's 5 mA, against pinmap.md's 'low = off' | DEF-96, VER-05 |
+| **The smallest dome's rim near the ring's inner edge** | D 4.0 +0/-0.05 mm (the drawing): the rim 0.171 mm inside the ring at 0.1 mm of placement error against 0.2 | DEF-97, VER-178 |
+| **design.py's maker for four capacitors** | C37, C38, C48, C49 (Fenghua 0402B...) named Samsung; JLC's BOM has no maker column, so the order is right | DEF-98, VER-186 |
 | **The case grew** | 78.9 x 156.48 x 10.70 mm against REQ-PRD-06's 77.4 x 156.64 x 9.6 before: Alex's two decisions; the requirement restated | VER-190 |
 
 Unchanged and still failing: the charge window 48.2 C (DEF-48), TH1's distance (DEF-37), the VBUS
@@ -453,7 +456,8 @@ The RP2354B board's gate history (fd1f6e8 and before) is in HISTORY.md section (
 | DEF-40 | the cutoff may never fire | VER-138 (FAIL), VER-139, VER-155, VER-156 | before the order |
 | DEF-41, 42 | assembly next to a live cell; Start/Select parts not bought | VER-91, VER-167 (FAIL) | case gate |
 | DEF-43, 51 | inrush; swelling room | VER-99, VER-182 (both CLOSED) | every change |
-| DEF-45 | the backlight sim does not read design.py | VER-05 | EVT |
+| DEF-45 | the backlight sim does not read design.py | VER-05 (paper_checks.py backlight since 2026-10-28: reads design.py; PASS; CLOSED) | every change |
+| DEF-96-98 | the backlight's glow at BL_PWM low; the dome's rim margin; four capacitors' maker field | VER-05, VER-178 (FAIL), VER-186 (FAIL) | before the order (DEF-97), EVT |
 | DEF-46 | bench cell emulation | VER-70, VER-67 | EVT |
 | DEF-49, 50 | the pill margin; the VBUS fault reach | VER-45, VER-177 (FAIL at 9.1 V; both OPEN: the BOM half in, the decisions Alex's) | before the order |
 | DEF-53, 62 | a worst-case cell 0.25 mm from the FR4 edge; then a pocket with no fit | VER-181 (PASS at 39cc07f; both CLOSED) | before the order |
