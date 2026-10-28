@@ -1,0 +1,19 @@
+# VER-219 fpc
+DATE: 2026-10-28
+COMMIT: 1ebd9e5baf27cdc717fbdf1047ffe1e5a5cf3939
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/case_checks.py fpc
+[hirose_fh12.pdf sha256 28aca07025cc3b602ab828d1ca972ca6b83c8bac53ead1807bf66cf0074b2a8a; its pdftotext -layout text sha256 e99ced47bb08fb0b..., 1398 lines]
+  ok    J3 is FH12-50S-0.5SH(55): the 50-contact, 0.5 mm FH12 the panel's drawing asks for (a bottom-contact ZIF, er-tft035ips-6.txt:165)
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+  ok    tail thickness, the FPC with its PI stiffener: the panel's 0.3 +-0.03 mm (0.27-0.33, er-tft035ips-6.txt:278) inside the FH12's recommended 0.3 +-0.05 (0.25-0.35, hirose_fh12.txt:51)
+  ok    contact width: the panel's 0.35 +-0.03 mm (0.32-0.38, er-tft035ips-6.txt:277) inside the FH12's recommended 0.35 +-0.03 (0.32-0.38, hirose_fh12.txt:697)
+  ok    contact span A (first to last contact centre): the panel's 24.5 +-0.03 mm (24.47-24.53, er-tft035ips-6.txt:279) inside the FH12's recommended 24.5 +-0.05 (24.45-24.55, hirose_fh12.txt:744)
+  FAIL  tail width B: the panel's 25.5 +-0.15 mm (25.35-25.65, er-tft035ips-6.txt:285) inside the FH12's recommended 25.5 +-0.07 (25.43-25.57, hirose_fh12.txt:744): 0.08 mm outside at the worst tail
+  the FH12-50S's own D column is 25.57 mm (hirose_fh12.txt:250), read as its FPC opening (a figure dimension: not compared); VER-44 measures the bought tails with calipers and VER-136 seats one in a breakout
+1 failing
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL
