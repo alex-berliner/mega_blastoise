@@ -65,7 +65,7 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // The cell sits in a hole in the board (row 19; Alex, 2026-10-21: the case was too thick with it
 // under the board), in the board's plane, across the board between seat 2's deck and J3's range:
 // its top at most cell_top over the board, its bottom in a pocket in the tub's floor. The hole is
-// the board's (placement.py CUTOUTS, case/CELLCUT_FOR_CASE.md): 0.5 round a worst-case cell, 1.0
+// the board's (placement.py CUTOUTS): 0.5 round a worst-case cell, 1.0
 // more at its left end, where its leads come out and run to J2 at the hole's seat-1 corner. It is
 // pushed to the hole's right end, where the charger's thermistor TH1 reads it through the gap.
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
@@ -392,7 +392,7 @@ deck_engage = deck_face - z_top_cu - 0.6;               // the end screws' pilot
 side_engage = min(6.0, case_h - z_top_cu - 0.8);        // the side screws' pilots stop 0.8 under the band's face
 
 // edge parts, all on the right (+X) long edge. J1 slid 2 mm up its wall (towards seat 2) when the side
-// screws came back inward (2026-10-22, CELLCUT_FOR_CASE.md): its opening, tab, notch and slot follow usb_y
+// screws came back inward (2026-10-22): its opening, tab, notch and slot follow usb_y
 usb_y = 1.5; usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
 usb_r = 1.0;                                            // its corner radius: a rounded rectangle with 1.2 mm flats
                                                         // on its ends, not a stadium (HRO's 3D model, 2026-10-20)
@@ -425,7 +425,7 @@ usb_zone = [usb_y - usb_notch_w / 2 - usb_fit, usb_y + usb_notch_w / 2 + usb_fit
 // receptacle's face (the receptacle's shell length, 6.20 in the Type-C spec)
 plug_len_min = 6.55;  usb_mate = 6.20;
 // left long edge: debug. SW18 BOOTSEL and SW19 RESET under pinholes in the face: since 2026-10-24 (the routing
-// levers, CELLCUT_FOR_CASE.md) out of the left strip into the left bezel below H4, one above the other, each
+// levers) out of the left strip into the left bezel below H4, one above the other, each
 // lying across the bezel (TS-1088, its 3D model 4.8 x 2.9 x 1.95: pin_sw its half size in the plan, pin_sw_h
 // its height). A floor rib in the tub under them (pin_rib) carries a pin's press into the floor
 pin_pos = [];   // BOOT and RESET lost their pinholes: the SD slot took the left bezel (a question for Alex, progress.md)
