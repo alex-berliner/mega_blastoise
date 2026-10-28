@@ -1,5 +1,15 @@
 # Verification and validation
 
+**Decision (Alex, 2026-10-28): the order candidate is now the ESP32-S3-WROOM-1-N16R8 board**
+that `hardware/ref_design/docs/esp32s3_board_proposal.md` describes on main (dcb6a76, e79f251).
+It is not designed yet: there is no design.py for it, and this register will be re-seeded for
+it once there is. The RP2354B board (71737ae) is not being ordered. Its register is frozen at
+tag `vv-rp2354b-final` (c8ac9dd) and everything below that describes it stays as history. What
+the RP2354B rounds found that any board with the same cell, charger, case, panel, buttons,
+audio or connectors must also satisfy is in [carryover.md](carryover.md). The framework fixes
+made after the freeze (2026-10-28: ACCEPTED defects, 'sources', architecture proposals in R8,
+accepted grid gaps) are in the Rules below.
+
 How we know a board works before and after we order it. [PLAN.md](PLAN.md) is the single
 plan: what must be true before the order, then EVT, DVT and PVT. This page is the system.
 It covers both boards: `hardware/ref_design` (REF-A, Claude's) and `hardware/prod_board` with
@@ -16,15 +26,16 @@ the case, survives use.
 |---|---|---|
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
 | [HISTORY.md](HISTORY.md) | the earlier rounds' ledgers and findings, moved out of PLAN.md (O-S9); check_trace does not read it | |
+| [carryover.md](carryover.md) | what the RP2354B rounds found that the ESP32-S3 board must also satisfy: one row a finding, its number, the check that found it and the rule; the re-seed turns each row into requirements and checks; check_trace does not read it | |
 | [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.R / .P |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
-| [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, and the check classes and subsystems it targets | VER-NN |
-| [grid.md](grid.md) | the coverage grid, generated (never typed): check classes 1-18 by subsystem, each cell COVERED with its checks and worst status, planned, GAP or NOT_NEEDED; the gaps with their proposed checks; the FAILs | |
+| [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, the check classes and subsystems it targets, and the datasheet files it relies on ('sources') | VER-NN |
+| [grid.md](grid.md) | the coverage grid, generated (never typed): check classes 1-18 by subsystem, each cell COVERED with its checks and worst status, planned, GAP or NOT_NEEDED; the gaps with their proposed checks; the FAILs; the ACCEPTED and BLOCKED checks | |
 | [grid_reasons.csv](grid_reasons.csv) | the cells that need no check: class, subsystem, NOT_NEEDED (or ACCEPTED_GAP, which counts only once Alex signs GRID-<class>-<subsystem>) and why | |
 | [vp_map.csv](vp_map.csv) | a one-time map of the archived validation_plan.md's 218 methods to IDs, or CUT with a reason | plan #n |
 | [gates.md](gates.md) | the order, case, EVT, DVT and PVT gates, each criterion naming IDs and a board; the unit allocation; proposed waivers | G-ORD-NN, G-CASE-NN, G-EVT-NN, G-DVT-NN, G-PVT-NN, W-NN |
-| [defects.md](defects.md) | the corrective-action log (design defects; per-unit findings go in evidence/findings.csv) | DEF-NN |
-| [releases/APPROVALS.md](releases/APPROVALS.md) | Alex's decisions: approvals, acceptances (with the last phase they hold for) and waivers | A-NNN |
+| [defects.md](defects.md) | the corrective-action log (design defects; per-unit findings go in evidence/findings.csv); Status OPEN, FIXED, CLOSED, ACCEPTED or RETIRED | DEF-NN |
+| [releases/APPROVALS.md](releases/APPROVALS.md) | Alex's decisions: approvals, acceptances (with the last phase they hold for), defects moved to a later gate (DF-ACCEPT) and waivers | A-NNN |
 | [releases/](releases/) | release and change records, from the two templates | REL-<BOARD>-R<rev>-<PHASE>, CHG-NN |
 | [evidence/](evidence/) | the saved output of each check run, named `<date>_<VER>_<check>.txt`; units.csv and findings.csv for built units | |
 | [tools/check_trace.py](tools/check_trace.py) | the trace gate (Python 3 standard library) | |
@@ -160,6 +171,21 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
 - **A defect names its gate.** Each defect's `Gate:` is the first gate it must be fixed by; R4
   counts it there and at every later gate, so a docs or case defect does not hold the order back
   (O-R5).
+- **Accepting a defect is one signed line, and it is not a PASS** (2026-10-28, both reviewers of
+  vv-rp2354b-final). Alex signs `| A-NNN | DF-ACCEPT:DEF-nn | ACCEPTED | <gate it moves to> |
+  <why> |` and the defect's Status becomes ACCEPTED. Before that gate, R4 lists the defect instead
+  of failing on it, and every gate criterion (G-ORD-22's PHASE:ORDER too) lets through the checks
+  the defect names under 'Check added or changed', and only those, shown as ACCEPTED in the gate
+  and in grid.md. From that gate on it counts as OPEN again. An ACCEPTED Status with no signed line
+  fails the default mode. It verifies no requirement (R2) and covers no H row (R3).
+- **No PASS on a stand-in** (2026-10-28). A check's 'sources' column names the datasheet files
+  it relies on, by their name in hardware/ref_design/datasheets. A PASS whose sources are not all
+  there is BLOCKED: no gate counts it, it clears no grid cell, and the report lists it with the
+  missing files. Name a datasheet in 'sources' even before it is downloaded.
+- **An architecture proposal holds the order** (2026-10-28). A commit on the order branch after
+  the baseline commit that touches hardware/ref_design/docs/*proposal*.md warns in the default
+  mode and fails R8 at the order gate: dcb6a76 chose another MCU in a proposal doc, and R8, which
+  read only design paths, did not see it.
 - **Advisory checks stay advisory.** A check that only ADVISORY criteria name is printed but
   not counted by PHASE:<p> (VER-40). One check can be advisory on its own: a criterion's Needs
   cell may name it as `ADVISORY:VER-nn`, which makes that one check advisory at that gate and
@@ -192,6 +218,10 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   NOT_NEEDED reason in grid_reasons.csv or a NOT_BUILT check, and the order gate (R9) holds every
   cell of classes 1-15 until a built check that runs before the boards exist clears it: an ORDER
   check or an analysis, and for class 15 an analysis that has run (2026-10-27; tools/grid.py).
+  An accepted gap needs both an ACCEPTED_GAP row in grid_reasons.csv and Alex's signed
+  GRID-<class>-<subsystem> line; either alone leaves the cell a GAP. "Classes 1-15 pass before
+  the order" means each cell is covered (R9) and its ORDER checks pass or are ACCEPTED with a
+  signed line (G-ORD-22); a FAIL in the cell from a later-phase check does not hold the order.
 - **Nothing hides behind a later gate.** Every check is reached by a gate criterion, a
   requirement or an H-priority risk no later than its own phase.
 - **A check that can be a script is a script that can fail.** Show it failing once (VER-22,

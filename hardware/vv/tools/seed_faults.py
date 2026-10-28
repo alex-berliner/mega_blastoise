@@ -63,6 +63,17 @@ The review's findings applied at 71737ae add theirs (2026-10-27):
   O-R6  VER-137 not run: the display's class 4 cell, cleared only by an unrun analysis, is planned at R9.
   O-R1  a defect taken from OPEN to FIXED is listed by G0 with no GATE@ line and fails G1 after one.
 
+The framework fixes after vv-rp2354b-final's sign-off add theirs (2026-10-28):
+
+  accept   a defect ACCEPTED with no DF-ACCEPT line, and one on an unsigned line: the default mode fails;
+           a signed line moves DEF-62 past the order gate and lets VER-181 through as ACCEPTED (a control);
+           DEF-37 accepted lets VER-164 through and leaves VER-181, which it does not name, FAIL.
+  sources  a PASS whose 'sources' names a datasheet not on disk is BLOCKED at the order gate and in the
+           default report; a source written as a path fails the default mode.
+  R8       a proposal doc (docs/*proposal*.md) changed on the order branch after the baseline: the default
+           mode warns and the order gate fails.
+  grid     a GRID line signed with no ACCEPTED_GAP row leaves its cell a GAP, and R9 says why.
+
 Python 3 standard library and git.
 """
 import csv
@@ -303,11 +314,12 @@ FAULTS = [
      "3 case no check",
      lambda d: (drop_line(d, "grid_reasons.csv", "3,case,"),
                 csv_edit(d, "verification.csv", "VER-70", classes="3", subsystems="case"))),
-    # 5 since the class 2-15 round (2026-10-27): VER-13 and VER-144 (analyses that ran) clear class 15 for power, cell and
-    # display; VER-200 (BLOCKED, not run) holds audio; VER-193 alone clears buttons, case, mcu and usb_debug, so its NOT_RUN
-    # gives 4 + 1, and counting a NOT_RUN analysis would drop the count to 1
-    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 5",
-     lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN", evidence="", commit="", date="")),
+    # 8 since 2026-10-28: VER-144 and VER-193 are BLOCKED (their PASS rests on ao3400a.pdf, srv05-4.pdf and mcp6001.pdf,
+    # not on disk), so only VER-13 (an analysis that ran: FAIL) clears class 15, for power and cell; the other six cells
+    # are planned.  VER-13 not run leaves all eight planned; counting a NOT_RUN analysis would keep the count at 6.
+    # (5 before, with VER-193 not run while VER-144 and VER-193 cleared the rest.)
+    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 8",
+     lambda d: csv_edit(d, "verification.csv", "VER-13", last_result="NOT_RUN", evidence="", commit="", date="")),
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", R666")),
@@ -331,6 +343,19 @@ FAULTS = [
      "4 display planned: VER-05 VER-137",
      lambda d: (csv_edit(d, "verification.csv", "VER-137", last_result="NOT_RUN", evidence="", commit="", date=""),
                 block_field(d, "defects.md", "DEF-39", "Status", "FIXED (seeded: VER-137 not run)"))),
+    # the framework fixes after vv-rp2354b-final's sign-off (2026-10-28)
+    ("accept: a defect ACCEPTED with no DF-ACCEPT line at all", "structure",
+     "DEF-62: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-62' line",
+     lambda d: block_field(d, "defects.md", "DEF-62", "Status", "ACCEPTED (to EVT, seeded)")),
+    ("sources: a PASS whose datasheet is not on disk is BLOCKED at the order gate", "gate",
+     "VER-99 BLOCKED: its PASS rests on nosuch_datasheet.pdf",
+     lambda d: csv_edit(d, "verification.csv", "VER-99", sources="nosuch_datasheet.pdf")),
+    ("sources: the default mode reports a PASS on a datasheet not on disk as BLOCKED", "report",
+     "    VER-99: nosuch_datasheet.pdf",
+     lambda d: csv_edit(d, "verification.csv", "VER-99", sources="nosuch_datasheet.pdf")),
+    ("sources: a source that is a path, not a file in the datasheets directory", "structure",
+     "VER-99: sources token 'datasheets/bq24074.pdf' is not a file name",
+     lambda d: csv_edit(d, "verification.csv", "VER-99", sources="datasheets/bq24074.pdf")),
 ]
 
 
@@ -925,6 +950,67 @@ def g_grid_accepted(repo, base):
     return "order"
 
 
+def g_accept_unsigned(repo, base):
+    """1. (2026-10-28): a defect ACCEPTED on a DF-ACCEPT line committed without Alex's signature fails the default
+    mode: an unsigned acceptance moves nothing."""
+    vv = os.path.join(repo, "hardware/vv")
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-62 | ACCEPTED | EVT | DEC-27 decided at EVT | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-62", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-62 accepted to EVT, unsigned", sign=False)
+    return None
+
+
+def g_accept_signed(repo, base):
+    """1. (control): Alex's signed DF-ACCEPT line moves DEF-62 (Gate ORDER) to EVT: R4 lists it beside its result,
+    not in the OPEN list, G-ORD-07 lets VER-181 (a check DEF-62 names) through as ACCEPTED, and G0 does not list
+    the move (it is his own signed one)."""
+    vv = os.path.join(repo, "hardware/vv")
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-62 | ACCEPTED | EVT | DEC-27 decided at EVT | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-62", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-62 accepted to EVT")
+    return "order"
+
+
+def g_accept_outside(repo, base):
+    """1.: a signed acceptance lets through only the checks its defect names.  DEF-37 (VER-164, VER-87) accepted to
+    EVT: G-ORD-07 shows VER-164 ACCEPTED, and VER-181, which DEF-37 does not name, still FAIL."""
+    vv = os.path.join(repo, "hardware/vv")
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-37 | ACCEPTED | EVT | DEC-25's pad is a case part | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-37", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-37 accepted to EVT")
+    return "order"
+
+
+def g_proposal_branch(repo, base):
+    """3. (2026-10-28): a commit on the order branch after the baseline that touches docs/*proposal*.md (dcb6a76
+    chose another MCU there): the default mode warns, the order gate fails R8."""
+    b = re.search(r"^- Order branch: `[^`]+` from `([0-9a-f]+)`", open(os.path.join(repo, "hardware/vv/README.md")).read(),
+                  re.M).group(1)
+    wt = os.path.join(os.path.dirname(repo), "order_wt_proposal")
+    if not os.path.isdir(wt):
+        git(repo, "worktree", "add", "-q", "-b", "seeded-proposal", wt, b)
+        with open(os.path.join(wt, "hardware/ref_design/docs/next_revision_proposal.md"), "a") as f:
+            f.write("\nSeeded: the next board takes another MCU.\n")
+        commit(wt, "a proposal doc changes the architecture on the order branch")
+    name_order_branch(os.path.join(repo, "hardware/vv"), "seeded-proposal")
+    commit(repo, "README names the seeded proposal branch")
+    return "order"
+
+
+def g_proposal_branch_default(repo, base):
+    g_proposal_branch(repo, base)
+    return None
+
+
+def g_grid_signed_no_row(repo, base):
+    """4. (2026-10-28, step 9.5): a GRID line Alex signed with no ACCEPTED_GAP row in grid_reasons.csv does not
+    clear the cell, and the order gate says why."""
+    approve(os.path.join(repo, "hardware/vv"),
+            f"| A-001 | GRID-1-power | ACCEPTED | ORDER | read against the functions by hand | Alex | {TODAY} |")
+    commit(repo, "accept the power subsystem's class 1 gap, with no reason row")
+    return "order"
+
+
 GIT_FAULTS = [
     ("row result disagrees with its evidence", "structure", "the row says FAIL", g_result_disagrees),
     ("evidence past its valid_days", "report", "expired", g_expired),
@@ -1002,6 +1088,20 @@ GIT_FAULTS = [
      "DEF-14 went from OPEN to FIXED", g_status_listed),
     ("O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1)", "gate",
      "DEF-14 went from OPEN to FIXED", g_status_freeze),
+    # the framework fixes after vv-rp2354b-final's sign-off (2026-10-28)
+    ("accept: a defect ACCEPTED on an unsigned DF-ACCEPT line", "structure",
+     "DEF-62: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-62' line naming the gate it moves to "
+     "and why (A-001 pending: not signed with Alex's key)", g_accept_unsigned),
+    ("accept (control): a signed DF-ACCEPT line moves DEF-62 past the order gate and lets VER-181 through", "gate_no",
+     "VER-181 ACCEPTED (DEF-62 to EVT, A-001", g_accept_signed, "DEF-62 went from OPEN"),
+    ("accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-181)", "gate_no",
+     "VER-164 ACCEPTED (DEF-37 to EVT, A-001", g_accept_outside, "VER-181 ACCEPTED"),
+    ("R8: a proposal doc changed on the order branch after the baseline fails the order gate", "gate",
+     "seeded-proposal has architecture proposal commits after", g_proposal_branch),
+    ("R8: a proposal doc changed on the order branch after the baseline warns in the default mode", "report",
+     "seeded-proposal has architecture proposal commits after", g_proposal_branch_default),
+    ("grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why", "gate",
+     "GRID-1-power is signed but grid_reasons.csv has no ACCEPTED_GAP row", g_grid_signed_no_row),
 ]
 
 

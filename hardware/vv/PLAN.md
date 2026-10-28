@@ -1,6 +1,17 @@
 # The plan: from here to 5 boards, then 30
 
-**Not ready to order.** The board being ordered is `hardware/ref_design` at **71737ae** (main,
+**Decision (Alex, 2026-10-28): the 5-board JLC order is the ESP32-S3-WROOM-1-N16R8 board** in
+`hardware/ref_design/docs/esp32s3_board_proposal.md` on main (dcb6a76, e79f251), not the RP2354B
+board below. It is not designed yet: no design.py exists for it. This register will be re-seeded
+for it once its design exists. The RP2354B content (sections b to l) is frozen at tag
+`vv-rp2354b-final` (c8ac9dd) and stays as history; nothing in it is the plan for the next order.
+What it found that the new board must also satisfy is [carryover.md](carryover.md). On 2026-10-28
+the framework was fixed for the next board, after both sign-off reviewers declined
+vv-rp2354b-final: an ACCEPTED defect status with a signed DF-ACCEPT line (README, Rules), a
+'sources' column that makes a PASS on a missing datasheet BLOCKED, R8 failing the order gate on a
+proposal doc changed after the baseline, and the grid wording below (sections d and k).
+
+**Not ready to order (RP2354B, history).** The board that was to be ordered is `hardware/ref_design` at **71737ae** (main,
 2026-10-27: the board spin 40281b8 on ref-design-35in, merged as bfe9609, then a SOURCES.md
 fix). On 2026-10-27 this register, which described be437f8, was re-seeded for it: every
 scripted check and every check that failed at be437f8 was re-run against 71737ae's files
@@ -71,6 +82,14 @@ pins. The counts are in section (i).
   keeps its ID and names the commit that removed it; no live row may lean on a retired check
   or cite a retired id outside 'Was: ...' (O-R9, F-R14).
 - Each defect names its Gate; R4 holds it there and at every later gate, not before (O-R5).
+  Since 2026-10-28 the one way to move a defect later without fixing it is Status ACCEPTED with
+  Alex's signed `DF-ACCEPT:DEF-nn` line naming the gate it moves to and why: before that gate R4
+  lists it and every criterion, G-ORD-22 included, lets through the checks it names, shown as
+  ACCEPTED (not PASS) there and in grid.md. An unsigned ACCEPTED fails the default mode.
+- A check's 'sources' names the datasheet files it relies on; a PASS whose sources are not in
+  hardware/ref_design/datasheets is BLOCKED at every gate and in the grid (2026-10-28).
+- A commit on the order branch after the baseline that touches docs/*proposal*.md warns in the
+  default mode and fails R8 at the order gate (2026-10-28).
 - The design baseline in README.md names every design path and must equal HEAD and the
   baseline commit's own blobs, or the default mode fails (DEF-47: on 2026-10-26 the rebase onto
   be437f8 failed it at once, as designed, and the rebase onto 71737ae on 2026-10-27 did the same;
@@ -162,6 +181,19 @@ Every number below comes from `tools/design_numbers.py` and the board's own chec
 
 ## (d) Before the 5-board order
 
+**What "classes 1-15 pass before the order" means** (2026-10-28, for every board this register
+describes): each cell of classes 1-15 in grid.md is covered (R9: a check that can clear it has
+run, or a NOT_NEEDED reason, or an accepted gap), and each ORDER check in it passes or is ACCEPTED
+with a signed DF-ACCEPT line (G-ORD-22). A FAIL in the cell from a check of a later phase (an EVT
+analysis such as VER-103) does not hold the order: its defect's Gate does. An accepted gap needs
+both a grid_reasons.csv ACCEPTED_GAP row and Alex's signed GRID-<class>-<subsystem> line.
+
+**How a decision to accept moves the gate** (2026-10-28): "Alex accepts X for EVT" means a signed
+`DF-ACCEPT:DEF-nn` line with scope EVT and the defect's Status ACCEPTED. R4 then lists the defect
+instead of failing on it, and the checks the defect names under 'Check added or changed' pass the
+ORDER criteria as ACCEPTED. A check the defect does not name still fails. A DFMEA row's ACCEPTED
+line (DF-nn) covers R3 only; a requirement's DEFERRED line covers R1 and R2 only.
+
 The order gate holds only what the copper, the BOM and the fab files freeze, or what would
 make the five boards useless or unsafe. A BOM decision Alex may accept for EVT is held here by
 its defect, while its check binds at EVT. Every ORDER check is named in a numbered step below
@@ -196,9 +228,9 @@ first (O-S9).
 | 7 | **The board against the case**: the XY chain from positions.json; placement drift against placement.py and positions.json (VER-19 stays: VER-143 compares two builds of the same scripts, so a placement or positions error passes it: O-S6); check_fit; the MLCC keep-out (passes) and TH1 (fails at 1.05 mm, step 1.5); the ESTIMATE ledger with fpc_low in it (O-S8), the cell from its spec sheet (F-S1). | VER-174, VER-06, VER-19, VER-142, VER-164, VER-152 | 1 day plus calipers |
 | 8 | **The panel and the cell, parts in hand**: the ER-TFT035IPS-6 lit through the breakout, its header numbering by diode and continuity tests (F-R1); ID4 on SDO, or SDA if SDO is silent (F-R8); its redraw timed at an in-spec clock; the FPC folded into a breakout in J3's place; the tail's thickness; the cell's spec sheet. cell.json and its assert (VER-160) moved to EVT (O-S6); the cell's incoming inspection (VER-49) is EVT's. | VER-43, VER-136, VER-44, VER-37 | Alex and Claude: an evening each once parts arrive |
 | 9 | **Test access and firmware size**: every bring-up probe point has copper (the probes moved at 71737ae: TP3, TP6, TP11-TP14); the game's llvm-size inside 2 MB. | VER-158, VER-151 | 2 hours |
-| 9.5 | **The coverage grid's gaps** ([grid.md](grid.md), R9): the pre-order checks the grid planned: each subsystem's requirements read against its functions (VER-189), the case's architecture (VER-190), the USB data path's corners (VER-191), the USB connector's fault reach (VER-195), the amplifier's states (VER-196), the copied core's values against rp2350.pdf's own rules (VER-197, built and run 2026-10-27: FAIL, DEF-67), and the paper heat estimate run to a number (VER-144, VER-193), the clocked buses' timing (VER-199, new 2026-10-27). R9 also holds every cell whose only clearing checks are NOT_BUILT: build them or ask Alex to accept the gap with a signed GRID-<class>-<subsystem> line. | VER-189, VER-190, VER-191, VER-195, VER-196, VER-197, VER-144, VER-193, VER-199, VER-200 | 2 days; the later-phase analyses R9 holds, about 3 days more, or Alex's acceptances: 30 min |
+| 9.5 | **The coverage grid's gaps** ([grid.md](grid.md), R9): the pre-order checks the grid planned: each subsystem's requirements read against its functions (VER-189), the case's architecture (VER-190), the USB data path's corners (VER-191), the USB connector's fault reach (VER-195), the amplifier's states (VER-196), the copied core's values against rp2350.pdf's own rules (VER-197, built and run 2026-10-27: FAIL, DEF-67), and the paper heat estimate run to a number (VER-144, VER-193), the clocked buses' timing (VER-199, new 2026-10-27). R9 also holds every cell whose only clearing checks are NOT_BUILT or BLOCKED: build or unblock them, or accept the gap, which needs two things: Claude adds the cell's ACCEPTED_GAP row with its reason to grid_reasons.csv, and Alex signs the GRID-<class>-<subsystem> line. Either alone leaves the cell a GAP (grid.py lists a signed line with no row). | VER-189, VER-190, VER-191, VER-195, VER-196, VER-197, VER-144, VER-193, VER-199, VER-200 | 2 days; the later-phase analyses R9 holds, about 3 days more, or Alex's acceptances: 30 min |
 | 10 | **Reviews** (advisory here): the DFMEA review binds at G-EVT-16 (VER-98); the clean-room, return-path and gerbv reviews if time allows (VER-40, VER-21, VER-27). | VER-98 | Alex: half a day, optional |
-| 11 | **Alex's decisions** in APPROVALS.md, in signed commits: one `REQ-ALL@<commit>` line; the H rows only built units can detect, accepted for ORDER (`--gate order --verbose` lists them); DF-147, DF-101 and DF-164 for EVT (steps 1.6, 1.7, 1.11); u4 pin 58's waiver, now for U10's input (DEC-29); one `GATE@<commit>` line after reading G0's list of moves (O-S5). | R1, R3, G1 | Alex: 1 h |
+| 11 | **Alex's decisions** in APPROVALS.md, in signed commits: one `REQ-ALL@<commit>` line; the H rows only built units can detect, accepted for ORDER (`--gate order --verbose` lists them); DF-147, DF-101 and DF-164 for EVT (steps 1.6, 1.7, 1.11), each with its defect's `DF-ACCEPT:DEF-nn` line to EVT (DEF-48, DEF-50, DEF-49) and that defect's Status ACCEPTED, since a DF-nn line alone moves no defect and no check (2026-10-28); u4 pin 58's waiver, now for U10's input (DEC-29); one `GATE@<commit>` line after reading G0's list of moves (O-S5). | R1, R3, G1 | Alex: 1 h |
 | 12 | **Release and order**: the release record; the dry run (valid 7 days); stock on order day (valid 1 day); `check_trace.py --gate order` exits 0; order 5 assembled and 5 bare boards, typing the Gerbers' extent, 73.4 x 151.48 mm (72.4 wide without J1's tab), not bom.md's 151.64 (DEF-79, O-R3). | VER-42, VER-28, VER-41 | 1 day |
 
 Rough total: about 5.5 working days of Claude's work (6 before this re-seed: the drill, CPL,
@@ -530,10 +562,20 @@ spec sheet); VER-18 PASS in the data, the closest copper 0.108 mm from the edge 
 and from grid_reasons.csv; nothing in it is typed. A check is tagged only with the classes it
 targets for every subsystem it names (the tags are a cross product). The order gate's R9 fails
 while a cell of classes 1-15 has no built check that can clear it (below), no NOT_NEEDED
-reason and no `GRID-<class>-<subsystem>` acceptance Alex signed; a cell whose clearing checks
+reason and no accepted gap; a cell whose clearing checks
 are all NOT_BUILT (or, for class 15, not yet run) is "planned" and still a gap. `check_trace.py` reports the count; run_checks.py
 rewrites grid.md after each run. On the reworked board: re-tag the rows the rework touches,
 then run `python3 hardware/vv/tools/grid.py`.
+
+Said plainly (2026-10-28): "classes 1-15 pass before the order" means each cell's ORDER checks
+pass, or are ACCEPTED through a defect Alex moved with a signed DF-ACCEPT line (G-ORD-22), and the
+cell is covered (R9). R9 is coverage, not results: it clears a cell on a FAIL too, so the grid can
+read FAIL in a cell on the day the order gate passes. Such a FAIL comes from a check of a later
+phase (VER-103 and VER-138 at EVT, say); its defect's Gate holds it, not the order. An accepted gap
+is two things, both needed: an ACCEPTED_GAP row in grid_reasons.csv with its reason, and Alex's
+signed `GRID-<class>-<subsystem>` line; grid.py and the gate list a signed line with no row. A PASS
+whose 'sources' name a datasheet not on disk shows BLOCKED and clears nothing; a check an accepted
+defect lets through shows ACCEPTED, never PASS.
 
 Which check can clear a cell (tools/grid.py, after the grid's audit, now in HISTORY.md): for classes 1-14 a built
 check that runs before the boards exist, an ORDER check or an analysis (A); for class 15 an

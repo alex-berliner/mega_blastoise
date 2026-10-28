@@ -4,7 +4,7 @@
     python3 hardware/vv/tools/grid.py           # write hardware/vv/grid.md
     python3 hardware/vv/tools/grid.py --check   # exit 1 when grid.md is not what the register gives
 
-It reads verification.csv (each check's 'classes' and 'subsystems', space-separated) and
+It reads verification.csv (each check's 'classes', 'subsystems' and 'sources', space-separated) and
 grid_reasons.csv (class, subsystem, status NOT_NEEDED or ACCEPTED_GAP, reason). Nothing in
 grid.md is typed: re-run this after any change to either file (run_checks.py does).
 
@@ -36,11 +36,21 @@ every subsystem it names). A cell is:
   NOT_NEEDED   grid_reasons.csv says why the class cannot apply to the subsystem.
   ACCEPTED_GAP grid_reasons.csv proposes it; it counts only when Alex has signed the line
                'GRID-<class>-<subsystem>' ACCEPTED in releases/APPROVALS.md (check_trace passes the
-               signed ones in). Until then it is a GAP.
+               signed ones in). Until then it is a GAP. It needs both: a signed line with no
+               ACCEPTED_GAP row clears nothing either, and is listed (PLAN.md step 9.5).
+
+Two marks on a check (2026-10-28), shown after its id and counted in a cell's worst status:
+
+  BLOCKED      a PASS whose 'sources' name a datasheet that is not in hardware/ref_design/datasheets:
+               it rests on a stand-in, so it clears no cell and no gate counts it.
+  ACCEPTED     a check that a defect Alex moved to a later gate with a signed DF-ACCEPT line names:
+               the order gate lets it through, and it is not a PASS (check_trace passes these in).
 
 The order gate (check_trace.py --gate order, rule R9) fails while any cell of classes 1-15 is
 GAP, planned or an unsigned ACCEPTED_GAP (the audit of 2026-10-27: a NOT_RUN bench test of a later
-phase no longer clears a cell of classes 1-14, and a class 15 analysis clears only once it has run). Classes 16-18 belong to EVT, DVT and PVT and are shown,
+phase no longer clears a cell of classes 1-14, and a class 15 analysis clears only once it has run).
+R9 is coverage, not results: a cell's ORDER checks must pass or be ACCEPTED at G-ORD-22, and a FAIL
+from a later-phase analysis in the cell does not hold the order. Classes 16-18 belong to EVT, DVT and PVT and are shown,
 not gated here; 19 and 20 are whole-register classes, listed under the table (subsystem
 'register').
 
@@ -52,6 +62,11 @@ import re
 import sys
 
 HERE = os.path.dirname(os.path.abspath(__file__))
+ROOT = os.path.dirname(os.path.dirname(os.path.dirname(HERE)))
+# 2026-10-28: a check's 'sources' names the datasheet files it relies on, by their name in this directory; a PASS
+# on one that is not here rests on a stand-in, so it shows BLOCKED and clears no cell (check_trace: no gate counts it)
+DATASHEETS = os.path.join(ROOT, "hardware", "ref_design", "datasheets")
+SOURCE_TOKEN = re.compile(r"[A-Za-z0-9][\w.+-]*\.(?:pdf|zip|csv|txt)")
 
 CLASSES = {
     1: "Requirements", 2: "Architecture fit", 3: "Connectivity", 4: "Values and worst case",
@@ -69,11 +84,33 @@ ORDER_CLASSES = range(1, 16)             # 1-14, and 15 by a paper estimate
 LATER = {16: "EVT", 17: "DVT", 18: "PVT"}
 REASON_COLS = ["class", "subsystem", "status", "reason"]
 REASON_STATUS = ("NOT_NEEDED", "ACCEPTED_GAP")
-WORST = ["FAIL", "NOT_BUILT", "NOT_RUN", "PASS"]
+# BLOCKED: a PASS on a datasheet not on disk; ACCEPTED: a check an ACCEPTED defect lets through the order gate
+WORST = ["FAIL", "BLOCKED", "NOT_BUILT", "NOT_RUN", "ACCEPTED", "PASS"]
 BUILT = ("PASS", "FAIL", "NOT_RUN")      # classes 16-18: any built check
 RESULTS = ("PASS", "FAIL")               # classes 1-15: a clearing check counts once it has run (O-R6)
 PHASES = ["ORDER", "CASE", "EVT", "DVT", "PVT", "SALE"]
 LIVE_BOARDS = ("ref_design", "both")
+
+
+def missing_sources(v, ds=DATASHEETS):
+    """The files a check's 'sources' names that are not in hardware/ref_design/datasheets."""
+    return [s for s in (v.get("sources") or "").split() if not os.path.isfile(os.path.join(ds, s))]
+
+
+def shown(v, accepted):
+    """The status a check shows in a cell: ACCEPTED when an accepted defect lets it through the order gate and it
+    has not passed cleanly; BLOCKED for a PASS on a datasheet not on disk; otherwise its last result."""
+    blocked = v["last_result"] == "PASS" and v.get("missing")
+    if v["id"] in accepted and (blocked or v["last_result"] != "PASS"):
+        return "ACCEPTED"
+    return "BLOCKED" if blocked else v["last_result"]
+
+
+def signed_without_row(reasons, signed):
+    """GRID-<class>-<subsystem> lines Alex signed with no ACCEPTED_GAP row in grid_reasons.csv: an accepted gap
+    needs both (PLAN.md step 9.5), so these do nothing and are reported."""
+    rows = {f"GRID-{r['class']}-{r['subsystem']}" for r in reasons if r["status"] == "ACCEPTED_GAP"}
+    return sorted(set(signed) - rows)
 
 
 def can_clear(v, c):
@@ -111,9 +148,10 @@ def read(vv):
                 reasons.append(dict(zip(REASON_COLS, (c.strip() for c in r)), _where=f"grid_reasons.csv:{n}"))
     for v in vers:
         v["cls"], v["subs"] = [], []
-        if "classes" not in v or "subsystems" not in v:
-            problems.append((v["_where"], "verification.csv has no 'classes' and 'subsystems' columns"))
+        if "classes" not in v or "subsystems" not in v or "sources" not in v:
+            problems.append((v["_where"], "verification.csv has no 'classes', 'subsystems' and 'sources' columns"))
             break
+        v["missing"] = missing_sources(v) if v["last_result"] == "PASS" else []
         live = v["last_result"] not in ("CUT", "RETIRED")
         for tok in v["classes"].split():
             if not re.fullmatch(r"\d{1,2}", tok) or int(tok) not in CLASSES:
@@ -155,9 +193,13 @@ def read(vv):
     return vers, reasons, problems
 
 
-def cells(vers, reasons, signed=frozenset()):
-    """{(class, subsystem): cell}. signed: the 'GRID-<class>-<subsystem>' items Alex has signed ACCEPTED."""
+def cells(vers, reasons, signed=frozenset(), accepted=None):
+    """{(class, subsystem): cell}. signed: the 'GRID-<class>-<subsystem>' items Alex has signed ACCEPTED.
+    accepted: {VER id: why} for the checks an ACCEPTED defect lets through the order gate (check_trace)."""
+    accepted = accepted or {}
     live = [v for v in vers if v.get("board") in LIVE_BOARDS and v["last_result"] not in ("CUT", "RETIRED")]
+    for v in live:
+        v["shown"] = shown(v, accepted)
     why = {(r.get("c"), r["subsystem"]): r for r in reasons}
     out, problems = {}, []
     for c in CLASSES:
@@ -166,7 +208,9 @@ def cells(vers, reasons, signed=frozenset()):
         for s in SUBSYSTEMS:
             ids = [v for v in live if c in v["cls"] and s in v["subs"]]
             counts_ = [v for v in ids if can_clear(v, c)]
-            built = [v for v in counts_ if v["last_result"] in (RESULTS if c in ORDER_CLASSES else BUILT)]
+            # a BLOCKED PASS rests on a stand-in, so it has not run on the part's own numbers: it clears nothing
+            built = [v for v in counts_ if v["last_result"] in (RESULTS if c in ORDER_CLASSES else BUILT)
+                     and v["shown"] != "BLOCKED"]
             r = why.get((c, s))
             cell = {"checks": ids, "built": built, "reason": r, "c": c}
             if r and r["status"] == "NOT_NEEDED" and ids:
@@ -187,7 +231,7 @@ def cells(vers, reasons, signed=frozenset()):
             # classes 1-15: the worst among the checks that can clear the cell (a later bench test cannot, and its
             # NOT_BUILT says only that the boards do not exist yet); classes 16-18: among all of them
             judged = counts_ if c in ORDER_CLASSES and counts_ else ids
-            cell["worst"] = min((v["last_result"] for v in judged), key=WORST.index) if judged else ""
+            cell["worst"] = min((v["shown"] for v in judged), key=WORST.index) if judged else ""
             phases = [v["phase"] for v in built] or [v["phase"] for v in counts_] or [v["phase"] for v in ids]
             cell["earliest"] = min(phases, key=PHASES.index) if phases else ""
             out[(c, s)] = cell
@@ -208,12 +252,13 @@ def counts(grid, c):
 
 
 def tag(v):
-    """A clearing check's id, with its phase when it is not an ORDER check (O-R6)."""
-    return v["id"] if v["phase"] == "ORDER" else f"{v['id']}@{v['phase']}"
+    """A clearing check's id, with its phase when it is not an ORDER check (O-R6), and ACCEPTED or BLOCKED when it
+    shows that instead of its result (2026-10-28)."""
+    t = v["id"] if v["phase"] == "ORDER" else f"{v['id']}@{v['phase']}"
+    return t + (f" {v['shown']}" if v.get("shown") in ("ACCEPTED", "BLOCKED") else "")
 
 
 def text_cell(cell):
-    ids = " ".join(v["id"] for v in cell["checks"])
     st = cell["state"]
     # a planned or GAP cell names first the checks that can clear it, then the ones that cannot
     later = " ".join(v["id"] for v in cell["checks"] if v not in cell["counts"])
@@ -222,7 +267,8 @@ def text_cell(cell):
         late = f", earliest {cell['earliest']}" if cell["earliest"] != "ORDER" else ""
         if cell["c"] in ORDER_CLASSES:
             return f"COVERED, worst {cell['worst']}{late}: {' '.join(tag(v) for v in cell['counts'])}{later}"
-        return f"COVERED, worst {cell['worst']}{late}: {ids}"
+        return f"COVERED, worst {cell['worst']}{late}: " + " ".join(
+            v["id"] + (f" {v['shown']}" if v["shown"] in ("ACCEPTED", "BLOCKED") else "") for v in cell["checks"])
     if st == "planned":
         return f"planned ({cell['earliest']}): {' '.join(tag(v) for v in cell['counts'])}{later}"
     if st == "NOT_NEEDED":
@@ -234,7 +280,8 @@ def text_cell(cell):
     return f"GAP{later}"
 
 
-def render(vers, reasons, grid):
+def render(vers, reasons, grid, accepted=None, signed=frozenset()):
+    accepted = accepted or {}
     live = [v for v in vers if v.get("board") in LIVE_BOARDS and v["last_result"] not in ("CUT", "RETIRED")]
     L = ["# Coverage grid: check classes by subsystem (REF-A, hardware/ref_design)", "",
          "Generated by `python3 hardware/vv/tools/grid.py` from verification.csv (each check's `classes` and "
@@ -247,11 +294,18 @@ def render(vers, reasons, grid):
          "Classes 16-18 belong to EVT, DVT and PVT and are shown, not gated by the order; 19 and 20 are "
          "whole-register classes, listed below. Only checks of board ref_design or both count; CUT and RETIRED "
          "checks never do.", "",
-         "A cell reads: COVERED, worst <status> (FAIL, NOT_BUILT, NOT_RUN, PASS) among the checks that can "
-         "clear it (classes 16-18: among all its checks) and, when no clearing check is an ORDER check, the "
+         "A cell reads: COVERED, worst <status> (FAIL, BLOCKED, NOT_BUILT, NOT_RUN, ACCEPTED, PASS) among the checks "
+         "that can clear it (classes 16-18: among all its checks) and, when no clearing check is an ORDER check, the "
          "earliest phase, then the later checks that measure it but cannot clear it; planned (the checks that could clear it "
          "once built and run, then the ones that measure it but cannot clear it: a GAP for the order gate); "
-         "GAP; NOT_NEEDED (grid_reasons.csv says why).", ""]
+         "GAP; NOT_NEEDED (grid_reasons.csv says why); ACCEPTED_GAP (signed: a grid_reasons.csv ACCEPTED_GAP row "
+         "and Alex's signed GRID-<class>-<subsystem> line, both). BLOCKED is a PASS that rests on a datasheet not in "
+         "hardware/ref_design/datasheets: it clears nothing and no gate counts it. ACCEPTED is a check that a "
+         "defect Alex moved to a later gate with a signed DF-ACCEPT line names: the order gate lets it through, "
+         "and it is not a PASS.", "",
+         "What 'classes 1-15 pass before the order' means: R9 holds a cell until a check that can clear it has run, "
+         "and G-ORD-22 holds every ORDER check until it passes or is ACCEPTED with a signed line. A FAIL in a cell "
+         "from a check of a later phase (VER-103@EVT, say) does not hold the order: its defect's Gate does.", ""]
     L.append("| Class | " + " | ".join(SUBSYSTEMS) + " |")
     L.append("|---|" + "---|" * len(SUBSYSTEMS))
     for c in CLASSES:
@@ -296,10 +350,16 @@ def render(vers, reasons, grid):
         for v in cell["planned"]:
             L.append(f"- {c} {CLASSES[c]} / {s}{held}: {v['id']} {v['title']} ({v['method']}, {v['last_result']}, "
                      f"{v['phase']}). Pass: {v['pass_limit']}")
-    fails = [v for v in live if v["last_result"] == "FAIL"]
+    fails = [v for v in live if v["last_result"] == "FAIL" and v["shown"] != "ACCEPTED"]
     L += ["", f"## FAIL ({len(fails)})", ""]
     for v in fails:
         L.append(f"- {v['id']} {v['title']} ({v['phase']}): classes {v['classes']}; {v['subsystems']}")
+    acc = [v for v in live if v["shown"] == "ACCEPTED"]
+    L += ["", f"## ACCEPTED at the order gate ({len(acc)}): not a PASS", ""]
+    L += [f"- {v['id']} {v['title']} ({v['phase']}, {v['last_result']}): {accepted[v['id']]}" for v in acc] or ["- none"]
+    blk = [v for v in live if v["shown"] == "BLOCKED"]
+    L += ["", f"## BLOCKED ({len(blk)}): a PASS that rests on a datasheet not in hardware/ref_design/datasheets", ""]
+    L += [f"- {v['id']} {v['title']} ({v['phase']}): {' '.join(v['missing'])}" for v in blk] or ["- none"]
     nn = [r for r in reasons if r["status"] == "NOT_NEEDED"]
     L += ["", f"## Not needed ({len(nn)}), from grid_reasons.csv", ""]
     for r in sorted(nn, key=lambda r: (r["c"] or 0, SUBSYSTEMS.index(r["subsystem"])
@@ -310,6 +370,10 @@ def render(vers, reasons, grid):
         L += ["", f"## Accepted gaps proposed ({len(acc)}): each counts only once Alex signs GRID-<class>-<subsystem>", ""]
         for r in acc:
             L.append(f"- {r['class']} {CLASSES.get(r['c'], '?')} / {r['subsystem']}: {r['reason']}")
+    orphans = signed_without_row(reasons, signed)
+    if orphans:
+        L += ["", f"## Signed with no ACCEPTED_GAP row ({len(orphans)}): these cells stay a GAP until grid_reasons.csv "
+                  "has the row too", ""] + [f"- {x}" for x in orphans]
     return "\n".join(L) + "\n"
 
 
@@ -320,9 +384,9 @@ def same(a, b):
     return FOOTER.sub("", a).rstrip() == FOOTER.sub("", b).rstrip()
 
 
-def build(vv, signed=frozenset()):
+def build(vv, signed=frozenset(), accepted=None):
     vers, reasons, problems = read(vv)
-    grid, p2 = cells(vers, reasons, signed)
+    grid, p2 = cells(vers, reasons, signed, accepted)
     return vers, reasons, grid, problems + p2
 
 
@@ -332,17 +396,17 @@ def main():
     if "--vv" in sys.argv:
         vv = os.path.abspath(sys.argv[sys.argv.index("--vv") + 1])
     sys.path.insert(0, HERE)
-    import check_trace as ct               # the signed approvals, read the one way check_trace reads them
+    import check_trace as ct               # the signed approvals and acceptances, read the one way check_trace reads them
     ct.VV = vv
-    _, eff, _ = ct.parse_approvals()
-    signed = frozenset(k for k, a in eff.items() if k.startswith("GRID-") and a["decision"] == "ACCEPTED")
-    vers, reasons, grid, problems = build(vv, signed)
+    db = ct.load()
+    signed, accepted = ct.grid_signed(db), ct.accepted_checks(db, "ORDER")
+    vers, reasons, grid, problems = build(vv, signed, accepted)
     for w, m in problems:
         print(f"  {w}: {m}")
     if problems:
         print(f"grid: {len(problems)} problem(s) in the register; grid.md not written")
         return 1
-    body = render(vers, reasons, grid)
+    body = render(vers, reasons, grid, accepted, signed)
     path = os.path.join(vv, "grid.md")
     old = open(path, encoding="utf-8").read() if os.path.exists(path) else ""
     if "--check" in sys.argv:
@@ -355,6 +419,8 @@ def main():
         print(f"wrote {os.path.relpath(path)}")
     else:
         print("grid.md unchanged")
+    for x in signed_without_row(reasons, signed):
+        print(f"  {x} is signed but grid_reasons.csv has no ACCEPTED_GAP row for it: the cell stays a GAP")
     gaps = order_gaps(grid)
     print(f"{len(gaps)} cells of classes 1-15 the order gate holds "
           f"({sum(1 for *_, c in gaps if c['state'] == 'GAP')} GAP, "

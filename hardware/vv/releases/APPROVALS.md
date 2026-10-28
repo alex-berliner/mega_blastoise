@@ -36,18 +36,24 @@ still fails K1 (O-R12).
 Columns:
 
 - ID: A-NNN, the next free number.
-- Item: a REQ, DF or W id.
-- Decision: APPROVED, REJECTED or DEFERRED (requirements); ACCEPTED (DFMEA rows); WAIVED
-  (waivers); FROZEN (a GATE@ bulk line: the gate state as it stands at a commit).
+- Item: a REQ, DF or W id; `GRID-<class>-<subsystem>` (an accepted coverage gap, which also
+  needs its ACCEPTED_GAP row in grid_reasons.csv); `DF-ACCEPT:DEF-nn` (a defect moved to a
+  later gate, 2026-10-28); or a bulk line.
+- Decision: APPROVED, REJECTED or DEFERRED (requirements); ACCEPTED (DFMEA rows, grid gaps and
+  defects); WAIVED (waivers); FROZEN (a GATE@ bulk line: the gate state as it stands at a commit).
 - Scope: for ACCEPTED, WAIVED and DEFERRED, the last phase the decision holds for (ORDER,
   CASE, EVT, DVT, PVT, SALE); an acceptance for EVT does not open the DVT or PVT gate, and a
-  requirement deferred to EVT is PROPOSED again at DVT. For APPROVED and REJECTED, `-`.
+  requirement deferred to EVT is PROPOSED again at DVT. For APPROVED and REJECTED, `-`. For
+  `DF-ACCEPT:DEF-nn` it is the gate the defect moves to (CASE to SALE, later than its Gate):
+  the defect and the checks it names pass every gate before that one as ACCEPTED, not PASS,
+  and that gate holds it again.
 - Reason: why. Required for everything but APPROVED.
 - By: who decided.
 - Date: YYYY-MM-DD.
 
 Examples (not decisions):
 `| A-001 | DF-87 | ACCEPTED | DVT | hobby units kept by their builder; revisit before SALE | Alex | 2026-10-25 |`
+`| A-005 | DF-ACCEPT:DEF-50 | ACCEPTED | EVT | 9.1 V EN reach accepted for five attended units; clamp at DVT | Alex | 2026-10-28 |`
 `| A-002 | REQ-PRD-03.R | DEFERRED | EVT | set once the cell's spec sheet and a capacity sample exist | Alex | 2026-10-25 |`
 `| A-003 | REQ-ALL@<commit> | APPROVED | - | every requirement as worded at that commit | Alex | 2026-10-27 |`
 `| A-004 | GATE@<commit> | FROZEN | EVT | every check's phase, defect's Gate, criterion's Needs and requirement's Phase as they stand at that commit | Alex | 2026-10-27 |`

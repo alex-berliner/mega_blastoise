@@ -9,8 +9,16 @@ check named, and the DVT and PVT gates refuse any defect that is not CLOSED.
 Fields: Found (where, phase, which check or person), Symptom, Root cause, Why missed (why
 the checks before it did not catch it), Check added or changed (VER ids), Updated (REQ and
 DF rows), Gate (the first gate it must be fixed by: R4 counts it there and at every later
-gate, not before: O-R5), Status (OPEN, FIXED or CLOSED, then a note), and optionally Board
-(ref_design when absent). A CLOSED defect's check must pass on fresh evidence, or check_trace fails.
+gate, not before: O-R5), Status (OPEN, FIXED, CLOSED or ACCEPTED, then a note), and optionally
+Board (ref_design when absent). A CLOSED defect's check must pass on fresh evidence, or check_trace fails.
+
+ACCEPTED (2026-10-28) is the one way to move a defect to a later gate without fixing it. It needs
+Alex's signed line `| A-NNN | DF-ACCEPT:DEF-nn | ACCEPTED | <the gate it moves to> | <why> |` in
+releases/APPROVALS.md; an ACCEPTED Status without that signed line fails check_trace. Before the
+gate it moved to, R4 lists the defect instead of failing on it, and every gate criterion (G-ORD-22
+too) lets through as ACCEPTED the checks this defect names under 'Check added or changed', and only
+those. From that gate on it counts as OPEN again. It does not verify a requirement (R2) or an H row
+(R3): Alex defers the requirement or accepts the row on its own line. Leave the Gate field as it was.
 
 Per-unit findings on built boards (a bridge, a tombstone, a reversed cell) are not design
 defects: they go in hardware/vv/evidence/findings.csv (VER-110). A finding seen on 2 units
@@ -371,7 +379,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006, after the class 2-15 round changed grid.py and seed_faults.py: 100 of 100 seeded faults caught; VER-129 PASS 2026-10-27 at 5ae8eba, after seed_faults.py's class 15 count and signed-waiver seed followed VER-13 and VER-33: 100 of 100 seeded faults caught; at 449dcb9, after check_trace's docstring edit: 100 of 100 seeded faults caught; reopened 2026-10-25 by the second review, O-R2, with its holes logged as DEF-52; VER-129 PASS 2026-10-27 at 7880d0e on the 71737ae re-seed: 100 of 100 seeded faults caught, 5 of them new for round 3's sign-off and the body rule; 95 of 95 at 6289d2a before it)
+- Status: FIXED (until VER-129 re-runs after the framework fixes of 2026-10-28; VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006, after the class 2-15 round changed grid.py and seed_faults.py: 100 of 100 seeded faults caught; VER-129 PASS 2026-10-27 at 5ae8eba, after seed_faults.py's class 15 count and signed-waiver seed followed VER-13 and VER-33: 100 of 100 seeded faults caught; at 449dcb9, after check_trace's docstring edit: 100 of 100 seeded faults caught; reopened 2026-10-25 by the second review, O-R2, with its holes logged as DEF-52; VER-129 PASS 2026-10-27 at 7880d0e on the 71737ae re-seed: 100 of 100 seeded faults caught, 5 of them new for round 3's sign-off and the body rule; 95 of 95 at 6289d2a before it)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -544,7 +552,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a live row citing a RETIRED id, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole). The drill and CPL checks (design_numbers.py drill and cpl) now run fab.py's own export into a temp dir and read what it writes; they fail on the board's real output, which DEF-32 and DEF-33 hold, not this defect.
 - Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006: 100 of 100 seeded faults caught; at 5ae8eba: 100 of 100 seeded faults caught; at 449dcb9: 100 of 100 seeded faults caught, as at 7880d0e on the 71737ae re-seed. Was: VER-129 PASS 2026-10-27 at 6289d2a after the grid's audit: 95 of 95 seeded faults caught, 16 of them this defect's, 8 from round 2's objections, 11 from round 3's findings, 10 for the grid and VER-188 and 3 for the grid's audit; the claims script's fault waits for VER-161, DEF-54)
+- Status: FIXED (until VER-129 re-runs after the framework fixes of 2026-10-28; VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006: 100 of 100 seeded faults caught; at 5ae8eba: 100 of 100 seeded faults caught; at 449dcb9: 100 of 100 seeded faults caught, as at 7880d0e on the 71737ae re-seed. Was: VER-129 PASS 2026-10-27 at 6289d2a after the grid's audit: 95 of 95 seeded faults caught, 16 of them this defect's, 8 from round 2's objections, 11 from round 3's findings, 10 for the grid and VER-188 and 3 for the grid's audit; the claims script's fault waits for VER-161, DEF-54)
 
 ### DEF-53: A worst-case cell sits 0.25 mm from the routed FR4 edge on every side
 - Found: two-model review (O-R7), 2026-10-25, from case.scad and assembly.md step 5; restated on every side by round 2's sign-off objections (O, F), 2026-10-26
