@@ -1,7 +1,7 @@
 # Next spin: requirements
 
 What the next hardware spin has to do, and what each item needs from its chip. The goals behind
-it are in [DESIGN.md section 1](../../DESIGN.md#1-purpose-and-goals); this file is the technical side and changes
+it are in [DESIGN.md section 1](DESIGN.md#1-purpose-and-goals); this file is the technical side and changes
 with each spin. Decided with Alex on 2026-10-28 (queue issues
 [#3](https://github.com/alex-berliner/claude-queue/issues/3) and [#4](https://github.com/alex-berliner/claude-queue/issues/4)).
 

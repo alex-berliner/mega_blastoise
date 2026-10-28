@@ -2,7 +2,7 @@
 
 Software internals for the Mega Blastoise firmware and host test harness.
 
-For project overview and hardware, see [DESIGN.md](../archive/v1/DESIGN.md) (the v1 device).
+For what the product is, see [DESIGN.md](../static/DESIGN.md); the v1 device's overview is [archive/v1/DESIGN.md](../archive/v1/DESIGN.md).
 
 ---
 

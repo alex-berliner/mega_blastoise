@@ -27,7 +27,7 @@ Goals:
 6. **It can be built in batches and sold** at a low price.
 
 The technical requirements for the next spin, and what each one needs from the chip, are in
-[docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md).
+[next_spin_requirements.md](next_spin_requirements.md).
 
 ## 2. How it plays
 
@@ -94,6 +94,6 @@ How it behaves.
 
 ## 5. Next spin
 
-The next hardware spin's requirements, and what each needs from its chip, are in [docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md). (2026-10-28)
+The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
 Last updated: 2026-10-28 14:50 EDT

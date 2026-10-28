@@ -15,6 +15,10 @@ Architecture overview: see [docs/reference/architecture/README.md](docs/referenc
 
 ## Documentation
 
+Docs are in three folders: `docs/static/` (what the product is; changes only when that changes), `docs/reference/` (how it is built now) and `docs/living/` (plans, proposals and status).
+
+- [docs/static/DESIGN.md](docs/static/DESIGN.md): what the product is, as Alex specified it. Start here
+- [docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md): the next hardware spin's requirements and chosen parts
 - [docs/reference/TECHNICAL.md](docs/reference/TECHNICAL.md): software internals, crate layout, interfaces, data flow
 - [docs/reference/architecture/](docs/reference/architecture/README.md): deep-dive architecture docs
 - [hardware/ref_design/](hardware/ref_design/README.md): the reference design (board, case, docs)
