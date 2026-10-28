@@ -28,6 +28,7 @@ REGIONS = {   # name: (x0, y0, x1, y1) KiCad; a part's box must lie inside its r
     "spine": (88.0, 143.6, 107.5, 150.5),
     "left_of_hole": (72.4, 62.0, 80.5, 106.0), "right_of_hole": (119.2, 62.0, 124.0, 100.0),
     "seat2_l": (63.0, 40.0, 80.5, 60.0),
+    "spine_wide": (84.0, 143.6, 112.0, 158.5),
     "any_low": (62.8, 108.0, 135.5, 175.0),
 }
 ORDER = [   # ref, region, preferred (x, y, rot) from placement.P unless given, turns
@@ -40,6 +41,7 @@ ORDER = [   # ref, region, preferred (x, y, rot) from placement.P unless given, 
     ("JP6", "fpc", (0, 90)), ("C60", "fpc", (0, 90)), ("C61", "fpc", (0, 90)),
     ("U3", "left_of_hole", (90, 0, 180, 270)), ("C5", "left_of_hole", (90, 0)), ("C6", "left_of_hole", (90, 0)), ("C7", "left_of_hole", (90, 0)),
     ("JP1", "left_of_hole", (0, 90)),
+    ("RN1", "spine_wide", (0, 90)), ("RN2", "spine_wide", (0, 90)),
     ("TP8", "any_low", (0,)), ("Q1", "any_low", (0, 180)),
     ("U11", "spine", (0, 90)), ("C62", "spine", (0, 90)), ("R86", "spine", (90, 0)), ("R87", "spine", (90, 0)), ("R88", "spine", (90, 0)), ("R63", "any_low", (90, 0)),
 ]
@@ -55,6 +57,12 @@ def box_of(fp):
     x0, y0 = min(mm(bb.GetX()), mm(pb.GetX())), min(mm(bb.GetY()), mm(pb.GetY()))
     x1, y1 = max(mm(bb.GetRight()), mm(pb.GetRight())), max(mm(bb.GetBottom()), mm(pb.GetBottom()))
     return (x0, y0, x1, y1)
+
+
+def near_circle(box, c, r):
+    cx = min(max(c[0], box[0]), box[2])
+    cy = min(max(c[1], box[1]), box[3])
+    return math.hypot(cx - c[0], cy - c[1]) < r
 
 
 def hit(a, b, m=0.0):
@@ -98,6 +106,10 @@ def main():
             if not (x0 <= bx[0] and bx[2] <= x1 and y0 <= bx[1] and bx[3] <= y1):
                 continue
             if any(hit(bx, k) for k in keep):
+                continue
+            if any(near_circle(bx, c, pl.CASE["piece_d"] / 2 + 0.2) for c in pl.CASE["pieces"]):      # nothing under a silicone piece
+                continue
+            if any(near_circle(bx, h, 2.8) for h in pl.CASE["pins"]):                                  # nor within a screw boss
                 continue
             if any(hit(bx, o, 0.0) for o in others.values()):
                 continue

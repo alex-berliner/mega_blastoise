@@ -144,8 +144,8 @@ at("TP16", 19.4, -44.0, 0)
 
 # ---- seat 1's buttons: U8 beside U6 in the spine
 at("U8", 3.2, -56.0, 90)
-at("RN1", -23.5, -45.8, 90)
-at("RN2", -26.5, -45.8, 90)
+at("RN1", 6.0, -50.5, 0)
+at("RN2", 6.0, -52.0, 0)
 at("C52", -9.0, -51.0, 0)
 
 # ---- the module (2026-10-28): its U.FL side towards the left wall, the antenna's flex plate on the wall above it (x 64.5 .. 71, y 62.1 .. 107.9)
