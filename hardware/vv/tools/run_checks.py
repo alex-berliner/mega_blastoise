@@ -96,6 +96,8 @@ CHECKS = {
     # 2026-10-28: prod_board's placed contacts (read only) and the dome footprint against the dome's drawing
     "VER-163": ("check_placed_contacts_prod", ["python3", "hardware/vv/tools/check_placed_contacts.py", "--prod"], True),
     "VER-178": ("check_dome", ["python3", "hardware/vv/tools/check_dome.py"], True),
+    # 2026-10-28: the LCSC identity over Konnect's JLC snapshot on this machine (exit 2 if it is missing)
+    "VER-186": ("check_lcsc", ["python3", "hardware/vv/tools/check_lcsc.py"], True),
     "VER-125": ("check_land", ["python3", "hardware/vv/tools/check_land.py"], True),
     "VER-130": ("check_bom_cpl", ["python3", "hardware/vv/tools/check_bom_cpl.py"], True),
     # the checks of classes 2, 3, 5, 7, 10 and 12-15 (2026-10-27); exit 2 is BLOCKED: nothing is recorded

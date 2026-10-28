@@ -839,7 +839,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: the module (C3013946), the TLV75733P (C485517), the DM3AT (C114218) and the TPS850 (C2759975) went on the board with no check of JLC's class (Basic, Extended), stock or minimum order; the board session's parts database was not reachable.
 - Root cause: parts chosen offline.
 - Why missed: VER-41 runs on order day only.
-- Check added or changed: VER-41 (order-day stock and class, the four first); VER-14 (LCSC identity)
+- Check added or changed: VER-41 (order-day stock and class, the four first); VER-14 (LCSC identity); VER-186 (check_lcsc.py over Konnect's 2026-07-13 snapshot, 2026-10-28: the four are in JLC's database as designed, all Extended, stock 18078, 30038, 9158 and 2979 against 33 for 30 boards; a snapshot, so VER-41 still decides on order day)
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
 - Status: OPEN
@@ -1003,3 +1003,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-168
 - Gate: ORDER
 - Status: OPEN (proposed: accept, since the dome touches the ring at every placement up to 0.3 mm and the rule's 0.2 mm is a margin, not a contact limit; or fp_dome.py's ring from r 1.65 with a 0.4 mm vent, which keeps the vent 0.30 mm from both pads; copper, so before the order)
+
+### DEF-98: design.py names Samsung as the maker of the four Fenghua X7R capacitors
+- Found: VER-186 (check_lcsc.py) at 39cc07f, 2026-10-28, against Konnect's JLC snapshot of 2026-07-13
+- Symptom: C37, C38 (4.7n, 0402B472K500NT, C1538) and C48, C49 (1n, 0402B102K500NT, C1523) carry the maker 'Samsung' in design.py, so in the schematic's and the board's fields; JLC's record and the MPN say FH (Guangdong Fenghua). design.py's C() helper names the maker 'FH' only for 0402CG parts. The BOM fab.py writes for JLC has no maker column and JLC matches on the LCSC number, so the order gets the right part; a person reading the schematic or buying by hand would not.
+- Root cause: a maker chosen by an MPN prefix rule that covers only one Fenghua series.
+- Why missed: no check compared the maker field with the part's record.
+- Check added or changed: VER-186 (built)
+- Updated: none
+- Gate: EVT
+- Status: OPEN (fix: C() names 'FH' for every MPN starting '0402', or CAP carries the maker per line; a field change, no copper)
