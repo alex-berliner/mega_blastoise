@@ -68,15 +68,6 @@ jobs:
           mkdir -p _site/assembly
           cp -r hardware/ref_design/viewer/site/. _site/assembly/
           python3 hardware/ref_design/viewer/build.py --check || echo "::warning::the assembly viewer is older than the board or case it shows; run hardware/ref_design/viewer/build.py"
-          # The current shell (the cell in the board), from branch ref-design-cellcut, until it
-          # reaches main: published the same way, at /assembly-cellcut/
-          if git fetch --depth=1 origin ref-design-cellcut; then
-            mkdir -p _site/assembly-cellcut "$RUNNER_TEMP/cellcut"
-            git archive FETCH_HEAD hardware/ref_design/viewer/site | tar -x -C "$RUNNER_TEMP/cellcut"
-            cp -r "$RUNNER_TEMP"/cellcut/hardware/ref_design/viewer/site/. _site/assembly-cellcut/
-          else
-            echo "::warning::no ref-design-cellcut branch: its assembly view is not published"
-          fi
           # Every distinct layout's last assembly view, listed in site/views/views.json (one
           # line each), at /views/<slug>/. Each commit is fetched by SHA (or its viewer/* tag,
           # for commits on no pushed branch); one that can't be fetched only warns.
