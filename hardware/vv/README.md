@@ -1,14 +1,15 @@
 # Verification and validation
 
-**Decision (Alex, 2026-10-28): the order candidate is now the ESP32-S3-WROOM-1-N16R8 board**
-that `hardware/ref_design/docs/esp32s3_board_proposal.md` describes on main (dcb6a76, e79f251).
-It is not designed yet: there is no design.py for it, and this register will be re-seeded for
-it once there is. The RP2354B board (71737ae) is not being ordered. Its register is frozen at
-tag `vv-rp2354b-final` (c8ac9dd) and everything below that describes it stays as history. What
-the RP2354B rounds found that any board with the same cell, charger, case, panel, buttons,
-audio or connectors must also satisfy is in [carryover.md](carryover.md). The framework fixes
-made after the freeze (2026-10-28: ACCEPTED defects, 'sources', architecture proposals in R8,
-accepted grid gaps) are in the Rules below.
+**The order candidate is the ESP32-S3 board at 39cc07f** (branch `ref-design-esp32s3`, 2026-10-28):
+an ESP32-S3-WROOM-1U-N16R8 module (U.FL, an external flex antenna, Wi-Fi on), the TLV75733P for 3V3,
+the panel on its 8-bit 8080 bus, a microSD slot, a third 74HC165, a dedicated power button SW24, the
+cell in a 38.2 x 55.2 mm hole and a case 1.5 mm wider on the left. Alex chose it on 2026-10-28 over the
+RP2354B board (71737ae), whose register is frozen at tag `vv-rp2354b-final` (c8ac9dd). On 2026-10-28
+this register was re-seeded for 39cc07f: the baseline below is that commit, the rows for parts and nets
+that left are RETIRED with it, the new parts have their requirements, DFMEA rows and checks, every
+row of [carryover.md](carryover.md) has its verdict at 39cc07f, and every scripted check was re-run
+(PLAN.md sections b, c and i). The baseline implements docs/esp32s3_board_proposal.md, so R8's
+warning on its proposal commits (dcb6a76, e79f251) is gone: they are ancestors of the baseline.
 
 How we know a board works before and after we order it. [PLAN.md](PLAN.md) is the single
 plan: what must be true before the order, then EVT, DVT and PVT. This page is the system.
@@ -206,7 +207,7 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   release record, and they must match.
 - **The baseline is checked against the baseline commit too.** The default mode fails when a
   design path's hash in README differs from HEAD's blob for that path, or from the blob at the
-  baseline commit (`71737ae`), so a baseline rewritten from HEAD cannot hide a design edit.
+  baseline commit (`39cc07f`), so a baseline rewritten from HEAD cannot hide a design edit.
 - **Detection is only what can see the failure.** A DFMEA row's 'detects' lists the checks
   that must all pass before it is DONE. Its detection rating is 10 with none, and 8 or more
   while every one is NOT_BUILT. An occurrence of 3 needs `Similar: <the board and part>` in its
@@ -276,49 +277,53 @@ The design files this register describes, as git object hashes (`git rev-parse
 HEAD:<path>`; board/lib and board/tools are trees). The default mode fails when any differs
 from HEAD, and every ref_design gate fails with "gate evaluated against a design it does not
 describe" (the order gate reads the board's files, the case gate case.scad and export.py,
-later gates all). Re-seeded on 2026-10-27 at 71737ae (main), the board Alex is ordering: the
-board spin 40281b8 (branch ref-design-35in) merged as bfe9609, then a SOURCES.md fix. The
-earlier seeds are kept on branches vv-plan-f0ab637 (2026-10-27, be437f8's register before the
-rebase), vv-plan-684a609 (2026-10-25, ref-design-island-45) and vv-plan-76955d2 (2026-10-24).
-The second review (F-R13) added the schematics, battler.kicad_pro (its DRC rules, which VER-04
-relies on), the whole board/tools tree (the route, silk and fab scripts and last_route.ses;
-cost.py and the like churn it too, accepted) and case/export.py (it writes case/positions.json,
-which placement.py reads; positions.json is gitignored, so its sha256 goes in the release record
-instead). Round 3's sign-off (O-S4) and this re-seed added tools/build.py (it runs the build_pcb,
-route, silk and fab stages), battler.kicad_dru (the copper-to-NPTH rule VER-04's DRC reads),
-fp-lib-table, sym-lib-table and placement_zones.py (placement.py imports it). A pin_review/*.json
-change is not a design path: it stales VER-02, which covers it.
+later gates all). Re-seeded on 2026-10-28 at 39cc07f (branch ref-design-esp32s3), the ESP32-S3
+board Alex is ordering: the routed board (seed 144 of batch 7) and its fab outputs. The RP2354B
+board's register (71737ae) is tag `vv-rp2354b-final`; the earlier seeds are kept on branches
+vv-plan-36403e3 (this branch before the rebase onto 39cc07f), vv-plan-f0ab637, vv-plan-684a609 and
+vv-plan-76955d2. The second review (F-R13) added the schematics, battler.kicad_pro (its DRC rules,
+which VER-04 relies on), the whole board/tools tree (the route, silk and fab scripts and
+last_route.ses; cost.py and the like churn it too, accepted) and case/export.py (it writes
+case/positions.json, which placement.py reads; positions.json is gitignored, so its sha256 goes in
+the release record instead). Round 3's sign-off (O-S4) added tools/build.py, battler.kicad_dru,
+fp-lib-table, sym-lib-table and placement_zones.py. This re-seed added board/placement_new.json
+(placement.py applies it over its own poses: tools/place_new.py's spots for the new parts) and
+storage.kicad_sch (the microSD sheet); mcu_power.kicad_sch left with the RP2354B's core. A
+pin_review/*.json change is not a design path: it stales VER-02 and VER-36, which cover it.
 
 The order branch below is read by check_trace (O-R13): a commit on it after the baseline commit
-that touches any of these paths makes the default mode warn and the order gate fail (R8). The
-board is merged, so the order branch is main. Every hash below equals the same path at 71737ae.
-The gate-moves line names the register state round 3's two reviewers read: until Alex signs a
-`GATE@` line, the order gate prints every phase or Gate moved later since it (G0, O-S5).
+that touches any of these paths makes the default mode warn and the order gate fail (R8). The board
+is not merged: the order branch is ref-design-esp32s3, where the board session still commits
+renders, kits and docs; a design commit there after 39cc07f is what R8 shows. Every hash below
+equals the same path at 39cc07f. The gate-moves line names the register state before this re-seed
+(fd1f6e8, vv-rp2354b-final's successor): until Alex signs a `GATE@` line, the order gate prints
+every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before he signs.
 
-- Order branch: `main` from `71737ae`
-- Gate moves listed since: `b9b38a9`
-- `hardware/ref_design/board/design.py` dc9163eafc2ddeb48212a885e0221194eedd1fbc
-- `hardware/ref_design/board/placement.py` 417f9cb14f2495023e04ee0652e40cdfbf34fe72
+- Order branch: `ref-design-esp32s3` from `39cc07f`
+- Gate moves listed since: `fd1f6e8`
+- `hardware/ref_design/board/design.py` 88a602bcc85cae2e58a602de2036c32f4b2ec033
+- `hardware/ref_design/board/placement.py` 5d55805545f6b17ab007aa0188917c19b6ab1d1e
 - `hardware/ref_design/board/placement_zones.py` a1594329d1f088749a82e1aa1f165a24542843ad
-- `hardware/ref_design/board/lib` 47bf656ce9c005f65a94f5d06666cb6a860bc95c
-- `hardware/ref_design/board/battler.kicad_pcb` 8ae5446e6bfecde96b576d6afa99babae7305603
-- `hardware/ref_design/board/battler.kicad_pro` c599c39e15604818d89953e674d8fdec6cf8eb8e
+- `hardware/ref_design/board/placement_new.json` 726e40c4b8dea568e7f25b51420302c8855e811f
+- `hardware/ref_design/board/lib` 4ff8867570c82373aa7b597a9c0326cd44d321ee
+- `hardware/ref_design/board/battler.kicad_pcb` 6b13d96ed254f1aece6c47a785e6d31ad2fb7ca4
+- `hardware/ref_design/board/battler.kicad_pro` b69f8a936c40329f05277314dec0abef5461c04d
 - `hardware/ref_design/board/battler.kicad_dru` a70cf22f24b815cb27e8f6808c297eafcc3e3706
 - `hardware/ref_design/board/fp-lib-table` 869deca7bc078b6e52f2016868bfb4b0cffe28ad
 - `hardware/ref_design/board/sym-lib-table` bad6b19dda9197494092e27b4854bcbf59f9d307
-- `hardware/ref_design/board/tools` 09b48b6fef6158e0420e2477b6b33ea2cfa0fc90
+- `hardware/ref_design/board/tools` fa25ff936f1a587a3ea9caeb51d33f884f617aa7
 - `hardware/ref_design/tools/build.py` 93bcb52fa546055454242aa2bf1e65581bb27a84
-- `hardware/ref_design/board/audio.kicad_sch` c3f05af80eedccd73d79e9e00ccdd9ea6cb7572d
-- `hardware/ref_design/board/battler.kicad_sch` d5ed7b835ef3668f9be177a601270a0c16692406
-- `hardware/ref_design/board/buttons.kicad_sch` 3d9e7e5b5b3d3996477a21796e2d07261692eaff
-- `hardware/ref_design/board/debug.kicad_sch` d9566469d2b707bf8f96cf4a8047aa315b627359
-- `hardware/ref_design/board/display.kicad_sch` f11fac00141b33241e662ceb9ec6ea31323f6d3a
-- `hardware/ref_design/board/mcu.kicad_sch` c45cd6d9162738bd627999e9e296c7c8ac57c8fe
-- `hardware/ref_design/board/mcu_power.kicad_sch` 31b3b9ecf81724e63967f21da5ca78b9820b1c64
-- `hardware/ref_design/board/power.kicad_sch` 59cc8282fde42a7cbc79fc9024fe1bfd9bfbb799
-- `hardware/ref_design/board/usb_charger.kicad_sch` bed1f5bfa7f7fe315ed4eca6183f687b77dab721
-- `hardware/ref_design/case/case.scad` 07cae29bb29ce02439fdf8b2b0bf3314d3118646
-- `hardware/ref_design/case/export.py` 41fdd1f0834187e938832421a83506032ccec9a5
+- `hardware/ref_design/board/audio.kicad_sch` 3c0ed35df2964d167b3d5319c27db1cf2ba1e400
+- `hardware/ref_design/board/battler.kicad_sch` 2eab07857a053c85bc282795adb4638d1451aa2c
+- `hardware/ref_design/board/buttons.kicad_sch` 5a0b62ab4b4ce54b3f571906b362634bd581a446
+- `hardware/ref_design/board/debug.kicad_sch` e22afa205e64d6a1f21e8681737819edffd62e85
+- `hardware/ref_design/board/display.kicad_sch` af2cdc75cfa8c60a3f121fb59c847b30606d3ff7
+- `hardware/ref_design/board/mcu.kicad_sch` 81aa12b5cf8b0d4b96bd1614bb96b8210fef93f2
+- `hardware/ref_design/board/power.kicad_sch` 1537bba1316d9d6725176c44c2c8ced554add60e
+- `hardware/ref_design/board/storage.kicad_sch` be626b579f2e1691027bdd77ad458662ec9fe1d4
+- `hardware/ref_design/board/usb_charger.kicad_sch` 9782654c75f29fbf0ea6000d53a99db9ee1ea33a
+- `hardware/ref_design/case/case.scad` 96522730a23d7810bc76e5ac3a397afd3807cf41
+- `hardware/ref_design/case/export.py` 2b14fd99117a4885a2bbd79550ea369431f9f219
 
 ## Ratings (DFMEA)
 

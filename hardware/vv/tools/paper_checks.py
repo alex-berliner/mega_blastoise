@@ -6,9 +6,9 @@
     python3 hardware/vv/tools/paper_checks.py --list
 
   latch     VER-33   both Start paths into U3's EN: the sure-on, sure-off and ghost-press bands, E9 after a reset
-  usb       VER-191  R21/R22 at their corners against the RP2350's 27 ohm; D+ and D- capacitance to ground
+  usb       VER-191  R21/R22 against Espressif's 22/33 ohm and their distance to the module; D+ and D- capacitance
   audio     VER-100  the PWM filter, Ci/Ri and the bridge gain at every tolerance corner: band edges and the carrier
-  core      VER-197  the copied core's values against rp2350.pdf's own rules (VREG, DVDD decoupling, crystal, AVDD filter)
+  module    VER-204  the ESP32-S3 module's supply: its 22 uF and 0.1 uF at pin 2, EN's RC, 3V3 through a Wi-Fi burst
   shelf     VER-103  the off-state budget with the cell in, and the months from the cutoff to the PCM's UVP
   ampstate  VER-196  U7 shut down in every state but the firmware's AMP_EN high
   hotplug   VER-12   a 2 m cable plugged live into R41/C1 and U2's IN (an ODE): VBUS, EN1 and PWR_EN peaks
@@ -17,8 +17,8 @@
 
 Each check reads design.py (through design_numbers.design()) and, for 'usb' and 'core', the routed board
 (pcbnew). A datasheet number design.py does not hold is a named constant below with its file and line.
-rp2350.txt and bq24074.txt are pdftotext -layout copies of the PDFs in hardware/ref_design/datasheets
-(tools/datasheet_hashes.py records their sha256); rt9013.pdf is cited by page. A number from a
+'<name>.txt:<line>' is the pdftotext -layout copy of <name>.pdf in hardware/ref_design/datasheets (tools/ds.py;
+tools/datasheet_hashes.py records their sha256). A number from a
 datasheet that is not on disk is taken from board/pin_review/<part>.json (which quotes the page) and is
 marked 'not on disk': VER-34 confirms it. A stand-in is a number no file gives, chosen pessimistic, and
 says so where it is printed.
@@ -38,11 +38,14 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import design_numbers as dn  # noqa: E402
 
 # ---- datasheet numbers ----------------------------------------------------------------------------------
-# RT9013 (U3), DS9013-10, rt9013.pdf
-U3_VIH, U3_VIL = 1.6, 0.6        # V: EN logic high minimum, logic low maximum (p4)
-U3_IEN = 1e-6                    # A: EN pin current, maximum (p4)
-U3_ISHDN = 1.5e-6                # A: shutdown current at VEN 0 V, maximum, 25 C (p3)
-U3_EN_ABS = 6.0                  # V: EN absolute maximum (p3)
+# TLV75733P (U3 since 39cc07f), SBVS322C, tlv757p.pdf
+U3_VIH = 1.0                     # V: EN pin high voltage (enabled), minimum (tlv757p.txt:328)
+U3_VIL = 0.3                     # V: EN pin low voltage, maximum (tlv757p.txt:331)
+U3_IEN = 1e-6                    # A: EN pin current: 10 nA typical only (tlv757p.txt:333); 1 uA stand-in
+U3_ISHDN = 1e-6                  # A: shutdown current at VEN 0.4 V or less, maximum (tlv757p.txt:265)
+U3_EN_ABS = 6.0                  # V: EN absolute maximum (tlv757p.txt:179)
+U3_EN_REC = 5.5                  # V: EN recommended maximum (tlv757p.txt:208)
+U3_TSTR = 550e-6                 # s: start-up time, typical (tlv757p.txt:326)
 # BQ24073 (U2), SLUS810N, bq24074.txt
 U2_IBAT_PDWN = 6.5e-6            # A: sleep current into BAT, input not detected, TJ 85 C, maximum (bq24074.txt:714)
 U2_OVP_MIN = 6.4                 # V: input OVP threshold, minimum (bq24074.txt:699)
@@ -50,27 +53,26 @@ U2_EN_ABS = 7.0                  # V: EN1, EN2, CE ... absolute maximum (bq24074
 U2_EN_PD = 285e3                 # ohm: EN1's internal pull-down, approximately (bq24074.txt:512)
 U2_VO_REG = (4.3, 4.5)           # V: OUT regulation with input (bq24074.txt:729)
 U2_BAT_OUT_R = 0.1               # ohm: VBAT - VOUT 100 mV max at 1 A, VIN 0 (bq24074.txt:724)
-# RP2350 (U4), rp2350.txt
-RP_IIN = 1e-6                    # A: GPIO input leakage, maximum (rp2350.txt:101100)
-RP_VOH = 2.62                    # V: GPIO VOH minimum at IOVDD 3.3 V and the set drive (rp2350.txt:101144)
-RP_E9_PULL = 8.2e3               # ohm: RP2350-E9, a pull this low or lower holds a pad low (rp2350.txt:102915)
-RP_E9_V = 2.2                    # V: E9's leakage holds an undriven pad near 2.2 V (rp2350.txt:102909)
-RP_USB_R = 27.0                  # ohm: 'A 27 ohm series termination resistor is required on each pin' (rp2350.txt:1196)
-RP_XTAL_CL = 10e-12              # F: ABM8-272-T3 load capacitance, the recommended crystal (rp2350.txt:40927, 40950)
-RP_VREG_C = 4.7e-6               # F: VREG CIN at least 4.7 uF, COUT 4.7 uF +-20% (rp2350.txt:33598, 33603)
-RP_VREG_L = 3.3e-6               # H: 3.3 uH +-20%, the AOTA-B201610S3R3-101-T recommended (rp2350.txt:33608-33612)
-RP_AVDD_RC = (33.0, 4.7e-6)      # VREG_AVDD's RC filter: 33 ohm and 4.7 uF (Figure 19, rp2350.txt:33281-33290)
-RP_PWM_CLK = 150e6               # Hz: clk_sys at the SDK default; AUDIO_PWM at 8 bits is clk_sys / 256 (design.py's 586 kHz)
-# Parts whose datasheets are not on disk (pin_review quotes the page; VER-34 confirms)
-Q_VTH = (1.0, 2.5)               # V: 2N7002 VGS(th) min, max (q1.json 'VGS(th) 1..2.5 V', C8545 p2; not on disk)
-VF_01MA, VF_DECADE = 0.240, 0.080  # V: BAT54C 240 mV max at 0.1 mA (d2.json p3); BAT54WS 240 mV at 0.1 mA, 320 mV at 1 mA (d3.json p2)
-U1_C = 5e-12                     # F: SRV05-4 I/O to GND, maximum (u1.json p2; srv05-4.pdf not on disk)
-U7_ISD = 4.2e-6                  # A: FM8002A shutdown current, typical only (u7.json p3; fm8002a.pdf not on disk)
+# ESP32-S3 (U4's chip since 39cc07f), esp32-s3.pdf (series datasheet v2.2) and the module's, esp32-s3-wroom-1.pdf
+ESP_IIN = 50e-9                  # A: IIH and IIL, maximum, at 25 C (esp32-s3.txt:3748-3749)
+ESP_VOH = 2.64                   # V: VOH 0.8 x VDD at 3.3 V (esp32-s3.txt:3750), into a high-impedance load (3768)
+ESP_VDD_MIN = 3.0                # V: the module's VDD33, minimum (esp32-s3-wroom-1.txt:1596)
+ESP_TX_PEAK = 0.355              # A: 802.11b 1 Mbps at 20.5 dBm, the module's TX peak (esp32-s3-wroom-1.txt:1662)
+ESP_EN_RC = (10e3, 1e-6)         # ohm, F: CHIP_PU's RC delay 'usually R = 10 kOhm and C = 1 uF' (esp32-s3-hw-design-guidelines.txt:338)
+ESP_USB_R = (22.0, 33.0)         # ohm: USB series resistors, 'initial value can be 22/33' (esp32-s3-hw-design-guidelines.txt:874)
+ESP_3V3_C = (22e-6, 0.1e-6)      # F: the module's peripheral schematic, 22 uF and 0.1 uF on 3V3 (esp32-s3-wroom-1.txt:2875)
+ESP_PWM_CLK = 80e6               # Hz: LEDC from the 80 MHz APB clock; AUDIO_PWM at 8 bits is 312.5 kHz (design.py, pinmap.md)
+# Parts whose datasheets are on disk since 2026-10-28
+Q_VTH = (1.0, 2.5)               # V: 2N7002 Vth(GS) minimum, maximum (2n7002_cj.txt:55)
+VF_01MA, VF_DECADE = 0.240, 0.080  # V: BAT54C 240 mV max at 0.1 mA, 320 mV at 1 mA (bat54c.txt:113-115); BAT54WS the same (bat54ws.txt:75-77)
+U1_C = 5e-12                     # F: SRV05-4 junction capacitance, maximum (srv05-4.txt:105)
+U7_ISD = 4.2e-6                  # A: FM8002A shutdown current IOFF, typical only (fm8002a.txt:123)
+SW24_R = (0.1, 0.5)              # ohm: TPS850 contact resistance, 100 mOhm and 500 mOhm max (rocpu_tps850.txt:20, 137)
 # Stand-ins: no file gives these; each is pessimistic and printed as a stand-in
 STAND_U7_ISD = 2 * U7_ISD        # A: twice the FM8002A's typical, as no maximum is printed
 STAND_IDSS = 1e-6                # A: a 2N7002 or AO3400A off at a few volts (the usual 1 uA IDSS at rated VDS)
 STAND_CLAMP_V = dn.CLAMP_V       # V: U10's unpowered input clamp (design_numbers.py, the cutoff check)
-STAND_RP_USB_C = 10e-12          # F: the RP2350's USB pad (rp2350.pdf gives none)
+STAND_ESP_USB_C = 10e-12         # F: the ESP32-S3's USB pad (esp32-s3.pdf gives none; a pin is 2 pF, esp32-s3.txt:3745)
 STAND_TRACK_C = 0.1e-12          # F/mm: a track over the B.Cu pour on 1.6 mm FR4, about twice the usual 0.05 pF/mm
 STAND_XTAL_STRAY = (2e-12, 5e-12)  # F: board and pin stray at XIN/XOUT
 STAND_CELL_MAH = 700.0           # mAh: REQ-PRD-03.R's 'about 700 mAh' until VER-37 reads the cell
@@ -130,11 +132,11 @@ def bisect(f, lo, hi, n=80):
 
 
 # ---- VER-33 -----------------------------------------------------------------------------------------------
-SEED_LATCH = {"R42": "47k"}          # PWR_HOLD's pull-down weaker than E9 allows
+SEED_LATCH = {"R13": "1k"}           # PWR_BTN_RAW's pull-down so stiff the button's path cannot lift EN (and Q1's gate)
 
 
 def latch_point(vsys, rs, rpd, ren, vf_on, ien):
-    """The Start contact (rs) from VSYS into the RAW node (rpd to GND, a Schottky into PWR_EN, ren to GND)."""
+    """The button's contact (rs) from VSYS into the RAW node (rpd to GND, a Schottky into PWR_EN, ren to GND)."""
     def diode_i(v):
         if v <= 0:
             return 0.0
@@ -151,44 +153,63 @@ def latch_point(vsys, rs, rpd, ren, vf_on, ien):
 
 
 def latch(seed=None):
+    """39cc07f: one power contact, SW24 (a TPS850 tact switch in seat 1's deck, VSYS to PWR_BTN_RAW); the Starts are plain
+    buttons to GND. Bands of contact resistance and leakage across SW24, the hold through PWR_HOLD and D2, and the
+    release after a reset or crash (R42 against the ESP32-S3's pad, which has no erratum like the RP2350's E9)."""
     parts, _ = load(seed)
     lo, hi = 1 - R_TOL, 1 + R_TOL
     r15 = r(parts, "R15")
     ok = True
-    print(f"U3 RT9013 EN: VIH {U3_VIH} V, VIL {U3_VIL} V, IEN {U3_IEN * 1e6:.0f} uA max (rt9013.pdf p4); "
-          f"Q1/Q7 2N7002 VGS(th) {Q_VTH[0]}-{Q_VTH[1]} V (q1.json p2, not on disk)")
-    print(f"Schottky VF max {VF_01MA * 1e3:.0f} mV at 0.1 mA, {VF_DECADE * 1e3:.0f} mV a decade (d2.json p3, d3.json p2); "
-          "for the off cases VF is taken as 0, the worst there")
-    for seat, (pd, dio, q) in (("seat 1 (SW21)", ("R13", "D2", "Q1")), ("seat 2 (SW23)", ("R62", "D8", "Q7"))):
-        rpd = r(parts, pd)
-        raw, en = latch_point(3.42, 1e3, rpd * lo, r15 * lo, True, U3_IEN)
+    print(f"U3 TLV75733P EN: VIH {U3_VIH} V min, VIL {U3_VIL} V max (tlv757p.txt:328, 331), IEN {U3_IEN * 1e6:.0f} uA (stand-in; "
+          f"10 nA typical, 333); Q1 2N7002 VGS(th) {Q_VTH[0]}-{Q_VTH[1]} V (2n7002_cj.txt:55)")
+    print(f"Schottky VF max {VF_01MA * 1e3:.0f} mV at 0.1 mA, {VF_DECADE * 1e3:.0f} mV a decade (bat54c.txt:113-115, "
+          "bat54ws.txt:75-77); for the off cases VF is taken as 0, the worst there")
+    sw = [ref for ref, p in parts.items() if p["bom"] and set(p["pins"].values()) == {"VSYS", "PWR_BTN_RAW"}]
+    starts = [ref for ref, p in parts.items() if ref.startswith("SW") and "START" in p["value"]]
+    on_vsys = [ref for ref in starts if "VSYS" in parts[ref]["pins"].values()]
+    ok &= len(sw) == 1 and not on_vsys
+    print(f"power contacts (VSYS to PWR_BTN_RAW): {', '.join(sw) or 'none'}; Starts ({', '.join(starts)}) on VSYS: "
+          f"{', '.join(on_vsys) or 'none, they are plain buttons to GND'}")
+    rpd = r(parts, "R13")
+    for vsys in (3.42, 3.0):
+        raw, en = latch_point(vsys, SW24_R[1] + 1e3, rpd * lo, r15 * lo, True, U3_IEN)
         on = en >= U3_VIH and raw >= Q_VTH[1]
         ok &= on
-        print(f"{seat}: 1 kohm in series at VSYS 3.42 V: {q}'s gate {raw:.3f} V ({raw - Q_VTH[1]:+.3f} V over its 2.5 V "
-              f"maximum threshold), EN {en:.3f} V ({en - U3_VIH:+.3f} V over VIH): {'on' if on else 'NOT SURE ON'}")
-        raw, en = latch_point(4.2, 1e6, rpd * hi, r15 * hi, False, 0)
-        off = en <= U3_VIL and raw < Q_VTH[0]
-        ok &= off
-        print(f"{seat}: 1 Mohm across the dome at 4.2 V: RAW {raw:.3f} V, EN at most {en:.3f} V (VIL {U3_VIL}); "
-              f"{q}'s gate {raw:.3f} V against its 1.0 V minimum threshold: {'off' if off else 'NOT SURE OFF'}")
-        # the bands
-        on_max = bisect(lambda rs: min(latch_point(3.42, rs, rpd * lo, r15 * lo, True, U3_IEN)[1] - U3_VIH,
-                                       latch_point(3.42, rs, rpd * lo, r15 * lo, True, U3_IEN)[0] - Q_VTH[1]), 1, 1e6)
-        ghost = bisect(lambda rs: latch_point(4.2, rs, rpd * hi, r15 * hi, False, 0)[0] - Q_VTH[0], 1, 1e8)
-        offmin = bisect(lambda rs: latch_point(4.2, rs, rpd * hi, r15 * hi, False, 0)[1] - U3_VIL, 1, 1e8)
-        print(f"  bands: sure on (EN and {q} both) up to {on_max / 1e3:.1f} kohm at VSYS 3.42 V; {q} may read a ghost "
-              f"press under {ghost / 1e3:.0f} kohm of leakage at 4.2 V; EN may turn on under {offmin / 1e3:.0f} kohm; "
-              f"sure off above {max(ghost, offmin) / 1e3:.0f} kohm (1 Mohm is {'above' if 1e6 > max(ghost, offmin) else 'NOT above'} it)")
-        ok &= 1e6 > max(ghost, offmin)
+        print(f"SW24 at its 500 mOhm maximum (rocpu_tps850.txt:137) plus 1 kohm of dirt, VSYS {vsys} V: Q1's gate {raw:.3f} V "
+              f"({raw - Q_VTH[1]:+.3f} V over its 2.5 V maximum threshold), EN {en:.3f} V ({en - U3_VIH:+.3f} V over VIH): "
+              f"{'on' if on else 'NOT SURE ON'}")
+    raw, en = latch_point(4.4, 1e6, rpd * hi, r15 * hi, False, 0)
+    off = en <= U3_VIL and raw < Q_VTH[0]
+    ok &= off
+    print(f"1 Mohm across SW24 at VSYS 4.4 V: RAW {raw:.3f} V, EN at most {en:.3f} V (VIL {U3_VIL}); Q1's gate against its "
+          f"1.0 V minimum threshold: {'off' if off else 'NOT SURE OFF'}")
+    on_max = bisect(lambda rs: min(latch_point(3.0, rs, rpd * lo, r15 * lo, True, U3_IEN)[1] - U3_VIH,
+                                   latch_point(3.0, rs, rpd * lo, r15 * lo, True, U3_IEN)[0] - Q_VTH[1]), 1, 1e6)
+    ghost = bisect(lambda rs: latch_point(4.4, rs, rpd * hi, r15 * hi, False, 0)[0] - Q_VTH[0], 1, 1e8)
+    offmin = bisect(lambda rs: latch_point(4.4, rs, rpd * hi, r15 * hi, False, 0)[1] - U3_VIL, 1, 1e8)
+    print(f"  bands: sure on (EN and Q1 both) up to {on_max / 1e3:.1f} kohm at VSYS 3.0 V (the switch is rated 500 mOhm); Q1 may "
+          f"read a ghost press under {ghost / 1e3:.0f} kohm of leakage at 4.4 V; EN may turn on under {offmin / 1e3:.0f} kohm; "
+          f"sure off above {max(ghost, offmin) / 1e3:.0f} kohm (1 Mohm is {'above' if 1e6 > max(ghost, offmin) else 'NOT above'} it)")
+    ok &= 1e6 > max(ghost, offmin) and on_max >= 1e3          # REQ-PWR-08's 1 kohm of dirt in series
+    # after a reset or crash: GPIO21 resets as an input with no pull (pinmap.md 'Pins at reset'), R42 pulls it down
     r42 = r(parts, "R42")
-    e9 = r42 <= RP_E9_PULL
-    ok &= e9
-    print(f"after RESET or a crash with E9 (A2 stepping): R42 {parts['R42']['value']} against E9's 8.2 kohm "
-          f"(rp2350.txt:102915): {'PWR_HOLD pulled low, EN 0 V' if e9 else 'E9 can hold PWR_HOLD near 2.2 V: EN stays up'}")
-    hold = latch_point(RP_VOH, 1e-3, r42 * lo, r15 * lo, True, U3_IEN)[1]
+    leak = ESP_IIN * r42 * hi
+    rel = leak < U3_VIL
+    ok &= rel
+    print(f"after a reset or crash: PWR_HOLD (GPIO21) an input, its {ESP_IIN * 1e9:.0f} nA leakage maximum (esp32-s3.txt:3748) "
+          f"through R42 {parts['R42']['value']}: {leak * 1e3:.2f} mV, so EN falls once SW24 is up (the ESP32-S3 has no pad "
+          "erratum like the RP2350's E9: R42 could be 100k)")
+    hold = latch_point(ESP_VOH, 1e-3, r42 * lo, r15 * lo, True, U3_IEN)[1]
     ok &= hold >= U3_VIH
-    print(f"held by firmware (PWR_HOLD at the GPIO's {RP_VOH} V VOH minimum, rp2350.txt:101144): EN {hold:.3f} V "
-          f"({hold - U3_VIH:+.3f} V over VIH); GPIO44 sources {RP_VOH / (r42 * lo) * 1e3:.2f} mA into R42")
+    print(f"held by firmware (PWR_HOLD at the pad's VOH 0.8 x VDD = {ESP_VOH} V, esp32-s3.txt:3750, into a light load): EN "
+          f"{hold:.3f} V ({hold - U3_VIH:+.3f} V over VIH); GPIO21 sources {ESP_VOH / (r42 * lo) * 1e3:.2f} mA into R42 "
+          "(VOH is specified into a high impedance, 3768: at 0.56 mA the pad stays near it)")
+    # the start-up chain a press must cover before firmware can set PWR_HOLD
+    en_rc = ESP_EN_RC[0] * ESP_EN_RC[1]
+    t_en = -en_rc * math.log(1 - 0.75)
+    print(f"a press must last: U3's start-up {U3_TSTR * 1e6:.0f} us (tlv757p.txt:326) + EN's RC to 0.75 x VDD "
+          f"(VIH_nRST, esp32-s3.txt:3761) {t_en * 1e3:.1f} ms with R23/C12 + the ROM and bootloader (not in any datasheet: "
+          "VER-73 times it) + pinmap.md's 1 s hold rule")
     r14 = r(parts, "R14")
     for vbus in (4.75, 5.25):
         v = latch_point(vbus, r14 * hi, 1e12, r15 * lo, True, U3_IEN)[1]
@@ -197,42 +218,39 @@ def latch(seed=None):
 
 
 # ---- VER-196 -----------------------------------------------------------------------------------------------
-SEED_AMP = {"R37": "1M"}             # AMP_EN's pull-down so weak the pad's leakage nears Q3's threshold
+SEED_AMP = {"R37": "100M"}           # AMP_EN's pull-down so weak the pad's leakage nears Q3's threshold
 
 
 def ampstate(seed=None):
     parts, _ = load(seed)
     r36, r37 = r(parts, "R36") * (1 + R_TOL), r(parts, "R37") * (1 + R_TOL)
-    gate = RP_IIN * r37
+    gate = dn.I_LEAK * r37
     margin = Q_VTH[0] - gate
     ok = margin >= 0.4
-    print(f"Q3 2N7002 VGS(th) {Q_VTH[0]}-{Q_VTH[1]} V (q1.json p2, not on disk); AMP_EN held by R37 {parts['R37']['value']} "
-          f"(+1%) against the pad's {RP_IIN * 1e6:.0f} uA leakage maximum (rp2350.txt:101100): gate at most {gate:.2f} V, "
-          f"{margin:.2f} V under the minimum threshold (limit 0.4 V)")
+    print(f"Q3 2N7002 VGS(th) {Q_VTH[0]}-{Q_VTH[1]} V (2n7002_cj.txt:55); AMP_EN (GPIO45) held by R37 {parts['R37']['value']} "
+          f"(+1%) against the pad's leakage ({dn.I_LEAK * 1e6:g} uA stand-in, 20 x IIH's 50 nA, esp32-s3.txt:3748): gate at most "
+          f"{gate:.3f} V, {margin:.2f} V under the minimum threshold (limit 0.4 V)")
     states = [
         ("off, VSYS live", "U4 unpowered, its pad passes no current; R37 holds the gate at 0 V"),
-        ("power-up before firmware", "pads reset with IE clear, pull-down on (PADS_BANK0 GPIO reset: IE 0, PDE 1, ISO 1, "
-         "rp2350.txt:59412-59433); E9 does not act after a PoR or RUN reset (rp2350.txt:102952)"),
-        ("RESET (RUN)", "a RUN reset resets the pads as at power-up (rp2350.txt:102952)"),
-        ("watchdog reset", "the pads reset only if the watchdog's PSM WDSEL includes RESETS (rp2350.txt:36739-36791, all "
-         "0 at reset): the SDK's watchdog_enable() sets it; firmware rule: keep that, or E9 (A2) can hold AMP_EN near "
-         f"{RP_E9_V} V behind {parts['R37']['value']}, over Q3's {Q_VTH[0]} V"),
-        ("sleep or dormant", "outputs keep their level; firmware rule: drive AMP_EN low before sleep, never leave it an "
-         "input (E9 on A2 needs 8.2 kohm or less, R37 is 100k)"),
+        ("power-up before firmware", "GPIO45 resets with its weak pull-down (WPD, IE: esp32-s3.txt:901) and has no power-up "
+         "glitch (Table 2-2, 958-1006); it is the VDD_SPI strapping pin, so it must read 0 at reset anyway (VER-203)"),
+        ("EN low (reset)", "the chip is held in reset: its pads as at power-up"),
+        ("watchdog or panic reset", "a system reset returns the pads to their reset state: input with GPIO45's pull-down"),
+        ("light or deep sleep", "firmware rule: drive AMP_EN low before sleep (or hold it with the RTC's pad hold)"),
         ("USB in, cell flat", "VSYS is U2's OUT, 4.3-4.5 V (bq24074.txt:729); AMP_EN as above"),
     ]
     for name, why in states:
-        print(f"  {name}: AMP_EN <= {gate:.2f} V, Q3 off, U7 shut down: {why}")
+        print(f"  {name}: AMP_EN <= {gate:.3f} V, Q3 off, U7 shut down: {why}")
     for vsys in (3.0, 4.4):
         shdn = vsys - STAND_IDSS * r36
         print(f"VSYS {vsys} V: AMP_SHDN at least {shdn:.2f} V (R36 {parts['R36']['value']} with Q3's off leakage, "
-              f"stand-in {STAND_IDSS * 1e6:.0f} uA): within {vsys - shdn:.2f} V of VDD, the 'supply voltage' the "
-              "FM8002A names for shutdown (u7.json pin 1; it prints no VIH: limit 95% of VDD)")
+              f"stand-in {STAND_IDSS * 1e6:.0f} uA; 80 nA at 60 V, 2n7002_cj.txt:57): within {vsys - shdn:.2f} V of VDD, "
+              "the 'supply voltage' the FM8002A names for shutdown (fm8002a.txt:75-76; it prints no VIH: limit 95% of VDD)")
         ok &= shdn >= 0.95 * vsys
     off = STAND_U7_ISD + STAND_IDSS
-    print(f"U7's shutdown {U7_ISD * 1e6:.1f} uA typical (u7.json p3, not on disk; {STAND_U7_ISD * 1e6:.1f} uA as a stand-in "
+    print(f"U7's shutdown {U7_ISD * 1e6:.1f} uA typical (fm8002a.txt:123, no maximum; {STAND_U7_ISD * 1e6:.1f} uA as a stand-in "
           f"maximum) and R36's {STAND_IDSS * 1e6:.0f} uA (Q3's leakage): {off * 1e6:.1f} uA of the off budget; "
-          "the whole budget is 'shelf' (VER-103), against VER-73's 30 uA")
+          "the whole budget is 'shelf' (VER-103), against VER-65's 30 uA")
     total = off_budget(parts, 4.2, 25)[0]
     ok &= total <= 30e-6
     print(f"the whole off budget at 4.2 V, 25 C: {total * 1e6:.1f} uA (limit 30 uA)")
@@ -247,10 +265,10 @@ def off_budget(parts, vbat, temp_c):
     vdiv = min(vbat * r18 / (r17 + r18), STAND_CLAMP_V)
     lines = [
         ("U2 sleep current into BAT", U2_IBAT_PDWN, "6.5 uA max at TJ 85 C (bq24074.txt:714): used at 25 and 45 C"),
-        ("U3 shut down", U3_ISHDN * warm, f"1.5 uA max at 25 C (rt9013.pdf p3){'; doubled at 45 C (stand-in)' if warm > 1 else ''}"),
+        ("U3 shut down", U3_ISHDN * warm, f"1 uA max (tlv757p.txt:265){'; doubled at 45 C (stand-in)' if warm > 1 else ''}"),
         ("R17 into U10's unpowered input", (vbat - vdiv) / r17,
-         f"VBAT_DIV held at {vdiv:.2f} V by U10's input clamp (stand-in {STAND_CLAMP_V} V: MCP6001 not on disk)"),
-        ("U7 shut down on VSYS", STAND_U7_ISD * warm, "FM8002A 4.2 uA typical (u7.json p3, not on disk): 2 x typical, stand-in"),
+         f"VBAT_DIV held at {vdiv:.2f} V by U10's input clamp (estimate {STAND_CLAMP_V} V; mcp6001.txt:115-117 allows it)"),
+        ("U7 shut down on VSYS", STAND_U7_ISD * warm, "FM8002A 4.2 uA typical (fm8002a.txt:123): 2 x typical, stand-in"),
         ("Q3 off (R36 from VSYS)", STAND_IDSS * warm, "2N7002 IDSS, stand-in"),
         ("Q5, Q6 off (the backlight LEDs from VSYS)", 2 * STAND_IDSS * warm, "AO3400A IDSS, stand-in"),
     ]
@@ -263,7 +281,7 @@ SEED_SHELF = {"R17": "47k", "R18": "47k"}     # a stiff divider: 10 x the drain
 def shelf(seed=None):
     parts, _ = load(seed)
     ok = True
-    print("off, no USB, cell in: VSYS is live through U2's battery FET; 3V3, +1V1 and the panel are off")
+    print("off, no USB, cell in: VSYS is live through U2's battery FET; 3V3, the module and the panel are off")
     for temp in (25, 45):
         tot, lines = off_budget(parts, 4.2, temp)
         print(f"-- {temp} C, VBAT 4.2 V")
@@ -294,10 +312,12 @@ def shelf(seed=None):
 
 
 # ---- VER-191 -------------------------------------------------------------------------------------------------
-SEED_USB = {"R21": "22"}
+SEED_USB = {"R21": "100"}
 
 
 def usb(seed=None):
+    """39cc07f: R21/R22 against Espressif's 22/33 ohm, placed close to the module (esp32-s3-hw-design-guidelines.txt:873-875,
+    1307), read here as their pad within CLOSE_MM of the module's pin; D+ and D- capacitance to ground."""
     parts, _ = load(seed)
     pcb, b = dn.board()
     mm = pcb.ToMM
@@ -305,14 +325,15 @@ def usb(seed=None):
     for ref in ("R21", "R22"):
         v = r(parts, ref)
         lo, hi = v * (1 - R_TOL), v * (1 + R_TOL)
-        good = lo <= RP_USB_R <= hi
+        good = ESP_USB_R[0] * (1 - R_TOL) <= lo and hi <= ESP_USB_R[1] * (1 + R_TOL)
         ok &= good
-        print(f"{ref} {parts[ref]['value']} ohm 1%: {lo:.2f}-{hi:.2f} ohm against the 27 ohm rp2350.txt:1196 requires: "
-              f"{'meets it' if good else 'NOT 27 ohm'}")
-    print("ZDRV (USB 2.0's 28-44 ohm with the series resistor) also needs the PHY's own output impedance, which "
-          "rp2350.pdf does not give: the 27 ohm is Raspberry Pi's figure for that sum (rp2350.txt:1196, 100753)")
-    length = {}
-    vias = {}
+        print(f"{ref} {parts[ref]['value']} ohm 1%: {lo:.2f}-{hi:.2f} ohm against Espressif's 'initial value can be 22/33' "
+              f"(esp32-s3-hw-design-guidelines.txt:874): {'inside' if good else 'OUTSIDE 22-33 ohm'}")
+    print("ZDRV (USB 2.0's 28-44 ohm with the series resistor) also needs the PHY's own output impedance, which esp32-s3.pdf "
+          "does not give: 22/33 ohm is Espressif's starting value for that sum, to be tuned on the board (874)")
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+    u4 = {p.GetNumber(): p for p in fps["U4"].Pads()}
+    length, vias = {}, {}
     for t in b.GetTracks():
         n = t.GetNetname().split("/")[-1]
         if n in ("USB_DP", "USB_DM", "USB_DP_MCU", "USB_DM_MCU"):
@@ -320,16 +341,26 @@ def usb(seed=None):
                 length[n] = length.get(n, 0) + mm(t.GetLength())
             else:
                 vias[n] = vias.get(n, 0) + 1
+    for ref, net in (("R21", "USB_DP_MCU"), ("R22", "USB_DM_MCU")):
+        pin = next(k for k, v in parts["U4"]["pins"].items() if v == net)
+        pad = next(p for p in fps[ref].Pads() if p.GetNetname().split("/")[-1] == net)
+        d = math.hypot(mm(pad.GetPosition().x - u4[pin].GetPosition().x), mm(pad.GetPosition().y - u4[pin].GetPosition().y))
+        good = d <= CLOSE_MM
+        ok &= good
+        print(f"{ref}'s pad on {net} is {d:.1f} mm from the module's pin {pin} in a straight line, {length.get(net, 0):.1f} mm of "
+              f"track: 'place them close to the chip' (esp32-s3-hw-design-guidelines.txt:875, 1307), read here as {CLOSE_MM:g} mm: "
+              + ("close" if good else "NOT close: the line between the pin and the resistor is unterminated (at full speed's "
+                 "4-20 ns edges a 20 mm stub is 0.13 ns, so the cost is EMI and ringing, not timing)"))
     for line in ("DP", "DM"):
         mm_ = length.get(f"USB_{line}", 0) + length.get(f"USB_{line}_MCU", 0)
         nv = vias.get(f"USB_{line}", 0) + vias.get(f"USB_{line}_MCU", 0)
-        ctot = U1_C + STAND_RP_USB_C + mm_ * STAND_TRACK_C + nv * 0.5e-12
+        ctot = U1_C + STAND_ESP_USB_C + mm_ * STAND_TRACK_C + nv * 0.5e-12
         good = ctot <= 100e-12
         ok &= good
         print(f"D{'+' if line == 'DP' else '-'}: track {mm_:.1f} mm ({mm_ * STAND_TRACK_C * 1e12:.1f} pF at "
               f"{STAND_TRACK_C * 1e12:.1f} pF/mm, stand-in), {nv} vias (0.5 pF each), U1 {U1_C * 1e12:.0f} pF max "
-              f"(u1.json p2, not on disk), the RP2350's pad {STAND_RP_USB_C * 1e12:.0f} pF (stand-in): {ctot * 1e12:.1f} pF "
-              f"against 100 pF; it passes unless U1 and the pad together exceed {(100e-12 - mm_ * STAND_TRACK_C - nv * 0.5e-12) * 1e12:.0f} pF")
+              f"(srv05-4.txt:105), the module's pad {STAND_ESP_USB_C * 1e12:.0f} pF (stand-in): {ctot * 1e12:.1f} pF "
+              f"against 100 pF")
     mismatch = abs(length.get("USB_DP", 0) + length.get("USB_DP_MCU", 0) - length.get("USB_DM", 0) - length.get("USB_DM_MCU", 0))
     print(f"D+/D- length mismatch {mismatch:.2f} mm (VER-108 owns the limit)")
     return dn.result(ok)
@@ -358,11 +389,11 @@ def audio(seed=None):
     names = ["R32", "C37", "R33", "C38", "C39", "R34", "R35"]
     nom = [r(parts, n) if n[0] == "R" else c(parts, n) for n in names]
     tol = [R_TOL if n[0] == "R" else ctol(parts, n) for n in names]
-    carrier = RP_PWM_CLK / 256
+    carrier = ESP_PWM_CLK / 256
     worst = {"hi3db": 1e9, "lo3db": 0, "carrier": 0}
     for signs in itertools.product((-1, 1), repeat=len(names)):
         vals = [v * (1 + s * t) for v, s, t in zip(nom, signs, tol)]
-        for rsrc in (0.0, 170.0):                 # the pad's own resistance: 0 to (3.3 - 2.62 V) / 4 mA (rp2350.txt:101144)
+        for rsrc in (0.0, 170.0):                 # the pad's own resistance, 0 to 170 ohm (a weak drive: stand-in)
             h = lambda f: abs(audio_h(f, *vals, rsrc))   # noqa: E731
             mid = h(1e3)
             hi = bisect(lambda f: h(f) - mid / math.sqrt(2), 2e3, 2e5)
@@ -377,7 +408,7 @@ def audio(seed=None):
     print(f"nominal: gain at 1 kHz {20 * math.log10(h0(1e3)):.1f} dB over the PWM's swing (2 x Rf/Ri, u7.json pin 4); "
           f"-3 dB at {bisect(lambda f: h0(f) - h0(1e3) / math.sqrt(2), 1.0, 900.0):.1f} Hz and "
           f"{bisect(lambda f: h0(f) - h0(1e3) / math.sqrt(2), 2e3, 2e5) / 1e3:.1f} kHz; the carrier at "
-          f"{carrier / 1e3:.1f} kHz (clk_sys 150 MHz / 256) {20 * math.log10(h0(1e3) / h0(carrier)):.1f} dB down")
+          f"{carrier / 1e3:.1f} kHz (LEDC from the 80 MHz APB clock / 256) {20 * math.log10(h0(1e3) / h0(carrier)):.1f} dB down")
     print(f"every corner (2^7 tolerance corners x the pad's 0-170 ohm): high -3 dB at least {worst['hi3db'] / 1e3:.1f} kHz "
           f"(limit 10), low corner at most {worst['lo3db']:.1f} Hz (limit 50), carrier at least {worst['carrier']:.1f} dB "
           "down (limit 40)")
@@ -390,15 +421,18 @@ def audio(seed=None):
     keep = bisect(lambda s: att_at(s) - 40, 0.05, 1.0)
     print(f"C37 and C38 are X7R (0402B472K, 50 V): DC bias at the PWM's 1.65 V mean lowers them (VER-30); the carrier "
           f"stays 40 dB down while they keep {keep * 100:.0f}% of their -10% value")
-    print("not in this check: the FM8002A's own bandwidth and PSRR (fm8002a.pdf not on disk)")
+    print("not in this check: the FM8002A's own bandwidth and PSRR (fm8002a.pdf prints neither)")
     return dn.result(worst["hi3db"] >= 10e3 and worst["lo3db"] <= 50 and worst["carrier"] >= 40)
 
 
-# ---- VER-197 -------------------------------------------------------------------------------------------------
-SEED_CORE = {"C25": "1u"}
+# ---- VER-204 (39cc07f; VER-197 read the RP2350's copied core) --------------------------------------------------
+SEED_MODULE = {"C11": "1u"}
 
 
-def core(seed=None):
+def module(seed=None):
+    """The ESP32-S3-WROOM-1U's supply and reset against Espressif's own figures: a 22 uF and a 0.1 uF on 3V3 at pin 2
+    (the module's peripheral schematic, esp32-s3-wroom-1.txt:2875), each within CLOSE_MM of the pin; EN's RC (10k, 1 uF,
+    esp32-s3-hw-design-guidelines.txt:338) and its rise; a 10 uF at the power entrance (218); the EN trace's length."""
     parts, _ = load(seed)
     pcb, b = dn.board()
     mm = pcb.ToMM
@@ -409,69 +443,76 @@ def core(seed=None):
         ok &= good
         print(("  ok    " if good else "  FAIL  ") + text)
 
-    print("the copied core against rp2350.pdf's own component rules (section 6.3.8.2, 6.1, 8.2.1.1):")
-    row(c(parts, "C24") >= RP_VREG_C, f"C24 VREG_VIN {parts['C24']['value']}: CIN at least 4.7 uF (rp2350.txt:33598, 32715)")
-    row(abs(c(parts, "C25") - RP_VREG_C) < 1e-9 and ctol(parts, "C25") <= 0.20,
-        f"C25 VREG output {parts['C25']['value']} {parts['C25']['mpn']} (+-{ctol(parts, 'C25') * 100:.0f}%): COUT 4.7 uF +-20% "
-        "(rp2350.txt:33603); its DC-bias loss at 1.1 V is VER-30's")
-    row(abs(dn.farads(parts["L2"]["value"]) - RP_VREG_L) < 1e-9, f"L2 {parts['L2']['value']}H: 3.3 uH +-20% (rp2350.txt:33608)")
-    row(parts["L2"]["mpn"] == "AOTA-B201610S3R3-101-T",
-        f"L2 is {parts['L2']['mpn']}, the part rp2350.txt:33612 recommends (its DCR and Isat then meet 33608)")
-    row(abs(r(parts, "R19") - RP_AVDD_RC[0]) < 1e-6 and abs(c(parts, "C26") - RP_AVDD_RC[1]) < 1e-9
-        and parts["R19"]["pins"]["2"] == "VREG_AVDD" and "VREG_AVDD" in parts["C26"]["pins"].values(),
-        f"VREG_AVDD filter R19 {parts['R19']['value']} ohm and C26 {parts['C26']['value']}: 33 ohm and 4.7 uF as Figure 19 "
-        "(rp2350.txt:33281-33290)")
-    row(parts["X1"]["mpn"] == "ABM8-272-T3", f"X1 {parts['X1']['mpn']}: the recommended crystal (rp2350.txt:40927)")
-    cs = 1 / (1 / c(parts, "C27") + 1 / c(parts, "C28"))
-    cl = [cs + s for s in STAND_XTAL_STRAY]
-    row(all(abs(x - RP_XTAL_CL) <= 2.5e-12 for x in cl),
-        f"X1's load: C27 {parts['C27']['value']} and C28 {parts['C28']['value']} in series {cs * 1e12:.1f} pF + "
-        f"{STAND_XTAL_STRAY[0] * 1e12:.0f}-{STAND_XTAL_STRAY[1] * 1e12:.0f} pF stray (stand-in) = {cl[0] * 1e12:.1f}-"
-        f"{cl[1] * 1e12:.1f} pF against CL 10 pF (rp2350.txt:40950), limit +-2.5 pF")
-    row(abs(r(parts, "R21") - RP_USB_R) < 1e-6 and abs(r(parts, "R22") - RP_USB_R) < 1e-6,
-        "R21, R22 27 ohm on USB_DP, USB_DM (rp2350.txt:1196)")
-    # decoupling by distance on the routed board
+    if not parts["U4"]["value"].startswith("ESP32-S3"):
+        sys.exit("paper_checks module: U4 is " + parts["U4"]["value"])
     fps = {f.GetReference(): f for f in b.GetFootprints()}
     u4 = {p.GetNumber(): p for p in fps["U4"].Pads()}
-    caps = {ref: f for ref, f in fps.items() if ref.startswith("C") and ref in parts and parts[ref]["bom"]}
+    vdd = next(k for k, v in parts["U4"]["pins"].items() if v == "+3V3")
+    en = next(k for k, v in parts["U4"]["pins"].items() if v == "EN")
 
     def pos(p):
         return mm(p.GetPosition().x), mm(p.GetPosition().y)
 
-    def nearest(pin, net):
-        px, py = pos(u4[pin])
-        best = []
-        for ref, f in caps.items():
-            if net not in parts[ref]["pins"].values():
+    def near(pin, net, cmin, cmax=None):
+        out = []
+        for ref, f in fps.items():
+            if ref not in parts or not parts[ref]["bom"] or parts[ref]["lib"] != "Device:C":
+                continue
+            if net not in parts[ref]["pins"].values() or "GND" not in parts[ref]["pins"].values():
+                continue
+            cv = c(parts, ref)
+            if cv < cmin * 0.99 or (cmax and cv > cmax * 1.01):
                 continue
             pad = next(q for q in f.Pads() if q.GetNetname().split("/")[-1] == net)
-            qx, qy = pos(pad)
-            best.append((math.hypot(qx - px, qy - py), ref))
-        return sorted(best)
+            out.append((math.hypot(pos(pad)[0] - pos(u4[pin])[0], pos(pad)[1] - pos(u4[pin])[1]), ref))
+        return sorted(out)
 
-    reg = pos(u4["63"])
-    dv = sorted(("10", "32", "51"), key=lambda p: math.hypot(pos(u4[p])[0] - reg[0], pos(u4[p])[1] - reg[1]))
-    print("  DVDD pins by distance from VREG_LX (pin 63): " + ", ".join(
-        f"{p} ({math.hypot(pos(u4[p])[0] - reg[0], pos(u4[p])[1] - reg[1]):.1f} mm)" for p in dv))
-    print(f"  'close to the pin' (rp2350.txt:32665, 32686, 32705) is read here as a capacitor pad within {CLOSE_MM} mm of "
-          "the pin's pad, centre to centre; Raspberry Pi's own layout puts its 0402s 1-3 mm from the pins")
-    for k, p in enumerate(dv):
-        near = nearest(p, "+1V1")
-        d, ref = near[0]
-        want = 100e-9 if k < 2 else 4.7e-6
-        big = [x for x in near if c(parts, x[1]) >= want * 0.99]
-        dw, rw = big[0] if big else (1e9, "none")
-        good = dw <= CLOSE_MM
-        row(good, f"DVDD pin {p}: rp2350.txt:32665-32675 asks {'100 nF' if k < 2 else '4.7 uF (the pin furthest from the regulator)'}"
-            f" close to it; the nearest +1V1 capacitor is {ref} {parts[ref]['value']} at {d:.1f} mm, the nearest of "
-            f"{'100 nF' if k < 2 else '4.7 uF'} or more {rw} at {dw:.1f} mm")
-    named = {"59": "ADC_AVDD", "68": "USB_OTP_VDD", "69": "QSPI_IOVDD"}
-    for pin in sorted((q for q, n in parts["U4"]["pins"].items() if n == "+3V3" and q not in ("64",)), key=int):
-        d, ref = nearest(pin, "+3V3")[0]
-        name = named.get(pin, "IOVDD")
-        row(d <= CLOSE_MM, f"{name} pin {pin}: nearest +3V3 capacitor {ref} {parts[ref]['value']} at {d:.1f} mm"
-            + (" (100 nF close to the pin, rp2350.txt:32705)" if pin == "59" else
-               " (100 nF close to the pin, rp2350.txt:32686)" if pin == "68" else ""))
+    print(f"U4 {parts['U4']['mpn']}: 3V3 on pin {vdd}, EN on pin {en}; 'close to the pin' read as a capacitor pad within "
+          f"{CLOSE_MM:g} mm of the pin's pad, centre to centre")
+    for want, label in ((ESP_3V3_C[0], "22 uF"), (ESP_3V3_C[1], "0.1 uF")):
+        hits = near(vdd, "+3V3", want, want)
+        d, ref = hits[0] if hits else (1e9, "none")
+        row(d <= CLOSE_MM, f"{label} on 3V3 (esp32-s3-wroom-1.txt:2875): the nearest is {ref} "
+            + (f"{parts[ref]['value']} at {d:.1f} mm" if hits else "(none on +3V3)"))
+    big = near(vdd, "+3V3", 10e-6)
+    print("  every capacitor of 10 uF or more on +3V3 and 3V3_LDO by distance from pin 2: "
+          + ", ".join(f"{ref} {parts[ref]['value']} {d:.1f} mm" for d, ref in big))
+    ent = [ref for ref in ("C6", "C7") if ref in parts and c(parts, ref) >= 10e-6 * 0.99]
+    row(bool(ent), f"10 uF or more at the main power entrance (esp32-s3-hw-design-guidelines.txt:218, 300-303): "
+        f"{', '.join(ent)} at U3's output")
+    en_r = [ref for ref, p in parts.items() if p["lib"] == "Device:R" and set(p["pins"].values()) == {"EN", "+3V3"}]
+    en_c = [ref for ref, p in parts.items() if p["lib"] == "Device:C" and set(p["pins"].values()) == {"EN", "GND"}]
+    rv = r(parts, en_r[0]) if en_r else 0.0
+    cv = c(parts, en_c[0]) if en_c else 0.0
+    row(abs(rv - ESP_EN_RC[0]) < 1 and abs(cv - ESP_EN_RC[1]) < 1e-9,
+        f"EN's RC: {en_r[0] if en_r else 'none'} {parts[en_r[0]]['value'] if en_r else ''} and {en_c[0] if en_c else 'none'} "
+        f"{parts[en_c[0]]['value'] if en_c else ''} against 'R = 10 kOhm and C = 1 uF' (esp32-s3-hw-design-guidelines.txt:338)")
+    if rv and cv:
+        t = -rv * cv * math.log(1 - 0.75)
+        row(t >= 50e-6, f"EN reaches VIH_nRST (0.75 x VDD, esp32-s3.txt:3761) {t * 1e3:.1f} ms after 3V3, past tSTBL's 50 us "
+            "(esp32-s3-wroom-1.txt:931)")
+        for ref in en_r + en_c:
+            pad = next(q for q in fps[ref].Pads() if q.GetNetname().split("/")[-1] == "EN")
+            d = math.hypot(pos(pad)[0] - pos(u4[en])[0], pos(pad)[1] - pos(u4[en])[1])
+            print(f"  {ref}'s EN pad {d:.1f} mm from pin {en}")
+    l_en = sum(mm(t.GetLength()) for t in b.GetTracks() if t.GetClass() == "PCB_TRACK"
+               and t.GetNetname().split("/")[-1] == "EN")
+    print(f"  the EN trace is {l_en:.1f} mm long (to J7's pogo pad on the back): 'make the CHIP_PU trace as short as possible' "
+          "(esp32-s3-hw-design-guidelines.txt:316) gives no number; a long EN picks up a reset from a nearby edge or ESD "
+          "(DFMEA, VER-95's screen)")
+    # 3V3 at the module during a Wi-Fi TX burst with the cell at the 3.50 V cutoff (VBAT read at U2's BAT, R17's end)
+    import circuit_checks as cc
+    i3 = sum(i for _, i, _ in cc.loads_3v3(parts, "peak"))
+    i_sys = i3 + 0.1177 + I_LOADS["U7"][1]
+    d_vsys, _ = path_drop(pcb, b, "VSYS", [("U2", "10"), ("U2", "11")], ("U3", "1"), i3)
+    d_vsys = d_vsys or 0.0
+    vd = dn.U3_VDO_1A * i3 / 1.0
+    v3 = 3.50 - U2_BAT_OUT_R * i_sys - d_vsys - vd
+    print(f"  3V3 during a TX burst at the 3.50 V cutoff: VBAT 3.50 V less U2's battery FET ({U2_BAT_OUT_R} ohm, bq24074.txt:724) "
+          f"at the system's {i_sys * 1e3:.0f} mA ({U2_BAT_OUT_R * i_sys * 1e3:.0f} mV), less VSYS's copper from U2's OUT to U3's "
+          f"IN at {i3 * 1e3:.0f} mA ({d_vsys * 1e3:.0f} mV, VER-13's solver on the routed board), less U3's dropout "
+          f"{vd * 1e3:.0f} mV ({dn.U3_VDO_1A * 1e3:.0f} mV at 1 A, tlv757p.txt:298, scaled with the current) = {v3:.3f} V")
+    row(v3 >= ESP_VDD_MIN, f"3V3 {v3:.3f} V at the module in that burst against VDD33's 3.0 V minimum (esp32-s3-wroom-1.txt:1596)")
     return dn.result(ok)
 
 
@@ -525,7 +566,7 @@ def hotplug(seed=None):
     pwr_en = pk * r15 / (r14 + r15)
     ok &= pwr_en <= 5.5
     print(f"PWR_EN at most {pwr_en:.2f} V (R14/R15 with D3's drop taken as 0, C47 {parts['C47']['value']} only slows it), "
-          f"limit 5.5 V (U3's EN 6 V absolute, rt9013.pdf p3)")
+          f"limit 5.5 V (U3's EN recommended maximum, tlv757p.txt:208; 6.0 V absolute, 179)")
     return dn.result(ok)
 
 
@@ -535,7 +576,7 @@ CU_RHO = 1.72e-5                 # ohm.mm: copper at 20 C
 VIA_PLATE = 0.018                # mm: via barrel plating, a thin figure (to confirm on JLC's capability page, VER-17)
 I_PATH = 0.75                    # A: the row's current through the input paths (U2's 475 mA USB500 limit, bq24074.txt:733,
                                  # sits under it)
-I_LOADS = {"U3": ("1", 0.15), "J3": (None, 0.12), "U7": ("6", 0.5)}   # A: 3V3 budget (REQ-PWR-15), the panel's 120 mA
+I_LOADS = {"U3": ("1", 0.62), "J3": (None, 0.12), "U7": ("6", 0.5)}   # A: 3V3's peak in a Wi-Fi burst (VER-31), the panel's 120 mA
                                  # backlight (pin_review/panel.json), the amplifier's peak (stand-in: 0.35 W into 8 ohm
                                  # bridged at 4 V needs about 0.3 A, plus margin)
 SEED_COPPER = {"CELL_P": 0.05}   # a 0.05 mm track for the cell (applied to the board in memory)
@@ -733,51 +774,130 @@ def mating(seed=None):
         tau = (rs + U2_BAT_OUT_R) * vsys_c
         print(f"  series {rs} ohm (cell, PCM, leads; stand-in): peak about {ipk:.0f} A into C3, VSYS charged with tau "
               f"{tau * 1e6:.1f} us; {(vbat_c + vsys_c) * 4.2 * 1e6:.0f} uC in all")
-    print("PWR_EN through the edge: no capacitor or diode joins VSYS to PWR_EN with the domes open (D2, D8 and D3 are "
-          "reverse-biased or at 0 V; R13 and R62 hold the RAW nodes at 0 V), so PWR_EN moves only by the open dome's "
-          "pad capacitance into Q1's gate: well under U3's 0.6 V VIL")
+    print("PWR_EN through the edge: no capacitor or diode joins VSYS to PWR_EN with SW24 open (D2 and D3 are "
+          "reverse-biased or at 0 V; R13 holds PWR_BTN_RAW at 0 V), so PWR_EN moves only by the open switch's "
+          "capacitance into Q1's gate: well under U3's 0.3 V VIL")
     print("BLOCKED: the PCM's short-circuit threshold and delay come from the cell's spec sheet (VER-37); with them, "
           "compare the peak and tau above. No result until then.")
     print("RESULT: BLOCKED")
     return 2
 
 
-# ---- VER-30 (blocked on Samsung's DC-bias curves) ----------------------------------------------------------------
+# ---- VER-30: each MLCC's capacitance at its tolerance and its DC-bias curve ----------------------------------------------
+def bias_curve(mpn):
+    """[(vdc, delta %)] from hardware/ref_design/datasheets/samsung_<mpn>_dcbias.csv (Samsung's own curve), or None."""
+    import csv as _csv
+    import glob as _glob
+    for path in _glob.glob(os.path.join(dn.REF, "datasheets", "samsung_*_dcbias.csv")):
+        key = os.path.basename(path)[len("samsung_"):-len("_dcbias.csv")].upper()
+        if (mpn or "").upper().startswith(key[:13]):
+            rows = [r for r in _csv.reader(ln for ln in open(path, encoding="utf-8") if not ln.startswith("#"))]
+            return [(float(a), float(b)) for a, b in rows[1:]], os.path.basename(path)
+    return None
+
+
+def at_bias(curve, v):
+    pts = curve[0]
+    for (v0, d0), (v1, d1) in zip(pts, pts[1:]):
+        if v0 <= v <= v1:
+            return d0 + (d1 - d0) * (v - v0) / (v1 - v0)
+    return pts[-1][1]
+
+
 def mlccbias(seed=None):
     parts, _ = load(seed)
-    rail = {"VBUS_C1": 5.25, "VSYS": 4.5, "VBAT": 4.2, "3V3_LDO": 3.37, "+3V3": 3.37, "+1V1": 1.16,
-            "VREG_AVDD": 3.37, "AMP_VDD": 4.5}
+    rail = {"VBUS_C1": 5.25, "VSYS": 4.5, "VBAT": 4.2, "3V3_LDO": 3.35, "+3V3": 3.35, "SD_VDD": 3.35, "AMP_VDD": 4.5}
     need = [(("C1",), 1e-6, "U2 IN 1-10 uF (bq24074.txt:520)"),
-            (("C2", "C5", "C34"), 4.7e-6, "U2 OUT 4.7-47 uF (bq24074.txt:533), C34 through JP3"),
+            (("C2", "C5", "C34"), 4.7e-6, "U2 OUT 4.7-47 uF (bq24074.txt:533), C5 and C34 on VSYS too"),
             (("C3",), 4.7e-6, "U2 BAT 4.7-47 uF (bq24074.txt:501)"),
-            (("C5",), 1e-6, "U3 input 1 uF X7R or more (rt9013.pdf p8)"),
-            (("C6", "C7"), 1e-6, "U3 output 1 uF or more (rt9013.pdf p8)"),
-            (("C24",), 4.7e-6, "VREG CIN at least 4.7 uF (rp2350.txt:33598)"),
-            (("C25",), 3.76e-6, "VREG COUT 4.7 uF -20% (rp2350.txt:33603)"),
-            (("C34",), 1e-6, "FM8002A Cs 1 uF (u7.json p6, not on disk)")]
-    short = []
+            (("C5",), 1e-6, "U3 CIN 1 uF or more (tlv757p.txt:210)"),
+            (("C6", "C7"), 1e-6, "U3 COUT 1 uF or more (tlv757p.txt:211)"),
+            (("C10",), 10e-6, "the module's bulk: 'highly recommended to add a 10 uF capacitor' for the TX bursts "
+                              "(esp32-s3-hw-design-guidelines.txt:299-301; the peripheral schematic's 22 uF nominal, "
+                              "esp32-s3-wroom-1.txt:2875)"),
+            (("C34",), 1e-6, "FM8002A's VDD 1 uF (u7.json p6)")]
+    short, blocked = [], []
     for refs, cmin, why in need:
-        v = max(rail.get(n, 0) for ref in refs for n in parts[ref]["pins"].values())
-        have = sum(c(parts, ref) * (1 - ctol(parts, ref)) for ref in refs)
-        if have < cmin * 0.999:
+        have, notes, missing = 0.0, [], []
+        for ref in refs:
+            v = max(rail.get(n, 0) for n in parts[ref]["pins"].values())
+            low = c(parts, ref) * (1 - ctol(parts, ref))
+            cur = bias_curve(parts[ref]["mpn"])
+            if cur is None:
+                missing.append(ref)
+                have += low
+                notes.append(f"{ref} {parts[ref]['mpn']} {low * 1e6:.2f} uF at -tol, no curve")
+                continue
+            d = at_bias(cur, v)
+            eff = low * (1 + d / 100)
+            have += eff
+            notes.append(f"{ref} {parts[ref]['mpn']} at {v:.2f} V: {low * 1e6:.2f} uF at -tol, {d:+.1f}% "
+                         f"({cur[1]}) = {eff * 1e6:.2f} uF")
+        good = have >= cmin * 0.999
+        state = "ok" if good and not missing else ("SHORT" if not good else "BLOCKED")
+        if not good:
             short.append("+".join(refs))
-        print(f"  {'+'.join(refs)} ({', '.join(parts[ref]['mpn'] for ref in refs)}) at {v:.2f} V: {have * 1e6:.2f} uF at "
-              f"its low tolerance; needs {cmin * 1e6:.2f} uF ({why}): "
-              + (f"may lose up to {(1 - cmin / have) * 100:.0f}% to DC bias" if have >= cmin * 0.999 else
-                 "SHORT before any DC-bias loss (the curve can only lower it)"))
-    print("Samsung's DC-bias curves for CL10A106KP8NNNC, CL10A106MA8NRNC, CL10A475KO8NNNC, CL05A475MP5NRNC "
-          "(product.samsungsem.com, the MLCC pages) are not in hardware/ref_design/datasheets: each 'may lose' above "
-          "waits for its curve (BLOCKED)")
+        elif missing:
+            blocked.append(f"{'+'.join(refs)} ({', '.join(parts[x]['mpn'] for x in missing)})")
+        print(f"  {state:7s} {'+'.join(refs)}: {have * 1e6:.2f} uF against {cmin * 1e6:.2f} uF ({why}); " + "; ".join(notes))
     if short:
-        print(f"short at the part's own tolerance, whatever the curve: {', '.join(short)}")
+        print(f"short at the part's tolerance and DC bias: {', '.join(short)}")
         return dn.result(False)
-    print("RESULT: BLOCKED")
-    return 2
+    if blocked:
+        print("BLOCKED: no DC-bias curve on disk for " + "; ".join(blocked) + " (Samsung's component library, "
+              "https://weblib.samsungsem.com/mlcc/mlcc-ec-data-sheet.do?partNumber=CL21A226MAQNNNE): its tolerance alone leaves "
+              "it over the minimum, the curve decides")
+        print("RESULT: BLOCKED")
+        return 2
+    return dn.result(True)
 
 
-CHECKS = {"latch": (latch, SEED_LATCH), "usb": (usb, SEED_USB), "audio": (audio, SEED_AUDIO), "core": (core, SEED_CORE),
+# ---- VER-206 (39cc07f): a microSD card plugged in while the board runs --------------------------------------------------
+STAND_CARD_C = (1e-6, 10e-6)     # F: a card's own VDD capacitance (the SD Physical Layer spec is not on disk: stand-ins)
+SEED_SD = {"C60": "100n", "C6": "100n", "C7": "100n"}     # the rail's bulk taken away in memory: the dip must fail
+
+
+def sdinsert(seed=None):
+    """J8's VDD is +3V3 through JP6 (a bridged jumper, no load switch): a card's own capacitance charges from the rail's
+    MLCCs at once (charge sharing), then U3 refills it at its current limit. 3V3 must stay at the module's 3.0 V minimum."""
+    parts, _ = load(seed)
+    rails = {"+3V3", "3V3_LDO", "SD_VDD", "LCD_3V3"}
+    tot, lines, nocurve = 0.0, [], []
+    for ref, p in sorted(parts.items()):
+        if p["lib"] != "Device:C" or not p["bom"] or not (set(p["pins"].values()) & rails) or "GND" not in p["pins"].values():
+            continue
+        low = c(parts, ref) * (1 - ctol(parts, ref))
+        cur = bias_curve(p["mpn"])
+        eff = low * (1 + at_bias(cur, 3.35) / 100) if cur else low * 0.5
+        if not cur:
+            nocurve.append(ref)
+        tot += eff
+        lines.append(f"{ref} {p['value']} {eff * 1e6:.2f} uF" + ("" if cur else " (no curve: half of -tol, stand-in)"))
+    print("the 3V3 rail's capacitance at 3.35 V, each part at its -tolerance and its Samsung DC-bias curve: " + ", ".join(lines)
+          + f"; {tot * 1e6:.1f} uF in all")
+    v0 = 3.3 * (1 - dn.VREG_TOL)
+    icl = 1.2                                   # A: U3's current limit, minimum (tlv757p.txt:267)
+    worst = None
+    for cc in STAND_CARD_C:
+        dip = v0 * cc / (tot + cc)
+        t = cc * (v0 - dip) / max(icl - 0.62, 1e-3)       # refilled at the current limit less VER-31's 0.62 A peak load
+        print(f"  a card with {cc * 1e6:g} uF (stand-in): 3V3 from {v0:.3f} V falls {dip:.2f} V to {v0 - dip:.2f} V at once, then U3 "
+              f"refills it in about {t * 1e6:.0f} us at its 1.2 A limit (tlv757p.txt:267) less the 0.62 A peak load")
+        worst = v0 - dip if worst is None else min(worst, v0 - dip)
+    cmax = tot * (v0 - ESP_VDD_MIN) / ESP_VDD_MIN
+    print(f"  a card's capacitance that takes 3V3 under the module's {ESP_VDD_MIN} V (esp32-s3-wroom-1.txt:1596): {cmax * 1e6:.1f} uF")
+    ok = worst >= ESP_VDD_MIN
+    print(("  ok    " if ok else "  FAIL  ") + f"3V3 at its lowest {worst:.2f} V for a {STAND_CARD_C[1] * 1e6:g} uF card against {ESP_VDD_MIN} V; "
+          "the card's real capacitance and the dip's length on the scope are VER-209's (unit 1)")
+    if nocurve:
+        print(f"  no DC-bias curve on disk for {', '.join(nocurve)} (CL21A226MAQNNNE: Samsung's library)")
+    return dn.result(ok)
+
+
+CHECKS = {"latch": (latch, SEED_LATCH), "usb": (usb, SEED_USB), "audio": (audio, SEED_AUDIO), "module": (module, SEED_MODULE),
           "shelf": (shelf, SEED_SHELF), "ampstate": (ampstate, SEED_AMP), "hotplug": (hotplug, SEED_HOTPLUG),
-          "copper": (copper, SEED_COPPER), "mating": (mating, None), "mlccbias": (mlccbias, None)}
+          "copper": (copper, SEED_COPPER), "mating": (mating, None), "mlccbias": (mlccbias, None),
+          "sdinsert": (sdinsert, SEED_SD)}
 
 
 def main():

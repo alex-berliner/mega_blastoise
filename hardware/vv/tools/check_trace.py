@@ -190,7 +190,9 @@ DESIGN_PY = "hardware/ref_design/board/design.py"
 # (it runs the build_pcb, route, silk and fab stages), the custom DRC rules (battler.kicad_dru, which VER-04's
 # DRC reads), the library tables, and placement_zones.py (placement.py imports it).  pin_review/*.json is not a
 # design path: VER-02 covers it, so a pin_review change stales VER-02's evidence instead.
-BOARD_FILES = ("board/design.py", "board/placement.py", "board/placement_zones.py", "board/lib",
+# 2026-10-28 (the ESP32-S3 re-seed at 39cc07f): placement_new.json, which placement.py applies over its own poses (the new
+# parts' spots from tools/place_new.py), moves parts as placement.py does
+BOARD_FILES = ("board/design.py", "board/placement.py", "board/placement_zones.py", "board/placement_new.json", "board/lib",
                "board/battler.kicad_pcb", "board/battler.kicad_pro", "board/battler.kicad_dru", "board/fp-lib-table",
                "board/sym-lib-table", "board/tools", "tools/build.py")
 BOARD_GLOBS = ("board/*.kicad_sch",)

@@ -83,7 +83,8 @@ CHECKS = {
     "VER-13": ("copper", ["python3", PC, "copper"], True),
     "VER-103": ("shelf", ["python3", PC, "shelf"], False),
     "VER-30": ("mlccbias", ["python3", PC, "mlccbias"], False),
-    "VER-197": ("core", ["python3", PC, "core"], True),
+    "VER-204": ("module", ["python3", PC, "module"], True),        # 39cc07f: the module's supply (was VER-197, the core)
+    "VER-206": ("sdinsert", ["python3", PC, "sdinsert"], False),
     "VER-12": ("hotplug", ["python3", PC, "hotplug"], False),
     "VER-196": ("ampstate", ["python3", PC, "ampstate"], False),
     "VER-140": ("mating", ["python3", PC, "mating"], False),
@@ -94,7 +95,7 @@ CHECKS = {
     # the checks of classes 2, 3, 5, 7, 10 and 12-15 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
     "VER-198": ("appcircuit", ["python3", CC, "appcircuit"], True),
     "VER-190": ("arch", ["python3", CS, "arch"], False),
-    "VER-15": ("gpio", ["python3", CC, "gpio"], False),
+    "VER-203": ("gpio", ["python3", CC, "gpio"], False),           # 39cc07f: the module's pins (was VER-15, the RP2350's)
     "VER-36": ("pinreview", ["python3", CC, "pinreview"], False),
     "VER-149": ("fwpins", ["python3", CC, "fwpins"], False),
     "VER-31": ("ratings", ["python3", CC, "ratings"], False),
@@ -104,6 +105,7 @@ CHECKS = {
     "VER-17": ("jlc", ["python3", LC, "jlc"], True),
     "VER-21": ("ret", ["python3", LC, "ret"], True),
     "VER-108": ("usbpair", ["python3", LC, "usbpair"], True),
+    "VER-205": ("antenna", ["python3", LC, "antenna"], True),
     "VER-199": ("timing", ["python3", CC, "timing"], True),
     "VER-06": ("check_fit", ["python3", CS, "fit"], True),
     "VER-19": ("placement", ["python3", CS, "placement"], True),

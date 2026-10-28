@@ -97,8 +97,10 @@ def propose(a, b):
     nc = [x for x in s if x.startswith("NC:")]
     if frozenset(s) in TIES:
         return "benign", "", "a solder jumper's own two pads: bridged in copper by design"
-    if any(x in ("NC:U4.70", "NC:U4.71", "NC:U4.72", "NC:U4.73", "NC:U4.74") for x in nc):
-        return "self-test", "DF-72", "an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)"
+    if any(x in ("NC:U4.28", "NC:U4.29", "NC:U4.30") for x in nc):
+        return "self-test", "DF-185", "a module pin wired to the octal PSRAM inside (IO35-IO37): a bridge stops the PSRAM (unit 1's first article)"
+    if s == {"VSYS", "PWR_BTN_RAW"}:
+        return "dangerous", "DF-188", "SW24's own pads shorted: the power button held for ever, the device cannot turn off (the cell drains to its PCM)"
     if "NC:U2.14" in s:
         return "dangerous", "DF-152", "U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them"
     if any(x.startswith("NC:U8.7") or x.startswith("NC:U9.7") for x in nc):
@@ -120,13 +122,11 @@ def propose(a, b):
     if s == {"VBUS", "GND"}:
         return "dangerous", "DF-51", "VBUS shorted at J1's row (DF-51) or U2's IN to its pad (DF-149): the source's limit is the only stop"
     if s == {"CC2", "VBUS"} or s == {"CC1", "VBUS"}:
-        return "dangerous", "DF-51", "VBUS on a CC pin: GPIO45/46 over their limit through 10k (VER-195)"
-    if "+1V1" in s:
-        return "dangerous", "DF-72", "DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD"
-    if s & {"VREG_LX", "VREG_AVDD"}:
-        return "dangerous", "DF-72", "the core regulator's switch node or analogue supply shorted"
+        return "dangerous", "DF-51", "VBUS on a CC pin: the module's IO2/IO4 over their limit through 10k (VER-195)"
     if s == {"+3V3", "GND"}:
-        return "dangerous", "DF-162", "3V3 shorted at a 74HC165 (CLK INH to VCC): U3 in current limit"
+        return "dangerous", "DF-162", "3V3 shorted (a 74HC165's CLK INH to VCC, or the module's pins 1-2): U3 in current limit"
+    if s == {"EN", "GND"} or s == {"EN", "+3V3"}:
+        return "self-test", "DF-185", "the module's EN held: it never starts, or J7's reset does nothing (bring-up)"
     if s == {"LCD_3V3", "GND"}:
         return "dangerous", "DF-59", "the panel's supply shorted at J3: U3 in current limit through JP4"
     if "GND" in s and re.fullmatch(r"P[12]_(UP|DOWN|LEFT|RIGHT|A|B|X|Y)", (s - {"GND"}).pop()):
@@ -391,7 +391,7 @@ def fab(seed=None):
         + (f"; under: {bad_m}" if bad_m else "")
         + f"; the four domes' (SW20-SW23, 4 mm domes, VER-178's) {', '.join(f'{mask_d[r]:.2f}' for r in ('SW20', 'SW21', 'SW22', 'SW23'))} mm")
     # (b) keep-out: no via, pour or foreign track within 2.9 mm of a comb's centre on F.Cu (pcbnew)
-    keep = []
+    keep, pour_min = [], {}
     for r in sorted((s for s in contacts if int(s[2:]) <= 16), key=lambda s: int(s[2:])):
         c = fps[r].GetPosition()
         own = {p.GetNetname() for p in fps[r].Pads()}
@@ -416,7 +416,15 @@ def fab(seed=None):
                         hi = mid
                     else:
                         lo = mid + 1
-                keep.append(f"{r}: the {z.GetNetname()} pour on F.Cu at {mm(hi):.3f} mm")
+                # 39cc07f: route.py's keep-out is a 24-gon 2.9 mm across its flats, so a pour can touch 2.900 mm: the rule is
+                # 2.9 mm or more, met to the micrometre (pcbnew's Collide counts a touch)
+                if mm(hi) < KEEP_R - 0.001:
+                    keep.append(f"{r}: the {z.GetNetname()} pour on F.Cu at {mm(hi):.3f} mm")
+                else:
+                    pour_min[r] = min(pour_min.get(r, 9.0), mm(hi))
+    if pour_min:
+        print(f"  the GND pour's nearest edge to a comb's centre: {min(pour_min.values()):.4f} mm (the rule area's flats, "
+              f"{KEEP_R} mm), on {len(pour_min)} combs")
     row(not keep, f"(b) no via, pour or other track within {KEEP_R} mm of the 16 combs' centres on F.Cu (vias on any layer)"
         + (f": {'; '.join(keep[:8])}{' ...' if len(keep) > 8 else ''}" if keep else ""))
     # (c) copper under every CPL centroid
@@ -514,8 +522,9 @@ def jlc(seed=None):
         "track width": min(mm(t.GetWidth()) for t in tracks),
         "via drill": min(mm(v.GetDrillValue()) for v in vias),
         "via annular ring": min((mm(v.GetWidth(pcb.F_Cu)) - mm(v.GetDrillValue())) / 2 for v in vias),
-        "PTH annular ring": min((min(mm(p.GetSize(pcb.F_Cu).x), mm(p.GetSize(pcb.F_Cu).y)) - mm(p.GetDrillSize().x)) / 2
-                                for p in pth if p.GetDrillSize().x == p.GetDrillSize().y),
+        # 39cc07f: no round plated hole is left on the board (J1's are slots), so the minimum may be over nothing
+        "PTH annular ring": min([(min(mm(p.GetSize(pcb.F_Cu).x), mm(p.GetSize(pcb.F_Cu).y)) - mm(p.GetDrillSize().x)) / 2
+                                 for p in pth if p.GetDrillSize().x == p.GetDrillSize().y] or [float("inf")]),
     }
     narrow = sorted({round(mm(t.GetWidth()), 3) for t in tracks})[:3]
     print("the board's minima (pcbnew): " + ", ".join(f"{k} {v:.3f} mm" for k, v in have.items())
@@ -539,7 +548,9 @@ def jlc(seed=None):
 
 
 # ---- VER-21: return paths under the fast nets ------------------------------------------------------------------------
-FAST = ["LCD_SCK", "LCD_SCK_MCU", "LCD_MOSI", "LCD_MOSI_MCU", "USB_DP", "USB_DM", "USB_DP_MCU", "USB_DM_MCU", "AUDIO_PWM",
+# 39cc07f: the panel's 8080 bus (WR and D0-D7, 25 MHz) and the microSD's 4-bit bus replace the SPI nets
+FAST = ["LCD_WR", "LCD_WR_MCU"] + [f"LCD_D{k}{s}" for k in range(8) for s in ("", "_MCU")] + \
+       ["SD_CLK", "SD_CMD", "SD_D0", "SD_D1", "SD_D2", "SD_D3", "USB_DP", "USB_DM", "USB_DP_MCU", "USB_DM_MCU", "AUDIO_PWM",
         "SR_CLK", "SR_CLK_MCU", "SR_PL", "SR_DATA"]
 GAP_MM, STEP_MM = 2.0, 0.1
 SEED_RET = "nofill"          # the opposite layer's GND fill dropped in memory: every sample is over a gap
@@ -681,8 +692,116 @@ def usbpair(seed=None):
     return dn.result(not row.bad)
 
 
+# ---- VER-205 (39cc07f): the flex antenna's keep-out on the board and its clearance to metal ---------------------------
+ANT_CLEAR = 15.0             # mm: 'A clearance of at least 15 mm is recommended in all directions' (esp32-s3-hw-design-guidelines.txt:1299),
+                             # written for the module's own PCB antenna: a stand-in until the flex antenna's maker's figure is on disk
+ANT_DOC = os.path.join(dn.REF, "docs", "esp32s3_build.md")
+SEED_ANT = "pour"            # a GND pour sample put inside the keep-out in memory: the copper count must fail
+
+
+def antenna(seed=None):
+    pcb, b = dn.board()
+    mm = pcb.ToMM
+    row = Rows()
+    doc = open(ANT_DOC, encoding="utf-8").read()
+    m = re.search(r"x ([\d.]+) \.\. ([\d.]+),\s*y ([\d.]+) \.\. ([\d.]+), on a (\d+) mm U\.FL cable", doc)
+    if not m:
+        print("docs/esp32s3_build.md names no antenna plate 'x .. , y .. , on a .. mm U.FL cable'\nRESULT: FAIL")
+        return 1
+    ax0, ax1, ay0, ay1 = (float(m.group(i)) for i in range(1, 5))
+    print(f"the flex antenna's plate (docs/esp32s3_build.md): x {ax0}-{ax1}, y {ay0}-{ay1} (KiCad), on a {m.group(5)} mm U.FL cable; "
+          "it lies on the case's left wall, fitted by hand (JLC does not fit cables)")
+    zones = [z for z in b.Zones() if z.GetIsRuleArea() and z.GetZoneName() == "antenna_keepout"]
+    row(bool(zones), f"a rule area 'antenna_keepout' on the board: {len(zones)}")
+    if not zones:
+        return dn.result(False)
+    z = zones[0]
+    bb = z.GetBoundingBox()
+    kx0, ky0, kx1, ky1 = mm(bb.GetLeft()), mm(bb.GetTop()), mm(bb.GetRight()), mm(bb.GetBottom())
+    both = z.IsOnLayer(pcb.F_Cu) and z.IsOnLayer(pcb.B_Cu)
+    rules = z.GetDoNotAllowTracks() and z.GetDoNotAllowVias() and z.GetDoNotAllowZoneFills() and z.GetDoNotAllowFootprints()
+    row(both and rules, f"the keep-out x {kx0:.2f}-{kx1:.2f}, y {ky0:.2f}-{ky1:.2f} on both copper layers ({both}), forbidding tracks, "
+        f"vias, pours and footprints ({rules})")
+    print(f"  it covers the plate's x {ax0}-{ax1} out to {kx1 - ax1:+.2f} mm; along y it stops {ky0 - ay0:.2f} mm short of the plate's "
+          f"top end and {ay1 - ky1:.2f} mm short of its bottom (placement.py: none below, the module's top row keeps its lane)")
+    inside = []
+
+    def hit(x, y):
+        return kx0 < x < kx1 and ky0 < y < ky1
+    for t in b.GetTracks():
+        for p in (t.GetStart(), t.GetEnd()):
+            if hit(mm(p.x), mm(p.y)):
+                inside.append(f"{t.GetClass()} {t.GetNetname()} at ({mm(p.x):.2f}, {mm(p.y):.2f})")
+    for f in b.GetFootprints():
+        for p in f.Pads():
+            if hit(mm(p.GetPosition().x), mm(p.GetPosition().y)):
+                inside.append(f"pad {f.GetReference()}.{p.GetNumber()}")
+    for zz in b.Zones():
+        if zz.GetIsRuleArea() or not zz.IsFilled():
+            continue
+        for lay in (pcb.F_Cu, pcb.B_Cu):
+            if not zz.IsOnLayer(lay):
+                continue
+            poly = zz.GetFilledPolysList(lay)
+            for i in range(poly.OutlineCount()):
+                o = poly.Outline(i)
+                for k in range(o.PointCount()):
+                    q = o.CPoint(k)
+                    if hit(mm(q.x), mm(q.y)):
+                        inside.append(f"{zz.GetNetname()} pour on {b.GetLayerName(lay)}")
+                        break
+    if seed == "pour":
+        inside.append("seeded: a GND pour vertex at the keep-out's centre")
+    row(not inside, f"copper inside the keep-out: {len(inside)}" + (f" ({'; '.join(sorted(set(inside))[:6])})" if inside else ""))
+    # the plate against the metal near it: the module's shield, the cell's pouch, the panel, the slot's shell, the screws
+    fps = {f.GetReference(): f for f in b.GetFootprints()}
+
+    def gap_rect(x0, y0, x1, y1):
+        dx = max(x0 - ax1, ax0 - x1, 0.0)
+        dy = max(y0 - ay1, ay0 - y1, 0.0)
+        return math.hypot(dx, dy), (x0 < ax1 and x1 > ax0 and y0 < ay1 and y1 > ay0)
+    metal = []
+    for ref in ("U4", "J8", "J3"):
+        f = fps[ref]
+        fb = f.GetBoundingBox(False)
+        metal.append((ref, mm(fb.GetLeft()), mm(fb.GetTop()), mm(fb.GetRight()), mm(fb.GetBottom())))
+    cx0, cy0, cx1, cy1 = dn.cutouts()
+    metal.append(("the cell (its pocket, 0.9 mm inside the hole)", cx0 + 0.9, cy0 + 0.9, cx1 - 0.9, cy1 - 0.9))
+    pos_glass = None
+    try:
+        import case_checks as cs
+        with cs.ref_copy() as (_, pos, _l):
+            pos_glass = pos["glass"]
+    except Exception as ex:                       # noqa: BLE001
+        print(f"  (the panel's outline from positions.json not read: {ex})")
+    if pos_glass:
+        (gx0, gy0), (gx1, gy1) = pos_glass
+        metal.append(("the panel (its glass outline)", min(gx0, gx1), min(gy0, gy1), max(gx0, gx1), max(gy0, gy1)))
+    for i in range(1, 7):
+        h = fps.get(f"H{i}")
+        if h:
+            hx, hy = mm(h.GetPosition().x), mm(h.GetPosition().y)
+            metal.append((f"H{i}'s M2 screw (its 5 mm boss)", hx - 2.5, hy - 2.5, hx + 2.5, hy + 2.5))
+    print(f"  the plate to metal near it, against {ANT_CLEAR:g} mm (esp32-s3-hw-design-guidelines.txt:1299, the module's PCB antenna's "
+          "figure as a stand-in: the flex antenna's maker's keep-out is not on disk, Kinghelm C4943394, https://www.lcsc.com/"
+          "product-detail/C4943394.html):")
+    near = []
+    for name, x0, y0, x1, y1 in metal:
+        d, over = gap_rect(x0, y0, x1, y1)
+        if d < 30:
+            near.append((d, name, over))
+    for d, name, over in sorted(near):
+        print(f"    {name}: {'OVERLAPS the plate' if over else f'{d:.1f} mm'}")
+    close = [n for d, n, o in near if d < ANT_CLEAR and not n.startswith("U4")]
+    row(not close, f"metal within {ANT_CLEAR:g} mm of the plate, the module's own shield aside (its U.FL feeds the cable): "
+        + (", ".join(close) if close else "none"))
+    print("  the antenna's own datasheet (gain, keep-out, ground plane, cable loss) is not in hardware/ref_design/datasheets: the "
+          "range test VER-207 on unit 1 decides; REQ-RF-04's grant names the antenna types the module may use")
+    return dn.result(not row.bad)
+
+
 CHECKS = {"bridges": (bridges, SEED_BRIDGES), "fab": (fab, SEED_FAB), "jlc": (jlc, None), "ret": (ret, SEED_RET),
-          "usbpair": (usbpair, SEED_USB)}
+          "usbpair": (usbpair, SEED_USB), "antenna": (antenna, SEED_ANT)}
 
 
 def main():

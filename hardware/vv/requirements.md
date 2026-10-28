@@ -10,12 +10,14 @@ first, and a status.
 `hardware/ref_design/docs/validation_plan.md` (archived), the datasheet reviews in
 `hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1, revised
 them the same day from the two-model review, re-seeded them on 2026-10-25 for 684a609, and
-re-seeded them on 2026-10-26 for be437f8, and on 2026-10-27 for the board being ordered,
-71737ae (main; the board spin 40281b8: the BQ24073 charger, RT9013 LDO, the 3.5 in ER-TFT035IPS-6
-panel (ILI9488) with R61 3.74k, TH1 a 10k B4460 0805, U10 buffering VBAT/2, 74HC165s in the button
-ends with 47k pull-ups, metal domes for Start and Select, the cell along the board in a 37.8 x
-54.8 mm hole under the glass's seat-2 half, J4 a JST SH header, the speaker sunk in a hole, a
-72.4 x 151.48 mm board (73.4 mm wide across J1's tab) in a one-piece top. A requirement whose subject left
+re-seeded them on 2026-10-26 for be437f8, on 2026-10-27 for the RP2354B board (71737ae), and on
+2026-10-28 for the board being ordered, the ESP32-S3 board at 39cc07f (branch ref-design-esp32s3:
+the ESP32-S3-WROOM-1U-N16R8 module with an external flex antenna on a U.FL cable and Wi-Fi on, the
+TLV75733P for 3V3, the BQ24073 charger, the 3.5 in ER-TFT035IPS-6 panel (ILI9488) on its 8-bit 8080
+bus, a microSD slot, three 74HC165s, a dedicated power key SW24, TH1 a 10k B4460 0805, U10 buffering
+VBAT/2, the cell along the board in a 38.2 x 55.2 mm hole, J4 a JST SH header, the speaker sunk in a
+hole, a 73.9 x 151.48 mm board in a one-piece top 1.5 mm wider on the left). The radio (RF) and
+storage (STO) sections are new with it. A requirement whose subject left
 the design is RETIRED with the commit that removed it; it keeps its ID. None is binding until
 Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md): APPROVED, REJECTED, or
 DEFERRED with a reason. A Status here that has no matching line he committed there is a
@@ -66,8 +68,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-01.R: Twenty independent inputs (ref_design)
 - Level: product
 - Board: ref_design
-- Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), each on its own line, with any combination of up to 20 held at once read correctly.
-- Rationale: Start and Select added 2026-10-19 (a3158fc); since 2d1124d the 16 D-pad and A/B/X/Y contacts come in through two chained 74HC165s and both Starts turn the device on.
+- Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), and the power key, each on its own line, with any combination of up to 21 held at once read correctly.
+- Rationale: since 39cc07f all 20 contacts and the power key SW24 come in through three chained 74HC165s (24 bits, U11 the third: pinmap.md Buttons); the Starts are plain buttons, the power key alone turns the device on (Was: both Starts turned it on).
 - Source: Alex's use; README.
 - Method: T
 - Verified by: VER-56, VER-76
@@ -192,11 +194,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-08.R: Recoverable firmware (ref_design)
 - Level: product
 - Board: ref_design
-- Statement: A unit with blank, corrupt or hung firmware shall enter the USB boot loader through the top piece's pinholes with the case closed, with the cell flat and USB in, 2 out of 2 tries; with the case open SWD shall attach through J5 and through J7.
-- Rationale: BOOTSEL and RESET sit under the pinholes in the left bezel below H4 (86bf694); J5 is a JST SH and J7 a row of pogo pads.
-- Source: validation_plan #182, #202; bringup.md.
+- Statement: A unit with blank, corrupt or hung firmware shall take a new image over USB-C (the ESP32-S3's USB Serial/JTAG) with the case closed, and with the case open shall enter the ROM's download mode through J7's BOOT and EN pads, 3 out of 3 tries.
+- Rationale: the BOOT and RESET buttons and their pinholes left at 39cc07f (the microSD slot took the left bezel; docs/esp32s3_build.md); J7 keeps 3V3, EN, BOOT and GND on pogo pads on the back. An image that turns USB off can only be recovered with the case open (DEC-41).
+- Source: docs/esp32s3_build.md; esp32-s3-wroom-1.txt:810-817 (boot mode); design.py J7.
 - Method: D, T
-- Verified by: VER-107, VER-58
+- Verified by: VER-212
 - Phase: EVT
 - Status: PROPOSED
 
@@ -273,13 +275,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: At 99.9% of units, charging shall pause when the cell is above 45 C or below 0 C, or outside the cell maker's charge range if that is narrower: the hot edge at or under 45 C and the cold edge at or over 0 C (one-sided limits), and resume when back in range.
-- Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot).
+- Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot); TH1's resistance at 25 C and its B are each +-1% (tctr0805.txt:260, the part number's two F's).
 - Source: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
 - Method: A, T
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
-- Notes: at 71737ae TH1 is a 10k B4460 0805 (TCTR0805F10K0F4460T, C525375), the highest B among the 10k NTCs JLC stocks: charging runs from 5.8 C to 44.5 C at nominal values, 4.3 C to 47.8 C at SLUS810N's limits (the hot trip 3.46 kohm: V_HOT 0.270 V over I_TS 78 uA) and 3.9 C to 48.2 C at the worst corner with TH1's own 1% R25 and B (`design_numbers.py tempwin`, VER-32; the B tolerance is the design comment's until the TCTR0805's datasheet is on disk). Was: B3950, 1.4 C to 51.5 C at be437f8. The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more (B 5032 with TH1 exactly nominal); its cold edge is then 6.5 C; no stocked 10k part has it. No series or parallel resistor fixes both edges. PLAN.md decision DEC-05: accept the 48.2 C hot edge for EVT against the cell's datasheet (DF-147), or restate this requirement to the cell's own range if VER-37 shows it runs to 50 C.
+- Notes: at 39cc07f TH1 is a 10k B4460 0805 (TCTR0805F10K0F4460T, C525375), the highest B among the 10k NTCs JLC stocks, its resistance and B each +-1% (tctr0805.txt:260): charging runs from 5.8 C to 44.5 C at nominal values, 4.3 C to 47.8 C at SLUS810N's limits and 3.9 C to 48.2 C at the worst corner (`design_numbers.py tempwin`, VER-32). Was: B3950, 1.4 C to 51.5 C at be437f8. The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more; no stocked 10k part has it; no series or parallel resistor fixes both edges. PLAN.md decision DEC-05: accept the 48.2 C hot edge for EVT against the cell's datasheet (DF-147), or restate this requirement to the cell's own range if VER-37 shows it runs to 50 C.
 
 ### REQ-BAT-04: Cell temperature during charge
 - Level: subsystem
@@ -387,14 +389,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-BAT-12: Cutoff accuracy
 - Level: subsystem
 - Board: ref_design
-- Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest 3V3 load the firmware draws, including units whose 3V3 plus the RT9013's dropout exceeds 3.50 x CV/4.2.
-- Rationale: the ADC reads VBAT/2 against 3V3 itself: in regulation a gain set at charge-done is only as good as the charger's +-1% CV (a cutoff anywhere from 3.465 to 3.535 V), and in dropout the reading rises as the cell falls, so on a unit with 3V3 +2% and 120 mV of dropout it never reaches 3.50 V (3.521 V, VER-138: DF-116). GPIO47 also reads through R17/R18's 235 kohm: every 100 nA of pad leakage moves the pin 23.5 mV, 47 mV of VBAT, the whole +0.05 V window, and it changes with temperature, which a one-point calibration does not remove (O-R15). The leakage term: the RP2350's IIN is at most 1 uA (rp2350.txt:101199), so up to 0.235 V at the pin and 0.47 V of VBAT, nine times the window. A calibration at 25 C takes in the leakage at 25 C, so the statement is held at 25 C (O-R6), and VER-139 measures the drift with temperature on unit 1.
-- Source: design.py R17/R18; pinmap.md Battery voltage; pin_review/u3.json; the RP2350 datasheet's IIN (rp2350.txt:101199); Claude's analysis (O-23, O-49).
+- Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest 3V3 load the firmware draws, with Wi-Fi on and off.
+- Rationale: since 39cc07f the ESP32-S3's ADC1 reads VBAT/2 at 12 dB against its own reference: its total error after Espressif's calibration is +-50 mV at the pin (esp32-s3.txt:3804), +-100 mV of VBAT, measured with Wi-Fi off (3780-3781), and the datasheet does not split offset from gain, so a one-point gain set at charge-done (the charger's CV is +-1%) cannot be shown to meet the window: the per-unit point at 3.50 V does (VER-138, DF-116). U10 buffers the divider, so the pad's leakage does not flow through R17/R18's 235 kohm. Was: the 3V3-referenced ADC and its dropout knee, which left at 39cc07f.
+- Source: design.py R17, R18, U10; pinmap.md Battery voltage; esp32-s3.txt:3779-3804 (ADC); mcp6001.txt:135-142; Claude's analysis (O-23, O-49).
 - Method: A, T
 - Verified by: VER-138, VER-139, VER-67
 - Phase: EVT
 - Status: PROPOSED
-- Notes: since 71737ae U10 (MCP6001) buffers VBAT_DIV onto GPIO47, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift (VER-138; the MCP6001's datasheet is not on disk, VER-34), against +-0.470 V through 235 kohm at be437f8. Two terms remain and bind at EVT: the CV calibration (a cutoff at a true 3.465-3.535 V) and the dropout case (3.521 V at the worst corner, the cutoff never fires there); REQ-TST-06's bench calibration at 3.50 V and a firmware rule for the dropout case answer them (DEC-07). Was: 470k/470k straight into GPIO47 for EVT, a buffer at DVT if VER-139's drift needed it.
+- Notes: U10 (MCP6001) buffers VBAT_DIV onto IO1, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift, whose datasheet gives typical figures only (VER-138). The ADC's own +-50 mV at the pin is what the per-unit calibration at 3.50 V (REQ-TST-06) takes out; its drift with temperature and Wi-Fi is VER-139's and VER-67's.
 
 ### REQ-BAT-13: Charge timeout
 - Level: subsystem
@@ -492,9 +494,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-04: 3V3 regulation
 - Level: subsystem
 - Board: both
-- Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for VSYS 3.60-4.50 V and loads of 0-150 mA.
-- Rationale: RP2354B IOVDD and the panel's logic supply; the RT9013 is +-2%.
-- Source: pin_review/u3.json; ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (pin_review/panel.json: up to 3.366 V is 66 mV over, accepted as minor: DF-96).
+- Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for VSYS 3.60-4.50 V and loads of 0-620 mA.
+- Rationale: the module's VDD33 is 3.0-3.6 V (esp32-s3-wroom-1.txt:1596) and the panel's logic supply 3.3 V maximum; the TLV75733P is +-1.5% over TJ -40 to 125 C (tlv757p.txt:255) and its load regulation 0.060 V/A (260); 620 mA is VER-31's peak in a Wi-Fi TX burst.
+- Source: tlv757p.txt:252-260; esp32-s3-wroom-1.txt:1596; ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-96).
 - Method: T
 - Verified by: VER-83, VER-55
 - Phase: EVT
@@ -503,11 +505,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-05: 3V3 through the unplug
 - Level: subsystem
 - Board: ref_design
-- Statement: Through the USB-to-cell hand-over at full load (backlight 100%, sound playing), 3V3 shall stay at or above 3.135 V for any cell at or above 3.50 V.
-- Rationale: VREG_AVDD's and USB_OTP_VDD's minimum (3.135 V, above QSPI_IOVDD's 2.97 V); the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET and the RT9013's dropout (about 3.33 V at 3.50 V and 150 mA, worst case).
-- Source: pin_review/u4.json pins 61 and 68; pin_review/u3.json (dropout); design.py U2.
+- Statement: Through the USB-to-cell hand-over at full load (backlight 100%, sound playing, Wi-Fi transmitting), 3V3 at the module shall stay at or above 3.0 V for any cell at or above 3.50 V.
+- Rationale: the module's VDD33 minimum is 3.0 V (esp32-s3-wroom-1.txt:1596); the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET, VSYS's copper to U3 and the TLV75733P's dropout: 2.976 V at 3.50 V in a TX burst (VER-204, DF-187).
+- Source: esp32-s3-wroom-1.txt:1596; tlv757p.txt:298; bq24074.txt:724; design.py U2.
 - Method: A, T
-- Verified by: VER-70, VER-138
+- Verified by: VER-70, VER-204, VER-208
 - Phase: EVT
 - Status: PROPOSED
 
@@ -527,7 +529,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V.
-- Rationale: designed under 20 uA at 25 C (R17 into U10's unpowered input about 7.9 uA at a 4.2 V cell since 71737ae, an estimate until VER-34 reads the MCP6001's input limits; U2 from BAT, U7's shutdown on the live VSYS, U3 off; Was: the 940k divider's 4.5 uA); leakage rises with temperature (O-51).
+- Rationale: designed under 30 uA at 25 C: 26.8 uA at a 4.2 V cell (VER-103: U2 6.5, U3 1.0 (tlv757p.txt:265), R17 into U10's unpowered input 7.9, U7 8.4 on a stand-in, the FETs' leakage 3.0); leakage rises with temperature (O-51).
 - Source: bringup.md step 5.1; the 45 C number is Claude's estimate (O-51).
 - Method: T
 - Verified by: VER-65, VER-146
@@ -537,20 +539,20 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-08: Turn-on margin
 - Level: subsystem
 - Board: ref_design
-- Statement: With 1 kohm in series with either Start dome (SW21, SW23) and the cell at 3.50 V, pressing it shall bring 3V3 to 3.20 V or more within 50 ms and PWR_BTN_N (or P2_START) shall read low, with Q1's and Q7's gate margin over their maximum threshold reported in volts.
-- Rationale: a dirty or worn metal dome adds resistance: at VSYS 3.45 V Q1's gate sees 3.45 x 33/34 = 3.35 V through 1 kohm against a 2N7002 Vgs(th) of up to 2.5 V.
-- Source: design.py R13, R62; pin_review/q1.json; validation_plan section 1 'Latch replica'.
+- Statement: With 1 kohm in series with the power key SW24 and the cell at 3.50 V, pressing it shall bring 3V3 to 3.20 V or more within 50 ms and PWR_BTN_N shall read low, with Q1's gate margin over its maximum threshold reported in volts.
+- Rationale: a dirty or worn contact adds resistance: at VSYS 3.0 V Q1's gate sees 2.88 V through 1 kohm and SW24's 500 mOhm against a 2N7002 Vgs(th) of up to 2.5 V (VER-33; 2n7002_cj.txt:55, rocpu_tps850.txt:137). Was: either Start dome, through Q1 and Q7.
+- Source: design.py SW24, R13; 2n7002_cj.txt:55; rocpu_tps850.txt:20, 137; validation_plan section 1 'Latch replica'.
 - Method: T, A
-- Verified by: VER-78, VER-33
+- Verified by: VER-211, VER-33
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-PWR-09: Turn-off after a reset or crash
 - Level: subsystem
 - Board: ref_design
-- Statement: On the cell with no USB, after RESET, a watchdog reset or a hard fault, PWR_HOLD shall fall below 0.5 V within 10 ms and 3V3 below 0.5 V within 200 ms of Start being released.
-- Rationale: a crashed unit must turn itself off, not drain the cell; RP2350-E9 can hold a released pad near 2 V.
-- Source: RP2350 erratum E9 (pin_review/u4.json); design.py R42 comment; pinmap.md Power control.
+- Statement: On the cell with no USB, after a reset on J7's EN pad, a watchdog reset or a panic, PWR_HOLD shall fall below 0.5 V within 10 ms and 3V3 below 0.5 V within 200 ms of the power key being released.
+- Rationale: a crashed unit must turn itself off, not drain the cell: IO21 resets as an input with no pull (pinmap.md 'Pins at reset') and R42 4.7k pulls it down (VER-33).
+- Source: design.py R42; pinmap.md Power control; esp32-s3.txt:3748.
 - Method: T
 - Verified by: VER-77, VER-73
 - Phase: EVT
@@ -570,11 +572,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PWR-11: No turn-on from leakage
 - Level: subsystem
 - Board: ref_design
-- Statement: With 1 Mohm across either Start dome (VSYS to PWR_BTN_RAW or P2_START_RAW) and the cell at 4.2 V, the device shall stay off (3V3 below 0.5 V) for 10 min; the design's sure-on, sure-off and ghost-press bands of dome resistance are those VER-33 prints from U3's VIH and VIL, Q1's and Q7's threshold, R13, R62, R15 and the diodes' Vf (O-R17), and 1 Mohm shall sit above its sure-off band.
-- Rationale: both Start domes carry VSYS on their rings all the time; sweat or flux can bridge them.
-- Source: validation_plan #185 (written for P1_Y, now SW21 and SW23); design.py R13, R62 and R15; pin_review/u3.json and q1.json; VER-33's output.
+- Statement: With 1 Mohm across the power key SW24 (VSYS to PWR_BTN_RAW) and the cell at 4.2 V, the device shall stay off (3V3 below 0.5 V) for 10 min; the design's sure-on, sure-off and ghost-press bands of contact resistance are those VER-33 prints from U3's VIH and VIL, Q1's threshold, R13, R15 and the diodes' Vf (O-R17), and 1 Mohm shall sit above its sure-off band.
+- Rationale: SW24 carries VSYS on one pad all the time; sweat, flux or a pressed cap can bridge it (DF-188). The Starts left the power path at 39cc07f (Was: both Start domes).
+- Source: design.py R13, R15, SW24; tlv757p.txt:328-331; 2n7002_cj.txt:55; VER-33's output.
 - Method: T, A
-- Verified by: VER-79, VER-33
+- Verified by: VER-211, VER-33
 - Phase: EVT
 - Status: PROPOSED
 
@@ -612,14 +614,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-31, VER-36
 - Phase: EVT
 - Status: PROPOSED
-- Notes: the phase moved to EVT with VER-36 (F-R2(d): check_pins' tooling changes no copper); the two findings that set the BOM, exception (2) and the second 4.7 uF on +1V1, are answered by hand before the order (DEF-61, through VER-34 and VER-23). Named exceptions: (1) GPIO47 with VBAT/2 on a non-FT pad while IOVDD is 0 V, 24 hours a day on every unit with a cell (Was: pin_review/u4.json pin 58, waived there by the design session; since 71737ae GPIO47 sees U10's output, 0 V when off, and the condition sits on U10's input instead: DF-182, the waiver rewritten in u4.json for it and still the design session's, DEC-29); (2) the panel's VCI and VDDI at up to 3.366 V against 3.3 V recommended (DF-96).
+- Notes: the phase moved to EVT with VER-36 (F-R2(d)). Named exception: (2) the panel's VCI and VDDI at up to 3.333 V (3.350 V at TJ 125 C) against 3.3 V recommended (DF-96). Exception (1), U10's input at VBAT/2 with VDD at 0 V, is inside the MCP6001's own limits since its datasheet is on disk (2 mA, VDD + 1.0 V: mcp6001.txt:115-117, VER-31).
 
 ### REQ-PWR-15: 3V3 budget
 - Level: subsystem
 - Board: ref_design
-- Statement: The 3V3 load shall be 150 mA or less and U3's dissipation 0.20 W or less at VSYS 4.5 V on USB.
-- Rationale: the RT9013's SOT-23-5 is 0.4 W at 250 C/W; 0.20 W keeps it 50 C over the board; the budget was never written down.
-- Source: pin_review/u3.json (0.4 W, dropout).
+- Statement: The 3V3 load in a Wi-Fi TX burst shall be 80% or less of U3's 1 A, U3's current limit shall be over the module's 0.5 A supply minimum, and U3's junction shall meet REQ-THM-04's per-mode limits.
+- Rationale: since 39cc07f the module's Wi-Fi peaks at 355 mA (esp32-s3-wroom-1.txt:1662) and Espressif asks a 0.5 A supply (1597); the TLV75733P is rated 1 A (tlv757p.txt:209) with a 1.2 A current limit (267); its heat is VER-144's (DF-31).
+- Source: tlv757p.txt:209, 267; esp32-s3-wroom-1.txt:1597, 1662-1741.
 - Method: A, T
 - Verified by: VER-31, VER-83, VER-144
 - Phase: EVT
@@ -637,14 +639,36 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Status: PROPOSED
 - Notes: DEC-17's BOM half is in design.py at 71737ae (R14 47k, R43 220k: 9.1 V, DEF-50 FIXED); 20 V needs a clamp (copper); proposed: Alex accepts 9.1 V for EVT as this statement's value. The decision is made before the order, because DEF-50 keeps Gate ORDER and closes on it; the check (VER-177) binds at G-EVT-04, so an acceptance for EVT does not leave a failing ORDER check behind (O-R9; F-R2(f) wanted VER-177 at ORDER, but DEF-50's Gate already holds the BOM decision there).
 
+### REQ-PWR-18: The power key
+- Level: subsystem
+- Board: ref_design
+- Statement: The power key SW24 shall turn the device on with a press held 1 s, leave it off after a press under 1 s, and turn it off with a long press; its cap shall sit 0.4-0.6 mm under the deck's face and need 300 gf or less, and nothing pressing the case face down shall press it.
+- Rationale: the dedicated key since 39cc07f (Alex, 2026-10-28): a ROCPU TPS850 J14K (250 +-50 gf, 0.2 +0.1 mm, rocpu_tps850.txt:20, 33) under a printed cap (case.scad pwr_cap); pinmap.md's Power control gives the hold rule.
+- Source: design.py SW24; case.scad pwr_*; rocpu_tps850.txt:17-33; pinmap.md Power control.
+- Method: T
+- Verified by: VER-211, VER-213, VER-33
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-PWR-19: A jig on J7 does not back-feed U3
+- Level: subsystem
+- Board: ref_design
+- Statement: No procedure shall drive J7's 3V3 pad while JP1 is bridged and VSYS is 0 V; the bring-up and jig procedures shall say how J7 is powered.
+- Rationale: U3's OUT over its IN + 0.3 V is over the TLV75733P's absolute maximum and runs current back through its body diode (tlv757p.txt:180, 1137-1138); design.py's J7 note invites exactly that (DF-189).
+- Source: tlv757p.txt:180, 1129-1142; design.py J7; VER-159.
+- Method: A, I
+- Verified by: VER-159, VER-212
+- Phase: EVT
+- Status: PROPOSED
+
 ## Subsystem: core (MCU)
 
 ### REQ-MCU-01: Boot from blank
 - Level: subsystem
 - Board: ref_design
-- Statement: A blank board on USB with no cell shall enumerate as the RP2350 boot drive within 5 s.
-- Rationale: proves chip, crystal, USB and 1V1 in one step.
-- Source: bringup.md step 1.
+- Statement: A blank board on USB with no cell shall enumerate as the ESP32-S3's USB Serial/JTAG within 5 s and take an image over it.
+- Rationale: proves the module, its supply, EN and USB in one step (the module carries flash, PSRAM and crystal).
+- Source: esp32-s3-wroom-1.txt:810-837 (boot modes); bringup.md step 1.
 - Method: T
 - Verified by: VER-55
 - Phase: EVT
@@ -653,11 +677,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MCU-02: USB full speed
 - Level: subsystem
 - Board: ref_design
-- Statement: D+ and D- shall each pass a 27 ohm +-1% series resistor, stubs shall be 3.5 mm or shorter, and the device shall enumerate on 3 different hosts.
-- Rationale: the RP2350 requires 27 ohm; long stubs reflect.
-- Source: RP2350 datasheet Table 2 (pin_review/u4.json pins 66, 67); pin_review/j1.json.
+- Statement: D+ and D- shall each pass a series resistor of 22-33 ohm placed within 5 mm of the module's pin, stubs shall be 3.5 mm or shorter, and the device shall enumerate on 3 different hosts.
+- Rationale: Espressif's guidelines: 'initial value can be 22/33', 'close to the chip' (esp32-s3-hw-design-guidelines.txt:873-875, 1307); at 39cc07f they sit 11.5 mm away (VER-191, DF-198). Was: the RP2350's 27 ohm.
+- Source: esp32-s3-hw-design-guidelines.txt:873-875, 1304-1313; pin_review/j1.json.
 - Method: A, T
-- Verified by: VER-02, VER-108, VER-80
+- Verified by: VER-191, VER-108, VER-80
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -670,16 +694,17 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: A, T
 - Verified by: VER-02, VER-55
 - Phase: EVT
-- Status: PROPOSED
+- Status: RETIRED
+- Retired: RETIRED in 39cc07f: the module carries its own 40 MHz crystal; X1, C27, C28 and R20 left with the RP2354B
 
 ### REQ-MCU-04: Debug ports
 - Level: subsystem
 - Board: ref_design
-- Statement: SWD shall attach through J5 and through J7, and firmware logs shall reach the host over USB CDC or RTT at 1 line or more a second.
-- Rationale: bring-up and recovery; there is no UART connector since 86bf694 (Was: J6).
-- Source: RP-003139-SP (pin_review/j5.json); design.py J5, J7.
+- Statement: Firmware shall flash and log over USB-C through the ESP32-S3's USB Serial/JTAG at 1 line or more a second, and J7's pads (3V3, EN, BOOT, GND) shall reset the module and enter its download mode from a pogo jig.
+- Rationale: bring-up and recovery (Was: SWD on J5 and J7, the UART header); the module's USB Serial/JTAG carries both the flash and the log (docs/esp32s3_board_proposal.md item 7).
+- Source: docs/esp32s3_board_proposal.md; design.py J7; esp32-s3-wroom-1.txt:860-871.
 - Method: T
-- Verified by: VER-58, VER-02
+- Verified by: VER-212, VER-02
 - Phase: EVT
 - Status: PROPOSED
 
@@ -698,14 +723,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MCU-06: GPIO functions
 - Level: subsystem
 - Board: ref_design
-- Statement: Every GPIO shall be assigned only a function that pin has in the RP2350 function table, with 0 PWM-slice or peripheral conflicts (PWM6 A on GPIO28, PWM7 B on GPIO31, SPI0 on GPIO33 and 36-39, ADC on GPIO45-47).
-- Rationale: a pin that cannot do its job is a respin.
-- Source: RP2350 datasheet Table 3 (pin_review/u4.json); validation_plan #55, #140.
+- Statement: Every module pin shall carry only a function that pin has in the module's Table 3-1, ADC nets on ADC1 channels (Wi-Fi on), USB on IO19 and IO20, IO35-IO37 unconnected, and no load-switching output on a pin with a high-level power-up glitch.
+- Rationale: a pin that cannot do its job is a respin; ADC2 cannot run with Wi-Fi (esp32-s3.txt:3415); the N16R8's PSRAM owns IO35-IO37 (esp32-s3-wroom-1.txt:691-693); Table 2-2 lists the glitching pins (esp32-s3.txt:958-1006). Was: the RP2350's function table and PWM slices, VER-15.
+- Source: esp32-s3-wroom-1.txt:629-696; esp32-s3.txt:958-1006, 3415.
 - Method: A
-- Verified by: VER-15
+- Verified by: VER-203
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: F's objection (round 2) read GPIO28 as PWM2 A; the RP2350's table maps GPIO 0-31 to slices (n >> 1) & 7 and GPIO 32-47 to 8 + ((n >> 1) & 3), so GPIO28 is slice 6 A and GPIO31 slice 7 B (embassy-rp 0.8.0 src/pwm.rs: 'impl_pin!(PIN_28, PWM_SLICE6, ChannelAPin)', 'impl_pin!(PIN_31, PWM_SLICE7, ChannelBPin)'). VER-15 derives each slice from the table, not from pin_review.
+- Notes: the module pin, GPIO and net table is VER-203's evidence; the GPIO matrix routes the panel, the SD bus and the LEDC to any pin, so only ADC1 and USB are fixed (docs/esp32s3_board_proposal.md 'Pin map').
 
 ### REQ-MCU-07: Pull-downs for E9
 - Level: subsystem
@@ -716,52 +741,85 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: A, T
 - Verified by: VER-02, VER-75
 - Phase: ORDER
-- Status: PROPOSED
+- Status: RETIRED
 - Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM on GPIO28 (R60 + R61, 103.74k since R61 3.74k) do not: DF-45, DF-47. Decision for Alex (PLAN.md decision DEC-11): 4.7k pull-downs (BOM only), or rely on firmware and the placed stepping (VER-75).
+- Retired: RETIRED in 39cc07f: erratum E9 left with the RP2350; the ESP32-S3's strapping pins at reset are REQ-MCU-12's
 
 ### REQ-MCU-08: Chip identity
 - Level: subsystem
 - Board: ref_design
-- Statement: Each unit shall report an RP2354B with 2 MB of internal flash, and its chip ID and stepping shall be recorded at first boot (1 record per unit).
-- Rationale: a substituted RP2350B has no flash; the stepping decides which errata apply.
-- Source: validation_plan #179, #217.
+- Statement: Each unit shall report an ESP32-S3 with 16 MB of flash and 8 MB of PSRAM at 3.3 V VDD_SPI (the N16R8), and its chip revision, MAC and eFuse summary shall be recorded at first boot (1 record per unit).
+- Rationale: a substituted N16R16VA runs its PSRAM at 1.8 V and a WROOM-1 has a PCB antenna; the chip revision decides which errata apply (VER-214).
+- Source: esp32-s3-wroom-1.txt:130-171.
 - Method: T
-- Verified by: VER-75
+- Verified by: VER-210
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-MCU-09: Core supply
 - Level: subsystem
 - Board: ref_design
-- Statement: The 1V1 rail shall stay inside the RP2350's DVDD range (Table 1688) including ripple at full CPU load, with the decoupling the RP2350 datasheet 6.3.8.1 recommends or a written reason for any difference.
-- Rationale: the copied core is the most layout-sensitive part; the datasheet recommends a second 4.7 uF that design.py lacks.
-- Source: RP2350 datasheet 6.3.8.1, Table 1688 (pin_review/u4.json pin 10).
+- Statement: The module's 3V3 pin shall have 22 uF and 0.1 uF within 5 mm, EN a 10k and 1 uF RC that rises past VIH_nRST after the rails, and 3V3 at the pin shall stay inside VDD33's 3.0-3.6 V through a Wi-Fi TX burst at the cutoff.
+- Rationale: Espressif's peripheral schematic and guidelines (esp32-s3-wroom-1.txt:2875; esp32-s3-hw-design-guidelines.txt:299-303, 338); at 39cc07f C10 sits 23.6 mm from pin 2 and 3V3 reaches 2.976 V in a burst at 3.50 V (VER-204, DF-187). Was: the RP2350's 1V1 core supply.
+- Source: esp32-s3-wroom-1.txt:931, 1596, 2875; esp32-s3-hw-design-guidelines.txt:299-303, 316-338.
 - Method: A, T
-- Verified by: VER-23, VER-197, VER-187, VER-84
+- Verified by: VER-204, VER-208
 - Phase: EVT
 - Status: PROPOSED
-- Notes: write the DVDD minimum and maximum into VER-84 from Table 1688 on first use.
 
 ### REQ-MCU-10: Flash budget
 - Level: subsystem
 - Board: ref_design
-- Statement: The firmware image shall be 1.6 MB or less of the RP2354B's 2 MB (or the limit Alex sets), with a written flash map (image, settings, battle log), checked in scripts/check.sh on every change.
-- Rationale: the firmware already fills about 1.37 MB; Gen 3 data and flash logging are still to land (DF-121).
-- Source: crates/mega_blastoise_fw/memory-rp2350.x; Claude's proposal (O-53).
+- Statement: The firmware image shall fit its app partition in the module's 16 MB flash at 80% or less, with a written partition table (bootloader, app, settings, battle log, game data), checked in scripts/check.sh on every change.
+- Rationale: the 2 MB of the MCU before it was the reason for the change (docs/esp32s3_board_proposal.md); the partition table is what can still run out.
+- Source: docs/esp32s3_board_proposal.md; esp32-s3-wroom-1.txt:130-150.
 - Method: A
-- Verified by: VER-151, VER-185, VER-150
-- Phase: ORDER
+- Verified by: VER-216, VER-185
+- Phase: EVT
 - Status: PROPOSED
-- Notes: the llvm-size figure is VER-151's (ORDER); the flash map and the scripts/check.sh step are VER-185's (EVT) (F-R2(f)).
+- Notes: the phase moved from ORDER to EVT at 39cc07f: with 16 MB the order freezes no flash decision (G-ORD-23 retired).
 
 ### REQ-MCU-11: A bring-up image for the ordered chip
 - Level: subsystem
 - Board: ref_design
-- Statement: Before the boards arrive, a self-test image shall build and link for the RP2354B (embassy-rp rp235xb, 2048K of flash) from pin definitions generated from design.py, with 0 hand-typed pin numbers.
-- Rationale: the fw crate targets the A package with 4 MB and the ST7796, and the only ref-board branch (fw-ref-board a01f6fb) predates the routing levers: it holds PWR_HOLD on GPIO2 and drives SR_PL on GPIO28 (DEF-34); the image is needed the day the boards arrive, not to order them (round 2's proportionality objection), while the GPIO choices that copper freezes are VER-15's.
-- Source: crates/mega_blastoise_fw/Cargo.toml; vp_map #56; Claude's review (F-44, O-37, O-56).
+- Statement: Before the boards arrive, a self-test image shall build for the ESP32-S3 (esp-hal) from pin definitions generated from design.py, with 0 hand-typed GPIO numbers.
+- Rationale: the image is needed the day the boards arrive (round 2's proportionality objection); the GPIO choices that copper freezes are VER-203's.
+- Source: docs/esp32s3_board_proposal.md 'Firmware with Wi-Fi'; Claude's review (F-44, O-37, O-56).
 - Method: A
-- Verified by: VER-149, VER-150
+- Verified by: VER-149, VER-215
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-MCU-12: Strapping pins at reset
+- Level: subsystem
+- Board: ref_design
+- Statement: At every reset the module shall read IO0 high (SPI boot), IO45 low (VDD_SPI 3.3 V for the N16R8's flash and PSRAM), IO46 low, and IO3 driven, from the board's resistors and drivers alone, with no eFuse burnt that changes them.
+- Rationale: a high IO45 runs the 3.3 V flash and PSRAM at 1.8 V: no boot; IO0 low is the download mode (esp32-s3-wroom-1.txt:714-754, 810-899); AMP_EN and CHG_OFF share IO45 and IO46.
+- Source: esp32-s3-wroom-1.txt:748-754, 816-817, 849, 876-899; design.py R37, R44.
+- Method: A, T
+- Verified by: VER-203, VER-55
+- Phase: ORDER
+- Status: PROPOSED
+
+### REQ-MCU-13: The module's ambient
+- Level: subsystem
+- Board: ref_design
+- Statement: The air round the module shall stay at or under 65 C (the N16R8's ambient limit) in every mode at 40 C outside, or the firmware shall enable the PSRAM's ECC (85 C).
+- Rationale: the N16R8 and N16R16V modules' octal PSRAM limits them to 65 C ambient, 85 C with ECC on and 1/16 of the PSRAM lost (esp32-s3-wroom-1.txt:102-105, 1598); at 39cc07f VER-193 puts it at 84.9 C on a stand-in (DF-193).
+- Source: esp32-s3-wroom-1.txt:102-105, 1598.
+- Method: A, T
+- Verified by: VER-193, VER-86
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-MCU-14: The module's errata
+- Level: subsystem
+- Board: ref_design
+- Statement: Every erratum Espressif lists for the ESP32-S3's chip revision on the board shall be answered for this design: applies or not, and its fix or firmware rule.
+- Rationale: the errata table of the MCU before it set two BOM values (Was: VER-16); the ESP32-S3's errata may set firmware rules.
+- Source: Espressif's ESP32-S3 errata (not on disk: VER-214 BLOCKED).
+- Method: I
+- Verified by: VER-214
 - Phase: EVT
 - Status: PROPOSED
 
@@ -770,9 +828,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-01: Panel interface
 - Level: subsystem
 - Board: ref_design
-- Statement: The panel shall run 4-wire 8-bit SPI (IM2-0 = 111, as design.py straps them) and return 0x94 0x88 for ID4 (0xD3) at a read clock of 5 MHz or less.
-- Rationale: proves the interface straps and the read path. The read is expected on SDO (panel pin 33); VER-43 reads ID4 there first and, if nothing answers, on SDA with a turnaround, and records which pin answered (F-R8: this statement is restated only if the read turns out to be on SDA, and no order action follows from it).
-- Source: ER-TFT035IPS-6 datasheet section 4.1 (pin_review/panel.json); the ILI9488's serial read cycle (trc 150 ns, so 6.7 MHz at most; VER-34 quotes it); bringup.md display step 2.
+- Statement: The panel shall run the 8080 8-bit bus (IM2-0 = 011, as design.py straps them, CSX tied low, RDX high) and return 0x94 0x88 for ID4 (0xD3).
+- Rationale: proves the interface straps and the bus; since 39cc07f the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/display_parallel_proposal.md). Was: 4-wire SPI.
+- Source: er-tft035ips-6.txt:709-722; design.py PANEL.
 - Method: T
 - Verified by: VER-43, VER-60
 - Phase: ORDER
@@ -781,9 +839,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-02: Write speed
 - Level: subsystem
 - Board: ref_design
-- Statement: SPI writes at 20 MHz shall draw 10 full 320 x 480 frames (461 kB each in 18-bit colour) of a checker pattern with 0 corrupted pixels.
-- Rationale: the ILI9488 takes only 18-bit colour over SPI; 20 MHz is the in-spec clock: the serial write cycle is 50 ns (twc, 4-line SPI, ili9488.txt:16258, quoted by VER-34), so 20 MHz is at the limit and a clock over 20 MHz is out of spec (O-R1). A 150 MHz clk_peri gives 18.75 MHz (or exactly 20 MHz with a 120 MHz clk_peri and CPSDVSR 6).
-- Source: ILI9488 datasheet; bringup.md display step 4; validation_plan #16, #143.
+- Statement: 8080 writes at 25 MHz or less shall draw 10 full 320 x 480 frames of a checker pattern with 0 corrupted pixels.
+- Rationale: the ILI9488's parallel write cycle is 40 ns (twc, ili9488.txt:16159), so 25 MHz is the limit with 0 ns spare (VER-199, DF-191); RGB565 is two bytes a pixel over the 8-bit bus.
+- Source: ili9488.txt:16159-16172; pinmap.md Display.
 - Method: T
 - Verified by: VER-61
 - Phase: EVT
@@ -827,7 +885,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
-- Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not 71737ae's 3.74k on GPIO28 (0.119 V, 54.1 mA a pin, 117.7 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05).
+- Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the board's 3.74k on BL_PWM (IO9's LEDC: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05).
 - Source: board/sim/backlight_results.txt (to re-run).
 - Method: A, T
 - Verified by: VER-05, VER-62
@@ -870,7 +928,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-10: Tearing-effect signal
 - Level: subsystem
 - Board: ref_design
-- Statement: With TEON set, GPIO32 shall see one TE pulse per frame at 60 Hz +-10%.
+- Statement: With TEON set, IO10 (LCD_TE) shall see one TE pulse per frame at 60 Hz +-10%.
 - Rationale: firmware starts frames on it to avoid tearing.
 - Source: bringup.md display step 6.
 - Method: T
@@ -881,14 +939,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-DSP-11: Redraw time
 - Level: subsystem
 - Board: ref_design
-- Statement: A full-screen 320 x 480 redraw, sent to the ILI9488 as 18-bit colour, shall complete in 220 ms or less (Alex sets the number: DEC-13), and a battle-text update in 50 ms or less, with the frame held in 320 KB of RAM or less, the battle screens redrawn in parts.
-- Rationale: the ILI9488 takes only 18-bit colour over SPI: 461 kB a frame, 184 ms at 20 MHz and 197 ms at 18.75 MHz from a 150 MHz clk_peri; the serial write cycle is 50 ns (twc) and the read cycle 150 ns (trc, 6.7 MHz; ili9488.txt:16258, :16262), so a clock over 20 MHz is out of spec and the 40 MHz figure this requirement used to quote was never in spec (O-R1). 220 ms leaves 23 ms over the bytes at 18.75 MHz for the commands and the colour expansion; 200 ms would leave 3 ms. An 18-bit frame does not fit beside the game; the RGB565 frame is expanded on the fly (DF-180). The 2.4 in panel's RGB565 that took this risk away left again in 79de1f7.
-- Source: ILI9488 datasheet (18-bit only over serial); crates/mega_blastoise_fw; validation_plan #180.
+- Statement: A full-screen 320 x 480 redraw shall complete in 20 ms or less (60 fps with a frame in the PSRAM), and a battle-text update in 5 ms or less.
+- Rationale: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the PSRAM holds the 307,200 B frame (docs/esp32s3_board_proposal.md). Was: 220 ms over SPI.
+- Source: ili9488.txt:16159; docs/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
 - Method: A, T
 - Verified by: VER-43, VER-61
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: PLAN.md decision DEC-13 is a copper decision in step 1, with three options: (a) keep SPI, this requirement at 220 ms a full frame and 50 ms a text update, the screens redrawn in parts (no copper); (b) the 8080 8-bit bus on J3 pins 19-26 plus WRX, RGB565 at about 12 ms a frame (copper: a local re-route by J3, PIO firmware); (c) is not offered: clocks over 20 MHz are out of spec.
+- Notes: PLAN.md decision DEC-13 was taken in the design: the 8080 8-bit bus (docs/display_parallel_proposal.md, 39cc07f); Alex sets the two numbers.
 
 ### REQ-DSP-12: Backlight halves match at low duty
 - Level: subsystem
@@ -917,8 +975,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-AUD-02: Carrier rejection
 - Level: subsystem
 - Board: ref_design
-- Statement: The 586 kHz PWM carrier at the speaker shall be 40 dB or more below the full-scale 1 kHz level.
-- Rationale: designed 49 dB with 8-bit PWM; 10-bit would only reach 26 dB.
+- Statement: The 312.5 kHz PWM carrier at the speaker shall be 40 dB or more below the full-scale 1 kHz level.
+- Rationale: the LEDC runs from the 80 MHz APB clock: 8 bits is 312.5 kHz (pinmap.md Audio); R32 and R33 1.5k (39cc07f) give 44.5 dB nominal and 42.6 dB at the worst corner (VER-100). Was: 586 kHz from the RP2350.
 - Source: design_review.md Audio; ad291a8.
 - Method: T, A
 - Verified by: VER-64, VER-100
@@ -929,7 +987,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The audio chain shall be -3 dB at 10 kHz or higher and at 50 Hz or lower.
-- Rationale: designed 14 kHz and 36 Hz; about what a 15 mm speaker reproduces.
+- Rationale: a 15 mm speaker reproduces little above 10 kHz; since 39cc07f the 1.5k filter gives 9.7 kHz nominal and 8.2 kHz at the worst corner (VER-100: FAIL), while design.py's comment says 6.7 kHz (its sim): Alex restates the number or the filter changes (DEF-93).
 - Source: design_review.md Audio.
 - Method: A, T
 - Verified by: VER-100, VER-64
@@ -975,7 +1033,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 15 kohm of pill resistance (ref_design: through the 74HC165 against its 47k pull-up).
-- Rationale: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 47k (+-5%) pull-up (RN1-RN4 since 71737ae, DEC-24) a pill reads pressed under about 17 kohm (the RP2350's 50k internal pull-up allowed 10 kohm; Was: 3.7 kohm with 10k at be437f8): DF-164.
+- Rationale: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 47k (+-5%) pull-up (RN1-RN4 since 71737ae, DEC-24) a pill reads pressed under about 17 kohm (Was: the RP2350's 50k internal pull-up allowed 10 kohm; 3.7 kohm with 10k at be437f8): DF-164.
 - Source: validation_plan gate item 5, #42, #137; TI SN74HC165 VIL.
 - Method: T
 - Verified by: VER-45, VER-56
@@ -987,10 +1045,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: Leakage between a contact's two combs shall be 100 Mohm or more at 4.2 V, clean and after 24 h at high humidity.
-- Rationale: the Start domes SW21 and SW23 carry VSYS on their rings, so leakage turns the device on (REQ-PWR-11); on the others it reads as a press.
+- Rationale: the power key SW24 carries VSYS on one pad, so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
 - Source: validation_plan gate item 5, #185.
 - Method: T
-- Verified by: VER-46, VER-79
+- Verified by: VER-46, VER-211
 - Phase: EVT
 - Status: PROPOSED
 
@@ -1060,6 +1118,17 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: CASE
 - Status: PROPOSED
 
+### REQ-BTN-09: The 24-bit chain
+- Level: subsystem
+- Board: ref_design
+- Statement: The three 74HC165s (U8, U9, U11) shall read all 24 bits in pinmap.md's order with every input pulled up or tied, at an SR_CLK of 1 MHz or less with 0 errors in a million reads.
+- Rationale: U11 joined the chain at 39cc07f with the Starts, the Selects, the power key's read and the charger's status (pinmap.md Buttons); SR_CLK runs 185.8 mm to three loads (VER-199).
+- Source: design.py U8, U9, U11; sn74hc165.txt:371-504; pinmap.md Buttons.
+- Method: A, T
+- Verified by: VER-198, VER-199, VER-56, VER-179
+- Phase: EVT
+- Status: PROPOSED
+
 ## Subsystem: mechanics (MEC)
 
 ### REQ-MEC-01: Heights inside the case
@@ -1088,7 +1157,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: Every cap shall sit and press its full dome travel (the D-pad rocked in 8 directions) with 0 contact with the shell, and at rest touch only its dome.
-- Rationale: a cap that drags or is preloaded feels wrong or sticks; a Start dome held down keeps the device on.
+- Rationale: a cap that drags or is preloaded feels wrong or sticks; the power key's cap held down keeps the device on.
 - Source: case/check_buttons.py.
 - Method: A, D
 - Verified by: VER-07, VER-48
@@ -1142,7 +1211,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-08: No unintended openings
 - Level: subsystem
 - Board: ref_design
-- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, pinholes, cap holes, speaker grille, screw holes).
+- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, the microSD opening, the power key's hole, cap holes, speaker grille, screw holes).
 - Rationale: screw pilots and a notch once came through the face (DEF-19).
 - Source: 177123c.
 - Method: A, I
@@ -1175,8 +1244,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-MEC-11: Connector access
 - Level: subsystem
 - Board: ref_design
-- Statement: Every connector's mouth (J1 with a mated plug, J2's plug and wires, J3's FPC lead-in, J4 with the speaker's JST SH plug and its 35 mm leads, J5 with a JST SH cable) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and no pinhole shall fall inside a boss.
-- Rationale: the pinholes once met a side screw (2f43660), the USB-C opening was fixed twice, and a UART connector once faced J5's back (DEF-20; Was: J6).
+- Statement: Every connector's mouth (J1 with a mated plug, J2's plug and wires, J3's FPC lead-in, J4 with the speaker's JST SH plug and its 35 mm leads) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and J8's body shall clear the left wall's SD opening by 0.2 mm a side.
+- Rationale: the USB-C opening was fixed twice; the SD slot's body is 13.85 mm wide in a 14.0 mm opening at 39cc07f (VER-165, DF-195). Was: J5 with a JST SH cable, and the pinholes.
 - Source: Claude's review (F-28).
 - Method: A
 - Verified by: VER-165
@@ -1233,8 +1302,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-THM-04: Heat budget per mode
 - Level: subsystem
 - Board: ref_design
-- Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall dissipate 2.0 W or less in total, tabulated per mode (off, cell play, USB play, charging, charging while playing) with each part's position, and the firmware rule the table implies (for example CHG_OFF or a capped volume while the backlight is at full on USB) shall be in the bring-up image before the touch test.
-- Rationale: a rough worst case on a 5.5 V source with a 3.0 V cell is about 1.6 W (U2 about 0.66 W, U7 0.4 W, U3 0.17 W, the backlight's FETs about 0.15 W at 54.1 mA a pin) in a 77.4 x 156.48 x 9.6 mm case, beside the glass; the table decides a firmware rule, not copper, so it is due with the bring-up image (round 2's proportionality objection).
+- Statement: Charging while playing with Wi-Fi on (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall dissipate 2.0 W or less in total, tabulated per mode (off, cell play, USB play, charging, charging while playing) with each part's position, and the firmware rule the table implies (CHG_OFF, a capped volume, a lower CPU clock or modem sleep) shall be in the bring-up image before the touch test.
+- Rationale: at 39cc07f the worst mode is 3.31 W inside the case at VER-31's Wi-Fi load (VER-144: U3 0.43 W, U2 0.80 W, the module 0.74 W), with the air round the module over its 65 C (DF-193); the table decides a firmware rule or copper (DEF-87).
 - Source: Claude's analysis (O-47, F-48).
 - Method: A
 - Verified by: VER-144
@@ -1258,12 +1327,93 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-EMC-02: Emissions
 - Level: subsystem
 - Board: both
-- Statement: Before any sale, radiated and conducted emissions shall pass FCC Part 15 Class B / CISPR 32 Class B with 3 dB of margin; in DVT a near-field pre-scan shall name the 5 largest peaks and their sources.
-- Rationale: an unintentional radiator needs it to be sold.
+- Statement: Before any sale, the device shall carry the module's FCC ID with an antenna the grant lists, and the rest of it shall pass FCC Part 15 Class B / CISPR 32 Class B emissions with 3 dB of margin; in DVT a near-field pre-scan shall name the 5 largest peaks and their sources.
+- Rationale: since 39cc07f the device transmits (Wi-Fi): it relies on the WROOM-1U's modular grant, kept only with an antenna type the grant lists (docs/esp32s3_board_proposal.md 'Open checks' 5).
 - Source: FCC 47 CFR Part 15 Subpart B; CISPR 32; validation_plan #67, #162.
 - Method: T
-- Verified by: VER-96, VER-118
+- Verified by: VER-96, VER-118, VER-217
 - Phase: DVT
+- Status: PROPOSED
+
+## Subsystem: radio (RF), since 39cc07f
+
+### REQ-RF-01: The antenna's keep-out on the board
+- Level: subsystem
+- Board: ref_design
+- Statement: The board shall keep a copper-free rule area on both layers under the flex antenna's plate (no track, via, pour or footprint), covering the plate's footprint on the board's plane.
+- Rationale: copper under an antenna detunes it (esp32-s3-hw-design-guidelines.txt:1290-1299); at 39cc07f the rule area is x board edge to 71.4, y 62.6-107.0, 0 copper inside, 0.5 and 0.9 mm short of the plate's ends (VER-205).
+- Source: esp32-s3-hw-design-guidelines.txt:1281-1301; placement.py ANTENNA_KEEPOUT; docs/esp32s3_build.md.
+- Method: A
+- Verified by: VER-205
+- Phase: ORDER
+- Status: PROPOSED
+
+### REQ-RF-02: The antenna fitted and clear of metal
+- Level: subsystem
+- Board: ref_design
+- Statement: The flex antenna and its U.FL cable shall be bought with the boards, fixed on the case's left wall as assembly.md says, and kept the clearance its maker's datasheet gives from metal (the panel, the cell, the screws), 15 mm until that datasheet is on disk.
+- Rationale: a WROOM-1U has no antenna of its own (esp32-s3-wroom-1.txt:100); at 39cc07f the panel's outline is 1.3 mm from the plate, the cell 10.6 mm, H2's boss over its end, and bom.md buys no antenna (VER-205, VER-167; DF-192, DF-197).
+- Source: esp32-s3-wroom-1.txt:100; esp32-s3-hw-design-guidelines.txt:1299; the antenna's datasheet (not on disk).
+- Method: A, I
+- Verified by: VER-205, VER-167, VER-48
+- Phase: CASE
+- Status: PROPOSED
+
+### REQ-RF-03: Wi-Fi range
+- Level: subsystem
+- Board: ref_design
+- Statement: In its closed case with a cell, held or face up, the device shall keep an RSSI of -70 dBm or better from an access point 10 m away line of sight, within 10 dB of the same antenna in free air, and hold a Showdown battle for 30 min with no dropped connection.
+- Rationale: Wi-Fi is the reason for the module (docs/esp32s3_board_proposal.md 'Radio'); the numbers are Claude's proposal for Alex to set.
+- Source: Claude's estimate; docs/esp32s3_board_proposal.md.
+- Method: T
+- Verified by: VER-207
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-RF-04: The radio's grant
+- Level: subsystem
+- Board: ref_design
+- Statement: Before any unit is sold or given away, the antenna fitted shall be of a type and gain the WROOM-1U's FCC grant lists, and the label shall carry the module's FCC ID.
+- Rationale: an intentional radiator relies on the module's modular grant only with a listed antenna (docs/esp32s3_board_proposal.md 'Open checks' 5).
+- Source: docs/esp32s3_board_proposal.md; the module's FCC grant (not on disk).
+- Method: I
+- Verified by: VER-217
+- Phase: SALE
+- Status: PROPOSED
+
+## Subsystem: storage (STO), the microSD slot, since 39cc07f
+
+### REQ-STO-01: The microSD bus
+- Level: subsystem
+- Board: ref_design
+- Statement: The microSD slot J8 shall read and write a card at 4 bits with 10k pull-ups on SD_CMD and SD_D0 to SD_D3, card detect low with a card in, at 20 MHz and 40 MHz with 0 errors over 4 MB.
+- Rationale: the slot is new at 39cc07f (docs/esp32s3_board_proposal.md item 5); Espressif asks pull-ups on the SDIO lines (esp32-s3-hw-design-guidelines.txt:864-865); the DM3AT's detect switch is normally open (hirose_dm3_catalog_C114218.txt:27).
+- Source: design.py J8, R79-R84; esp32-s3-hw-design-guidelines.txt:861-865; hirose_dm3_catalog_C114218.txt:26-27.
+- Method: A, T
+- Verified by: VER-198, VER-209
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-STO-02: A card plugged in while running
+- Level: subsystem
+- Board: ref_design
+- Statement: Inserting a microSD card while the device runs shall leave 3V3 at the module at or over 3.0 V and cause no reset.
+- Rationale: J8's VDD comes straight off 3V3 through JP6 with no load switch: a card over 1.8 uF of its own dips 3V3 under 3.0 V at once (VER-206 on stand-ins, DF-194).
+- Source: esp32-s3-wroom-1.txt:1596; tlv757p.txt:267; VER-206.
+- Method: A, T
+- Verified by: VER-206, VER-209
+- Phase: EVT
+- Status: PROPOSED
+
+### REQ-STO-03: The SD opening in the case
+- Level: subsystem
+- Board: ref_design
+- Statement: With the case closed a card shall go in and latch, and come out, 20 of 20 times, with the slot's body clear of the left wall's opening by 0.2 mm a side.
+- Rationale: the opening is 14.0 mm over the slot's 13.85 mm body at 39cc07f (VER-165, DF-195).
+- Source: case.scad sd_y, sd_z; hirose_dm3_catalog_C114218.pdf.
+- Method: A, T
+- Verified by: VER-165, VER-48
+- Phase: CASE
 - Status: PROPOSED
 
 ## Board: manufacture (FAB)
@@ -1386,8 +1536,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-10: Stock
 - Level: board
 - Board: both
-- Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; RP2354B and L2 shall never be substituted.
-- Rationale: RP2354B and L2 were out at JLC and LCSC on 2026-10-21; U1 and U3 were changed on 2026-10-22 to parts JLC stocks; a backlight driver and a ProTek SRV05-4 ran out before (Was: the AP3156).
+- Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the module (C3013946), the TLV75733P, the DM3AT and the TPS850 shall never be substituted.
+- Rationale: the new parts' JLC class and stock were not checked by the board session (docs/esp32s3_build.md, 'Not verified'); a substituted module can carry 1.8 V PSRAM (DF-69, DF-70). Was: the RP2354B and L2.
 - Source: DEF-12, DEF-13, DEF-29.
 - Method: I
 - Verified by: VER-41
@@ -1483,7 +1633,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a field fault must lead back to its lot and its tests.
 - Source: validation_plan #195.
 - Method: I
-- Verified by: VER-110, VER-75
+- Verified by: VER-110, VER-210
 - Phase: PVT
 - Status: PROPOSED
 
@@ -1523,7 +1673,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-TST-07: Connector mating budget
 - Level: board
 - Board: ref_design
-- Statement: No unit shall ship with J2, J3, J4 or J5 past half its rated mating cycles, counted per unit; no unit used for an FAI or an abuse test shall ship.
+- Statement: No shipped unit shall have any connector (J2, J3, J4, J8) mated more than half its rated cycles, counted per unit.
 - Rationale: PicoBlade and FH12 are rated for roughly 10-30 matings (confirm per maker), bring-up alone can use them up, and J4 is unplugged at every opening (DF-118).
 - Source: Claude's review (O-61).
 - Method: I

@@ -48,7 +48,7 @@ WAS = re.compile(r"\bWas:[^.;|]*")
 REF_RX = re.compile(r"(?<![\w-])([A-Z]{1,3})(\d{1,3})(?:\s*-\s*([A-Z]{1,3})?(\d{1,3}))?(?![\w])")
 GATE_RULE = re.compile(r"(?<![\w-])R[1-8]\b(?=\s+(?:at|fails|holds|counts|passes|reads|compares|of|and|in|is|"
                        r"refuses|wants|asks|follows|\(|,|;|:|\)))")
-SR_PIN = re.compile(r"\bU[89]'s D[0-7]\b")
+SR_PIN = re.compile(r"\bU(?:8|9|11)'s D[0-7]\b")      # U11, the third 74HC165, since 39cc07f
 MPN_KEEP = {"RP2350"}                      # the chip family: Raspberry Pi's datasheet and minimal design
 
 

@@ -77,7 +77,8 @@ CLASSES = {
 }
 GROUPS = {1: "A", 2: "A", 3: "B", 4: "B", 5: "B", 6: "B", 7: "B", 8: "C", 9: "C", 10: "C", 11: "C", 12: "C",
           13: "D", 14: "D", 15: "D", 16: "E", 17: "E", 18: "E", 19: "E", 20: "E"}
-SUBSYSTEMS = ["power", "cell", "mcu", "display", "audio", "buttons", "usb_debug", "case"]
+# 'storage' since 39cc07f: the microSD slot J8, its bus, its supply through JP6 and its opening in the left wall
+SUBSYSTEMS = ["power", "cell", "mcu", "display", "audio", "buttons", "usb_debug", "storage", "case"]
 REGISTER = "register"                    # the whole register: classes 19 and 20
 WHOLE = (19, 20)
 ORDER_CLASSES = range(1, 16)             # 1-14, and 15 by a paper estimate

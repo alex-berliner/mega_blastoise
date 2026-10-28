@@ -61,9 +61,13 @@ REF = os.path.join(ROOT, "hardware", "ref_design")
 BOARD = os.path.join(REF, "board")
 
 # Datasheet numbers design.py does not hold. Each is checked again in VER-34's source audit.
-VREG_TOL = 0.02          # RT9013 output accuracy +-2% (DS9013-10 p4)
+VREG_TOL = 0.015         # TLV75733P output accuracy +-1.5% over TJ -40 to 125 C (tlv757p.txt:255); +-1% to 85 C (252)
+VREG_TOL_85 = 0.01       # TLV75733P output accuracy, TJ -40 to 85 C (tlv757p.txt:252)
+U3_VDO_1A = 0.425        # V: TLV75733P dropout at 1 A, VOUT 3.3-5.0 V, DBV, TJ to 85 C (tlv757p.txt:298); 475 mV to 125 C (316)
 CV_TOL = 0.01            # BQ24073 VBAT(REG) 4.2 V +-1% (SLUS810N; design.py and pinmap.md quote +-1%)
-I_3V3_AT_CUTOFF = 0.15   # A: REQ-PWR-15's 3V3 budget, the load the cutoff is read under
+I_3V3_AT_CUTOFF = 0.15   # A: the 3V3 load between Wi-Fi bursts (REQ-PWR-15's average), the load the cutoff is read under
+I_3V3_PEAK = 0.355 + 0.15   # A: a Wi-Fi TX burst (802.11b 20.5 dBm, 355 mA peak, esp32-s3-wroom-1.txt:1662) on that load
+ADC_ATTEN3_ERR = 0.050   # V: the ESP32-S3 ADC's total error at ATTEN3 (0-2900 mV) after its calibration (esp32-s3.txt:3804)
 OPAMP_VOS = 0.0045       # V: MCP6002 input offset, maximum (pin_review/u6.json)
 R_TOL = 0.01             # every resistor in design.py's RES table is 1%
 PANEL_MAX_MA = 120.0     # ER-TFT035IPS-6 backlight, 6 LEDs in parallel, 120 mA (pin_review/panel.json: 'If 120 mA',
@@ -89,14 +93,14 @@ I_TS, I_TS_TOL = 75e-6, 0.04 # A: TS bias current 72-78 uA (SLUS810N's INTC, bq2
 # (LCSC C525375): VER-34 holds the B tolerance BLOCKED until it is (2026-10-27).
 TH1_TOL = 0.01               # TH1's R25 tolerance
 TH1_B_TOL = 0.01             # TH1's B tolerance (to confirm on the TCTR0805 datasheet, VER-34)
-# The VBAT sense buffer (U10, MCP6001T-I/OT since 71737ae).  Its datasheet is not on disk (pin_review/u10.json:
-# LCSC's download gave an HTML page): the listing quotes 1 pA bias, 4.5 mV offset and 2 uV/C drift, all typical
-# or unqualified.  These stand-ins are deliberately pessimistic until VER-34 reads the datasheet:
-OPAMP_IB_MAX = 1e-9          # A: input bias over temperature, 1000 x the listing's 1 pA
+# The VBAT sense buffer (U10, MCP6001T-I/OT).  Its datasheet is on disk since 2026-10-28 (mcp6001.pdf): the bias
+# is typical only (1 pA at 25 C, 19 pA at 85 C) and the drift typical only (2 uV/C), so those stay pessimistic:
+OPAMP_IB_MAX = 1e-9          # A: input bias over temperature, 50 x the datasheet's 19 pA typical at 85 C (mcp6001.txt:141)
 OPAMP_ROUT = 100.0           # ohm: closed-loop output resistance at DC, a pessimistic figure for a unity buffer
-OPAMP_VOS_BUF = 0.0045       # V: input offset (listing), constant, so the gain calibration takes most of it
-OPAMP_DRIFT = 5e-6           # V/C: offset drift, 2.5 x the listing's 2 uV/C
-CLAMP_V = 0.5                # V: an unpowered CMOS input's protection diode to its VDD at a few uA (an estimate)
+OPAMP_VOS_BUF = 0.0045       # V: input offset, maximum (mcp6001.txt:135); constant, so the gain calibration takes most of it
+OPAMP_DRIFT = 5e-6           # V/C: offset drift, 2.5 x the datasheet's 2 uV/C typical (mcp6001.txt:136)
+CLAMP_V = 0.5                # V: an unpowered CMOS input's protection diode to its VDD at a few uA (an estimate; MCP6001's
+                             # analog inputs may go to VDD + 1.0 V at up to 2 mA, mcp6001.txt:115-117)
 # The per-unit CV screen's load (VER-134, VER-145): a resistor alone cannot do it (cvload), so the
 # load is a resistor in parallel with a shunt branch that conducts only above a set voltage: a TL431
 # (cathode-to-anode set to 3.5 V by 10k over 24.9k, 1%) in series with 22 ohm.  A low-voltage zener
@@ -106,9 +110,9 @@ CV_LOAD_R = 160.0            # ohm, 1%: the load's resistor
 CV_SHUNT_V = (3.43, 3.57)    # V: the TL431 branch's set point, 3.5 V +-2% (Vref 2.495 V x (1 + 10k / 24.9k): a plain
                              # TL431's reference and the divider's 1% resistors)
 CV_SHUNT_R = 22.0            # ohm, 1%: in series with the TL431
-# RP2350 GPIO input leakage, maximum: the datasheet's pad table, 'Pin Input Leakage Current IIN 1 uA'
-# (rp2350.txt:101199, quoted by VER-34)
-I_LEAK = 1e-6
+# ESP32-S3 GPIO input current, maximum: IIH and IIL 50 nA (esp32-s3.txt:3748-3749), at 25 C only: a stand-in of
+# 20 x that (1 uA, the RP2350's figure before 39cc07f) covers 45 C
+I_LEAK = 1e-6                # A: stand-in, 20 x the ESP32-S3's IIH 50 nA (esp32-s3.txt:3748)
 # Fab and print tolerances for the cell's gap (VER-181): JLC's standard outline tolerance (+-0.2 mm,
 # to confirm on the dated capability page, VER-17); an FDM wall's position (+-0.1 mm, an estimate
 # until VER-174's XY chain); the board's float on its screws (M2 in 2.2 mm holes: +-0.1 mm)
@@ -124,7 +128,7 @@ JLC_FIXED = {
 }
 EN1_INTERNAL = 285e3     # BQ24073 EN1 internal pull-down (pin_review/u2.json pin 6)
 D3_VF = 0.3              # BAT54WS at a few hundred uA
-ABS = {"U2 IN": 28.0, "U2 EN1": 7.0, "U3 EN": 6.0}    # absolute maxima (u2.json, u3.json)
+ABS = {"U2 IN": 28.0, "U2 EN1": 7.0, "U3 EN": 6.0}    # absolute maxima (bq24074.txt:595, 599; TLV75733P EN 6.0 V, tlv757p.txt:179)
 PD_MAX = 20.0            # V: the highest fixed USB PD voltage, what a broken source may put out
 
 
@@ -232,7 +236,27 @@ def inrush():
     print(f"parts joining VBUS to VSYS: {', '.join(bridges) or 'none'} (want U2 alone: its input switch "
           "brings VSYS up inside the input limit, so the VSYS bulk is not seen at the plug)")
     print(f"U2 is {parts['U2']['value']}")
-    return result(vbus <= 10e-6 * 1.001 and bridges == ["U2"] and parts["U2"]["value"].startswith("BQ2407"))
+    # carry-over P8 (2026-10-28): the charge at the worst-case voltage and the part's own +tolerance, through its DC-bias curve
+    import paper_checks as pc
+    q_hi, why = 0.0, []
+    for r, p in sorted(caps.items()):
+        if not set(p["pins"].values()) & vbus_nets:
+            continue
+        hi = farads(p["value"]) * (1 + pc.ctol(parts, r))
+        cur = pc.bias_curve(p["mpn"])
+        if cur is None:
+            q_hi += hi * 5.25
+            why.append(f"{r} {p['mpn']} +{pc.ctol(parts, r):.0%}: {hi * 1e6:.1f} uF, no DC-bias curve on disk (taken whole)")
+            continue
+        # the charge a plug-in delivers is the integral of C(V) dV from 0 to 5.25 V, read off Samsung's curve
+        steps = 200
+        q = sum(hi * (1 + pc.at_bias(cur, 5.25 * (k + 0.5) / steps) / 100) * 5.25 / steps for k in range(steps))
+        q_hi += q
+        why.append(f"{r} {p['mpn']} +{pc.ctol(parts, r):.0%}: {hi * 1e6:.1f} uF at 0 V, {q * 1e6:.1f} uC charged to 5.25 V along "
+                   f"{cur[1]}")
+    print(f"worst-case charge at 5.25 V and +tolerance through the DC-bias curve: {q_hi * 1e6:.1f} uC against 50 uC ("
+          + "; ".join(why) + ")")
+    return result(vbus <= 10e-6 * 1.001 and q_hi <= 50e-6 and bridges == ["U2"] and parts["U2"]["value"].startswith("BQ2407"))
 
 
 def backlight():
@@ -248,7 +272,7 @@ def backlight():
     print(f"R60 {r60:g}, R61 {r61:g}, sense {rs:g} ohm: nominal {nom * 1e3:.1f} mA a sink, {2 * nom * 1e3:.1f} mA in all "
           "at 100% duty")
     print(f"the firmware's highest duty: {dmax:.0%} ({src})")
-    print(f"worst case at {dmax:.0%} duty (3V3 +{VREG_TOL:.0%}, R61 +1%, R60 -1%, offset +{OPAMP_VOS * 1e3:.1f} mV, "
+    print(f"worst case at {dmax:.0%} duty (3V3 +{VREG_TOL:.1%}, R61 +1%, R60 -1%, offset +{OPAMP_VOS * 1e3:.1f} mV, "
           f"sense -1%): {sink_hi * 1e3:.1f} mA a sink, {total:.1f} mA in all (panel maximum {PANEL_MAX_MA:g} mA)")
     print(f"{LEDS_PER_PIN} LEDs share each sink: {sink_hi * 1e3 / LEDS_PER_PIN:.1f} mA an LED on average against "
           f"{LED_MAX_MA:g} mA (one LED's share is not controlled: VER-43 measures each cathode pin on the breakout)")
@@ -269,31 +293,32 @@ def backlight():
 
 
 def cutoff():
+    """VER-138 since 39cc07f: the ESP32-S3's ADC has its own reference (not 3V3), so the old dropout knee, where the
+    reading rose as 3V3 fell, is gone. What is left: the ADC's own error at ATTEN3, the gain calibration's CV term,
+    the buffer's temperature terms, and 3V3 in dropout during a Wi-Fi burst at the cutoff (the module's 3.0 V)."""
     parts, _ = design()
-    u3 = json.load(open(os.path.join(BOARD, "pin_review", "u3.json")))
-    drop = next(r for r in u3["ratings"] if r["what"] == "Dropout")["limit"]
-    m = re.search(r"([\d.]+) mV max at ([\d.]+) mA", drop)
-    vd_max = float(m.group(1)) / 1e3 * I_3V3_AT_CUTOFF / (float(m.group(2)) / 1e3)
-    m = re.search(r"([\d.]+) mV typ", drop)
-    vd_typ = float(m.group(1)) / 1e3 * I_3V3_AT_CUTOFF / 0.5
-    print(f"U3 {parts['U3']['value']}: dropout {drop}; at {I_3V3_AT_CUTOFF * 1e3:.0f} mA about {vd_typ * 1e3:.0f} mV "
-          f"typical, {vd_max * 1e3:.0f} mV maximum (scaled with the current)")
-    print(f"R17/R18 {parts['R17']['value']}/{parts['R18']['value']}: the ADC reads VBAT/2 against 3V3 itself "
-          "(the buffer, if any, below)")
-    print("calibration (pinmap.md): the gain is set at charge-done, taking the cell as 4.20 V; "
-          f"the charger's CV is 4.20 V +-{CV_TOL:.0%}")
+    if not parts["U4"]["value"].startswith("ESP32-S3"):
+        sys.exit("design_numbers: cutoff reads the ESP32-S3's ADC; U4 is " + parts["U4"]["value"])
+    print(f"U4 {parts['U4']['value']}: VBAT_SENSE on ADC1 at 12 dB (ATTEN3, 0-2900 mV: VBAT/2 is 1.75 V at the cutoff); "
+          f"total error after Espressif's calibration +-{ADC_ATTEN3_ERR * 1e3:.0f} mV at the pin (esp32-s3.txt:3804), "
+          "measured at 25 C with Wi-Fi off (3780-3781); its own reference, not 3V3 (pinmap.md, Battery voltage)")
+    print(f"R17/R18 {parts['R17']['value']}/{parts['R18']['value']}: VBAT/2; calibration (pinmap.md): one gain point at "
+          f"charge-done, the cell taken as 4.20 V; the charger's CV is 4.20 V +-{CV_TOL:.0%}")
     ok = True
-    # in regulation the reading is VBAT x 4.2 / CV: the cutoff fires at a true 3.50 x CV / 4.2
+    gain = 2.0
+    raw = ADC_ATTEN3_ERR * gain
+    print(f"with Espressif's calibration only: +-{raw * 1e3:.0f} mV of VBAT at 3.50 V against REQ-BAT-12's window "
+          "(3.50 +0.05/-0.00, 50 mV wide): " + ("inside" if 2 * raw <= 0.05 else "OVER: the window needs a calibration on "
+                                                 "the unit (REQ-TST-06)"))
+    ok &= 2 * raw <= 0.05
+    # one gain point at 4.20 V: an offset in the ADC's error is not removed by a gain; the datasheet gives the total only
     lo, hi = 3.50 * (1 - CV_TOL), 3.50 * (1 + CV_TOL)
-    print(f"3V3 in regulation: the cutoff fires at a true {lo:.3f}-{hi:.3f} V (REQ-BAT-12: 3.50 +0.05/-0.00)")
+    print(f"with the gain set at charge-done and no offset: the cutoff fires at a true {lo:.3f}-{hi:.3f} V from the CV's "
+          "+-1% alone; esp32-s3.pdf splits its +-50 mV into no offset and gain, so no one-point calibration can be shown "
+          "to bring it inside 50 mV: the per-unit 3.50 V point (VER-155) and the bench sweep (VER-139) must")
     ok &= lo >= 3.50 - 1e-9
-    # in dropout 3V3 = VBAT - Vd and the reading rises as the cell falls: its lowest is at the knee
-    for label, vreg, vd, cv in (("nominal", 3.3, vd_typ, 1.0), ("worst", 3.3 * (1 + VREG_TOL), vd_max, 1 - CV_TOL)):
-        knee = (vreg + vd) * 4.2 / (4.2 * cv)
-        fires = knee <= 3.50
-        print(f"{label}: 3V3 {vreg:.3f} V, dropout {vd * 1e3:.0f} mV, CV {4.2 * cv:.3f} V: lowest reading in dropout "
-              f"{knee:.3f} V: {'fires' if fires else 'never reaches 3.50: the cutoff never fires'}")
-        ok &= fires
+    print("3V3 itself at the cutoff during a Wi-Fi burst is VER-204's (paper_checks.py module): the ADC's reference is "
+          "its own, so the rail's sag does not move the reading")
     # O-R15: GPIO47's pad leakage through whatever drives the pin; it changes with temperature, so a one-point
     # gain calibration does not remove it.  Since 71737ae a unity buffer (U10) sits between the divider's node and
     # the pin: the pad's leakage then flows from the op-amp's output, and the op-amp's own bias current flows
@@ -307,7 +332,7 @@ def cutoff():
     if not buf:
         band = I_LEAK * rth * gain                       # the pin's error, scaled back to VBAT
         fit = 0.05 / 2 / (rth * gain)
-        print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (the RP2350's IIN maximum, rp2350.txt:101199, quoted by VER-34) "
+        print(f"pad leakage: +-{I_LEAK * 1e6:g} uA (a stand-in, 20 x the ESP32-S3's IIH, esp32-s3.txt:3748) "
               f"through {rth / 1e3:.0f} kohm moves VBAT's reading +-{band:.3f} V; REQ-BAT-12's 50 mV window allows "
               f"+-{fit * 1e9:.0f} nA of leakage that changes with temperature, before any other error")
     else:
@@ -319,14 +344,15 @@ def cutoff():
         # the offset is constant: the gain set at charge-done (4.20 V) takes it in, leaving this much at 3.50 V
         resid = 4.2 * (1.75 + OPAMP_VOS_BUF) / (2.1 + OPAMP_VOS_BUF) - 3.5
         print(f"{buf[0]} ({u['value']}, {u['mpn']}) buffers {node} onto VBAT_SENSE: the pad's +-{I_LEAK * 1e6:g} uA "
-              f"(rp2350.txt:101199) through its output ({OPAMP_ROUT:g} ohm, pessimistic) moves VBAT's reading "
-              f"+-{pad * 1e3:.2f} mV; its bias ({OPAMP_IB_MAX * 1e9:g} nA, a stand-in 1000 x the listing's 1 pA) "
+              f"(stand-in, esp32-s3.txt:3748) through its output ({OPAMP_ROUT:g} ohm, pessimistic) moves VBAT's reading "
+              f"+-{pad * 1e3:.2f} mV; its bias ({OPAMP_IB_MAX * 1e9:g} nA, a stand-in 50 x the 19 pA typical at 85 C, "
+              f"mcp6001.txt:141) "
               f"through {rth / 1e3:.0f} kohm +-{bias * 1e3:.2f} mV; its drift ({OPAMP_DRIFT * 1e6:g} uV/C over 20 C) "
               f"+-{drift * 1e3:.2f} mV: +-{band * 1e3:.2f} mV in all that changes with temperature (was +-"
               f"{I_LEAK * rth * gain:.3f} V unbuffered)")
         print(f"  its {OPAMP_VOS_BUF * 1e3:g} mV offset is constant: after the gain calibration at 4.20 V it leaves "
-              f"{resid * 1e3:+.1f} mV at 3.50 V (inside the CV term above); the MCP6001's datasheet is not on disk "
-              "(pin_review/u10.json), so these numbers wait for VER-34")
+              f"{resid * 1e3:+.1f} mV at 3.50 V (inside the CV term above); offset +-4.5 mV maximum (mcp6001.txt:135), "
+              "drift and bias typical only (136, 141): the stand-ins above stay")
         # off (3V3 down), the buffer is unpowered and its input clamps the divider's node about CLAMP_V over 0 V
         i_off = (4.2 - CLAMP_V) / r17
         print(f"  off: {buf[0]} unpowered, its input's protection diode holds {node} near {CLAMP_V:g} V, so R17 draws "
@@ -355,8 +381,9 @@ def screws():
     print(f"bom.md's Screws line names M2 x {', '.join(f'{n:g}' for n in sorted(named)) or 'nothing'}; case.scad uses "
           f"M2 x {', '.join(f'{n:g}' for n in sorted(used))}: {'ok' if ok else 'fails'}")
     for label, length, pilot, want, short in (
-            ("side (H1-H4)", e.get("screw_l_side", e["screw_l"]), e["side_engage"], 4.0, 0.5),
-            ("end (H5, H6)", e.get("screw_l_end", e["screw_l"]), e["deck_engage"], 3.0, 0.1)):
+            # 39cc07f: H4 left the glass's corner for seat 1's deck (case.scad h4_pin, the end screws' pilot)
+            ("side (H1-H3)", e.get("screw_l_side", e["screw_l"]), e["side_engage"], 4.0, 0.5),
+            ("deck (H4, H5, H6)", e.get("screw_l_end", e["screw_l"]), e["deck_engage"], 3.0, 0.1)):
         tip = cb + length
         thread = tip - z_top
         spare = z_top + pilot - tip
@@ -688,6 +715,14 @@ def bom():
     if re.search(r"Start/Select strip isn't used", text):
         print("bom.md says the Start/Select strip isn't used, but SW20-SW23 sit under it")
         ok = False
+    # 39cc07f: the hand-fitted parts the new board needs. A WROOM-1U has a U.FL connector and no antenna of its own
+    # (esp32-s3-wroom-1.txt:100); the power key's cap is printed (case.scad pwr_cap), so it is the case's, not bom.md's
+    for r, p in sorted(parts.items()):
+        if "WROOM-1U" in (p["mpn"] or ""):
+            hit = re.search(r"(?i)\bantenna\b", text) and re.search(r"(?i)u\.fl|ipex|mhf", text)
+            print(f"{r} {p['mpn']}: an external antenna on a U.FL cable (esp32-s3-wroom-1.txt:100): "
+                  + ("bom.md buys it" if hit else "bom.md buys no antenna and no U.FL cable: the module has no radio path"))
+            ok &= bool(hit)
     return result(ok)
 
 
@@ -775,7 +810,9 @@ def swell():
 
 
 COPPER_EDGE = 0.30   # mm: REQ-FAB-03's copper to a routed edge (JLC's figure, to confirm on the dated page: VER-17)
-EDGE_ALLOWED = {"J1"}   # parts whose body stands past the outline by design: the USB-C receptacle's face on its tab
+EDGE_ALLOWED = {"J1", "J8"}   # parts whose body stands past the outline by design: the USB-C receptacle's face on its tab;
+                              # the microSD slot's mouth 0.45 mm past the left edge (placement.py J8, 39cc07f). Both need
+                              # JLC's assembly to accept an overhang (VER-28's DFM report)
 
 
 def edge(b=None):
@@ -1063,11 +1100,12 @@ def spkplug():
 CURRENT = {   # net: (the worst current it carries in A, where the number comes from); 0.25 A or more needs a class
     "VBUS": (0.75, "VER-13: J1 to U2 IN at the charge current"),
     "CELL_P": (0.75, "VER-13: J2 to JP5"), "VBAT": (0.75, "VER-13: JP5 to U2 BAT"),
-    "VSYS": (0.77, "VER-13: U3 0.15 A, LED_A 0.12 A and AMP_VDD 0.5 A"),
-    "AMP_VDD": (0.5, "VER-13: the amplifier, a stand-in until the FM8002A's datasheet"),
+    "VSYS": (0.98, "VER-31: U3 0.36 A with Wi-Fi on, LED_A 0.12 A and AMP_VDD 0.5 A held (39cc07f); 1.24 A in a TX burst"),
+    "AMP_VDD": (0.5, "VER-13: the amplifier, a stand-in (fm8002a.pdf prints no supply current at full power)"),
     "SPK_P": (0.35, "0.5 W into 8 ohm, the peak"), "SPK_N": (0.35, "0.5 W into 8 ohm, the peak"),
-    "+3V3": (0.15, "U3's load, VER-13"), "3V3_LDO": (0.15, "U3's load, VER-13"),
+    "+3V3": (0.62, "VER-31: the 3V3 load in a Wi-Fi TX burst (39cc07f)"), "3V3_LDO": (0.62, "as +3V3"),
     "LED_A": (0.12, "the panel's 117.7 mA worst case, VER-137"),
+    "SD_VDD": (0.10, "a microSD card writing (VER-31's stand-in)"),
 }
 CLASS_AMPS = 0.25
 
@@ -1103,6 +1141,15 @@ def netclass():
             bad.append(f"{net} is no net of the board")
         elif amps >= CLASS_AMPS and not cls:
             bad.append(f"{full} carries {amps:.2f} A in no class")
+        elif cls:
+            # 39cc07f (carry-over P4): the class's width must carry the net's current by IPC-2221's external chart (10 C)
+            import paper_checks as pc
+            w = classes[cls].get("track") or 0.0
+            cap = pc.ipc2221_amps(w)
+            print(f"    class {cls} {w} mm carries {cap:.2f} A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): "
+                  + ("enough" if cap >= amps else "NOT enough"))
+            if cap < amps:
+                bad.append(f"{full} carries {amps:.2f} A on class {cls}'s {w} mm, which carries {cap:.2f} A")
     print(f"findings: {len(bad)}" + ("".join(f"\n  {x}" for x in bad)))
     return result(not bad)
 

@@ -293,17 +293,31 @@ def placement(seed=None):
     row(not bad, f"{n} parts placed by placement.py (from positions.json and its own rules) against the routed board: worst "
         f"{worst[0]:.4f} mm ({worst[1]}); limits {PLACE_MM} mm and {PLACE_DEG} deg")
     # the case's own positions, straight from positions.json
+    # 39cc07f: no pinholes (BOOT and RESET left with the RP2354B's SW18 and SW19) and no J5; the power key's SW24 is the
+    # case's (case.scad pwr_pos) and J8's mouth is the left wall's opening (sd_y)
     case_pts = {**{k: v for k, v in pos["buttons"].items()}, **pos["ss_buttons"],
                 **{f"H{i + 1}": p for i, p in enumerate(pos["pins"])},
-                "SW18": pos["pinholes"][0], "SW19": pos["pinholes"][1], "J5": pos["swd"], "J3": [pos["fpc_conn"]["x"], pos["fpc_conn"]["y"]]}
+                **{ref: p for ref, p in zip(("SW18", "SW19"), pos.get("pinholes", []))},
+                "J3": [pos["fpc_conn"]["x"], pos["fpc_conn"]["y"]]}
+    if "power" in pos:
+        case_pts["SW24"] = pos["power"]["c"]
     off = []
     for ref, (x, y) in sorted(case_pts.items()):
+        if ref not in fps:
+            off.append(f"{ref} not on the board")
+            continue
         f = fps[ref]
         d = math.hypot(mm(f.GetPosition().x) - x, mm(f.GetPosition().y) - y)
         if d > PLACE_MM:
             off.append(f"{ref} {d:.3f} mm")
-    row(not off, f"{len(case_pts)} parts the case positions (the 20 contacts, H1-H6, the pinholes' SW18 and SW19, J5, J3) at "
+    row(not off, f"{len(case_pts)} parts the case positions (the 20 contacts, H1-H6, J3, the power key SW24) at "
         "positions.json's spot within 0.05 mm" + (f": {off}" if off else ""))
+    if "sd" in pos:
+        j8 = fps["J8"]
+        y0, y1 = sorted(pos["sd"]["y"])
+        print(f"  J8 at ({mm(j8.GetPosition().x):.2f}, {mm(j8.GetPosition().y):.2f}); the left wall's opening y {y0:.2f}-{y1:.2f} "
+              f"(case.scad sd_y): its centre {(y0 + y1) / 2:.2f}")
+        row(abs(mm(j8.GetPosition().y) - (y0 + y1) / 2) <= PLACE_MM, f"J8 centred on the SD opening within {PLACE_MM} mm")
     j1 = fps["J1"]
     usb_y = pos["usb"]["y"]
     row(abs(mm(j1.GetPosition().y) - usb_y) <= PLACE_MM, f"J1 at y {mm(j1.GetPosition().y):.3f} against the USB slot's {usb_y}")
@@ -523,8 +537,20 @@ def mouths(seed=None):
             return [[x0 - depth, y0], [x0, y1]] if mx < sx else [[x1, y0], [x1 + depth, y1]]
         return [[x0, y0 - depth], [x1, y0]] if my < sy else [[x0, y1], [x1, y1 + depth]]
     boxes = {"J2": (to_k(e["j2_plug"]), "the cell's plug (case.scad j2_plug)"),
-             "J4": (to_k(e["j4_plug"]), "the speaker's SH plug (case.scad j4_plug)"),
-             "J5": (mouth_side("J5", 6.0), "a JST SH cable, 6 mm (VER-165's procedure)")}
+             "J4": (to_k(e["j4_plug"]), "the speaker's SH plug (case.scad j4_plug)")}
+    # 39cc07f: J8's mouth is the left wall's opening, not a box inside the tub: its body must pass the opening with the
+    # print's and the board's float on each side (PRINT_TOL + SCREW_FLOAT)
+    if "J8" in ext and "sd" in pos:
+        y0, y1 = sorted(pos["sd"]["y"])
+        jx = ext["J8"]
+        side = min(jx[1] - y0, y1 - jx[3])
+        need = dn.PRINT_TOL + dn.SCREW_FLOAT
+        z0, z1 = pos["sd"]["z"]
+        top = jx[5]
+        row(side >= need and top <= z1 - dn.PRINT_TOL,
+            f"J8's body y {jx[1]:.3f}-{jx[3]:.3f} (its 3D model) in the left wall's opening y {y0:.2f}-{y1:.2f}: {side:.3f} mm a "
+            f"side against the print's {dn.PRINT_TOL} and the board's float {dn.SCREW_FLOAT} ({need:.1f} mm); its top {top:.2f} mm "
+            f"under the opening's {z1:.2f} mm over the board")
     if seed:
         boxes["J4"] = (mouth_side("J2", 8.0), "seeded: J2's mouth box made 8 mm deep")
     inner = [[100 - e["in_x"], 100 - (e["case_l"] / 2 - e["wall"])], [100 + e["in_x"], 100 + (e["case_l"] / 2 - e["wall"])]]
@@ -544,8 +570,12 @@ def mouths(seed=None):
             d = math.hypot(p[0] - h[0], p[1] - h[1])
             if d < pos["boss_d"] / 2 + 1.0:
                 bad.append(f"pinhole {p} {d:.2f} mm from H{i + 1}")
-    near = min(math.hypot(p[0] - h[0], p[1] - h[1]) for p in pos["pinholes"] for h in pos["pins"])
-    row(not bad, f"no pinhole inside a boss circle (boss {pos['boss_d']} mm + 1 mm): the nearest {near:.2f} mm" + (f": {bad}" if bad else ""))
+    if pos["pinholes"]:
+        near = min(math.hypot(p[0] - h[0], p[1] - h[1]) for p in pos["pinholes"] for h in pos["pins"])
+        row(not bad, f"no pinhole inside a boss circle (boss {pos['boss_d']} mm + 1 mm): the nearest {near:.2f} mm"
+            + (f": {bad}" if bad else ""))
+    else:
+        print("no pinholes in the case (case.scad pin_pos is empty since 39cc07f): the boss rule has nothing to read")
     return dn.result(not row.bad)
 
 

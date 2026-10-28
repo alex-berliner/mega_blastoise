@@ -138,61 +138,105 @@ def appcircuit(seed=None):
     ds.quote("bq24074", 562, "The thermal pad must be connected to the same potential as the VSS pin")
     row(u2["17"] == "GND" and u2["8"] == "GND", "the thermal pad (17) and VSS (8) on GND (bq24074.txt:562, 572)", "power")
 
-    print("U3 RT9013-33GB (rt9013.pdf, DS9013-10):")
-    ds.quote("rt9013", 479, "1μF/X7R on the RT9013 input")
-    ds.quote("rt9013", 481, "0.5")
-    ds.quote("rt9013", 494, "at least 1μF")
+    print("U3 TLV75733PDBVR (tlv757p.pdf, SBVS322C):")
+    ds.quote("tlv757p", 210, "Input capacitor", "1")
+    ds.quote("tlv757p", 211, "Output capacitor", "1", "200")
+    ds.quote("tlv757p", 1333, "Place input and output capacitors as close as possible")
     u3 = parts["U3"]["pins"]
     cin = between(parts, u3["1"], "GND", "C")
     cout = between(parts, u3["5"], "GND", "C")
-    row(sum(val(parts, r) for r in cin) >= 1e-6, f"CIN on VIN ({u3['1']}): {', '.join(cin)} {sum(val(parts, r) for r in cin) * 1e6:.0f} "
-        "uF >= 1 uF X7R (rt9013.pdf p8, rt9013.txt:479); its distance is checked below on the routed board", "power")
-    row(sum(val(parts, r) for r in cout) >= 1e-6, f"COUT on VOUT ({u3['5']}): {', '.join(cout)} "
-        f"{sum(val(parts, r) for r in cout) * 1e6:.0f} uF >= 1 uF ceramic (rt9013.txt:494)", "power")
-    ds.quote("rt9013", 483, "cannot be left floating")
+    # COUT is every capacitor U3's output sees through JP1's bridge: 3V3_LDO and +3V3 (the module's 22 uF included)
+    cout_all = cout + between(parts, "+3V3", "GND", "C")
+    c_all = sum(val(parts, r) for r in cout_all)
+    row(sum(val(parts, r) for r in cin) >= 1e-6, f"CIN on IN ({u3['1']}): {', '.join(cin)} {sum(val(parts, r) for r in cin) * 1e6:.0f} "
+        "uF >= 1 uF (tlv757p.txt:210); its distance is checked below on the routed board", "power")
+    row(1e-6 <= c_all <= 200e-6, f"COUT: {', '.join(cout)} on {u3['5']} and {len(cout_all) - len(cout)} more on +3V3 through JP1, "
+        f"{c_all * 1e6:.1f} uF nominal, inside 1-200 uF (tlv757p.txt:211)", "power")
+    ds.quote("tlv757p", 917, "Enable the device by forcing the EN pin to exceed VHI")
     en_pd = between(parts, u3["3"], "GND", "R")
-    row(bool(en_pd), f"EN ({u3['3']}) held low by {', '.join(en_pd) or 'nothing'}: 'cannot be left floating' (rt9013.txt:483)", "power")
-    row(u3["4"] is None, "pin 4 NC, as the SOT-23-5 pinout (pin_review/u3.json, p2)", "power")
+    row(bool(en_pd), f"EN ({u3['3']}) held low by {', '.join(en_pd) or 'nothing'} when nothing drives it (tlv757p.txt:917)", "power")
+    row(u3["4"] is None, "pin 4 NC on the DBV SOT-23-5 (IN 1, GND 2, EN 3, NC 4, OUT 5; tlv757p.txt:114, design.py U3)", "power")
 
-    print("U8, U9 SN74HC165PWR (sn74hc165.pdf, SCLS116):")
+    print("U8, U9, U11 SN74HC165PWR (sn74hc165.pdf, SCLS116):")
     ds.quote("sn74hc165", 157, "CLK", "15", "CLK INH")
     ds.quote("sn74hc165", 255, "Supply voltage", "2", "6")
-    for u in ("U8", "U9"):
+    regs = sorted(r for r, p in parts.items() if p["mpn"] == "SN74HC165PWR")
+    row(len(regs) == 3, f"three registers in the chain: {', '.join(regs)} (24 bits, pinmap.md Buttons)", "buttons")
+    for u in regs:
         p = parts[u]["pins"]
-        dec = [r for r in between(parts, "+3V3", "GND", "C")]
         row(p["15"] == "GND", f"{u} CLK INH (pin 15) at {p['15']}: low enables the clock (sn74hc165.txt:157, 198)", "buttons")
         row(p["16"] == "+3V3" and p["8"] == "GND", f"{u} VCC (16) on +3V3, inside 2-6 V (sn74hc165.txt:255)", "buttons")
-        row(p["10"] is not None, f"{u} SER (pin 10) at {p['10']}: driven, not floating", "buttons")
+        row(p["10"] is not None, f"{u} SER (pin 10) at {p['10']}: driven or tied, not floating", "buttons")
         ins = [p[d] for d in ("11", "12", "13", "14", "3", "4", "5", "6")]
-        pulled = all(any(set(parts[r]["pins"].values()) >= {n, "+3V3"} for r in parts if r.startswith("RN")) for n in ins)
-        row(pulled, f"{u} D0-D7 each pulled up by an RN array: no input floats with its contact open", "buttons")
-    print("U4 RP2354B outside the core (the core's values are VER-197's):")
-    q = ds.quote("rp2350", 100938, "RUN", "Pull-Up")
-    run_pu = [r for r in between(parts, "RUN", "+3V3", "R")]
-    row(True, f"RUN has its own pull-up ('{q}', rp2350.txt:100938){'' if not run_pu else ', plus ' + run_pu[0]}; "
-        "SW19 pulls it low through R26 1k", "mcu")
-    ds.quote("rp2350", 1196, "27Ω series termination")
-    row(all(abs(val(parts, r) - 27) < 1e-6 for r in ("R21", "R22")), "USB_DP and USB_DM through 27 ohm each (rp2350.txt:1196)",
-        "usb_debug")
-    j5 = parts["J5"]["pins"]
-    row({j5["1"], j5["3"]} == {"SWCLK", "SWDIO"} and parts["U4"]["pins"]["33"] == "SWCLK" and parts["U4"]["pins"]["34"] == "SWDIO",
-        "SWCLK (pin 33) and SWDIO (34) reach J5 and J7 (rp2350.txt:1207)", "usb_debug")
-    print("the panel ER-TFT035IPS-6 on J3 (er-tft035ips-6.pdf, its ILI9488):")
+
+        def held(n):
+            # tied to +3V3, a resistor or array to +3V3, or an open-drain line with its pull-up (PWR_BTN_N's R16)
+            return n == "+3V3" or any(set(parts[r]["pins"].values()) >= {n, "+3V3"} for r in parts
+                                      if parts[r]["lib"] in ("Device:R", "Device:R_Pack04") and parts[r]["bom"])
+        free = [n for n in ins if not held(n)]
+        row(not free, f"{u} D0-D7 each pulled up or tied high: no input floats with its contact open"
+            + (f" (floating: {', '.join(free)})" if free else ""), "buttons")
+    print("U4 ESP32-S3-WROOM-1U-N16R8 (esp32-s3-wroom-1.pdf, the module; esp32-s3-hw-design-guidelines.pdf):")
+    u4 = parts["U4"]["pins"]
+    ds.quote("esp32-s3-hw-design-guidelines", 338, "R = 10 kΩ and C = 1 μF")
+    ds.quote("esp32-s3-hw-design-guidelines", 336, "CHIP_PU must not be left floating")
+    en_r = between(parts, "EN", "+3V3", "R")
+    en_c = between(parts, "EN", "GND", "C")
+    row(u4["3"] == "EN" and len(en_r) == 1 and len(en_c) == 1 and abs(val(parts, en_r[0]) - 10e3) < 1
+        and abs(val(parts, en_c[0]) - 1e-6) < 1e-9,
+        f"EN (pin 3): {en_r[0] if en_r else 'nothing'} to +3V3 and {en_c[0] if en_c else 'nothing'} to GND, the RC delay "
+        "'usually R = 10 kOhm and C = 1 uF' (esp32-s3-hw-design-guidelines.txt:338), never floating (336)", "mcu")
+    ds.quote("esp32-s3-wroom-1", 2875, "22uF", "0.1uF")
+    c3 = between(parts, "+3V3", "GND", "C")
+    row(any(abs(val(parts, r) - 22e-6) < 1e-9 for r in c3) and any(abs(val(parts, r) - 0.1e-6) < 1e-9 for r in c3),
+        "3V3 (pin 2): a 22 uF and a 0.1 uF on +3V3, as the module's peripheral schematic (esp32-s3-wroom-1.txt:2875); their "
+        "distance to pin 2 is VER-204's", "mcu")
+    ds.quote("esp32-s3-hw-design-guidelines", 874, "22/33 Ω")
+    rr = [r for r in ("R21", "R22") if r in parts]
+    row(len(rr) == 2 and all(22.0 - 1e-6 <= val(parts, r) <= 33.0 + 1e-6 for r in rr)
+        and {parts["R21"]["pins"]["2"], parts["R22"]["pins"]["2"]} == {u4.get("14"), u4.get("13")},
+        "USB D+ (pin 14, IO20) and D- (pin 13, IO19) each through a series resistor of 22-33 ohm (R21, R22 22 ohm; "
+        "esp32-s3-hw-design-guidelines.txt:874); their distance to the module is VER-191's", "usb_debug")
+    row(all(u4.get(str(p)) is None for p in (28, 29, 30)), "IO35-IO37 (pins 28-30) unconnected: the octal PSRAM's "
+        "(esp32-s3-wroom-1.txt, the pin table's footnote; pinmap.md)", "mcu")
+    row(all(u4.get(str(p)) == "GND" for p in (1, 40, 41)), "GND on pins 1, 40 and the 41 pad", "mcu")
+    jtag = parts.get("J7", {}).get("pins", {})
+    row({jtag.get("2"), jtag.get("3")} == {"EN", "BOOT"} and u4.get("27") == "BOOT",
+        "J7's pads carry EN and BOOT (IO0, pin 27) with 3V3 and GND: the download mode by a pogo jig (no buttons)", "usb_debug")
+    print("the panel ER-TFT035IPS-6 on J3 (er-tft035ips-6.pdf, its ILI9488), on its 8-bit 8080 bus since 39cc07f:")
     panel = ns["PANEL"]
-    ds.quote("er-tft035ips-6", 722, "1", "4-wire 8-bit data Serial Interface")
-    row(all(panel[p] == "LCD_3V3" for p in (7, 8, 9)), "IM0-IM2 (pins 7-9) high: '1 1 1 4-wire 8-bit data Serial Interface I' "
-        "(er-tft035ips-6.txt:722)", "display")
+    ds.quote("er-tft035ips-6", 718, "0", "1", "1", "8080 MCU 8-bit Bus Interface")
+    row(panel[9] == "GND" and panel[8] == "LCD_3V3" and panel[7] == "LCD_3V3",
+        "IM2 (pin 9) low, IM1 (8) and IM0 (7) high: '0 1 1 8080 MCU 8-bit Bus Interface D[7:0]' (er-tft035ips-6.txt:718)", "display")
     ds.quote("er-tft035ips-6", 667, "DB17-DB0", "Fix to DGND level when not in use")
-    row(all(panel[p] == "GND" for p in range(11, 33)), "VSYNC, HSYNC, DOTCLK, DE and DB17-DB0 (11-32) at GND, as 'Fix to DGND "
-        "level when not in use' (er-tft035ips-6.txt:659-667)", "display")
+    row(all(panel[p] == "GND" for p in range(11, 25)) and all(panel[32 - k] == f"LCD_D{k}" for k in range(8)),
+        "VSYNC, HSYNC, DOTCLK, DE and DB17-DB8 (11-24) at GND ('Fix to DGND level when not in use', er-tft035ips-6.txt:659-667); "
+        "DB7-DB0 (25-32) on LCD_D7-LCD_D0 (pins 15-32 are DB17-DB0, 667)", "display")
     ds.quote("er-tft035ips-6", 675, "RD", "Fix to IOVCC when not in use")
     row(panel[35] == "LCD_3V3", "RD (35) at the logic supply (er-tft035ips-6.txt:675)", "display")
     ds.quote("er-tft035ips-6", 669, "SDO", "Leave the pin open")
-    row(panel[33] == "LCD_MISO" and panel[39] == "LCD_TE", "SDO (33) and TE (39) to U4's inputs, open-safe (669, 686)", "display")
+    ds.quote("er-tft035ips-6", 673, "Fix to DGND level when not in use")
+    row(panel[33] is None and panel[34] == "GND" and panel[39] == "LCD_TE",
+        "SDO (33) open, SDA (34) at GND, TE (39) to the module (er-tft035ips-6.txt:669, 673, 686)", "display")
+    row(panel[36] == "LCD_WR" and panel[37] == "LCD_DC" and panel[38] == "GND" and panel[10] == "LCD_RST",
+        "WRX (36), D/CX (37), RESET (10) from the module; CSX (38) tied low, always selected (the sheet says 'Fix to IOVCC when "
+        "not in use', 683: it is in use, held selected)", "display")
     q747 = ds.quote("er-tft035ips-6", 747, "VCI", "2.5", "3.3")
-    vmax = 3.3 * (1 + dn.VREG_TOL)
-    row(vmax <= 3.3, f"VCI and VDDI (40-42) on LCD_3V3 = +3V3 through JP4: up to {vmax:.3f} V (RT9013 +-2%) against "
-        f"'{q747}' (er-tft035ips-6.txt:747-748): the known DEF-61, DEC-09 proposes accepting it", "display")
+    vmax = 3.3 * (1 + dn.VREG_TOL_85)
+    row(vmax <= 3.3, f"VCI and VDDI (40-42) on LCD_3V3 = +3V3 through JP4: up to {vmax:.3f} V (TLV75733P +-1% to TJ 85 C, "
+        f"tlv757p.txt:252; {3.3 * (1 + dn.VREG_TOL):.3f} V at +-1.5%, 255) against '{q747}' (er-tft035ips-6.txt:747-748): "
+        "DEF-61, DEC-09 proposes accepting it", "display")
+    print("J8 microSD (Hirose DM3AT-SF-PEJM5) and its bus (esp32-s3-hw-design-guidelines.txt:864):")
+    ds.quote("esp32-s3-hw-design-guidelines", 864, "Please add pull-up resistors to the SDIO GPIO")
+    for net in ("SD_CMD", "SD_D0", "SD_D1", "SD_D2", "SD_D3"):
+        pu = between(parts, net, "+3V3", "R")
+        row(len(pu) == 1 and 10e3 * 0.99 <= val(parts, pu[0]) <= 100e3, f"{net}: pull-up {pu[0] if pu else 'none'} "
+            f"{parts[pu[0]]['value'] if pu else ''} (the guidelines' 1.3.12; the SD spec's 10-100 kohm, from memory)", "storage")
+    row(between(parts, "SD_CD", "+3V3", "R") != [] and parts["J8"]["pins"].get("10") == "GND",
+        "SD_CD pulled up, the detect switch to GND: low with a card in (normally open, hirose_dm3_catalog_C114218.txt:27)", "storage")
+    sdc = between(parts, "SD_VDD", "GND", "C")
+    row(sum(val(parts, r) for r in sdc) >= 1e-6 and parts["J8"]["pins"].get("4") == "SD_VDD",
+        f"the card's VDD (pin 4) on SD_VDD with {', '.join(sdc)} ({sum(val(parts, r) for r in sdc) * 1e6:.1f} uF) beside it", "storage")
     # the routed board: CIN's distance
     pcb, b = dn.board()
     mm = pcb.ToMM
@@ -200,17 +244,29 @@ def appcircuit(seed=None):
     vin = next(p for p in fp["U3"].Pads() if p.GetNumber() == "1")
     dist = min(math.hypot(mm(p.GetPosition().x - vin.GetPosition().x), mm(p.GetPosition().y - vin.GetPosition().y))
                for r in cin for p in fp[r].Pads() if p.GetNetname().split("/")[-1] == u3["1"])
-    row(dist <= 12.7, f"the nearest CIN pad is {dist:.1f} mm from U3's VIN, within 0.5 in (12.7 mm, rt9013.txt:481)", "power")
+    row(dist <= 12.7, f"the nearest CIN pad is {dist:.1f} mm from U3's IN: 'as close as possible' (tlv757p.txt:1333) gives no "
+        "number; read as the register's 0.5 in (12.7 mm, the RT9013's own figure before 39cc07f), pad centre to pad centre",
+        "power")
     quotes(row)
     print(f"{len(row.bad)} failing")
     return dn.result(not row.bad)
 
 
 # ---- the quoted-constant audit (part of VER-198) -------------------------------------------------------------
-CITE = re.compile(r"\b(bq24074|rp2350|ili9488|er-tft035ips-6|rt9013|sn74hc165)\.txt:(\d+)(?:-(\d+))?((?:,\s*\d+)*)")
+# 39cc07f: any '<name>.txt:<line>' whose <name>.pdf is in hardware/ref_design/datasheets (the ESP32-S3's, the
+# TLV757P's, the MCP6001's and the rest the register reads now), not a fixed list of six
+CITE = re.compile(r"(?<![\w.-])([a-z0-9][a-z0-9_-]*)\.txt:(\d+)(?:-(\d+))?((?:,\s*\d+)*)")
 DERIVED = {"I_TS_TOL": "the tolerance (78 - 72) / 2 / 75 of the cited band, not a printed number",
-           "RP_VREG_L": "the line pair names the part; 3.3 uH is on 33608, checked there",
-           "I_PATH": "VER-13's own test current; the cite is for the 475 mA USB500 limit it sits above"}
+           "I_PATH": "VER-13's own test current; the cite is for the 475 mA USB500 limit it sits above",
+           "I_LEAK": "a stand-in, 20 x the cited 50 nA",
+           "I_3V3_PEAK": "the cited 355 mA plus the 150 mA average load: a sum, not a printed number",
+           "U3_IEN": "a stand-in; the cited line gives 10 nA typical",
+           "OPAMP_IB_MAX": "a stand-in, 50 x the cited 19 pA", "OPAMP_DRIFT": "a stand-in, 2.5 x the cited 2 uV/C",
+           "CLAMP_V": "an estimate; the cited lines give the input's limits", "ESP_VOH": "0.8 x VDD at 3.3 V, the cited formula",
+           "U7_ISD": "u7.json's figure; fm8002a.txt:123 prints it, VER-34 compares",
+           "ESP_PWM_CLK": "the APB clock design.py and pinmap.md name; no datasheet line cited",
+           "V3V3": "3.3 V x (1 + the cited 1.5%), a product", "VF_DECADE": "320 - 240 mV, the difference of the two cited lines",
+           "STAND_ESP_USB_C": "a stand-in; the cited line gives a GPIO's 2 pF"}
 
 
 def numbers_near(name, lines):
@@ -252,6 +308,9 @@ def quotes(row):
                 if not isinstance(v, (int, float)) or name in DERIVED:
                     continue
                 c = cites[0]
+                if not ds.have(c.group(1)):
+                    row(False, f"{os.path.basename(path)}:{k} {name} cites {c.group(1)}.txt, whose PDF is not on disk")
+                    continue
                 lines = [int(c.group(2))] + ([int(c.group(3))] if c.group(3) else []) + \
                     [int(x) for x in re.findall(r"\d+", c.group(4) or "")]
                 if c.group(3):
@@ -266,82 +325,149 @@ def quotes(row):
     print(f"  {n} cited numbers read")
 
 
-# ---- VER-15: the GPIO function mux --------------------------------------------------------------------------------
-TABLE = (1261, 1390)          # rp2350.txt: Table 3, the GPIO function table (F0-F11), GPIO0-47
-SPI_JOB = {"LCD_SCK_MCU": "SPI0 SCK", "LCD_MOSI_MCU": "SPI0 TX", "LCD_MISO": "SPI0 RX", "LCD_CS": "SPI0 CSn"}
-PWM_NETS = ("BL_PWM", "AUDIO_PWM")
+# ---- VER-203: the ESP32-S3 module's pins (since 39cc07f; VER-15 read the RP2350's GPIO mux) --------------------------
+MOD_TABLE = (629, 688)        # esp32-s3-wroom-1.txt: Table 3-1, the module's pin definitions (two pages)
+GLITCH = (958, 997)           # esp32-s3.txt: Table 2-2, the power-up glitches
 ADC_NETS = ("CC1_SENSE", "CC2_SENSE", "VBAT_SENSE")
-PWM_RS = "embassy-rp-0.8.0/src/pwm.rs"
-SEED_GPIO = {"gpio": {29: "AUDIO_PWM", 31: "SR_CLK_MCU"}}   # the audio PWM onto the backlight's slice 6
+USB_NETS = {"USB_DM_MCU": "USB_D-", "USB_DP_MCU": "USB_D+"}
+# outputs that switch a load or the power: a high-level glitch at power-up would switch it (Table 2-2)
+LOAD_NETS = ("PWR_HOLD", "AMP_EN", "CHG_OFF", "BL_PWM")
+SEED_GPIO = {"esp": {}, "parts": {"R37": {"pins": {"1": "AMP_EN", "2": "+3V3"}}}}   # AMP_EN (IO45) pulled up: VDD_SPI 1.8 V
 
 
-def gpio_table():
-    """{gpio: set of function names} from rp2350.txt's Table 3 (QFN-80: GPIO0-47)."""
-    t = ds.text("rp2350")
+def module_table():
+    """{module pin: (name, gpio or None, set of functions)} from esp32-s3-wroom-1.txt's Table 3-1."""
+    t = ds.text("esp32-s3-wroom-1")
     out = {}
-    for k in range(TABLE[0], TABLE[1]):
-        m = re.match(r"^\s+(\d{1,2})\s{2,}(\S.*)$", t[k - 1])
-        if m and int(m.group(1)) <= 47:
-            out[int(m.group(1))] = {s.strip() for s in re.split(r"\s{2,}", m.group(2)) if s.strip()}
+    for k in range(MOD_TABLE[0], MOD_TABLE[1] + 1):
+        m = re.match(r"^\s+(\w+)\s*[abc]?\s+(\d{1,2})\s+(\S+)(?:\s+(.*))?$", t[k - 1])
+        if not m:
+            continue
+        name, no, fn = m.group(1), int(m.group(2)), (m.group(4) or "")
+        # a function list the layout wrapped round the name: its first half on the line before, its rest after
+        prev = t[k - 2].strip() if k >= 2 else ""
+        if prev.startswith("RTC_GPIO") and not re.match(r"^\w+\s+\d", prev):
+            fn = (prev + " " + fn).strip()
+            nxt = t[k].strip() if k < len(t) else ""
+            if nxt and not re.match(r"^\w+\s+\d", nxt):
+                fn = fn.rstrip(",") + ", " + nxt
+        fns = {s.strip() for s in re.split(r",\s*", fn) if s.strip()}
+        g = next((int(f[4:]) for f in fns if re.fullmatch(r"GPIO\d+", f)), None)
+        out[no] = (name, g, fns)
+    return out
+
+
+def glitches():
+    """{GPIO number: set of glitch kinds} from esp32-s3.txt's Table 2-2 (XTAL_32K_P/N are GPIO15/16)."""
+    t = ds.text("esp32-s3")
+    out, cur = {}, None
+    for k in range(GLITCH[0], GLITCH[1] + 1):
+        ln = t[k - 1]
+        m = re.match(r"^\s+(GPIO\d+|XTAL_32K_[PN])\b(.*)$", ln)
+        if m:
+            cur = {"XTAL_32K_P": 15, "XTAL_32K_N": 16}.get(m.group(1)) or int(m.group(1)[4:])
+            rest = m.group(2)
+        else:
+            rest = ln
+        for kind in ("Low-level glitch", "High-level glitch", "Pull-down glitch", "Pull-up glitch"):
+            if kind in rest and cur is not None:
+                out.setdefault(cur, set()).add(kind)
+        # a pin whose glitch rows straddle its name (GPIO18-20): the row above the name belongs to it too
+        nxt = t[k] if k < len(t) else ""
+        mn = re.match(r"^\s+(GPIO\d+)\s*$", nxt)
+        if mn and any(kind in ln for kind in ("glitch",)) and not m:
+            out.setdefault(int(mn.group(1)[4:]), set()).update(
+                {kd for kd in ("Low-level glitch", "High-level glitch", "Pull-down glitch") if kd in ln})
     return out
 
 
 def gpio(seed=None):
-    parts, ns = load(None)
-    g = dict(ns["GPIO"])
+    parts, ns = load(seed.get("parts") if seed else None)
+    esp = dict(ns["ESP32"])
     if seed:
-        g.update(seed["gpio"])
+        esp.update(seed["esp"])
     row = Rows()
-    ds.quote("rp2350", 1261, "GPIO", "F0", "F11")
-    tab = gpio_table()
-    row(sorted(tab) == list(range(48)), f"Table 3 read for GPIO0-47 (rp2350.txt:{TABLE[0]}-{TABLE[1]}): {len(tab)} rows")
-    q = ds.quote("rp2350", 80737, "QFN-80", "GPIO40")
-    print(f"  ADC: '{q}' (rp2350.txt:80737): GPIO40-47 are ADC0-7")
-    slices = {}
-    print("  the whole GPIO-to-PWM table, from the datasheet, against (n >> 1) & 7 (n < 32) and 8 + ((n >> 1) & 3) (n >= 32):")
-    for n in range(48):
-        pw = [f for f in tab.get(n, ()) if re.fullmatch(r"PWM\d+ [AB]", f)]
-        want = ((n >> 1) & 7) if n < 32 else 8 + ((n >> 1) & 3)
-        ch = "A" if n % 2 == 0 else "B"
-        got = pw[0] if pw else "none"
-        slices[n] = got
-        print(f"    GPIO{n:<2} {got:8} formula PWM{want} {ch}  net {g.get(n) or '-'}")
-        row(got == f"PWM{want} {ch}", f"GPIO{n}: the table's {got} is the formula's PWM{want} {ch}") if got != f"PWM{want} {ch}" else None
-    # embassy-rp's own table
-    rs = glob.glob(os.path.expanduser(f"~/.cargo/registry/src/*/{PWM_RS}"))
-    if not rs:
-        ds.blocked(f"{PWM_RS} is not in ~/.cargo/registry (cargo fetch in crates/mega_blastoise_fw)")
-    agree = 0
-    for ln in open(rs[0], encoding="utf-8"):
-        m = re.match(r"\s*impl_pin!\(PIN_(\d+), PWM_SLICE(\d+), Channel([AB])Pin\);", ln)
-        if m:
-            n = int(m.group(1))
-            ok = slices.get(n) == f"PWM{m.group(2)} {m.group(3)}"
-            agree += ok
-            if not ok:
-                row(False, f"pwm.rs says PIN_{n} is PWM{m.group(2)} {m.group(3)}; the datasheet {slices.get(n)}")
-    row(agree == 48, f"embassy-rp 0.8.0's pwm.rs agrees on {agree} of 48 pins ({rs[0].split('/src/', 1)[1]}: PIN_28 slice 6 A, "
-                     "PIN_31 slice 7 B among them)")
-    print("  each net's job against the functions its pin has:")
-    for n, net in sorted(g.items()):
-        if not net:
-            continue
-        fns = tab.get(n, set())
-        if net in SPI_JOB:
-            row(SPI_JOB[net] in fns, f"GPIO{n} {net}: needs {SPI_JOB[net]}; the pin has {', '.join(sorted(f for f in fns if f.startswith('SPI')))}")
-        elif net in PWM_NETS:
-            row(slices[n] != "none", f"GPIO{n} {net}: a PWM output, {slices[n]}")
-        elif net in ADC_NETS:
-            row(40 <= n <= 47, f"GPIO{n} {net}: an ADC input, ADC{n - 40}" if 40 <= n <= 47 else f"GPIO{n} {net}: NOT an ADC pin")
-        else:
-            row("SIO" in fns, f"GPIO{n} {net}: plain I/O (SIO{', PIO' if 'PIO0' in fns else ''})")
-    used = {}
-    for n in (k for k, v in g.items() if v in PWM_NETS):
-        used.setdefault(slices[n].split()[0], []).append(f"GPIO{n} {g[n]}")
-    for sl, who in sorted(used.items()):
-        row(len(who) == 1, f"{sl}: {', '.join(who)}" + ("" if len(who) == 1 else ": two PWM jobs on one slice (one frequency)"))
-    spi = {SPI_JOB[g[n]].split()[0] for n in g if g[n] in SPI_JOB}
-    row(len(spi) == 1, f"the panel's SPI pins all on one instance: {', '.join(sorted(spi))}")
+    if not parts["U4"]["value"].startswith("ESP32-S3-WROOM-1"):
+        sys.exit("circuit_checks gpio: U4 is " + parts["U4"]["value"] + ", not an ESP32-S3-WROOM-1 module")
+    ds.quote("esp32-s3-wroom-1", 627, "Table 3-1. Pin Definitions")
+    tab = module_table()
+    row(sorted(tab) == list(range(1, 42)), f"Table 3-1 read for pins 1-41 (esp32-s3-wroom-1.txt:{MOD_TABLE[0]}-{MOD_TABLE[1]}): "
+        f"{len(tab)} rows")
+    gp = {no: g for no, (_, g, _) in tab.items()}
+    print("  each module pin, its GPIO and its net (design.py ESP32):")
+    for no in sorted(esp):
+        name, g, fns = tab.get(no, ("?", None, set()))
+        print(f"    pin {no:2d} {name:5s} GPIO{g if g is not None else '-':<3} {esp[no] or '(open)'}")
+    for net in ADC_NETS:
+        pins = [no for no, n in esp.items() if n == net]
+        fns = tab[pins[0]][2] if pins else set()
+        adc1 = sorted(f for f in fns if f.startswith("ADC1_"))
+        row(bool(adc1), f"{net} on pin {pins[0] if pins else '?'} (GPIO{gp.get(pins[0]) if pins else '?'}): "
+            + (f"{adc1[0]}" if adc1 else "NOT an ADC1 channel") + " (ADC2 cannot be used with Wi-Fi, esp32-s3.txt:3415)")
+    ds.quote("esp32-s3", 3415, "ADC2_CH", "cannot be used with Wi-Fi")
+    for net, fn in USB_NETS.items():
+        pins = [no for no, n in esp.items() if n == net]
+        row(bool(pins) and fn in tab[pins[0]][2], f"{net} on pin {pins[0] if pins else '?'}: {fn} (Table 3-1)")
+    ds.quote("esp32-s3-wroom-1", 692, "IO35, IO36, and IO37 are connected to the Octal SPI PSRAM")
+    psram = [no for no, (_, g, _) in tab.items() if g in (35, 36, 37)]
+    row(all(esp.get(no) is None for no in psram), f"IO35-IO37 (pins {', '.join(map(str, psram))}) unconnected: the R8's octal "
+        "PSRAM (esp32-s3-wroom-1.txt:691-693)")
+    ds.quote("esp32-s3-wroom-1", 694, "ESP32-S3R16V")
+    row(parts["U4"]["mpn"].endswith("N16R8"), f"IO47 and IO48 run at 3.3 V: only the R16V's VDD_SPI is 1.8 V "
+        f"(esp32-s3-wroom-1.txt:694-696); U4 is {parts['U4']['mpn']} (LCD_D7, LCD_WR on them)")
+    # strapping pins (Table 4-1, 4-3, 4-4, 4-5)
+    ds.quote("esp32-s3-wroom-1", 751, "GPIO0", "Weak pull-up", "1")
+    ds.quote("esp32-s3-wroom-1", 753, "GPIO45", "Weak pull-down", "0")
+    ds.quote("esp32-s3-wroom-1", 754, "GPIO46", "Weak pull-down", "0")
+    ds.quote("esp32-s3-wroom-1", 816, "SPI Boot", "1")
+    ds.quote("esp32-s3-wroom-1", 849, "3.3 V", "0")
+    ds.quote("esp32-s3-wroom-1", 876, "does not have any internal pull resistors")
+    pin_of = {g: no for no, g in gp.items() if g is not None}
+
+    def strap_level(g):
+        """the level the board holds a strapping pin at reset: 0, 1, 'internal 1/0' or 'driven by <ref>'"""
+        net = esp.get(pin_of[g])
+        if net is None:
+            return None, "open"
+        pd = between(parts, net, "GND", "R")
+        pu = between(parts, net, "+3V3", "R")
+        drv = [r for r, p in parts.items() if r != "U4" and p["bom"] and net in p["pins"].values()
+               and p["lib"].startswith("74xx")]
+        if pd and not pu:
+            return 0, f"{net}: {pd[0]} {parts[pd[0]]['value']} to GND"
+        if pu and not pd:
+            return 1, f"{net}: {pu[0]} {parts[pu[0]]['value']} to +3V3"
+        if drv:
+            return "driven", f"{net}: driven by {drv[0]}'s output"
+        return "internal", f"{net}: no resistor on the board (the pin's internal default holds it)"
+    lv0, why0 = strap_level(0)
+    row(lv0 in ("internal", 1), f"GPIO0 (pin {pin_of[0]}) at reset: {why0}: 1 = SPI boot (esp32-s3-wroom-1.txt:751, 816); J7's "
+        "BOOT pad pulls it low for the download mode")
+    lv45, why45 = strap_level(45)
+    row(lv45 in (0, "internal"), f"GPIO45 (pin {pin_of[45]}) at reset: {why45}: 0 = VDD_SPI at 3.3 V for the N16R8's 3.3 V "
+        "flash and PSRAM (esp32-s3-wroom-1.txt:849; only the N16R16VA is 1.8 V, 170)")
+    lv46, why46 = strap_level(46)
+    row(lv46 in (0, "internal"), f"GPIO46 (pin {pin_of[46]}) at reset: {why46}: 0, so GPIO0 low gives the joint download mode "
+        "(esp32-s3-wroom-1.txt:817); with GPIO0 high any value boots from flash (816)")
+    lv3, why3 = strap_level(3)
+    row(lv3 != "open", f"GPIO3 (pin {pin_of[3]}) at reset: {why3}: not high impedance (esp32-s3-wroom-1.txt:876); its level is "
+        "ignored while the JTAG eFuses are unburnt (893): firmware must never burn EFUSE_STRAP_JTAG_SEL")
+    # power-up glitches on the load-switching outputs
+    ds.quote("esp32-s3", 958, "Table 2-2. Power-Up Glitches on Pins")
+    gl = glitches()
+    for net in LOAD_NETS:
+        pins = [no for no, n in esp.items() if n == net]
+        g = gp.get(pins[0]) if pins else None
+        kinds = gl.get(g, set())
+        row("High-level glitch" not in kinds and "Pull-up glitch" not in kinds,
+            f"{net} on GPIO{g}: power-up glitches {', '.join(sorted(kinds)) or 'none'} (esp32-s3.txt:958-1006): "
+            + ("never driven high before firmware" if "High-level glitch" not in kinds else "a HIGH glitch would switch its load"))
+    for g in sorted(gl):
+        if "High-level glitch" in gl[g]:
+            net = esp.get(pin_of.get(g))
+            print(f"  GPIO{g} ({net or 'open'}) has a 60 us high-level glitch at power-up (esp32-s3.txt:990-1006): "
+                  + {"SR_CLK_MCU": "one stray clock edge before the first load: harmless (SR_PL loads first)",
+                     "USB_DM_MCU": "USB, the ROM's own", "USB_DP_MCU": "USB, the ROM's own"}.get(net, "check its load"))
     print(f"{len(row.bad)} failing")
     return dn.result(not row.bad)
 
@@ -353,11 +479,20 @@ FLAG = re.compile(r"OPEN QUESTION|UNKNOWN|UNVERIFIED")
 SEED_PR = {"R43": {"value": "100k", "lcsc": "C25741", "mpn": "0402WGF1003TCE"}}   # a BOM value the review did not see
 
 
+def signed_approvals():
+    """The A-ids check_trace itself counts: table rows of releases/APPROVALS.md, committed, in a commit signed with the
+    key README pins (2026-10-28: this check used to count every 'A-NNN' in the file, its examples included, as signed)."""
+    import check_trace as ct
+    n0, w0 = len(ct.ERRORS), len(ct.WARNINGS)
+    rows, _, _ = ct.parse_approvals()
+    del ct.ERRORS[n0:], ct.WARNINGS[w0:]            # its own report is check_trace's, not this check's
+    return {r["id"] for r in rows if r["committed"]}, len(rows)
+
+
 def pinreview(seed=None):
     parts, _ = load(seed)
     row = Rows()
-    alines = open(APPROVALS, encoding="utf-8").read() if os.path.exists(APPROVALS) else ""
-    signed = set(re.findall(r"\bA-\d{3}\b", alines))
+    signed, n_rows = signed_approvals()
     kinds = {}
 
     def fail(kind, text):
@@ -436,7 +571,8 @@ def pinreview(seed=None):
                           for f in files if not f.endswith("passives.json")):
             fail("missing", f"{ref} {p['mpn']}: no pin_review file names it")
     print("failures by kind: " + ", ".join(f"{k} {n}" for k, n in sorted(kinds.items())) if kinds else "no failures")
-    print(f"signed A-lines in releases/APPROVALS.md: {len(signed)} (a waiver counts only when it cites one)")
+    print(f"A-lines check_trace counts in releases/APPROVALS.md: {len(signed)} of {n_rows} table rows (committed and signed "
+          "with README's pinned key; the header's examples are not rows); a waiver counts only when it cites one")
     return dn.result(not row.bad)
 
 
@@ -452,16 +588,19 @@ def fwpins(seed=None):
     row = Rows()
     git = ["git", "-C", dn.ROOT]
     names = subprocess.run(git + ["ls-tree", "-r", "--name-only", ref, "--", FW], capture_output=True, text=True).stdout.split()
-    want = {f"PIN_{n}": net for n, net in ns["GPIO"].items()}
-    print(f"design.py's GPIO map: {len(want)} nets on GPIO " + ", ".join(f"{n}={v}" for n, v in sorted(ns["GPIO"].items())))
+    # 39cc07f: design.py maps the ESP32-S3 module's pins (ESP32), the module's Table 3-1 gives each pin's GPIO
+    tab = module_table()
+    gmap = {tab[no][1]: net for no, net in ns["ESP32"].items() if net and tab.get(no, (0, None))[1] is not None}
+    print(f"design.py's GPIO map (module pins through esp32-s3-wroom-1.txt's Table 3-1): {len(gmap)} nets on GPIO "
+          + ", ".join(f"{n}={v}" for n, v in sorted(gmap.items())))
     pinfile = f"{FW}/board_ref_a.rs"
     if pinfile not in names:
-        row(False, f"{pinfile} does not exist at {ref}: the firmware has no generated REF-A pin file (DEF-34; "
-                   "board/tools/pinmap.py does not write one yet)")
+        row(False, f"{pinfile} does not exist at {ref}: the firmware has no generated pin file for the ESP32-S3 board "
+                   "(board/tools/pinmap.py writes docs/pinmap.md only)")
     else:
         text = subprocess.run(git + ["show", f"{ref}:{pinfile}"], capture_output=True, text=True).stdout
         got = {m.group(2): m.group(1) for m in re.finditer(r"pub const (\w+)\s*:\s*\w+\s*=\s*(\d+)\s*;", text)}
-        for n, net in sorted(ns["GPIO"].items()):
+        for n, net in sorted(gmap.items()):
             row(str(n) in got and got[str(n)].lower().replace("_", "") == net.lower().replace("_", ""),
                 f"GPIO{n} {net}: the pin file says {got.get(str(n), 'nothing')}")
     lit = []
@@ -478,14 +617,39 @@ MODES = ("off", "cell", "usb", "charging")
 VBUS_MAX = 5.25                   # V: a USB 2.0 port's VBUS maximum (USB 2.0 Table 7-7, from memory: README's note)
 CC_MAX = 2.18                     # V: CC at a sink's Rd with a 3 A source (Type-C vRd-3.0 maximum, from memory)
 USB_DATA_MAX = 3.6                # V: a full-speed line's high level maximum (USB 2.0 7.1.1, from memory)
-V3V3 = 3.3 * (1 + dn.VREG_TOL)    # V: the RT9013's +2% (design_numbers.VREG_TOL, DS9013-10 p4)
-# stand-ins for the 3V3 budget: no file gives these, each pessimistic and printed as one
-STAND_RP_VIN = 2.5 * 14.70e-3     # A: VREG_VIN at 2.5 x hello_usb's 14.70 mA (rp2350.txt:101676), both cores busy
+V3V3 = 3.3 * (1 + dn.VREG_TOL)    # V: the TLV75733P's +1.5% over TJ -40 to 125 C (design_numbers.VREG_TOL, tlv757p.txt:255)
+# the 3V3 budget since 39cc07f: the module from its own tables, the rest stand-ins, each printed as one
+ESP_CPU = 107.9e-3                # A: modem-sleep, 240 MHz, dual core, 128-bit, all peripheral clocks on (esp32-s3-wroom-1.txt:1741)
+ESP_RX = 97e-3                    # A: Wi-Fi RX, 802.11n HT40, peak, CPU idle (esp32-s3-wroom-1.txt:1670)
+ESP_TX = 355e-3                   # A: Wi-Fi TX, 802.11b 1 Mbps at 20.5 dBm, peak (esp32-s3-wroom-1.txt:1662)
+ESP_IVDD = 0.5                    # A: the current the supply must deliver, minimum (esp32-s3-wroom-1.txt:1597)
+STAND_PSRAM = 20e-3               # A: the octal PSRAM and flash at the frame's refresh (the module's tables omit it: 1698)
+STAND_SD = 100e-3                 # A: a microSD card writing (the SD spec's class figures, from memory; no card sheet on disk)
 STAND_PANEL_LOGIC = 20e-3         # A: the panel's VCI and VDDI together (er-tft035ips-6.pdf prints no current)
-STAND_OPAMP_IQ = 0.15e-3          # A: an MCP600x amplifier's quiescent current, generous (not on disk)
-STAND_SPI_C = 30e-12              # F: LCD_SCK's load, track and the panel's input, switched at 20 MHz
-# connectors' current ratings: their datasheets are not on disk (VER-34); the usual catalogue figure, as stand-ins
-STAND_CONN_A = {"J1": 5.0, "J2": 1.0, "J4": 1.0, "J5": 1.0}
+STAND_OPAMP_IQ = 0.17e-3          # A: an MCP600x amplifier's quiescent current, maximum (mcp6001.txt:160)
+STAND_BUS_C = 30e-12              # F: one panel bus line's load, track and the panel's input
+STAND_BUS_HZ = 12.5e6             # Hz: a data line toggling at half the 25 MHz write clock (pinmap.md's LCD_CAM limit)
+# connectors' current ratings: catalogue figures, stand-ins (J8's is Hirose's own line, VER-34 confirms the rest)
+STAND_CONN_A = {"J1": 5.0, "J2": 1.0, "J4": 1.0, "J8": 0.5}
+
+
+def loads_3v3(parts, wifi="avg"):
+    """[(name, amps, why)]: the 3V3 load with Wi-Fi on. wifi 'avg': listening (RX) on a busy CPU, the steady load the
+    heat budget uses; 'peak': a TX burst instead, the load U3 and the decoupling must carry for its duration."""
+    pulls = sum(V3V3 / val(parts, r) for r in ("R42", "R44")) + 16 * V3V3 / 47e3 + 4 * V3V3 / 47e3 \
+        + 2 * V3V3 / 100e3 + 6 * V3V3 / 10e3 + V3V3 / 103.74e3
+    radio = (ESP_TX, "TX burst 355 mA peak (esp32-s3-wroom-1.txt:1662)") if wifi == "peak" else \
+        (ESP_RX, "RX 97 mA peak (esp32-s3-wroom-1.txt:1670)")
+    return [("U4 CPU at 240 MHz, both cores", ESP_CPU, "107.9 mA (esp32-s3-wroom-1.txt:1741), all peripheral clocks on"),
+            ("U4 Wi-Fi", radio[0], radio[1]),
+            ("U4's PSRAM and flash", STAND_PSRAM, "stand-in (the module's tables leave PSRAM out, 1698)"),
+            ("J8, a microSD card writing", STAND_SD, "stand-in, 100 mA"),
+            ("the panel's VCI and VDDI", STAND_PANEL_LOGIC, "stand-in: the panel prints none"),
+            ("U6, U10", 3 * STAND_OPAMP_IQ, "170 uA a channel, maximum (mcp6001.txt:160)"),
+            ("U8, U9, U11", 3 * 80e-6, "ICC 80 uA at 6 V, the SN74HC165's maximum (not quoted), each"),
+            ("pull-ups and pull-downs driven against", pulls,
+             "R42 and R44 driven high, 20 x 47k, 2 x 100k, the SD bus's 6 x 10k held low, R60+R61"),
+            ("the panel bus at its write clock", 9 * STAND_BUS_C * V3V3 * STAND_BUS_HZ, "C V f on D0-D7 and WR, stand-in 30 pF")]
 SEED_RATINGS = {"R38": {"value": "330", "lcsc": "C25104", "mpn": "0402WGF3300TCE"}}   # VBUS's bleeder at 330 ohm: 84 mW
 
 
@@ -535,32 +699,36 @@ def ratings(seed=None):
     # ICs: (ref, pins, recommended maximum, absolute maximum, source); a named exception of REQ-PWR-14 is printed as one
     q = ds.quote
     q("bq24074", 634, "6.4"); q("bq24074", 595, "28"); q("bq24074", 596, "BAT", "5"); q("bq24074", 599, "7")
-    q("rt9013", 148, "5.5"); q("rt9013", 128, "6"); q("rt9013", 129, "6")
-    q("rp2350", 101378, "IOVDD", "3.63"); q("rp2350", 101026, "IOVDD", "3.63"); q("rp2350", 101043, "IOVDD + 0.5")
-    q("rp2350", 101386, "DVDD", "1.16"); q("rp2350", 101388, "VREG_VIN", "5.5"); q("rp2350", 101390, "3.63")
+    q("tlv757p", 206, "Input voltage", "5.5"); q("tlv757p", 178, "6.0"); q("tlv757p", 179, "Enable voltage", "6.0")
+    q("tlv757p", 208, "Enable voltage", "5.5"); q("tlv757p", 209, "Output current", "1")
+    q("esp32-s3-wroom-1", 1586, "VDD33", "3.6"); q("esp32-s3-wroom-1", 1596, "VDD33", "3.0", "3.6")
+    q("esp32-s3-wroom-1", 1597, "0.5"); q("esp32-s3", 3746, "VIH", "VDD 1 + 0.3")
     q("sn74hc165", 255, "6"); q("sn74hc165", 233, "7"); q("er-tft035ips-6", 747, "3.3"); q("er-tft035ips-6", 734, "4.6")
+    q("mcp6001", 159, "Supply Voltage", "6.0"); q("mcp6001", 113, "7.0"); q("fm8002a", 109, "VDD", "6")
+    q("fm8002a", 122, "1.6", "6"); q("srv05-4", 89, "VRWM", "5")
+    u4_sig = [p for p, n in parts["U4"]["pins"].items() if n and n not in ("+3V3", "GND")]
     ics = [
         ("U2", ["13"], 6.4, 28.0, "IN: 4.35-6.4 V recommended (bq24074.txt:634), 28 V absolute (595)"),
         ("U2", ["2", "3"], None, 5.0, "BAT: 5 V absolute (bq24074.txt:596)"),
         ("U2", ["10", "11", "6", "5", "4", "1", "16", "7", "9", "12", "15"], None, 7.0,
          "OUT, EN1, EN2, CE, TS, ISET, PGOOD, CHG, ILIM, TD: 7 V absolute (bq24074.txt:598-600)"),
-        ("U3", ["1"], 5.5, 6.0, "VIN: 2.2-5.5 V recommended (rt9013.txt:148), 6 V absolute (128)"),
-        ("U3", ["3"], None, 6.0, "EN: 6 V absolute (rt9013.txt:129)"),
-        ("U4", [p for p, n in parts["U4"]["pins"].items() if n == "+3V3"], 3.63, 3.63,
-         "IOVDD and the 3.3 V supplies: 3.63 V (rp2350.txt:101378, 101026; VREG_AVDD 101390)"),
-        ("U4", [p for p, n in parts["U4"]["pins"].items() if n == "+1V1"], 1.16, 1.21, "DVDD: 1.05-1.16 V (rp2350.txt:101386)"),
-        ("U4", [p for p, n in parts["U4"]["pins"].items() if n and n not in ("+3V3", "+1V1", "GND", "VREG_AVDD")],
-         V3V3, V3V3 + 0.5, "every signal pin: VPIN to IOVDD + 0.5 V (rp2350.txt:101043), steady at most IOVDD"),
+        ("U3", ["1"], 5.5, 6.0, "IN: 1.45-5.5 V recommended (tlv757p.txt:206), 6.0 V absolute (178)"),
+        ("U3", ["3"], 5.5, 6.0, "EN: 0-5.5 V recommended (tlv757p.txt:208), 6.0 V absolute (179)"),
+        ("U4", [p for p, n in parts["U4"]["pins"].items() if n == "+3V3"], 3.6, 3.6,
+         "3V3: 3.0-3.6 V recommended (esp32-s3-wroom-1.txt:1596), 3.6 V absolute (1586)"),
+        ("U4", u4_sig, V3V3, V3V3 + 0.3, "every signal pin: VIH at most VDD + 0.3 V (esp32-s3.txt:3746), steady at most VDD"),
         ("U8", ["16"], 6.0, 7.0, "VCC: 2-6 V (sn74hc165.txt:255), 7 V absolute (233)"),
         ("U9", ["16"], 6.0, 7.0, "VCC (sn74hc165.txt:255, 233)"),
-        ("U6", ["8"], 6.0, 7.0, "VDD 1.8-6.0 V, 7.0 V absolute (u6.json p3, not on disk)"),
-        ("U7", ["6"], 6.0, 6.0, "VDD 1.6-6 V, 6 V absolute (u7.json, not on disk)"),
-        ("U10", ["5"], 6.0, 6.0, "supply 1.8-6 V (u10.json: the LCSC listing; datasheet not on disk, DEF-63)"),
-        ("U1", ["5", "1", "3"], 5.0, 6.0, "VRWM 5 V, VBR 6 V (u1.json p2, not on disk)"),
+        ("U11", ["16"], 6.0, 7.0, "VCC (sn74hc165.txt:255, 233)"),
+        ("U6", ["8"], 6.0, 7.0, "VDD 1.8-6.0 V (mcp6001.txt:159, the MCP6002 shares the sheet), 7.0 V absolute (113)"),
+        ("U7", ["6"], 6.0, 6.0, "VDD 1.6-6 V (fm8002a.txt:122), 6 V absolute (109)"),
+        ("U10", ["5"], 6.0, 7.0, "VDD 1.8-6.0 V (mcp6001.txt:159), 7.0 V absolute (113)"),
+        ("U1", ["5", "1", "3"], 5.0, 6.0, "VRWM 5 V (srv05-4.txt:89)"),
         ("J3", [p for p, n in parts["J3"]["pins"].items() if n == "LCD_3V3"], 3.3, 4.6,
          "the panel's VCI and VDDI: 3.3 V recommended (er-tft035ips-6.txt:747-748), 4.6 V absolute (734)"),
+        ("J8", ["4"], 3.6, 3.6, "the card's VDD 2.7-3.6 V (the SD spec, from memory: pin_review/j8.json)"),
     ]
-    named = {("J3", "LCD_3V3"): "REQ-PWR-14 exception (2): the panel at 3.366 V (DF-96, DEF-61, DEC-09)"}
+    named = {("J3", "LCD_3V3"): "REQ-PWR-14 exception (2): the panel at 3.333 V, 3.350 V at TJ 125 C (DF-96, DEF-61, DEC-09)"}
     print("ICs: steady at or under the recommended maximum (or 0.3 V under the absolute maximum where none is printed), "
           "the hot-plug transient 0.3 V under the absolute maximum:")
     for ref, pins, rec, ab, why in ics:
@@ -573,12 +741,16 @@ def ratings(seed=None):
         good = (st <= lim + 1e-9 or exc) and (tr <= st + 1e-9 or tr <= ab - 0.3 + 1e-9)
         row(good, f"{ref} {','.join(nets)[:60]}: steady {st:.3f} V, transient {tr:.2f} V against {why}"
             + (f" [{exc}]" if exc and st > lim + 1e-9 else ""))
-    # U10's input with the device off: the named exception (1)
-    row(True, f"U10 pin 3 VBAT_DIV {vmax['VBAT_DIV']:.2f} V while its supply is 0 V (off): REQ-PWR-14 exception (1) "
-              "(DF-182, DEC-29); its input limit with VDD at 0 V waits for the MCP6001's datasheet (VER-34)")
-    # discretes at 80% (from their pin_review quotes, not on disk)
-    print("FETs and diodes at 80% of their ratings (pin_review quotes, not on disk):")
-    disc = {"2N7002": (60.0, 20.0, 0.115, "q1.json p1"), "AO3400A": (30.0, 12.0, 5.7, "q5.json p1")}
+    # U10's input with the device off: within the MCP6001's analog-input limits when the current is held under 2 mA
+    q("mcp6001", 115, "2 mA"); q("mcp6001", 117, "VDD + 1.0V")
+    i_in = (dn.VBAT_REG[1] - dn.CLAMP_V) / val(parts, "R17")
+    row(i_in <= 2e-3 and dn.CLAMP_V <= 1.0, f"U10 pin 3 VBAT_DIV while its supply is 0 V (off): clamped near {dn.CLAMP_V} V, "
+        f"{i_in * 1e6:.1f} uA through R17: inside 'VSS - 1.0 V to VDD + 1.0 V' at '+-2 mA' (mcp6001.txt:115-117); "
+        "REQ-PWR-14's exception (1) is no longer needed (DF-182)")
+    # discretes at 80%, from their datasheets on disk since 2026-10-28
+    q("2n7002_cj", 55, "Vth(GS)", "2.5")
+    print("FETs and diodes at 80% of their ratings:")
+    disc = {"2N7002": (60.0, 20.0, 0.115, "2n7002_cj.pdf"), "AO3400A": (30.0, 12.0, 5.7, "ao3400a.pdf")}
     for ref, p in sorted(parts.items()):
         if p["mpn"] in disc and p["bom"]:
             vds, vgs, idm, src = disc[p["mpn"]]
@@ -591,7 +763,13 @@ def ratings(seed=None):
         if p["mpn"] and p["mpn"].startswith("BAT54") and p["bom"]:
             vr = max(vmax[n] for n in p["pins"].values() if n)
             row(vr <= 0.8 * 30, f"{ref} {p['mpn']}: VR at most {vr:.2f} V of 30 V ({vr / 30 * 100:.0f}%), IF well under "
-                                "200 mA (d2.json, d3.json p1-p2)")
+                                "200 mA (bat54c.pdf, bat54ws.pdf)")
+    q("rocpu_tps850", 17, "MAXIMUM VOLTAGE", "12 VDC"); q("rocpu_tps850", 18, "MAXIMUM CURRENT DC", "50 mA"); q("rocpu_tps850", 136, "RATING", "15V 20mA")
+    sw = parts.get("SW24")
+    if sw:
+        i_sw = vmax["VSYS"] / (val(parts, "R13") * (1 - R_TOL)) + vmax["VSYS"] / (val(parts, "R15") * (1 - R_TOL))
+        row(vmax["VSYS"] <= 0.8 * 12 and i_sw <= 0.8 * 20e-3, f"SW24 TPS850: {vmax['VSYS']:.2f} V across it open, "
+            f"{i_sw * 1e3:.2f} mA through it closed (R13 and R15 from VSYS) against 12 V and 20 mA (rocpu_tps850.txt:17, 136)")
     # passives: MLCC voltage, resistor power, from JLC's own part data (passives.json db_description by LCSC number)
     print("passives at 80% (MLCC voltage, resistor power) from JLC's part description, matched by LCSC number:")
     worst = []
@@ -630,31 +808,28 @@ def ratings(seed=None):
                 if pd / pw > 0.2 else None
     worst.sort(reverse=True)
     print(f"  {len(worst)} passives read; the five most stressed: " + ", ".join(f"{r} {s * 100:.0f}%" for s, r in worst[:5]))
+    # the 3V3 budget (39cc07f: Wi-Fi on; REQ-PWR-15 as restated: the peak inside 80% of U3's 1 A, the supply at least
+    # the module's 0.5 A; U3's heat is VER-144's)
+    avg, peak = loads_3v3(parts, "avg"), loads_3v3(parts, "peak")
+    tot, tpk = sum(i for _, i, _ in avg), sum(i for _, i, _ in peak)
+    print("the 3V3 load with Wi-Fi on (listening; a TX burst in place of RX for the peak):")
+    for name, i, why in avg:
+        print(f"    {name:40s} {i * 1e3:6.1f} mA  {why}")
+    q("tlv757p", 267, "1.2", "1.55", "1.78")
+    row(tpk <= 0.8 * 1.0, f"3V3 peak {tpk * 1e3:.0f} mA (a TX burst), average {tot * 1e3:.0f} mA, against 80% of U3's 1 A "
+        "(tlv757p.txt:209); its current limit 1.2 A minimum (267) is over the module's 0.5 A supply minimum "
+        "(esp32-s3-wroom-1.txt:1597)")
     # connectors' current (stand-in ratings)
-    i_cell = 0.150 + 0.1177 + 0.5
-    print("connectors at 80% of their current (catalogue figures: datasheets not on disk, stand-ins):")
+    i_cell = tpk + 0.1177 + 0.5
+    q("jst_sh", 7, "Current rating", "1.0 A")
+    print("connectors at 80% of their current (J4's from jst_sh.txt:7; J1, J2 and J8 catalogue figures, stand-ins: "
+          "molex_53261.pdf has no text layer, so J2's 1 A is not read from it):")
     for ref, i, why in (("J1", 0.5, "VBUS at U2's USB500 limit (bq24074.txt:733)"),
-                        ("J2", i_cell, "the cell's peak: 3V3 150 mA + backlight 117.7 mA + the amplifier's 0.5 A peak"),
+                        ("J2", i_cell, f"the cell's peak: 3V3 {tpk * 1e3:.0f} mA in a TX burst + backlight 117.7 mA + the "
+                                       "amplifier's 0.5 A, all at once"),
                         ("J4", vmax["AMP_VDD"] / 8.0, "the speaker's peak, AMP_VDD across 8 ohm bridged"),
-                        ("J5", 0.01, "SWD signals")):
+                        ("J8", STAND_SD, "a card writing, through its VDD contact")):
         row(i <= 0.8 * STAND_CONN_A[ref], f"{ref}: {i:.2f} A of {STAND_CONN_A[ref]:g} A ({i / STAND_CONN_A[ref] * 100:.0f}%): {why}")
-    # the 3V3 budget
-    ds.quote("rp2350", 101676, "hello_usb", "14700")
-    pulls = sum(V3V3 / val(parts, r) for r in ("R42", "R44")) + 16 * V3V3 / 47e3 + 4 * V3V3 / 100e3 + V3V3 / 103.74e3
-    loads = [("U4 VREG_VIN", STAND_RP_VIN, "2.5 x hello_usb's 14.70 mA (rp2350.txt:101676), stand-in"),
-             ("U4 IOVDD, USB_OTP_VDD, ADC, QSPI", (506 + 570 + 142 + 22 + 216) * 1e-6 * 2, "twice hello_usb's (101676)"),
-             ("the panel's VCI and VDDI", STAND_PANEL_LOGIC, "stand-in: the panel prints none"),
-             ("U6, U10", 3 * STAND_OPAMP_IQ, "stand-in"),
-             ("U8, U9", 2 * 80e-6, "ICC 80 uA at 6 V, the SN74HC165's maximum (not quoted), each"),
-             ("pull-ups and the backlight divider driven", pulls, "R42 and R44 driven high, 16 x 47k, 4 x 100k, R60+R61"),
-             ("LCD_SCK switched at 20 MHz", STAND_SPI_C * V3V3 * 20e6, "C V f, stand-in 30 pF")]
-    tot = sum(i for _, i, _ in loads)
-    for name, i, why in loads:
-        print(f"    {name:40s} {i * 1e3:6.2f} mA  {why}")
-    row(tot <= 0.150, f"3V3 load {tot * 1e3:.1f} mA against REQ-PWR-15's 150 mA")
-    pu3 = (4.5 - 3.3) * tot
-    row(pu3 <= 0.20, f"U3 dissipates {pu3:.3f} W at VSYS 4.5 V on USB ({(4.5 - 3.3) * 0.150:.2f} W at the full 150 mA) "
-                     "against 0.20 W")
     print(f"{len(row.bad)} failing")
     return dn.result(not row.bad)
 
@@ -662,64 +837,66 @@ def ratings(seed=None):
 # ---- VER-195: VBUS on J1's CC and data pins ---------------------------------------------------------------------------
 PD_MAX = dn.PD_MAX                # V: the highest fixed USB PD voltage, what a broken source may put out
 U1_VF = (0.6, 1.2, 15e-3)         # V, V, A: U1's steering diode, about 0.6 V at onset (stand-in) and 1.2 V max at 15 mA
-                                  # (u1.json p2, not on disk)
-U1_VC = 17.5                      # V: U1's clamp at 5 A, maximum (u1.json p1-p2, not on disk)
-STAND_PAD_VF = (0.5, 20e-6, 0.06)  # V at A, V a decade: a pad's ESD diode reaches IOVDD + 0.5 V at about 20 uA (stand-in)
+                                  # (srv05-4.txt:97)
+U1_VC = 17.5                      # V: U1's clamp at 5 A, maximum (srv05-4.txt:102)
+STAND_PAD_VF = (0.5, 20e-6, 0.06)  # V at A, V a decade: a pad's ESD diode reaches VDD + 0.5 V at about 20 uA (stand-in)
 STAND_3V3_SINK = 10e-3            # A: the least 3V3 load that can absorb current pushed into the rail (stand-in: the
-                                  # RT9013 sources only, rt9013.pdf shows no sink)
-SEED_USBF = None                  # it fails at 71737ae: no seed is needed to show it can fail
+                                  # TLV75733P sources only; VOUT over VIN + 0.3 V is over its absolute maximum, tlv757p.txt:180)
+SEED_USBF = None                  # it fails at 39cc07f: no seed is needed to show it can fail
 
 
 def usbfault(seed=None):
     """PASS means no part over its absolute maximum for VBUS up to 20 V on any of J1's CC and data pins."""
-    parts, _ = load(seed)
+    parts, ns = load(seed)
     row = Rows()
-    ds.quote("rp2350", 101043, "VPIN", "IOVDD + 0.5")
-    ds.quote("rp2350", 100897, "GPIO46_ADC6", "Digital IO")
-    ds.quote("rp2350", 100951, "USB_DP", "USB IO", "USB_OTP_VDD")
-    iovdd = 3.3 * (1 - dn.VREG_TOL)
+    ds.quote("esp32-s3", 3746, "VIH", "VDD 1 + 0.3")
+    ds.quote("srv05-4", 97, "Forward Voltage", "1.2")
+    ds.quote("srv05-4", 102, "Clamping Voltage", "17.5")
+    vdd = 3.3 * (1 - dn.VREG_TOL)
+    tab = module_table()
+    gpio_of = {net: f"GPIO{tab[no][1]}" for no, net in ns["ESP32"].items() if net and tab.get(no, (0, None))[1] is not None}
 
     def pad_onset(r_series):
-        """the source voltage where a pad behind r_series first passes IOVDD + 0.5 V"""
-        return iovdd + STAND_PAD_VF[0] + STAND_PAD_VF[1] * r_series
+        """the source voltage where a pad behind r_series first passes VDD + 0.3 V"""
+        return vdd + STAND_PAD_VF[0] + STAND_PAD_VF[1] * r_series
 
-    print(f"VBUS up to {PD_MAX:g} V (PD_MAX) on each of J1's CC and data pins; IOVDD {iovdd:.3f} V (3V3 at -2%); GPIO45-47 are "
-          "'Digital IO / Analogue', not FT (rp2350.txt:100894-100900), so VPIN is IOVDD + 0.5 V (101043); a pad's diode "
-          f"modelled as {STAND_PAD_VF[0]} V at {STAND_PAD_VF[1] * 1e6:.0f} uA (stand-in)")
-    for cc, rd, rs, gp in (("CC1 (A5)", "R1", "R3", "GPIO46 CC1_SENSE"), ("CC2 (B5)", "R2", "R4", "GPIO45 CC2_SENSE")):
+    print(f"VBUS up to {PD_MAX:g} V (PD_MAX) on each of J1's CC and data pins; VDD {vdd:.3f} V (3V3 at -1.5%); an ESP32-S3 "
+          "pad's input is VDD + 0.3 V at most (esp32-s3.txt:3746: the chip's absolute table, 3674-3678, rates only its power "
+          f"pins); a pad's diode modelled as {STAND_PAD_VF[0]} V at {STAND_PAD_VF[1] * 1e6:.0f} uA (stand-in)")
+    for cc, rd, rs, net in (("CC1 (A5)", "R1", "R3", "CC1_SENSE"), ("CC2 (B5)", "R2", "R4", "CC2_SENSE")):
         r_d, r_s = val(parts, rd), val(parts, rs)
         p_rd = PD_MAX ** 2 / r_d
         v_rd = math.sqrt(0.0625 * r_d)
-        i_pad = (PD_MAX - iovdd - STAND_PAD_VF[0]) / r_s
+        i_pad = (PD_MAX - vdd - STAND_PAD_VF[0]) / r_s
         on = pad_onset(r_s)
         row(p_rd <= 0.0625, f"{cc}: {rd} {parts[rd]['value']} dissipates {p_rd * 1e3:.0f} mW at {PD_MAX:g} V against its 62.5 mW "
             f"(0402, JLC's description); it reaches 62.5 mW at {v_rd:.1f} V")
-        row(on >= PD_MAX, f"{cc}: {gp} behind {rs} {parts[rs]['value']} passes IOVDD + 0.5 V from about {on:.1f} V; at {PD_MAX:g} V "
-            f"{i_pad * 1e3:.2f} mA flows into its clamp (rp2350.pdf gives no injection limit)")
+        row(on >= PD_MAX, f"{cc}: {gpio_of.get(net, '?')} {net} behind {rs} {parts[rs]['value']} passes VDD + 0.3 V from about "
+            f"{on:.1f} V; at {PD_MAX:g} V {i_pad * 1e3:.2f} mA flows into its clamp (esp32-s3.pdf gives no injection limit)")
     u1_on = "USB_DP" in parts["U1"]["pins"].values()
     for line, pins in (("D+ (A6, B6)", ("R21", "USB_DP_MCU")), ("D- (A7, B7)", ("R22", "USB_DM_MCU"))):
-        r = val(parts, pins[0])
-        onset = V3V3 + U1_VF[0] if u1_on else pad_onset(r)
+        onset = V3V3 + U1_VF[0] if u1_on else pad_onset(val(parts, pins[0]))
         print(f"  {line}: from about {onset:.1f} V {'U1 steers' if u1_on else 'the pad steers'} the line into +3V3 "
-              f"({'U1 VF 1.2 V max at 15 mA, u1.json p2' if u1_on else 'no U1'}); the RT9013 cannot sink, so once the fault "
-              f"pushes more than the rail's load (stand-in {STAND_3V3_SINK * 1e3:.0f} mA) +3V3 rises; through {pins[0]} "
-              f"{parts[pins[0]]['value']} ohm the RP2350's USB pad ({pins[1]}) sits at the line's clamp")
-        row(onset >= PD_MAX, f"{line}: the RP2350's USB pad and the whole +3V3 domain are over their absolute maximum "
-            f"(IOVDD 3.63 V, rp2350.txt:101026) from about {onset:.1f} V; at {PD_MAX:g} V U1's clamp holds +3V3 near "
-            f"{U1_VC:g} V at 5 A (u1.json, not on disk)" if u1_on else f"{line}: the pad alone from about {onset:.1f} V")
-    print("for DEC-17: the CC paths are over from about 3.9 V (the pads, at a current R3 and R4 limit to under 2 mA) and "
+              f"({'U1 VF 1.2 V max at 15 mA, srv05-4.txt:97' if u1_on else 'no U1'}); the TLV75733P cannot sink, so once "
+              f"the fault pushes more than the rail's load (stand-in {STAND_3V3_SINK * 1e3:.0f} mA) +3V3 rises; through "
+              f"{pins[0]} {parts[pins[0]]['value']} ohm the module's USB pad ({gpio_of.get(pins[1], '?')}) sits at the line's clamp")
+        row(onset >= PD_MAX, f"{line}: the module's USB pad and the whole +3V3 domain are over their absolute maximum "
+            f"(VDD33 3.6 V, esp32-s3-wroom-1.txt:1586) from about {onset:.1f} V; at {PD_MAX:g} V U1's clamp holds +3V3 near "
+            f"{U1_VC:g} V at 5 A (srv05-4.txt:102)" if u1_on else f"{line}: the pad alone from about {onset:.1f} V")
+    print("for DEC-17: the CC paths are over from about 3.8 V (the pads, at a current R3 and R4 limit to under 2 mA) and "
           "17.9 V (R1, R2); a data line shorted to VBUS above about 4 V destroys the 3V3 domain whatever the series parts")
     print(f"{len(row.bad)} over")
     return dn.result(not row.bad)
 
 
 # ---- VER-199: the clocked buses on paper ------------------------------------------------------------------------------
-CLK_PERI = 150e6                  # Hz: clk_peri at the SDK's default clk_sys (paper_checks.RP_PWM_CLK)
-SPI_WRITE_HZ = CLK_PERI / 8       # 18.75 MHz: the fastest even divider of 150 MHz under 20 MHz (PLAN.md DEC-13)
+LCD_HZ = 25e6                     # Hz: the LCD_CAM write clock pinmap.md allows ('LCD_CAM at 25 MHz or less')
 STAND_PIN_C = 10e-12              # F: one CMOS input (the ILI9488's, a 74HC165's): datasheets on disk give none
 STAND_FPC_C = 3e-12               # F: J3 and the panel's FPC to the controller
-STAND_SPI_DELAY = 10e-9           # s: the RP2350 SPI's data change after SCK's edge (rp2350.pdf gives no figure)
-SEED_TIMING = {"R28": {"value": "1k"}}   # a 1k source resistor on LCD_SCK: its edges eat the SCL high time
+STAND_PAD_R = 33.0                # ohm: an ESP32-S3 pad at its default drive (IOH 40 mA at VOH 2.64 V is PAD_DRIVER 3,
+                                  # esp32-s3.txt:3752-3754: 16.5 ohm; the reset drive is weaker, about twice that: stand-in)
+STAND_SKEW = 2e-9                 # s: LCD_CAM's data change against WRX's edge inside the chip (the TRM gives no figure)
+SEED_TIMING = {"R78": {"value": "1k"}}   # a 1k source resistor on LCD_WR: its edges eat the WRX high and low times
 
 
 def timing(seed=None):
@@ -733,59 +910,66 @@ def timing(seed=None):
             n = t.GetNetname().split("/")[-1]
             length[n] = length.get(n, 0.0) + mm(t.GetLength())
     q = ds.quote
-    q("rp2350", 101144, "2.62")
-    q("ili9488", 16258, "twc", "50")
-    q("ili9488", 16259, "twrh", "10")
-    q("ili9488", 16262, "trc", "150")
-    q("ili9488", 16269, "tds", "10")
-    q("ili9488", 16277, "Does not include signal rising and falling times")
-    r_pad = (3.3 - 2.62) / 4e-3      # ohm: VOH 2.62 V at 4 mA (rp2350.txt:101144), the reset drive
+    q("ili9488", 16159, "twc", "Write cycle", "40")
+    q("ili9488", 16160, "twrh", "15")
+    q("ili9488", 16161, "twrl", "15")
+    q("ili9488", 16170, "tdst", "10")
+    q("ili9488", 16172, "tdht", "10")
+    q("esp32-s3", 3753, "IOH")
     import paper_checks as pc
     cpm = pc.STAND_TRACK_C
-    print(f"the RP2350's pad at its reset 4 mA drive: {r_pad:.0f} ohm (VOH 2.62 V at 4 mA, rp2350.txt:101144); tracks "
-          f"{cpm * 1e12:.1f} pF/mm (paper_checks.py's stand-in); an input {STAND_PIN_C * 1e12:.0f} pF, the FPC {STAND_FPC_C * 1e12:.0f} pF (stand-ins)")
-    # the panel's SPI (DBI type C option 3, 4-line)
-    print(f"SPI0 to the panel at {SPI_WRITE_HZ / 1e6:.2f} MHz (clk_peri 150 MHz / 8: 20 MHz is no divider of it):")
-    for net, rs, far in (("LCD_SCK", "R28", "SCL"), ("LCD_MOSI", "R29", "SDA")):
+    print(f"an ESP32-S3 pad: {STAND_PAD_R:g} ohm (stand-in); tracks {cpm * 1e12:.1f} pF/mm (paper_checks.py's stand-in); an input "
+          f"{STAND_PIN_C * 1e12:.0f} pF, the FPC {STAND_FPC_C * 1e12:.0f} pF (stand-ins)")
+    # the panel's 8080 bus (DBI type B), 8 bits, CSX tied low, WRX's rising edge latches the data
+    print(f"LCD_CAM to the panel at {LCD_HZ / 1e6:.2f} MHz (pinmap.md):")
+    edges = {}
+    for k in list(range(8)) + ["WR"]:
+        net = f"LCD_{'D' + str(k) if k != 'WR' else 'WR'}"
+        rs = next((r for r in between(parts, net, net + "_MCU", "R")), None)
         c = (length.get(net, 0) + length.get(net + "_MCU", 0)) * cpm + STAND_FPC_C + STAND_PIN_C
-        tr = 2.2 * (r_pad + val(parts, rs)) * c
-        print(f"  {net}: {length.get(net + '_MCU', 0) + length.get(net, 0):.1f} mm of track, {c * 1e12:.1f} pF, through {rs} "
-              f"{parts[rs]['value']} ohm: 10-90% edge {tr * 1e9:.1f} ns")
-        if net == "LCD_SCK":
-            t_sck = tr
-        else:
-            t_mosi = tr
-    period = 1 / SPI_WRITE_HZ
-    row(period >= 50e-9, f"write cycle {period * 1e9:.1f} ns against twc 50 ns (ili9488.txt:16258): {period * 1e9 - 50:.1f} ns spare "
-        "(at 20 MHz it would be 0.0)")
-    high = period / 2 - t_sck
-    row(high >= 10e-9, f"SCL high and low {period / 2 * 1e9:.1f} ns less an edge of {t_sck * 1e9:.1f} ns = {high * 1e9:.1f} ns against "
-        "twrh and twrl 10 ns (16259-16260; edges not included, 16277)")
-    # at the 50% crossings: an RC edge crosses half way 0.69 RC after launch, 0.31 of its 10-90% time (2.2 RC)
-    setup = period / 2 + 0.31 * t_sck - STAND_SPI_DELAY - 0.31 * t_mosi
-    row(setup >= 10e-9, f"SDA set-up before SCL rises, at the 50% crossings: half a cycle {period / 2 * 1e9:.1f} ns less the SPI's "
-        f"{STAND_SPI_DELAY * 1e9:.0f} ns (stand-in) and the two edges' difference: {setup * 1e9:.1f} ns against tds 10 ns (16269)")
-    rd = CLK_PERI / math.ceil(CLK_PERI * 150e-9 / 2) / 2
-    print(f"  firmware rule: a read (LCD_MISO) at {rd / 1e6:.2f} MHz or less (trc 150 ns, ili9488.txt:16262)")
-    # the buttons' chain
+        tr = 2.2 * (STAND_PAD_R + (val(parts, rs) if rs else 0)) * c
+        edges[net] = tr
+        print(f"  {net}: {length.get(net + '_MCU', 0) + length.get(net, 0):.1f} mm of track, {c * 1e12:.1f} pF, through "
+              f"{rs or 'no resistor'} {parts[rs]['value'] if rs else ''} ohm: 10-90% edge {tr * 1e9:.1f} ns")
+    period = 1 / LCD_HZ
+    row(period >= 40e-9 - 1e-15, f"write cycle {period * 1e9:.1f} ns against twc 40 ns (ili9488.txt:16159): "
+        f"{period * 1e9 - 40:.1f} ns spare (firmware: a clock whose divider is fractional makes some cycles shorter than "
+        "the mean; 0 ns spare leaves none for them)")
+    t_wr = edges["LCD_WR"]
+    hi = period / 2 - t_wr
+    row(hi >= 15e-9, f"WRX high and low {period / 2 * 1e9:.1f} ns less its edge {t_wr * 1e9:.1f} ns = {hi * 1e9:.1f} ns against "
+        "twrh and twrl 15 ns (16160-16161)")
+    worst_d = max(v for k, v in edges.items() if k != "LCD_WR")
+    setup = period / 2 + 0.31 * t_wr - STAND_SKEW - 0.31 * worst_d
+    row(setup >= 10e-9, f"data set-up before WRX rises, at the 50% crossings: half a cycle less the skew {STAND_SKEW * 1e9:.0f} ns "
+        f"(stand-in) and the slowest data line's edge ({worst_d * 1e9:.1f} ns): {setup * 1e9:.1f} ns against tdst 10 ns (16170)")
+    hold = period / 2 - STAND_SKEW
+    row(hold >= 10e-9, f"data hold after WRX rises, the data changing on WRX's falling edge: {hold * 1e9:.1f} ns against tdht "
+        "10 ns (16172)")
+    frame = 320 * 480 * 2 * period
+    print(f"  a full RGB565 frame: 320 x 480 x 2 bytes x {period * 1e9:.0f} ns = {frame * 1e3:.1f} ms of bus time "
+          f"({320 * 480 * 3 * period * 1e3:.1f} ms in RGB666); REQ-DSP-11's times are measured on the panel (VER-43)")
+    # the buttons' chain: three registers now
     q("sn74hc165", 371, "2V", "6")
     q("sn74hc165", 377, "2V", "75", "150")
     q("sn74hc165", 472, "2V", "80")
     q("sn74hc165", 488, "2V", "80")
-    c_clk = (length.get("SR_CLK", 0) + length.get("SR_CLK_MCU", 0)) * cpm + 2 * STAND_PIN_C
-    t_clk = 2.2 * (r_pad + val(parts, "R65")) * c_clk
+    regs = sorted(r for r, p in parts.items() if p["mpn"] == "SN74HC165PWR")
+    c_clk = (length.get("SR_CLK", 0) + length.get("SR_CLK_MCU", 0)) * cpm + len(regs) * STAND_PIN_C
+    t_clk = 2.2 * (STAND_PAD_R + val(parts, "R65")) * c_clk
     f_sr = min(6e6, 1 / (2 * 80e-9), 1 / (150e-9 + 2 * t_clk))
-    print(f"SR_CLK to U8 and U9: {length.get('SR_CLK', 0) + length.get('SR_CLK_MCU', 0):.1f} mm of track, {c_clk * 1e12:.1f} pF, edge "
-          f"{t_clk * 1e9:.1f} ns through R65; at 3.3 V the 74HC165 is read at its 2 V figures (fmax 6 MHz, tw 80 ns, tpd CLK to QH "
-          "150 ns, SH/LD high 80 ns before CLK: sn74hc165.txt:371-377, 472, 488), which bound it from the slow side")
+    print(f"SR_CLK to {', '.join(regs)}: {length.get('SR_CLK', 0) + length.get('SR_CLK_MCU', 0):.1f} mm of track, {c_clk * 1e12:.1f} "
+          f"pF, edge {t_clk * 1e9:.1f} ns through R65; at 3.3 V the 74HC165 is read at its 2 V figures (fmax 6 MHz, tw 80 ns, "
+          "tpd CLK to QH 150 ns, SH/LD high 80 ns before CLK: sn74hc165.txt:371-377, 472, 488), which bound it from the slow side")
     row(t_clk <= 500e-9, f"SR_CLK's edge {t_clk * 1e9:.1f} ns against the 74HC165's input transition limit, 1000 ns/V at 2 V "
         "(sn74hc165.txt:264-265)")
-    print(f"  firmware rule: SR_CLK at {f_sr / 1e6:.2f} MHz or less, SR_PL low 80 ns or more and high 80 ns before the first edge")
+    print(f"  firmware rule: SR_CLK at {f_sr / 1e6:.2f} MHz or less, SR_PL low 80 ns or more and high 80 ns before the first edge; "
+          f"{8 * len(regs)} bits a read")
     skew = (length.get("SR_CLK", 0)) * 6.5e-12
-    row(skew < 5e-9, f"the chain U9 QH to U8 SER: the clock reaches the two {skew * 1e12:.0f} ps apart (6.5 ps/mm), inside the "
-        "5 ns SER hold (sn74hc165.txt:503-504)")
+    row(skew < 5e-9, f"the chain's QH to SER links: the clock reaches the registers at most {skew * 1e12:.0f} ps apart (6.5 ps/mm), "
+        "inside the 5 ns SER hold (sn74hc165.txt:503-504)")
     pm = open(os.path.join(dn.REF, "docs", "pinmap.md"), encoding="utf-8").read()
-    for what, pat in (("the panel's SPI write and read clocks", r"(?i)(SPI|LCD_SCK)[^\n]*\b\d+(\.\d+)?\s*MHz"),
+    for what, pat in (("the panel bus's write clock", r"(?i)(LCD_CAM|8080|write cycle)[^\n]*\b\d+(\.\d+)?\s*(MHz|ns)"),
                       ("the buttons' SR_CLK rate and SR_PL widths", r"(?i)SR_CLK[^\n]*\b\d+(\.\d+)?\s*(MHz|kHz)")):
         row(bool(re.search(pat, pm)), f"pinmap.md states {what}" + ("" if re.search(pat, pm) else
                                                                     ": it does not, so no firmware is held to these limits"))

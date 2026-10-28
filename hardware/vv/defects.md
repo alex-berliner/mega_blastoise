@@ -35,20 +35,20 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: with no cable in, the MCU's D+ pull-up fed VBUS through U1's D+ steering diode to about 2.7 V; PWR_EN stayed up (the device could not turn off) and Q2 was left half on.
 - Root cause: U1's REF pin tied to VBUS without tracing the paths back from the MCU's pins into an unpowered rail.
 - Why missed: netlist, ERC and DRC check connectivity, not what flows where; no back-power path table existed (validation_plan #79).
-- Check added or changed: VER-159 (check_backpower.py over design.nets(), at the order gate, seeded with this very fault: U1 pin 5 back on VBUS must fail it); VER-127 (the off test with the Debug Probe attached, unit 1).
+- Check added or changed: VER-159 (check_backpower.py over design.nets(), seeded with this very fault: U1 pin 5 back on VBUS must fail it)
 - Updated: REQ-PWR-07, DF-98
 - Gate: ORDER
-- Status: FIXED (REF on 3V3); VER-159 built and passing 2026-10-27 (its seeded DEF-01 fails); VER-127 on unit 1
+- Status: CLOSED (REF on 3V3; VER-159 PASS 2026-10-28 at 39cc07f: the back-power table of six states, its seeded DEF-01 fails. Was: VER-127 with the Debug Probe, which left with J5)
 
 ### DEF-02: R15 cut to 10k removed the Start contact's pill margin
 - Found: model audit, round 2, design phase (d049b35, 2026-09-25)
 - Symptom: round 1 lowered R15 (PWR_EN pull-down) from 100k to 10k against D5 leakage; that cut the pill resistance Q1 could still read by about five times.
 - Root cause: a fix for one failure mode made without re-deriving the latch's other margins.
 - Why missed: the latch's margins exist only in prose; no state table or script recomputes them on a change.
-- Check added or changed: none yet; VER-33 (latch state table: the largest series resistance that still turns on) and VER-78 (1 kohm in series with either Start dome on the real board, F-R11).
+- Check added or changed: VER-33 (latch state table: the largest series resistance that still turns on) and VER-211 (1 kohm in series with the power key on the real board)
 - Updated: REQ-PWR-08, REQ-PWR-11, DF-27
 - Gate: ORDER
-- Status: FIXED (R15 back to 100k, R38 bleeder added); VER-33 built and passing 2026-10-27 (sure on to 9.1 kohm at VSYS 3.42 V); VER-78 on unit 1
+- Status: FIXED at 39cc07f: the power key SW24 alone turns the device on; VER-33 PASS 2026-10-28 (sure on to 5.0 kohm at VSYS 3.0 V, Q1's gate 0.38 V over 2.5 V through 1 kohm); VER-211 on unit 1
 
 ### DEF-03: The unplug hand-over took tens of ms, not microseconds
 - Found: model audit, round 3, design phase (5095356, 2026-09-25)
@@ -128,7 +128,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-02 checks R42's value; VER-77 (release on real silicon; not built); VER-16 (errata table; not built).
 - Updated: REQ-PWR-09, REQ-MCU-07, DF-25
 - Gate: ORDER
-- Status: FIXED (R42 4.7k); VER-16 done 2026-10-27 (analysis/errata_rp2350.md: E9 applies on A2, fixed by R42 and R44); VER-77 on unit 1
+- Status: RETIRED in 39cc07f: erratum E9 left with the RP2350; R42 stays and holds IO21 low after a reset (VER-33, VER-77)
 
 ### DEF-11: Charge current too high for the 403450
 - Found: validation plan (#28, #128), design phase (fixed in 4c4d846, 2026-10-05)
@@ -138,7 +138,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-37 (cell spec sheet; not run); VER-160 (cell.json and an assert that recomputes the limit when the cell or R5 changes; not built: it would have failed at 950afcf and 226bbb6); VER-66 (charge current per unit; not run).
 - Updated: REQ-BAT-02, DF-07
 - Gate: ORDER
-- Status: FIXED (R5 3.3k: 333-364 mA on the TP4056, 242-295 mA on the BQ24073 since 2d1124d); the cell's own limit is still unknown
+- Status: FIXED (R5 3.3k: 242-295 mA on the BQ24073, unchanged at 39cc07f); the cell's own limit is still unknown (VER-37)
 
 ### DEF-12: AP3156 backlight charge pump out of stock
 - Found: stock check before ordering (b7a6238, 2026-10-07)
@@ -238,7 +238,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-39 (stale-doc sweep, now also design.py's and placement.py's comments and the case documents case/*.md: FAIL 2026-10-26 at be437f8, the list above; its scope is hardware/ref_design/docs/*.md, hardware/ref_design/case/*.md, hardware/ref_design/README.md, hardware/ref_design/PLAN.md, design.py and placement.py); VER-161 (check_claims.py: the numbers, GPIOs and lists compared with design.py, case.scad and pin_review; not built) is the real fix; VER-130 (check_bom_cpl.py) fails on (x) until assembly.md agrees. For (s): the PDF is on disk, so VER-152 reads the FPC neck, body, tail and tip range off its outline drawing now and cites the lines (tools/datasheet_hashes.py records the file's sha256); the ESTIMATE stays in case.scad until the case pass, and the real panel's measurement stays the closing check. bringup.md matching the design is now also a precondition of first power (G-EVT-02, round 2's objection).
 - Updated: REQ-TST-01, DF-102, DF-169
 - Gate: CASE
-- Status: OPEN
+- Status: OPEN (39cc07f adds: bom.md, assembly.md and bringup.md still describe the RP2354B board (docs/esp32s3_build.md says so); bom.md buys no antenna or U.FL cable (DEF-85); pinmap.md says EN has 'the RESET button' and leaves U10 out of 'Battery voltage'; design.py's comments still cite E9, GPIO47, the ME6211's CE and 'either seat's Start as the power button'; assembly.md counts 117 placements and 49 part numbers against design.py's 114 and 45, VER-130)
 
 ### DEF-22: The validation plan's statuses went stale
 - Found: task brief and this register (2026-10-24)
@@ -288,7 +288,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-36 (read both rating schemas; fail on ok false or null without a waiver, on a waiver that cites no A-NNN line, on an IC's or connector's lcsc or mpn that differs from design.py, on a review of a ref absent from design.py, on open-question text, on a passive rated under 1.25 x its net; not built). Its acceptance test is the failure list it generates from the current files, never a typed list.
 - Updated: REQ-FAB-02, REQ-PWR-14, REQ-MCU-09, DF-94, DF-95, DF-96
 - Gate: EVT
-- Status: OPEN (F-R2(d): split. This defect keeps the tooling, which changes no copper, and moves to EVT; the two findings that set the BOM are DEF-61, Gate ORDER). 2026-10-27: VER-36 built (circuit_checks.py pinreview) and FAIL at 71737ae on 37 items: the expected list (panel VCI and VDDI, j1's D+/D- stubs, three OPEN QUESTION texts in u4.json pins 10, 61 and 68, u4 pin 58's unsigned waiver), u10.json's UNVERIFIED datasheet entry (DEF-63), 17 orphans (the files d5, q2, r47 and j6; D6 and D7 in d3 and d5, Q4 in q1; passives.json R6, R39, R40, R47, R48-R51, C9 and C41) and 12 passives.json entries whose net_max_basis still says 'logic/3V3 domain or lower (3.3)' against a net_max_v of 1.1-6.7 V (C1, C3, R13, R15, R17, R18, C8, C20-C22, C25, R62). The fix is the pin reviews' text, outside hardware/vv; no copper.
+- Status: OPEN (2026-10-28: VER-36 FAIL at 39cc07f: pin_review/u3.json still describes the RT9013 (DEF-88), seven orphan review files for parts that left (d5, j5, j6, l2, q2, r47, x1, and refs D6, D8, Q4, Q7 inside others), j8.json's detect pins 9 and 10 unverified, u10.json UNVERIFIED, panel VCI and VDDI. VER-36's own bug is fixed: it counted every 'A-NNN' in APPROVALS.md, examples included, as signed (4 at fd1f6e8); it now counts what check_trace counts (0))
 
 ### DEF-27: check_fit guesses part heights silently
 - Found: validation plan #96 (2026-10-05); still true at 76955d2
@@ -318,7 +318,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-41 (order-day stock, pre-orders, no substitution; not run).
 - Updated: REQ-FAB-10, DF-69, DF-93
 - Gate: ORDER
-- Status: OPEN (pre-orders pending per Alex's notes)
+- Status: RETIRED in 39cc07f: the RP2354B and L2 left; the new parts' stock and class are DEF-81's
 
 ### DEF-30: Which design is the order candidate is not recorded
 - Found: while seeding this register (2026-10-24)
@@ -328,7 +328,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-42 (release record: tag, commit, fab zip hash; not run); check_trace.py's rule R7 fails any gate when HEAD's design files differ from README's design baseline ("gate evaluated against a design it does not describe", F-1); evidence goes stale when HEAD moves past changes it covers, or its commit is not an ancestor of HEAD.
 - Updated: REQ-FAB-08, DF-76
 - Gate: ORDER
-- Status: OPEN (the release record names 71737ae or the commit after the last design pass; R7 and the default mode fail on anything after the baseline)
+- Status: OPEN (the release record names 39cc07f on ref-design-esp32s3 or the commit after the last design pass; R7 and the default mode fail on anything after the baseline)
 
 ### DEF-31: The case screws engage 1.4 mm of the lid's pilots
 - Found: two-model review (O-52), 2026-10-24, from case.scad
@@ -338,7 +338,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles; VER-190 (the case's architecture, 2026-10-27) maps REQ-MEC-09 to screw_l and fails on the same 3.2 mm.
 - Updated: REQ-MEC-09, DF-119
 - Gate: CASE
-- Status: OPEN (M2 x 7 in the four side pilots engages 4.2 mm with the tip 0.8 mm short; the end pilots cap at 3.3 mm, and REQ-MEC-09 now asks 3.0 mm of them: DEC-18)
+- Status: OPEN (39cc07f: the three side pilots H1-H3 still give M2 x 6 3.2 mm against 4.0 (M2 x 7 or x 8 pass); H4 moved to a deck pilot, 3.2 mm against 3.0: ok; DEC-18)
 
 ### DEF-32: The drill file mixes plated and unplated holes
 - Found: two-model review (O-14), 2026-10-24, from a scratch export with fab.py's own kicad-cli arguments
@@ -358,17 +358,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-176 (origin against the pads' centre: FAIL; J1-J4 pass only through a JLC_FIXED entry naming the placement preview screenshot and the offset JLC's library applies, which may be zero); VER-29 (the rotation table, at DVT; not built); VER-28 screenshots J1-J4 and is the reference.
 - Updated: REQ-FAB-07.R, DF-128
 - Gate: ORDER
-- Status: FIXED (since 40281b8 fab.py writes each footprint's pads' centre, not its origin: VER-176 PASS 2026-10-27, 120 rows, none over 0.10 mm; at be437f8 J1 was 1.50 mm off, J2 and J4 0.95, J3 0.23. It closes on VER-28's preview of J1-J5 on their pads: whether JLC's own library origins agree is still unknown (O-R7); a correction goes only through a JLC_FIXED entry naming its committed evidence, F-R4)
+- Status: FIXED (fab.py writes each footprint's pads' centre: VER-176 PASS 2026-10-28 at 39cc07f; it closes on VER-28's preview of J1-J4, J8, U4 and SW24 (O-R7))
 
 ### DEF-34: No firmware can run on the ordered board
 - Found: two-model review (O-56, F-44), 2026-10-24
 - Symptom: the fw crate targets the RP2350A (rp235xa, GPIO0-29), 4096K of flash and the ST7796; the only ref-board firmware (fw-ref-board a01f6fb) predates the routing levers (86bf694): it holds PWR_HOLD on GPIO2 (P2_START at 684a609) and drives SR_PL on GPIO28 (BL_PWM); every pin number is typed by hand. pinmap.md is generated from design.py (board/tools/pinmap.py), but no firmware file is.
 - Root cause: firmware written against another branch's design, with no generated pin file.
 - Why missed: the generated pin definitions (vp_map #56) were scheduled for EVT, so the first build for the real chip would be the day the boards arrive.
-- Check added or changed: VER-149 (generated pin file and a host test) and VER-150 (an rp235xb build at 2048K), moved to EVT on 2026-10-26 (G-EVT-08: needed when the boards arrive, not to order them); VER-151 (flash budget, ORDER: more than 2 MB would need an external flash); not built.
+- Check added or changed: VER-149 (the generated pin file against design.py) and VER-215 (the ESP32-S3 build)
 - Updated: REQ-MCU-10, REQ-MCU-11, DF-121, DF-122
 - Gate: EVT
-- Status: OPEN (2026-10-27: VER-149's comparison built, circuit_checks.py fwpins: FAIL, no crates/mega_blastoise_fw/src/board_ref_a.rs at HEAD or on fw-ref-board; VER-151 BLOCKED on the battler submodule)
+- Status: OPEN (2026-10-28: VER-149 FAIL at 39cc07f: no crates/mega_blastoise_fw/src/board_ref_a.rs for the ESP32-S3; the image is VER-215's)
 
 ### DEF-35: The trace gate could pass on evidence that did not show what it claimed
 - Board: both
@@ -389,7 +389,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-04 (fail on any type not in COSMETIC, and silk_edge_clearance out of COSMETIC), VER-22 (a seeded hole_to_hole fault; DVT); not built. VER-18 now reads the silk texts against the outline itself (FAIL). At ORDER, VER-04's evidence lists every DRC warning type and count, read by hand (F-R2(e)).
 - Updated: vp_map #19
 - Gate: EVT
-- Status: OPEN (F-R2(e): the script fix changes no copper, so it moves to EVT; until then a hidden warning type is caught by reading VER-04's warning list by hand before the order, PLAN.md step 2)
+- Status: FIXED at 39cc07f: check_pcb.py fails every violation type but COSMETIC (silk_overlap, silk_over_copper, silk_edge_clearance, text_height, text_thickness); VER-04 PASS 2026-10-28. It closes when VER-22 seeds a non-cosmetic type and check_pcb fails on it
 
 ### DEF-37: TH1 sits at the cell's edge, and four bare pads face the pouch
 - Found: two-model review (O-30, F-36), 2026-10-24, from placement.py and case.scad
@@ -399,7 +399,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-164 (design_numbers.py th1: the geometry, PASS); VER-87 (two thermocouples: the lag; not built).
 - Updated: REQ-THM-02, REQ-BAT-08, DF-04
 - Gate: CASE
-- Status: OPEN (worse at 71737ae: the 0805 TH1 sits 1.05 mm from the hole's edge at (119.95, 79.0), and the pocket keeps the cell's long side 0.9 mm inside that edge, so TH1's centre is 1.95 mm or more from the cell (VER-164 FAIL against its 1.0 mm); at be437f8 it was 0.80 mm from the edge and about 1.05 mm from a pushed cell. PLAN.md decision DEC-25 before the case release: a silicone thermal pad across the gap, TH1 0.1 mm nearer the edge in the next design pass, or accept the lag for EVT)
+- Status: OPEN (unchanged at 39cc07f: TH1 at (119.95, 79.0), 1.05 mm from the hole's edge and 1.95 mm or more from the cell's face, VER-164 FAIL; DEC-25)
 
 ### DEF-38: C9 sits 0.9 mm from a screw boss's edge
 - Found: two-model review (O-43), 2026-10-24, measured with pcbnew
@@ -426,10 +426,10 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: the ADC's reference is 3V3 and pinmap.md sets the gain at the end of a charge taking the cell as 4.20 V (the BQ24073's CV is +-1%): in regulation the cutoff fires at a true 3.465-3.535 V; in dropout the reading rises as the cell falls, and with 3V3 +2%, the RT9013's 120 mV maximum dropout at 150 mA and a -1% CV its lowest reading is 3.521 V, so the cutoff never fires. With no cell the BQ24073's battery detection toggles CHG, so a gain from a false end-of-charge edge can also be stored. GPIO47 also reads through R17/R18's 235 kohm, so every 100 nA of pad leakage is 47 mV of VBAT: the RP2350's input leakage over temperature alone can exceed REQ-BAT-12's window (O-R15; design_numbers.py cutoff now counts it).
 - Root cause: a ratio measurement treated as absolute; a calibration point chosen for convenience.
 - Why missed: VER-67's limit applies above 3.6 V and its sweep runs with USB in, which keeps 3V3 regulated.
-- Check added or changed: VER-138 (design_numbers.py cutoff: FAIL at 3.521 V), VER-139 (bench sweep without USB), VER-155 (bench calibration at 3.50 V), VER-156 (no gain from a no-cell edge); the last three not built.
+- Check added or changed: VER-138 (design_numbers.py cutoff: FAIL), VER-139 (bench sweep without USB), VER-155 (bench calibration at 3.50 V)
 - Updated: REQ-BAT-12, REQ-TST-06, DF-116, DF-117
 - Gate: EVT
-- Status: OPEN (re-run 2026-10-27 at 71737ae: the pad-leakage term is answered in copper, U10 (MCP6001) buffering VBAT_DIV onto GPIO47, +-0.87 mV of VBAT that changes with temperature against +-0.470 V before, on stand-ins for U10's bias and drift until VER-34 reads its datasheet (DF-182). Two terms remain, both firmware or procedure and both EVT's: the CV calibration fires at a true 3.465 V, and in dropout at the worst corner the lowest reading is 3.521 V, so the cutoff never fires there (VER-138 FAIL). DEC-07: REQ-TST-06's bench calibration at 3.50 V and a dropout rule in the firmware)
+- Status: OPEN (re-run 2026-10-28 at 39cc07f, the cause changed: the ESP32-S3's ADC has its own reference, so the dropout knee is gone, but its total error is +-50 mV at the pin (+-100 mV of VBAT, esp32-s3.txt:3804) and a gain set at charge-done keeps the CV's 3.465-3.535 V: VER-138 FAIL. The per-unit point at 3.50 V (VER-155) is the fix, DEC-07)
 
 ### DEF-41: Assembly works next to a live cell
 - Found: two-model review (O-29, F-37), 2026-10-24, from assembly.md
@@ -511,7 +511,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-32 (design_numbers.py tempwin, the window at SLUS810N's TS limits: FAIL, 1.4-51.5 C at the worst corner); VER-135 (per unit, now with a finger-warm step: TH1 is an NTC).
 - Updated: REQ-BAT-03, DF-147, DF-146
 - Gate: ORDER
-- Status: OPEN (re-run 2026-10-27 at 71737ae: TH1 is now a 10k B4460 0805, TCTR0805F10K0F4460T, the highest B among the 10k NTCs JLC stocks, per design.py's comment: the window is 3.9-48.2 C at the worst corner, 5.8-44.5 C nominal (VER-32 FAIL; it was 1.4-51.5 C with B3950). No stocked part reaches the B 5130 a 45 C edge needs, so the copper-free fix is used up: what is left is Alex's ACCEPTED line for DF-147 with scope EVT (attended charging in the LiPo bag), or REQ-BAT-03 restated to the cell's own range once VER-37 has its spec sheet. The Gate then moves to EVT under his next signed GATE@ line, and G0 lists the move until then (O-S5). It stays OPEN, and the order gate fails on it, until one of the two happens)
+- Status: OPEN (unchanged at 39cc07f: TH1 B4460, 3.9-48.2 C at the worst corner, VER-32 FAIL; the B tolerance is now read from the part number, tctr0805.txt:260; DEC-05)
 
 ### DEF-49: The shift registers cut the pill margin from 10 kohm to about 3.7 kohm
 - Found: re-seeding for 684a609 (2026-10-25)
@@ -521,7 +521,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision DEC-24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
 - Updated: REQ-BTN-01, DF-164
 - Gate: ORDER
-- Status: OPEN (RN1-RN4 47k, C2028 4D02WGJ0473TCE, in design.py at 71737ae: a pill reads pressed under about 17 kohm against a 47k -5% pull-up, and REQ-BTN-01 now asks 15 kohm. The BOM half is in; VER-45 on a bare board from the order closes it and cannot run before the order. What closes this defect: Alex's ACCEPTED line for DF-164 with scope EVT, or VER-45's PASS. Until one of the two has happened it holds the order gate (O-R1, F-R1: it read FIXED, so R4 did not see it))
+- Status: OPEN (unchanged at 39cc07f: RN1-RN4 47k for the combs and R86-R88, R63 47k for the Starts and Selects: a pill reads pressed under about 17 kohm; VER-45 on a bare board)
 
 ### DEF-50: A faulty USB source reaches the regulator's enable ahead of the charger's OVP
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py vbus
@@ -531,7 +531,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-177 (design_numbers.py vbus: FAIL at 6.9 V).
 - Updated: REQ-PWR-17, DF-101
 - Gate: ORDER
-- Status: OPEN (R14 47k and R43 220k in design.py at 71737ae: U3's EN now goes over its rating above VBUS 9.1 V and U2's EN1 above 12.4 V, was 6.9 V; EN1 still reads high down to VBUS 3.6 V at SLUS810N's 10 uA, bq24074.txt:848-850. VER-177 still fails against its 20 V and binds at EVT: it closes when Alex sets REQ-PWR-17's accepted value (proposed 9.1 V) or a DVT clamp reaches 20 V. The BOM half is in; the decision is not. Until Alex's ACCEPTED line for DF-101 with scope EVT is signed, or a DVT clamp reaches 20 V, it holds the order gate (O-R1, F-R1: it read FIXED, so R4 did not see it))
+- Status: OPEN (39cc07f: U3 is the TLV75733P, its EN 6.0 V absolute (tlv757p.txt:179): VER-177 FAIL at 9.1 V, U2's EN1 at 12.4 V, against 20 V; DEC-17)
 
 ### DEF-51: A worst-case cell had 0.30 mm to swell under the deck
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py swell
@@ -562,7 +562,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap: every side, and what would pass: FAIL).
 - Updated: REQ-BAT-08, DF-85 (now H)
 - Gate: ORDER
-- Status: FIXED (at 71737ae the hole is 37.8 x 54.8 mm with the cell along the board, and the pocket sits 0.9 mm inside it on the long sides and the seat-1 end and 1.9 mm at the lead end: every gap after tolerances is exactly REQ-BAT-08's, 0.50 mm and 1.50 mm, wherever the cell lies (VER-181's gap lines pass). VER-181 still fails on the pocket's fit, which is DEF-62; this defect closes with it on VER-181's PASS. Was: OPEN, DEC-27: a cell of at most 51.2 x 35.2 mm with the pocket moved in, or a 54.8 x 37.8 mm hole)
+- Status: CLOSED (VER-181 PASS 2026-10-28 at 39cc07f: the 55.2 x 38.2 mm hole leaves every gap at REQ-BAT-08's after tolerances and the pocket 0.40 mm over the worst-case cell)
 
 ### DEF-54: Rows still written for 76955d2 after the re-seed
 - Found: two-model review (O-R9, O-R10, F-R2, F-R4, F-R5, F-R7, F-R9, F-R10, F-R11, F-R14, F-R16), 2026-10-25
@@ -582,7 +582,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-132 (k) (the marker on B.Silkscreen, or JLC's paid removal option in the release record; built 2026-10-27, FAIL at 71737ae: absent among the 20 back-silk texts).
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision DEC-28)
+- Status: CLOSED (VER-132 PASS 2026-10-28 at 39cc07f: 'JLCJLCJLCJLC' on B.Silkscreen, silk.py)
 
 ### DEF-56: Copper within 0.20 mm of the cell's and the speaker's routed edges
 - Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge)
@@ -592,7 +592,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-18 (design_numbers.py edge: copper, courtyards and silk against every routed edge; since O-R2 each distance printed beside its worst case); VER-17 (JLC's dated page decides which of the two the rule applies to).
 - Updated: REQ-FAB-03, DF-179, DF-178
 - Gate: ORDER
-- Status: OPEN (reopened 2026-10-27, O-R2. VER-18 compares the data's distances with REQ-FAB-03's 0.30 mm and passes: the closest copper is 0.308 mm, GND pours by the speaker's 11.0 x 16.0 mm hole and by the cell's hole; Q7's pads 0.318 mm; a GND pour 0.399 mm from the outline. With ROUTE_TOL, the 0.2 mm outline tolerance this register uses for the cell's gap (VER-181), that pour can be 0.108 mm from the routed edge as built, and VER-18 now prints that worst case beside each distance. Whether JLC's 0.30 mm is a rule on the data or on the finished board is on its dated capability page, which is not on disk (VER-17). It closes when hardware/vv/analysis/jlc_capabilities.md is saved with its date: if the 0.30 mm is a data rule, VER-18's PASS stands and this closes on it; if it is an as-built rule, 0.108 mm is a copper decision for Alex at Gate ORDER (more clearance in build_pcb.py and a re-pour, or an acceptance), not a check failure. Was: CLOSED on VER-18's PASS 2026-10-27, and before that OPEN, DEC-32)
+- Status: OPEN (unchanged at 39cc07f: the closest copper 0.308 mm in the data, 0.108 mm with the outline tolerance, the GND pour by the speaker's hole; J8's shell tab 0.350 mm from the left edge; VER-18 PASS in the data, JLC's dated page decides)
 
 ### DEF-57: The board's name, BOARD_REV and build text sit in the cell's hole
 - Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge reads the silk texts)
@@ -612,7 +612,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap, now printing and failing on the unpushed lead end as well: FAIL).
 - Updated: REQ-BAT-08, DF-04, DF-85
 - Gate: CASE
-- Status: FIXED (case.scad at 71737ae draws the pocket as cell_pocket_box, 0.9 mm inside the hole on the long sides and the seat-1 end and 1.9 mm at the lead end, so the pocket's walls hold the cell off every edge with no tape; it closes on VER-181's PASS, which waits for the pocket's fit, DEF-62)
+- Status: CLOSED (VER-181 PASS 2026-10-28 at 39cc07f: the pocket's walls hold the cell off every edge, the lead end 1.50 mm after tolerances)
 
 ### DEF-59: case.scad's panel numbers are not the drawing's
 - Found: two-model review (O-R6), 2026-10-26, from the datasheet downloaded 2026-10-26 to the main checkout (untracked)
@@ -642,7 +642,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-34 (the datasheet audit quotes the panel's table and answers VCI and VDDI in writing); VER-23 (the overlay against RP-010329 answers the +1V1 capacitor in writing); VER-198 (2026-10-27: the application-circuit script reads er-tft035ips-6.txt:747 and fails on the 3.366 V until Alex accepts it or the supply changes).
 - Updated: REQ-PWR-14, DF-96
 - Gate: ORDER
-- Status: OPEN (unchanged at 71737ae: the panel's supply is still 3V3 through JP4, up to 3.366 V. Proposed: accept VCI and VDDI at 3.366 V, inside the absolute maximum and the controller's own range; the +1V1 capacitor follows RP-010329 as VER-23 finds it)
+- Status: OPEN (39cc07f: the panel's VCI and VDDI up to 3.333 V (the TLV75733P's +1% to TJ 85 C, tlv757p.txt:252; 3.350 V at +1.5%) against 3.3 V; proposed: accept, DEC-09. The +1V1 capacitor's half left with the RP2354B)
 
 ### DEF-62: The cell's pocket has no fit for a worst-case cell
 - Found: round 3's sign-off (O-S1), 2026-10-26, against DEC-27's geometry; confirmed at 71737ae on 2026-10-27 by design_numbers.py cellgap
@@ -652,7 +652,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap now checks the fit: the pocket 0.4 mm longer and wider than the cell, 0.1 mm print and 0.1 mm fit a side; FAIL at 71737ae, 0.00 mm spare; seeded in VER-129 with a 51.7 mm cell, and its 51.6 x 35.6 mm control passes); REQ-BAT-08's fit clause (PROPOSED).
 - Updated: REQ-BAT-08, DF-85, DF-04
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision DEC-27 before the order, since one option is copper: (a) a cell whose spec sheet (VER-37) guarantees 51.6 x 35.6 mm or less with its PCM, no copper; (b) the hole to 55.2 x 38.2 mm with the same insets, a re-route by the hole; Alex may also set a smaller fit in REQ-BAT-08)
+- Status: CLOSED (VER-181 PASS 2026-10-28 at 39cc07f: the hole 55.2 x 38.2 mm, the pocket 52.4 x 36.4, 0.40 mm over the worst-case 52 x 36 cell: DEC-27 taken as (b))
 
 ### DEF-63: U10 went on the board without its datasheet
 - Found: re-seeding for 71737ae (2026-10-27), from pin_review/u10.json
@@ -662,7 +662,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-34 (the audit now names U10, TH1's TCTR0805 and J4's SH header first, and replaces design_numbers.py's stand-ins for U10's bias, output resistance and drift); VER-138 prints the stand-ins it uses; VER-159 lists U10's input as a back-power path.
 - Updated: DF-182, DF-98, DF-138, REQ-BAT-12, REQ-PWR-07
 - Gate: ORDER
-- Status: OPEN (BLOCKED on the MCP6001 datasheet, DS20001733L: https://ww1.microchip.com/downloads/en/DeviceDoc/MCP6001-1R-1U-2-4-1-MHz-Low-Power-Op-Amp-DS20001733L.pdf; Alex downloads it into hardware/ref_design/datasheets, then VER-34 re-reads U10's five pins and its input limits before the order)
+- Status: FIXED (2026-10-28: mcp6001.pdf on disk; its SOT-23-5 pinout VOUT 1, VSS 2, VIN+ 3, VIN- 4, VDD 5 (mcp6001.txt:813-816) is design.py's U10; its off-state input limits (2 mA, VDD + 1.0 V, 115-117) cover the 7.9 uA; it closes when VER-36 passes with u10.json re-read, the board session's)
 
 ### DEF-64: The speaker's plug no longer fits J4, and its replacement is not bought
 - Found: re-seeding for 71737ae (2026-10-27), from bom.md's speaker line
@@ -692,17 +692,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-04 (its evidence lists the six warnings; this re-seed read them); VER-132 (the fab content check: every silk text clear of other silk and of pads; not built).
 - Updated: REQ-BAT-05.R, DF-125
 - Gate: ORDER
-- Status: OPEN (a silk.py change in the next design pass: '+' and 'BATT' apart by 0.15 mm or more, 'PANEL' off U4's pads; or Alex accepts both for EVT, since the '+' stays readable through the overlap at 10x)
+- Status: OPEN (39cc07f: the build reports 6 cosmetic silk warnings (VER-04's evidence lists them); J2's '+' and 'PANEL' to be read against them; or Alex accepts them for EVT)
 
 ### DEF-67: Three of U4's supply pins have no capacitor near them, and the far DVDD pin has no 4.7 uF
 - Found: VER-197 (paper_checks.py core), built 2026-10-27 for the coverage grid's class 4 / mcu cell, at 71737ae
 - Symptom: on the routed board the nearest capacitor to DVDD pin 51 is C25 at 7.2 mm; C22, the 100 nF the schematic gives pin 51 (sch_sheets.py SERVES), sits about 15 mm away. IOVDD pins 41 and 50 have no capacitor within 5 mm (7.4 and 6.7 mm); their own C17 and C15 sit about 10 mm away. DVDD pin 32, the one furthest from the regulator, has C21 (100 nF, 3.0 mm) and no 4.7 uF: rp2350.txt:32665-32675 asks 4.7 uF there, and 6.3.8.1 recommends a second 4.7 uF on the core supply (DF-94). The other IOVDD, ADC_AVDD, USB_OTP_VDD and QSPI_IOVDD pins each have one within 3.6 mm.
 - Root cause: placement.py places C13-C20, C22 and C23 by hand ('the screw, J2 and the folded FPC', placement.py:226-230); C15, C17 and C22 landed in a cluster near (83, 127), outside the core, and nothing measures a decoupler's distance to its pin.
 - Why missed: DRC and the netlist check connectivity, not distance; VER-23 (the overlay against RP-010329) is not built and its files are not on disk.
-- Check added or changed: VER-197 (new; its --seed fails on C25 at 1 uF)
+- Check added or changed: VER-204 (the module's decoupling; Was: VER-197)
 - Updated: DF-94, REQ-MCU-09
 - Gate: ORDER
-- Status: OPEN (copper: move C15, C17 and C22 to within about 2 mm of pins 50, 41 and 51, and add a 4.7 uF 0402 at pin 32, or Alex accepts the distances for EVT with VER-84's ripple measurement as the check)
+- Status: RETIRED in 39cc07f: the RP2354B's supply pins left; the module's 22 uF far from its pin is DEF-82
 
 ### DEF-68: The cell's current runs through a 0.15 mm track, and VSYS reaches U3 through 229 mohm
 - Found: VER-13 (paper_checks.py copper), built 2026-10-27, at 71737ae
@@ -712,7 +712,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-13 (built; --seed narrows CELL_P to 0.05 mm); VER-201 (design_numbers.py netclass, O-R8: build_pcb.py's class lists against the board's nets and the nets that carry 0.25 A or more; FAIL on VBUS_D5's stale entry, CELL_P and AMP_VDD)
 - Updated: REQ-BAT-12, DF-138
 - Gate: ORDER
-- Status: OPEN (copper: CELL_P at 0.5 mm or a pour, VSYS to U3 at 0.5 mm; or Alex sets the current and the drop limits VER-13 uses and accepts the copper for EVT)
+- Status: OPEN (39cc07f: CELL_P, VBUS_C1 and AMP_VDD joined the PWR class (0.3 mm) and VBUS_D5 left, so the class names only real nets (VER-201 PASS); but VSYS reaches U3 through 221 mohm of 0.24 mm track (137 mV at the Wi-Fi peak's 0.62 A) and VBAT to VSYS is 178.8 mV against 30 mV (VER-13 FAIL); DEF-86)
 
 ### DEF-69: A cell cut off at 3.50 V can reach its PCM's under-voltage trip in under a month
 - Found: VER-103 (paper_checks.py shelf), built 2026-10-27, at 71737ae
@@ -722,17 +722,17 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-103 (built; --seed stiffens the divider and must fail)
 - Updated: REQ-BAT-10, REQ-PWR-07
 - Gate: EVT
-- Status: OPEN (Alex sets REQ-BAT-10's period knowing both terms, or the cutoff moves up (firmware), or R17/R18 rise; VER-37's cell numbers and VER-65's measured drain replace the stand-ins)
+- Status: OPEN (unchanged at 39cc07f: 0.8 months from the cutoff to the PCM's UVP at the worst case, VER-103 FAIL)
 
 ### DEF-70: C24, the core regulator's input capacitor, is under the RP2350's 4.7 uF minimum at its own tolerance
 - Found: VER-30 (paper_checks.py mlccbias), built 2026-10-27, at 71737ae
 - Symptom: C24 is CL05A475MP5NRNC, 4.7 uF +-20% (the M in its part number): 3.76 uF at its low tolerance before any DC bias, against VREG_VIN's 'at least 4.7 uF' (rp2350.txt:33598). C25, the same part as the regulator's output, meets 'COUT 4.7 uF +-20%' (33603) only before DC bias: at -20% it has nothing left for the loss at 1.1 V. Raspberry Pi's minimal design, which the core copies, uses a 4.7 uF 0402 in both places (VER-23 confirms, its files not on disk).
 - Root cause: the copied core's values were kept without reading the datasheet's limits against the parts' tolerance.
 - Why missed: VER-30 (MLCC derating) was NOT_BUILT; VER-23 is not built.
-- Check added or changed: VER-30 (built: a group short at its own tolerance fails whatever its curve; the rest wait for Samsung's curves)
+- Check added or changed: VER-30
 - Updated: DF-94
 - Gate: ORDER
-- Status: OPEN (a BOM change if the pads allow: a 10 uF 0402 (or a K-tolerance 4.7 uF) for C24, and a 4.7 uF K-tolerance part for C25; or Alex accepts Raspberry Pi's choice with VER-84's ripple measurement as the check)
+- Status: RETIRED in 39cc07f: C24 left with the RP2354B's core regulator; a capacitor short at its DC bias at 39cc07f is DEF-83 (C3)
 
 ### DEF-71: Three firmware rules the RP2350's errata need are not in pinmap.md
 - Found: VER-16 (analysis/errata_rp2350.md) and VER-196 (paper_checks.py ampstate), 2026-10-27, at 71737ae
@@ -742,7 +742,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-16, VER-196 (both now name the rules); VER-39's doc sweep reads pinmap.md for them
 - Updated: DF-94, REQ-PWR-09
 - Gate: EVT
-- Status: OPEN (three lines in pinmap.md's Power control: AMP_EN driven low before sleep and never left an input; keep the SDK's watchdog_enable() (PSM WDSEL with RESETS); write no OTP and keep secure boot off. No copper)
+- Status: RETIRED in 39cc07f: the RP2350's errata left; the ESP32-S3's are VER-214's
 
 ### DEF-72: U2's footprint puts the cell's pins closer to the GND pad than TI's land pattern
 - Found: VER-125 (check_land.py), built 2026-10-27, at 71737ae
@@ -752,7 +752,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-125 (built; --seed shrinks the exposed pad and must fail)
 - Updated: DF-148
 - Gate: ORDER
-- Status: OPEN (a footprint with TI's 0.60 mm pads at 2.80 mm, the same EP, in board/lib; or Alex accepts KiCad's for EVT with VER-52's TP3-to-TP5 resistance before every first cell and VER-89's microscope look at U2 as the checks)
+- Status: FIXED at 39cc07f: U2 on TI's RGT0016C land (tools/fp_u2.py): pads 0.60 x 0.24 at 2.80, 0.26 mm to the exposed pad, equal to TI's (VER-125's U2 line ok); it closes when VER-125 passes, held today by U4's thermal pad (DEF-84)
 
 ### DEF-73: VBUS on J1's CC or data pins overstresses the CC parts above 3.9 V and the whole 3V3 domain above 4 V
 - Found: VER-195 (circuit_checks.py usbfault), built 2026-10-27, at 71737ae
@@ -762,7 +762,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-195 (built; FAIL at 71737ae, so no seed is needed to show it can fail)
 - Updated: DF-101, DF-51
 - Gate: EVT
-- Status: OPEN (for DEC-17 with DEF-50: proposed, accept for EVT, since a data line at VBUS is outside USB 2.0 and any fix needs copper; at DVT, R3 and R4 to 100k or more with a clamp at the pads, R1 and R2 in 0603 (100 mW), and a series element or a crowbar on the data lines only if REQ-PWR-17's accepted value asks for it)
+- Status: OPEN (unchanged in kind at 39cc07f: the CC paths over from about 4.0 V (IO2, IO4 behind 10k) and 17.9 V (R1, R2), the 3V3 domain from about 3.9 V through U1, VER-195 FAIL; DEC-17)
 
 ### DEF-74: The F.Cu GND pour comes 2.875 mm from every comb's centre, inside REQ-BTN-04's 2.9 mm
 - Found: VER-132 (layout_checks.py fab, item (b)), built 2026-10-27, at 71737ae
@@ -772,7 +772,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-132 (built; its seed puts paste in SW7's circle and must fail)
 - Updated: REQ-BTN-04
 - Gate: ORDER
-- Status: OPEN (copper. Proposed: Alex restates REQ-BTN-04 as no via within 2.9 mm and no other copper within 2.85 mm (the pour is flat), or a rule area of 2.9 mm round each comb in build_pcb.py with a re-pour, no re-route)
+- Status: CLOSED (VER-132 PASS 2026-10-28 at 39cc07f: route.py's comb keep-out is 2.9 mm across its flats, the pour 2.900 mm from every comb's centre)
 
 ### DEF-75: The fast nets cross gaps in the ground under them, and D+ and D- differ by 3.6 mm
 - Found: VER-21 (layout_checks.py ret) and VER-108 (layout_checks.py usbpair), built 2026-10-27, at 71737ae
@@ -782,7 +782,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-21, VER-108 (built; their seeds drop the ground fill and lengthen a stub, and must fail)
 - Updated: DF-51, DF-184
 - Gate: ORDER
-- Status: OPEN (copper. Proposed: Alex accepts both for EVT with VER-96, VER-80 and VER-179 as the measurements, since full-speed USB and an 18.75 MHz SPI have the margin above; at DVT, route the USB pair side by side on one layer over the B.Cu pour and stitch ground beside SR_CLK and SR_PL)
+- Status: OPEN (39cc07f: the longest runs over no ground are SD_D3 14.22 mm, SR_CLK 13.94, AUDIO_PWM 13.22, SD_D0 10.73, SD_CLK 10.56, USB_DP_MCU 8.64 (VER-21 FAIL); D+ 83.65 and D- 87.25 mm, 3.60 mm apart against 2.0 (VER-108 FAIL))
 
 ### DEF-76: pinmap.md states no clock limits for the panel's SPI or the buttons' shift registers
 - Found: VER-199 (circuit_checks.py timing), built 2026-10-27, at 71737ae
@@ -792,7 +792,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-199 (built; its seed puts 1k in LCD_SCK and must fail)
 - Updated: REQ-DSP-11, DF-180
 - Gate: EVT
-- Status: OPEN (no copper: three lines in pinmap.md, the SPI write and read clocks and the shift-register clock and load widths; VER-199 then passes)
+- Status: OPEN (39cc07f: pinmap.md states the panel bus's 25 MHz and its 40 ns cycle; it still states no SR_CLK rate or SR_PL widths, VER-199 FAIL)
 
 ### DEF-77: J5's mouth faces the side wall 2 mm away: no SWD cable with the board in the tub
 - Found: VER-165 (case_checks.py mouths), built 2026-10-27, at 71737ae
@@ -802,7 +802,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-165 (built; its seed makes a mouth box 8 mm deep and must fail)
 - Updated: REQ-MEC-11
 - Gate: CASE
-- Status: OPEN (proposed: accept: SWD is a bench tool, used with the board out or through J7's pogo pads on the back with the case open; at DVT turn J5 to face into the board if a debug cable in the tub is wanted)
+- Status: RETIRED in 39cc07f: J5 left with SWD
 
 ### DEF-78: Seven case ESTIMATEs and the cell's size set copper and none is measured
 - Found: VER-152 (case_checks.py estimates), built 2026-10-27, at 71737ae
@@ -812,7 +812,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-152 (built; its seed adds an unmeasured copper-setting estimate and must fail)
 - Updated: DF-61
 - Gate: ORDER
-- Status: OPEN (the measurements are VER-43 and VER-136 with a real panel and calipers on a Start/Select strip; or Alex accepts for EVT that J3's whole tip range is kept clear (j3_zone) and SW20-SW23's domes sit on a 7.5 mm pitch against the faceplate's 7.85, with VER-48 as the check)
+- Status: OPEN (39cc07f: the same seven ESTIMATEs set copper (VER-152 FAIL); fpc_low now also bounds J8, whose body reaches 0.175 mm into the folded FPC's zone at 1.675 mm tall: DEF-90)
 
 ### DEF-79: bom.md's order line and its cost table are not the board being ordered
 - Found: the review's O-R3 and F-R4 (2026-10-27), reading hardware/ref_design/docs/bom.md at 71737ae
@@ -822,4 +822,164 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-39 (its scope now names bom.md's order line, counts and cost rows, and case/*.md; to re-run); VER-130 (the BOM and CPL counts against design.py); VER-117 (the re-quote replaces the snapshot)
 - Updated: REQ-FAB-11, REQ-PRD-09
 - Gate: ORDER
-- Status: OPEN (the design session rewrites bom.md's order line from Edge.Cuts and its factory block from the BOM being ordered, each figure with its date and source, JLC's class for C160402 from its parts data, not a hand-added fee; the cost stays a snapshot until VER-117. Until then Alex types the Gerbers' extent, 73.4 x 151.48 mm (72.4 mm wide without J1's tab), into the order and checks it against JLC's own reading of the files)
+- Status: OPEN (39cc07f: bom.md still describes the RP2354B board's order: the board is now 73.9 x 151.48 mm (75.0 mm across J1's tab; Edge.Cuts' extent 75.00 x 151.58 with the line), 114 placements and 45 part numbers (VER-130); Alex types the Gerbers' extent into the order)
+
+### DEF-80: The flex antenna sits within 15 mm of the panel, the cell and a screw
+- Found: VER-205 (layout_checks.py antenna), built 2026-10-28, at 39cc07f
+- Symptom: the antenna's plate (x 64.5-71, y 62.1-107.9, docs/esp32s3_build.md) is 1.3 mm from the panel's glass outline, 10.6 mm from the cell's pocket, and H2's M2 screw boss lies over its top end; the guidelines give 15 mm in all directions for the module's own PCB antenna (esp32-s3-hw-design-guidelines.txt:1299), and the flex antenna's own keep-out is not on disk. The board's rule area is clean: 0 copper inside it on both layers.
+- Root cause: the WROOM-1U's antenna was put in the only free strip of the left bezel, between the board's edge and the panel, with no maker's figure to place it by.
+- Why missed: no check read the antenna until this re-seed.
+- Check added or changed: VER-205 (built; its seed puts a pour inside the keep-out and must fail); VER-207 (range in the closed case, unit 1)
+- Updated: REQ-RF-01, REQ-RF-02, REQ-RF-03, DF-192
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision DEC-38: accept for EVT with VER-207 as the measurement (no copper), or move the module and the antenna (copper and case))
+
+### DEF-81: The new parts' JLC class and stock were never checked
+- Found: docs/esp32s3_build.md 'Not verified' and docs/esp32s3_pinmap_diff.md, read at this re-seed (2026-10-28)
+- Symptom: the module (C3013946), the TLV75733P (C485517), the DM3AT (C114218) and the TPS850 (C2759975) went on the board with no check of JLC's class (Basic, Extended), stock or minimum order; the board session's parts database was not reachable.
+- Root cause: parts chosen offline.
+- Why missed: VER-41 runs on order day only.
+- Check added or changed: VER-41 (order-day stock and class, the four first); VER-14 (LCSC identity)
+- Updated: REQ-FAB-10, DF-69
+- Gate: ORDER
+- Status: OPEN
+
+### DEF-82: The module's 22 uF sits 23.6 mm from its 3V3 pin
+- Found: VER-204 (paper_checks.py module), built 2026-10-28, at 39cc07f
+- Symptom: C10 (22 uF, the module's bulk in Espressif's peripheral schematic, esp32-s3-wroom-1.txt:2875) has its pad 23.6 mm from pin 2; C11 (100 nF) is 3.4 mm away. The build note said about 10 mm.
+- Root cause: C10 placed above the module's top row where place_new.py found room.
+- Why missed: no check read the module's decoupling before this re-seed.
+- Check added or changed: VER-204 (built; its seed makes C11 1 uF and must fail); VER-208 (3V3 at C11 in TX bursts, unit 1)
+- Updated: REQ-MCU-09, DF-187
+- Gate: ORDER
+- Status: OPEN (copper: C10 within 5 mm of pin 2; or Alex accepts for EVT with VER-208 as the measurement, DEC-39)
+
+### DEF-83: C3, U2's BAT capacitor, is under its 4.7 uF minimum at 4.2 V
+- Found: VER-30 (paper_checks.py mlccbias), rewritten 2026-10-28 with Samsung's DC-bias curves on disk
+- Symptom: C3 (CL10A106KP8NNNC, 10 uF 10 V X5R 0603) is 9.0 uF at its -10% and loses 65.4% at 4.2 V (samsung_cl10a106kp8nnnc_dcbias.csv): 3.11 uF against SLUS810N's 'Bypass BAT to VSS with a 4.7-uF to 47-uF ceramic capacitor' (bq24074.txt:501). It was the same part at 71737ae; the curve was not on disk then.
+- Root cause: a 10 V 0603 X5R chosen by its nominal value.
+- Why missed: VER-30 was BLOCKED on the curves.
+- Check added or changed: VER-30 (now reads the curves; BLOCKED only on C10's, CL21A226MAQNNNE)
+- Updated: DF-136
+- Gate: ORDER
+- Status: OPEN (a BOM change: a second 10 uF on VBAT, or a 22 uF 0805, or a 25 V part with less loss; or Alex accepts for EVT, since the cell is in parallel with C3 whenever it is plugged)
+
+### DEF-84: U4's thermal pad is 3.9 mm square against the module's 3.7
+- Found: VER-125 (check_land.py), rewritten 2026-10-28 with the module's land pattern
+- Symptom: fp_esp32.py draws the WROOM-1U's GND pad 3.90 x 3.90 mm; Figure 11-2's text gives 3.7 (esp32-s3-wroom-1.txt:3422-3471). The 40 pads (1.5 x 0.9 at 1.27, the columns 17.5 apart) match.
+- Root cause: the footprint written by script without the land pattern's numbers read off the drawing.
+- Why missed: no land-pattern check for the module.
+- Check added or changed: VER-125 (a 'module' land row; its seed is U2's)
+- Updated: DF-185
+- Gate: ORDER
+- Status: OPEN (the board session reads Figure 11-2 by eye: if 3.7 mm is the pad, the footprint changes (copper), or its paste is windowed to the module's pad)
+
+### DEF-85: No antenna or U.FL cable is on any buy list, and the case has no place for it
+- Found: VER-167 (design_numbers.py bom), extended 2026-10-28, at 39cc07f
+- Symptom: the WROOM-1U has a U.FL connector and no antenna (esp32-s3-wroom-1.txt:100); bom.md names neither the flex antenna (Kinghelm C4943394 in the build note) nor a cable, and case.scad has no feature that holds it on the left wall.
+- Root cause: the antenna is a hand-fitted part outside JLC's BOM.
+- Why missed: the BOM check read contact classes only.
+- Check added or changed: VER-167 (now asks for the antenna and the cable); VER-207
+- Updated: REQ-RF-02, DF-197
+- Gate: CASE
+- Status: OPEN
+
+### DEF-86: 3V3 falls to 2.976 V at the module in a Wi-Fi burst at the 3.50 V cutoff
+- Found: VER-204 with VER-13's copper solver, 2026-10-28, at 39cc07f
+- Symptom: at VBAT 3.50 V and a TX burst (3V3 0.62 A, the system 1.24 A): U2's battery FET 124 mV (bq24074.txt:724), VSYS's 0.24 mm track from U2's OUT to U3's IN 137 mV (221 mohm), U3's dropout 263 mV (tlv757p.txt:298 scaled): 2.976 V against VDD33's 3.0 V minimum (esp32-s3-wroom-1.txt:1596).
+- Root cause: U3 sits across the board from U2, and the Wi-Fi peak was not in the 3V3 budget the copper was routed for.
+- Why missed: no check combined the burst, the copper and the dropout.
+- Check added or changed: VER-204 (built); VER-13; VER-208 on unit 1
+- Updated: REQ-PWR-05, REQ-MCU-09, DF-187
+- Gate: ORDER
+- Status: OPEN (copper: VSYS to U3 at 0.5 mm or a pour; or a firmware rule (TX power capped below about 3.6 V, or the cutoff at 3.6 V) accepted for EVT with VER-208, DEC-39)
+
+### DEF-87: Wi-Fi's heat takes the module's air over its 65 C and U3 over its junction limit on paper
+- Found: VER-144, VER-193 and VER-200 (thermal.py), rewritten 2026-10-28 at 39cc07f
+- Symptom: with Wi-Fi listening, the CPU at 240 MHz and the SD card writing (VER-31's 362 mA average on 3V3), the worst mode puts 3.31 W inside the case: its air 62.6 C at 40 C outside; the module's air 84.9 C on a 30 C/W stand-in against the N16R8's 65 C ambient (esp32-s3-wroom-1.txt:1598); U3 at 0.434 W reaches 163 C on JEDEC's 231.1 C/W (106 C on TI's EVM 100.8) against 105 C; the cell's air 47.6 C charging while playing at 25 C against 45 C; U7 144.7 C on a 160 C/W stand-in against 130 C. All on stand-ins for h, the module's theta and U7's; the 2.0 W budget of REQ-THM-04 is 3.31 W here.
+- Root cause: Wi-Fi and a 240 MHz CPU added to a closed handheld sized for the RP2354B's heat.
+- Why missed: the heat table had the RP2354B's 150 mA budget until this re-seed.
+- Check added or changed: VER-144, VER-193, VER-200 (rewritten); VER-86 on unit 2
+- Updated: REQ-THM-04, REQ-MCU-13, DF-31, DF-193
+- Gate: ORDER
+- Status: OPEN (PLAN.md decision DEC-40: a firmware heat rule (modem sleep, 80-160 MHz, the PSRAM's ECC for 85 C, CHG_OFF while hot) accepted for EVT with VER-86 measuring; copper for U3 only if the bench shows it)
+
+### DEF-88: pin_review/u3.json describes the RT9013, not the TLV75733P on the board
+- Found: VER-36 (circuit_checks.py pinreview) at 39cc07f, 2026-10-28
+- Symptom: u3.json names RT9013-33GB, C47773 and the RT9013's ratings (EN 1.6 V, 400 mV dropout at 500 mA) while design.py's U3 is TLV75733PDBVR, C485517. VER-02 passes because check_pins.py compares each pin's net, and the two parts share the SOT-23-5 pinout (IN 1, GND 2, EN 3, NC 4, OUT 5: tlv757p.txt:114). Seven review files describe parts that left.
+- Root cause: the review file kept when the part changed.
+- Why missed: VER-02 reads nets, not identity; VER-36 read identity but was not run at 39cc07f.
+- Check added or changed: VER-36 (its identity rule fires; its A-line count fixed)
+- Updated: REQ-FAB-02, DEF-26
+- Gate: ORDER
+- Status: OPEN (the board session rewrites u3.json from tlv757p.pdf and deletes the orphan files; pin_review is outside hardware/vv)
+
+### DEF-89: The microSD slot's body has 0.075 mm a side in the case's opening
+- Found: VER-165 (case_checks.py mouths), extended 2026-10-28, at 39cc07f
+- Symptom: J8's body (its 3D model) spans y 128.075-141.925; the left wall's opening (case.scad sd_y) is y 128.0-142.0: 0.075 mm a side against the print's 0.1 mm and the board's 0.1 mm float on its screws. Its top, 1.67 mm, is clear of the opening's 2.60 mm.
+- Root cause: the opening sized to the slot's 13.85 mm body plus 0.15 mm.
+- Why missed: the mouths check read J2, J4 and J5 only.
+- Check added or changed: VER-165
+- Updated: REQ-STO-03, REQ-MEC-11, DF-195
+- Gate: CASE
+- Status: OPEN (case.scad: sd_y 0.4 mm wider, no copper)
+
+### DEF-90: J8 reaches 0.175 mm into the folded FPC's zone, 1.675 mm tall against fpc_low's 1.05
+- Found: VER-20 (case_checks.py stack) at 39cc07f, 2026-10-28
+- Symptom: J8's extent ends at x 78.225; the folded FPC's zone starts at x 78.05 (positions.json fpc_zones); under the FPC the parts must stay under fpc_low (1.05 mm, an ESTIMATE) less 0.2 mm, and J8 is 1.675 mm tall. The build note put the slot's back at 78.02, 0.03 mm short of the zone; its 3D model reaches further.
+- Root cause: the slot's back placed against an estimated zone with its footprint's outline, not its 3D body.
+- Why missed: the stack check had not run on 39cc07f.
+- Check added or changed: VER-20; VER-152 (fpc_low is an ESTIMATE)
+- Updated: DF-123
+- Gate: ORDER
+- Status: OPEN (measure fpc_low and the FPC's fold on a real panel (VER-136) or move J8 0.2 mm left (copper))
+
+### DEF-91: A microSD card plugged in while running can dip 3V3 under 3.0 V
+- Found: VER-206 (paper_checks.py sdinsert), built 2026-10-28, at 39cc07f
+- Symptom: SD_VDD is +3V3 through JP6 with no load switch: the rail's 21.4 uF (at 3.35 V on Samsung's curves, half value where none) shares its charge with the card's own capacitance; a card over 1.8 uF takes 3V3 under 3.0 V, a 10 uF card (stand-in) to 2.21 V, for about 38 us until U3's 1.2 A limit refills it.
+- Root cause: the card's supply straight off the module's rail.
+- Why missed: new at 39cc07f.
+- Check added or changed: VER-206 (built; its seed takes the bulk away); VER-209 (three cards on the scope)
+- Updated: REQ-STO-02, DF-194
+- Gate: EVT
+- Status: OPEN (VER-209 decides; a load switch or a series resistor at DVT if a card resets the module)
+
+### DEF-92: J7's 3V3 pad back-feeds U3 when a jig powers it
+- Found: VER-159 (check_backpower.py), its jig state added 2026-10-28
+- Symptom: design.py's note says to power the board through J7's 3V3 'with the cell out and nothing on USB'; then U3's OUT sits over its IN + 0.3 V, over the TLV75733P's absolute maximum (tlv757p.txt:180), and its body diode feeds VSYS (1137-1138).
+- Root cause: the pogo pads kept from the RP2354B board without the regulator's reverse rule.
+- Why missed: the path table had no jig state.
+- Check added or changed: VER-159 (the jig state, listed with DF-189); VER-212 (the recovery procedure)
+- Updated: REQ-PWR-19, DF-189
+- Gate: EVT
+- Status: OPEN (bringup.md: power a jig from USB-C, or cut JP1 first)
+
+### DEF-93: The audio filter's bandwidth is 8.2 kHz at the worst corner against 10 kHz
+- Found: VER-100 (paper_checks.py audio) at 39cc07f, 2026-10-28
+- Symptom: R32 and R33 went to 1.5k for the LEDC's 312.5 kHz carrier: 44.5 dB down nominal, 42.6 dB at the worst corner (pass), but the -3 dB point is 9.7 kHz nominal and 8.2 kHz at the worst corner against REQ-AUD-03's 10 kHz. design.py's comment says 6.7 kHz (board/sim/audio_filter.py's model).
+- Root cause: carrier rejection traded against bandwidth with the requirement unchanged.
+- Why missed: VER-100 had not run on 39cc07f.
+- Check added or changed: VER-100
+- Updated: REQ-AUD-03
+- Gate: ORDER
+- Status: OPEN (Alex restates REQ-AUD-03 to 8 kHz (no copper), or the filter's values change (BOM), DEC-42)
+
+### DEF-94: USB's series resistors are 11.5 mm from the module
+- Found: VER-191 (paper_checks.py usb) at 39cc07f, 2026-10-28
+- Symptom: R21 and R22 (22 ohm) sit 11.5 mm in a straight line and 18.2 and 20.9 mm of track from pins 14 and 13, against 'place them close to the chip' (esp32-s3-hw-design-guidelines.txt:875, 1307). The design moved them there in e20cfa6 because the pair could not reach pads under the pins.
+- Root cause: routing room under the module.
+- Why missed: new at 39cc07f.
+- Check added or changed: VER-191
+- Updated: REQ-MCU-02, DF-198
+- Gate: ORDER
+- Status: OPEN (proposed: accept for EVT, since a 20 mm stub is 0.13 ns at full speed's 4-20 ns edges; VER-80 and VER-96 measure; the resistors under the pins at DVT)
+
+### DEF-95: J2 carries up to 1.24 A against a 1 A catalogue rating
+- Found: VER-31 (circuit_checks.py ratings) at 39cc07f, 2026-10-28
+- Symptom: a Wi-Fi TX burst (3V3 0.62 A) with the backlight at 117.7 mA and the amplifier's 0.5 A peak draws 1.24 A through J2, the PicoBlade, against its 1 A (a catalogue stand-in: molex_53261.pdf has no text layer) and the register's 80% rule. The cell (700 mAh) sees about 1.8 C.
+- Root cause: Wi-Fi's peak current on a connector sized for the RP2354B's load.
+- Why missed: the ratings table had no Wi-Fi load.
+- Check added or changed: VER-31
+- Updated: DF-118
+- Gate: EVT
+- Status: OPEN (Molex's own rating read from the drawing by eye, and the cell's spec sheet's discharge limit (VER-37); a firmware rule (the amplifier backed off during TX) if either is short)

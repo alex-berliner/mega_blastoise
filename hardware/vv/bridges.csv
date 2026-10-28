@@ -1,69 +1,39 @@
 net_a,net_b,class,df,pads,reason
-+1V1,+3V3,dangerous,DF-72,U4.50-U4.51 U4.65-U4.64,"DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD"
-+1V1,CHG_STAT_N,dangerous,DF-72,U4.51-U4.52,"DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD"
-+1V1,NC:U4.11,benign,,U4.10-U4.11,an unconnected pin: nothing on it
-+1V1,NC:U4.9,benign,,U4.9-U4.10,an unconnected pin: nothing on it
-+1V1,SWCLK,dangerous,DF-72,U4.32-U4.33,"DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD"
-+1V1,USB_DM_MCU,dangerous,DF-72,U4.66-U4.65,"DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD"
-+1V1,XOUT,dangerous,DF-72,U4.31-U4.32,"DVDD (1.21 V absolute, rp2350.txt:101023) joined to a pin driven at 3.3 V or to IOVDD"
 +3V3,3V3_LDO,benign,,JP1.1-JP1.2,a solder jumper's own two pads: bridged in copper by design
-+3V3,GND,dangerous,DF-162,U8.16-U8.15 U9.16-U9.15,3V3 shorted at a 74HC165 (CLK INH to VCC): U3 in current limit
++3V3,GND,dangerous,DF-162,U11.15-U11.16 U8.16-U8.15 U9.16-U9.15,"3V3 shorted (a 74HC165's CLK INH to VCC, or the module's pins 1-2): U3 in current limit"
 +3V3,LCD_3V3,benign,,JP4.1-JP4.2,a solder jumper's own two pads: bridged in copper by design
-+3V3,LCD_CS,self-test,,U4.41-U4.42,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-+3V3,LCD_RST,self-test,,U4.49-U4.50,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-+3V3,NC:U4.14,benign,,U4.14-U4.15,an unconnected pin: nothing on it
-+3V3,NC:U4.16,benign,,U4.15-U4.16,an unconnected pin: nothing on it
-+3V3,NC:U4.23,benign,,U4.23-U4.24,an unconnected pin: nothing on it
-+3V3,NC:U4.25,benign,,U4.24-U4.25,an unconnected pin: nothing on it
-+3V3,NC:U4.28,benign,,U4.28-U4.29,an unconnected pin: nothing on it
-+3V3,NC:U4.4,benign,,U4.4-U4.5,an unconnected pin: nothing on it
-+3V3,NC:U4.6,benign,,U4.5-U4.6,an unconnected pin: nothing on it
-+3V3,NC:U4.70,self-test,DF-72,U4.70-U4.69,an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)
-+3V3,NC:U4.77,benign,,U4.77-U4.76,an unconnected pin: nothing on it
-+3V3,P2_UP,self-test,,U9.11-U9.10,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-+3V3,QSPI_SS,self-test,,U4.76-U4.75,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-+3V3,SR_CHAIN,self-test,,U9.10-U9.9,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-+3V3,USB_DP_MCU,self-test,DF-51,U4.68-U4.67,a USB or CC line: enumeration or the source's offer fails (bring-up)
-+3V3,VBAT_SENSE,self-test,DF-72,U4.58-U4.59,"U10's output held at 3V3: VBAT reads 6.6 V, a value the firmware can refuse (VER-67 on unit 1)"
-+3V3,VREG_LX,dangerous,DF-72,U4.64-U4.63,the core regulator's switch node or analogue supply shorted
-+3V3,XIN,self-test,,U4.29-U4.30,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-AMP_EN,LCD_CS,self-test,,U4.42-U4.43,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-AMP_EN,P1_SELECT,self-test,,U4.43-U4.44,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
++3V3,P1_START,self-test,,U11.11-U11.12,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
++3V3,SD_VDD,self-test,,JP6.1-JP6.2,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
++3V3,SR_CHAIN2,self-test,,U11.9-U11.10,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 AMP_VDD,VSYS,benign,,JP3.1-JP3.2,a solder jumper's own two pads: bridged in copper by design
-AUDIO_PWM,LCD_TE,self-test,,U4.39-U4.40,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-AUDIO_PWM,SR_DATA,self-test,,U4.38-U4.39,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-BL_PWM,RUN,self-test,,U4.35-U4.36,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-BL_PWM,SR_CLK_MCU,self-test,,U4.36-U4.37,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 CC1,NC:J1.B8,benign,,J1.A5-J1.B8,an unconnected pin: nothing on it
 CC1,USB_DM,self-test,DF-51,J1.A5-J1.B7,a USB or CC line: enumeration or the source's offer fails (bring-up)
-CC1_SENSE,CC2_SENSE,self-test,,U4.56-U4.57,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-CC1_SENSE,VBAT_SENSE,self-test,,U4.57-U4.58,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 CC2,NC:J1.A8,benign,,J1.A8-J1.B5,an unconnected pin: nothing on it
-CC2,VBUS,dangerous,DF-51,J1.A9-J1.B5 J1.B4-J1.B5,VBUS on a CC pin: GPIO45/46 over their limit through 10k (VER-195)
-CC2_SENSE,PWR_HOLD,self-test,,U4.55-U4.56,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+CC2,VBUS,dangerous,DF-51,J1.A9-J1.B5 J1.B4-J1.B5,VBUS on a CC pin: the module's IO2/IO4 over their limit through 10k (VER-195)
 CELL_P,VBAT,benign,,JP5.1-JP5.2,a solder jumper's own two pads: bridged in copper by design
 CHG_EN1,CHG_PG_N,self-test,DF-149,U2.6-U2.7,a charger control or status pin held: the charge test (VER-66) or the status read sees it
 CHG_EN1,GND,self-test,DF-149,U2.17-U2.6 U2.5-U2.6,a charger control or status pin held: the charge test (VER-66) or the status read sees it
 CHG_ILIM,GND,self-test,DF-149,U2.17-U2.12,a charger control or status pin held: the charge test (VER-66) or the status read sees it
-CHG_ILIM,VBUS,self-test,DF-149,U2.13-U2.12,ILIM is unused in USB500 and rated 7 V (bq24074.txt:598-600): a supply on it is inside its rating; VER-66 sees a changed limit
 CHG_ILIM,VSYS,self-test,DF-149,U2.11-U2.12,ILIM is unused in USB500 and rated 7 V (bq24074.txt:598-600): a supply on it is inside its rating; VER-66 sees a changed limit
-CHG_ISET,CHG_TEMP,dangerous,DF-146,U2.1-U2.16,ISET's 2.5 V on TS holds it inside the charge window whatever the cell's temperature
 CHG_ISET,GND,dangerous,DF-06,U2.16-U2.15 U2.16-U2.17,RISET shorted: the charge current unset
-CHG_OFF,CHG_PG_N,self-test,DF-149,U4.53-U4.54,a charger control or status pin held: the charge test (VER-66) or the status read sees it
-CHG_OFF,GND,self-test,DF-149,U2.4-U2.17 U2.4-U2.5,a charger control or status pin held: the charge test (VER-66) or the status read sees it
-CHG_OFF,PWR_HOLD,self-test,DF-149,U4.54-U4.55,a charger control or status pin held: the charge test (VER-66) or the status read sees it
+CHG_OFF,GND,self-test,DF-149,U2.4-U2.17,a charger control or status pin held: the charge test (VER-66) or the status read sees it
 CHG_OFF,VBAT,dangerous,DF-149,U2.3-U2.4,"a U2 neighbour pair putting the cell or VSYS on a GPIO (over IOVDD + 0.5 V, and it back-powers 3V3 when off)"
-CHG_PG_N,CHG_STAT_N,self-test,DF-149,U4.52-U4.53,a charger control or status pin held: the charge test (VER-66) or the status read sees it
+CHG_PG_N,CHG_STAT_N,self-test,DF-149,U11.13-U11.14,a charger control or status pin held: the charge test (VER-66) or the status read sees it
 CHG_PG_N,GND,self-test,DF-149,U2.17-U2.7 U2.7-U2.8,a charger control or status pin held: the charge test (VER-66) or the status read sees it
-CHG_STAT_N,GND,self-test,DF-149,U2.17-U2.9 U2.8-U2.9,a charger control or status pin held: the charge test (VER-66) or the status read sees it
+CHG_PG_N,P1_START,self-test,DF-149,U11.12-U11.13,a charger control or status pin held: the charge test (VER-66) or the status read sees it
+CHG_STAT_N,GND,self-test,DF-149,U11.14-U11.15 U2.17-U2.9,a charger control or status pin held: the charge test (VER-66) or the status read sees it
 CHG_STAT_N,VSYS,dangerous,DF-149,U2.9-U2.10,"a U2 neighbour pair putting the cell or VSYS on a GPIO (over IOVDD + 0.5 V, and it back-powers 3V3 when off)"
 CHG_TEMP,GND,self-test,DF-149,U2.1-U2.17,a charger control or status pin held: the charge test (VER-66) or the status read sees it
 CHG_TEMP,VBAT,self-test,DF-149,U2.1-U2.2,a charger control or status pin held: the charge test (VER-66) or the status read sees it
-GND,LCD_3V3,dangerous,DF-59,J3.8-J3.9,the panel's supply shorted at J3: U3 in current limit through JP4
-GND,LCD_MISO,self-test,,J3.18-J3.19,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-GND,LCD_RST,self-test,,J3.40-J3.41,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+GND,LCD_3V3,dangerous,DF-59,J3.16-J3.17 J3.42-J3.43 J3.8-J3.9,the panel's supply shorted at J3: U3 in current limit through JP4
+GND,LCD_D7,self-test,,J3.26-J3.27,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+GND,LCD_DC,self-test,,J3.13-J3.14,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+GND,LCD_RST,self-test,,J3.40-J3.41 J3.41-J3.42,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+GND,LCD_TE,self-test,,J3.12-J3.13,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+GND,NC:J3.18,benign,,J3.17-J3.18,an unconnected pin: nothing on it
 GND,NC:J3.4,benign,,J3.3-J3.4,an unconnected pin: nothing on it
 GND,NC:J3.7,benign,,J3.7-J3.8,an unconnected pin: nothing on it
+GND,NC:U11.7,benign,,U11.7-U11.8,an unconnected pin: nothing on it
 GND,NC:U2.14,dangerous,DF-152,U2.15-U2.14 U2.17-U2.14,"U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them"
 GND,NC:U8.7,self-test,DF-163,U8.7-U8.8,a 74HC165's unused QH' output fighting its neighbour: a stuck button or SR_DATA (button test)
 GND,NC:U9.7,self-test,DF-163,U9.7-U9.8,a 74HC165's unused QH' output fighting its neighbour: a stuck button or SR_DATA (button test)
@@ -85,24 +55,19 @@ GND,P2_X,self-test,,SW15.1-SW15.2,"a contact's own comb gap (0.20 mm by design, 
 GND,P2_Y,self-test,,SW16.1-SW16.2,"a contact's own comb gap (0.20 mm by design, REQ-BTN-03), or a 74HC165 input beside CLK INH: a held button (the button test)"
 GND,VBAT,dangerous,DF-148,U2.2-U2.17 U2.3-U2.17,the cell shorted at U2 (BAT to the exposed pad)
 GND,VBUS,dangerous,DF-51,J1.A1-J1.A4 J1.A1-J1.B9 J1.A12-J1.B4 J1.A4-J1.B12 J1.A9-J1.A12 J1.A9-J1.B1 J1.B1-J1.B4 J1.B9-J1.B12 U2.17-U2.13,VBUS shorted at J1's row (DF-51) or U2's IN to its pad (DF-149): the source's limit is the only stop
-GND,VREG_AVDD,dangerous,DF-72,U4.62-U4.61,the core regulator's switch node or analogue supply shorted
-GND,VREG_LX,dangerous,DF-72,U4.63-U4.62,the core regulator's switch node or analogue supply shorted
 GND,VSYS,dangerous,DF-149,U2.17-U2.10 U2.17-U2.11,"VSYS shorted to U2's pad: the cell through U2's battery FET, no fuse (DF-172)"
-GND,XIN,self-test,,SW18.2-X1.1,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_3V3,LCD_MOSI,self-test,,J3.16-J3.17,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_3V3,LCD_RST,self-test,,J3.41-J3.42,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_3V3,LCD_SCK,self-test,,J3.15-J3.16,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 LCD_3V3,LCD_TE,self-test,,J3.11-J3.12,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_3V3,LCD_WR,self-test,,J3.15-J3.16,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 LCD_3V3,NC:J3.45,benign,,J3.44-J3.45,an unconnected pin: nothing on it
-LCD_CS,LCD_DC,self-test,,J3.13-J3.14,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_CS,LCD_TE,self-test,,J3.12-J3.13,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_DC,LCD_MISO,self-test,,U4.45-U4.46,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_DC,LCD_SCK,self-test,,J3.14-J3.15,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_DC,LCD_SCK_MCU,self-test,,U4.46-U4.47,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_MISO,LCD_MOSI,self-test,,J3.17-J3.18,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_MISO,P1_SELECT,self-test,,U4.44-U4.45,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_MOSI_MCU,LCD_RST,self-test,,U4.48-U4.49,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-LCD_MOSI_MCU,LCD_SCK_MCU,self-test,,U4.47-U4.48,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D0,LCD_D1,self-test,,J3.19-J3.20,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D0,NC:J3.18,benign,,J3.18-J3.19,an unconnected pin: nothing on it
+LCD_D1,LCD_D2,self-test,,J3.20-J3.21,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D2,LCD_D3,self-test,,J3.21-J3.22,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D3,LCD_D4,self-test,,J3.22-J3.23,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D4,LCD_D5,self-test,,J3.23-J3.24,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D5,LCD_D6,self-test,,J3.24-J3.25,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_D6,LCD_D7,self-test,,J3.25-J3.26,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+LCD_DC,LCD_WR,self-test,,J3.14-J3.15,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 LED_A,LED_K1,self-test,DF-59,J3.49-J3.50,a backlight string shorted or paralleled: visible at the display test
 LED_A,VSYS,benign,,JP2.1-JP2.2,a solder jumper's own two pads: bridged in copper by design
 LED_K1,LED_K2,self-test,DF-59,J3.48-J3.49,a backlight string shorted or paralleled: visible at the display test
@@ -114,32 +79,8 @@ NC:J3.45,NC:J3.46,benign,,J3.45-J3.46,an unconnected pin: nothing on it
 NC:J3.46,NC:J3.47,benign,,J3.46-J3.47,an unconnected pin: nothing on it
 NC:J3.5,NC:J3.6,benign,,J3.5-J3.6,an unconnected pin: nothing on it
 NC:J3.6,NC:J3.7,benign,,J3.6-J3.7,an unconnected pin: nothing on it
+NC:U11.7,PWR_BTN_N,benign,,U11.6-U11.7,an unconnected pin: nothing on it
 NC:U2.14,VBUS,dangerous,DF-152,U2.14-U2.13,"U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them"
-NC:U4.11,NC:U4.12,benign,,U4.11-U4.12,an unconnected pin: nothing on it
-NC:U4.12,NC:U4.13,benign,,U4.12-U4.13,an unconnected pin: nothing on it
-NC:U4.13,NC:U4.14,benign,,U4.13-U4.14,an unconnected pin: nothing on it
-NC:U4.16,NC:U4.17,benign,,U4.16-U4.17,an unconnected pin: nothing on it
-NC:U4.17,NC:U4.18,benign,,U4.17-U4.18,an unconnected pin: nothing on it
-NC:U4.18,SR_PL,benign,,U4.18-U4.19,an unconnected pin: nothing on it
-NC:U4.2,NC:U4.3,benign,,U4.2-U4.3,an unconnected pin: nothing on it
-NC:U4.2,P2_SELECT,benign,,U4.1-U4.2,an unconnected pin: nothing on it
-NC:U4.20,SR_PL,benign,,U4.19-U4.20,an unconnected pin: nothing on it
-NC:U4.21,NC:U4.22,benign,,U4.21-U4.22,an unconnected pin: nothing on it
-NC:U4.22,NC:U4.23,benign,,U4.22-U4.23,an unconnected pin: nothing on it
-NC:U4.25,NC:U4.26,benign,,U4.25-U4.26,an unconnected pin: nothing on it
-NC:U4.26,NC:U4.27,benign,,U4.26-U4.27,an unconnected pin: nothing on it
-NC:U4.27,NC:U4.28,benign,,U4.27-U4.28,an unconnected pin: nothing on it
-NC:U4.3,NC:U4.4,benign,,U4.3-U4.4,an unconnected pin: nothing on it
-NC:U4.6,NC:U4.7,benign,,U4.6-U4.7,an unconnected pin: nothing on it
-NC:U4.7,NC:U4.8,benign,,U4.7-U4.8,an unconnected pin: nothing on it
-NC:U4.70,NC:U4.71,self-test,DF-72,U4.71-U4.70,an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)
-NC:U4.71,NC:U4.72,self-test,DF-72,U4.72-U4.71,an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)
-NC:U4.72,NC:U4.73,self-test,DF-72,U4.73-U4.72,an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)
-NC:U4.73,NC:U4.74,self-test,DF-72,U4.74-U4.73,an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)
-NC:U4.74,QSPI_SS,self-test,DF-72,U4.75-U4.74,an RP2354B QSPI pin wired to the flash inside the package: a bridge stops the boot (unit 1's first article)
-NC:U4.77,NC:U4.78,benign,,U4.78-U4.77,an unconnected pin: nothing on it
-NC:U4.78,P2_START,benign,,U4.79-U4.78,an unconnected pin: nothing on it
-NC:U4.8,NC:U4.9,benign,,U4.8-U4.9,an unconnected pin: nothing on it
 NC:U8.7,P1_Y,self-test,DF-163,U8.6-U8.7,a 74HC165's unused QH' output fighting its neighbour: a stuck button or SR_DATA (button test)
 NC:U9.7,P2_Y,self-test,DF-163,U9.6-U9.7,a 74HC165's unused QH' output fighting its neighbour: a stuck button or SR_DATA (button test)
 P1_A,P1_B,self-test,,RN2.1-RN2.2 U8.3-U8.4,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
@@ -148,6 +89,8 @@ P1_B,P1_X,self-test,,RN2.2-RN2.3 U8.4-U8.5,two signals or a signal and a rail th
 P1_DOWN,P1_LEFT,self-test,,RN1.2-RN1.3 U8.13-U8.12,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P1_DOWN,P1_UP,self-test,,RN1.1-RN1.2 U8.12-U8.11,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P1_LEFT,P1_RIGHT,self-test,,RN1.3-RN1.4 U8.14-U8.13,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+P1_SELECT,P2_SELECT,self-test,,U11.3-U11.4,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+P1_SELECT,P2_START,self-test,,U11.4-U11.5,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P1_UP,SR_CHAIN,self-test,,U8.11-U8.10,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P1_X,P1_Y,self-test,,RN2.3-RN2.4 U8.5-U8.6,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P2_A,P2_B,self-test,,RN4.1-RN4.2 U9.3-U9.4,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
@@ -156,13 +99,12 @@ P2_B,P2_X,self-test,,RN4.2-RN4.3 U9.4-U9.5,two signals or a signal and a rail th
 P2_DOWN,P2_LEFT,self-test,,RN3.2-RN3.3 U9.13-U9.12,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P2_DOWN,P2_UP,self-test,,RN3.1-RN3.2 U9.12-U9.11,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P2_LEFT,P2_RIGHT,self-test,,RN3.3-RN3.4 U9.14-U9.13,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-P2_START,PWR_BTN_N,self-test,,U4.80-U4.79,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+P2_SELECT,SR_CLK,self-test,,U11.2-U11.3,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+P2_START,PWR_BTN_N,self-test,,U11.5-U11.6,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+P2_UP,SR_CHAIN2,self-test,,U9.11-U9.10,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 P2_X,P2_Y,self-test,,RN4.3-RN4.4 U9.5-U9.6,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-RUN,SWDIO,self-test,,U4.34-U4.35,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+SD_CD,SD_D1,self-test,,J8.8-J8.9,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+SR_CHAIN,SR_CHAIN2,self-test,,U9.10-U9.9,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 SR_CHAIN,SR_DATA,self-test,,U8.10-U8.9,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-SR_CLK,SR_PL,self-test,,U8.1-U8.2 U9.1-U9.2,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-SR_CLK_MCU,SR_DATA,self-test,,U4.37-U4.38,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
-SWCLK,SWDIO,self-test,,U4.33-U4.34,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
+SR_CLK,SR_PL,self-test,,U11.1-U11.2 U8.1-U8.2 U9.1-U9.2,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it
 USB_DM,USB_DP,self-test,DF-51,J1.A6-J1.A7 J1.A6-J1.B7 J1.A7-J1.B6,a USB or CC line: enumeration or the source's offer fails (bring-up)
-USB_DM_MCU,USB_DP_MCU,self-test,DF-51,U4.67-U4.66,a USB or CC line: enumeration or the source's offer fails (bring-up)
-XIN,XOUT,self-test,,U4.30-U4.31,two signals or a signal and a rail the firmware drives and reads: the bring-up and self-test see it

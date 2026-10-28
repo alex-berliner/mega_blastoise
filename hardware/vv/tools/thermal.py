@@ -3,7 +3,7 @@
 
     python3 hardware/vv/tools/thermal.py modes       # VER-144: U2, U3, Q5, Q6 per mode; the firmware heat rule
     python3 hardware/vv/tools/thermal.py board       # VER-193: every other part, the cell's own heat, the case's inside
-    python3 hardware/vv/tools/thermal.py amp         # VER-200: the amplifier (U7): BLOCKED on fm8002a.pdf
+    python3 hardware/vv/tools/thermal.py amp         # VER-200: the amplifier (U7), on a stand-in theta (fm8002a.pdf prints none)
     python3 hardware/vv/tools/thermal.py <check> --seed    # a seeded fault (a hotter part): must exit 1
 
 The model, stated once: the heat inside the case leaves through its outside, area A from case.scad (case_w, case_l,
@@ -50,12 +50,11 @@ def quotes():
         "u2_iin": (0.5, q("bq24074", 733, "450", "500")),
         "u2_kiset": (975.0, q("bq24074", 785, "975")),
         "u2_rbat": (0.1, q("bq24074", 724, "100")),
-        "u3_theta": (250.0, q("rt9013", 135, "SOT-23-5", "250")),
-        "u3_tj": (125.0, q("rt9013", 149, "125")),
-        "u4_theta": (40.542, q("rp2350", 100196, "RP2350A", "40.542")),
-        "u4_tbd": q("rp2350", 100253, "RP2354B", "TBD"),
-        "u4_tj": (125.0, q("rp2350", 101054, "125")),
-        "u4_p": (52.7e-3, q("rp2350", 101676, "hello_usb", "52.7")),
+        "u3_theta": (231.1, q("tlv757p", 232, "RθJA", "231.1")),
+        "u3_theta_evm": (100.8, q("tlv757p", 229, "RθJA", "100.8")),
+        "u3_tj": (125.0, q("tlv757p", 213, "Junction temperature", "125")),
+        "u4_ta": (65.0, q("esp32-s3-wroom-1", 1598, "65 °C version", "65")),
+        "u7_tj": (150.0, q("fm8002a", 112, "TJ", "150")),
         "u8_theta": (108.0, q("sn74hc165", 281, "108")),
         "led_vf": (3.2, q("er-tft035ips-6", 758, "3.0", "3.2")),
     }
@@ -67,10 +66,7 @@ def three_v3():
     import contextlib
     import circuit_checks as cc
     parts, _ = dn.design()
-    pulls = sum(cc.V3V3 / cc.val(parts, r) for r in ("R42", "R44")) + 16 * cc.V3V3 / 47e3 + 4 * cc.V3V3 / 100e3 \
-        + cc.V3V3 / 103.74e3
-    return (cc.STAND_RP_VIN + (506 + 570 + 142 + 22 + 216) * 1e-6 * 2 + cc.STAND_PANEL_LOGIC + 3 * cc.STAND_OPAMP_IQ
-            + 2 * 80e-6 + pulls + cc.STAND_SPI_C * cc.V3V3 * 20e6)
+    return sum(i for _, i, _ in cc.loads_3v3(parts, "avg"))      # Wi-Fi listening on a busy CPU, the SD card writing
 
 
 def case_area():
@@ -147,12 +143,12 @@ def modes(seed=None):
     row = Rows()
     tab, k = modes_table(Q, seed)
     a, dims = case_area()
-    THETA.update({"U2": (Q["u2_theta"][0], "bq24074.txt:666"), "U3": (Q["u3_theta"][0], "rt9013.txt:135, a single-layer "
-                                                                                       "JEDEC 51-3 board: pessimistic here")})
-    TJMAX.update({"U2": (Q["u2_tj"][0], "bq24074.txt:641"), "U3": (Q["u3_tj"][0], "rt9013.txt:149")})
+    THETA.update({"U2": (Q["u2_theta"][0], "bq24074.txt:666"), "U3": (Q["u3_theta"][0], "tlv757p.txt:232, DBV on JEDEC's "
+                                                                                       "board; 100.8 on TI's EVM, 229")})
+    TJMAX.update({"U2": (Q["u2_tj"][0], "bq24074.txt:641"), "U3": (Q["u3_tj"][0], "tlv757p.txt:213")})
     print(f"the case {dims[0]:.2f} x {dims[1]:.2f} x {dims[2]:.2f} mm:{a * 1e4:.1f} cm2 outside; h_out {H_OUT:g} and h_in {H_IN:g} W/m2K "
           f"(stand-ins): {1 / (H_OUT * a):.1f} C/W skin to air, {1 / (H_IN * a):.1f} C/W inside to skin")
-    print(f"3V3 load {k['i3'] * 1e3:.1f} mA (VER-31's parts and stand-ins); the system while playing {k['i_sys'] * 1e3:.0f} mA "
+    print(f"3V3 load {k['i3'] * 1e3:.1f} mA (VER-31's average: Wi-Fi listening, the CPU busy, the SD card writing); the system while playing {k['i_sys'] * 1e3:.0f} mA "
           f"(3V3, the backlight's 117.7 mA, the amplifier's mean {I_AMP_AVG * 1e3:.0f} mA: a stand-in); ICHG at most "
           f"{k['ichg'] * 1e3:.0f} mA (KISET 975 / R5 -1%); VBAT {k['vbat']} V in fast charge (bq24074.txt:2655)")
     print(f"U2 by TI's equation (11) (bq24074.txt:2662): {k['u2_max']:.3f} W at the corner where IN carries its 500 mA, the "
@@ -182,22 +178,22 @@ def modes(seed=None):
     th_lim = (TJMAX["U2"][0] - MARGIN - worst["U2"][3]) / worst["U2"][2]
     print(f"sensitivity: U2 reaches its limit at {th_lim:.1f} C/W against the datasheet's 44.5 (a JEDEC board with inner planes); a "
           "2-layer board is worse, so VER-68 measures the case under U2 on unit 1, and U2's own regulation lowers ICHG first")
-    i3_budget = 0.150
-    u3_b = (4.5 - 3.3) * i3_budget * Q["u3_theta"][0] + worst["U3"][3]
     lim3 = TJMAX["U3"][0] - MARGIN
-    print(f"sensitivity: at REQ-PWR-15's full 150 mA budget U3 dissipates 0.18 W and reaches {u3_b:.1f} C in the same mode at 40 C "
-          f"(limit {lim3:g}): " + (f"still {lim3 - u3_b:.1f} C under it" if u3_b <= lim3 else
-                                   "over it: the budget and the 40 C rule meet only with the load VER-31 estimates"))
+    u3_evm = worst["U3"][3] + worst["U3"][2] * Q["u3_theta_evm"][0]
+    th3 = (lim3 - worst["U3"][3]) / worst["U3"][2]
+    print(f"sensitivity: U3 on TI's EVM figure (100.8 C/W, tlv757p.txt:229) reaches {u3_evm:.1f} C; it meets {lim3:g} C below "
+          f"{th3:.0f} C/W, between the EVM's and JEDEC's: the board's own figure decides (VER-68 reads the case over U3 on unit 1)")
     print("the firmware heat rule (for pinmap.md before VER-86 runs, proposed): on USB with the backlight above 75%, cap the "
           "amplifier's volume (its share is the largest heat after U2) or pause charging with CHG_OFF while the case reads hot; "
           "VER-86 measures the skin")
-    print("U7, the amplifier, is VER-200's: fm8002a.pdf (its thermal resistance and junction maximum) is not on disk")
+    print("U7, the amplifier, is VER-200's: fm8002a.pdf gives its 150 C junction maximum (fm8002a.txt:112) and no thermal resistance")
     print(f"{len(row.bad)} over")
     return dn.result(not row.bad)
 
 
 # ---- VER-193 ------------------------------------------------------------------------------------------------------------
 STAND_SMALL_THETA = 400.0       # C/W: worse than any SMD package's junction-to-ambient, for parts whose power is tiny
+STAND_MODULE_THETA = 30.0       # C/W: the module's shield to the air round it on a 2-layer board (no Espressif figure)
 
 
 def board(seed=None):
@@ -209,20 +205,24 @@ def board(seed=None):
     worst_mode = max(tab, key=lambda m: tab[m][1])
     print(f"the hottest mode for the inside is {worst_mode} ({tab[worst_mode][1]:.2f} W): inside {air40:.1f} C at {T_AMB:g} C outside")
     i3 = k["i3"]
-    p_u4 = 3.3 * i3 * 0.6                     # the core and its regulator: the 3V3 load less the panel and pull-ups, about 60%
+    import circuit_checks as cc
+    p_u4 = 3.3 * (cc.ESP_CPU + cc.ESP_RX + cc.STAND_PSRAM)     # the module's own share of the 3V3 load (VER-31)
+    # the module is rated by its ambient (65 C for the R8's octal PSRAM, esp32-s3-wroom-1.txt:1598), not by a junction: its
+    # ambient is the case's inside air, and the module's own heat warms the board round it (stand-in: 30 C/W to that air)
+    t_mod = air40 + p_u4 * STAND_MODULE_THETA
+    row(t_mod <= Q["u4_ta"][0], f"U4 the module: {p_u4:.3f} W (CPU 107.9 mA, Wi-Fi RX 97 mA, PSRAM 20 mA at 3.3 V, VER-31) puts the "
+        f"air round it at {air40:.1f} + {p_u4:.3f} x {STAND_MODULE_THETA:g} C/W (stand-in) = {t_mod:.1f} C against its 65 C "
+        "ambient limit (esp32-s3-wroom-1.txt:1598; 85 C with the PSRAM's ECC on and 1/16 of it lost, 103-105)")
     parts = [
-        ("U4", p_u4, Q["u4_theta"][0], Q["u4_tj"][0],
-         f"VREG_VIN and IOVDD at the 3V3 budget's RP2350 share ({p_u4:.3f} W, VER-31's 2.5 x hello_usb stand-in); RP2354B's own "
-         f"QFN-80 figure is TBD (rp2350.txt:100253), so the smaller QFN-60's 40.542 C/W (100196) bounds it; Tj 125 (101054)"),
         ("U8", 3.3 * 80e-6 + 2 * 10e-12 * 3.3 ** 2 * 5e5, Q["u8_theta"][0], 125.0,
          "ICC and the scan's switching at 0.5 MHz; TSSOP 108 C/W (sn74hc165.txt:281); 125 C, the HC family's usual maximum (stand-in)"),
         ("U9", 3.3 * 80e-6 + 2 * 10e-12 * 3.3 ** 2 * 5e5, Q["u8_theta"][0], 125.0, "as U8"),
-        ("U1", 3.3 * 5e-6, STAND_SMALL_THETA, 125.0, "leakage only, 5 uA at 5 V (u1.json p2, not on disk); any package's theta"),
-        ("U6", 3.3 * 0.15e-3 + (3.3 - 1.5) * 0.5e-3 * 2, STAND_SMALL_THETA, 125.0,
-         "quiescent and two gates' charge (stand-in); MCP6002 not on disk"),
-        ("U10", 3.3 * 0.15e-3, STAND_SMALL_THETA, 125.0, "quiescent (stand-in); MCP6001 not on disk (DEF-63)"),
+        ("U11", 3.3 * 80e-6 + 2 * 10e-12 * 3.3 ** 2 * 5e5, Q["u8_theta"][0], 125.0, "as U8"),
+        ("U1", 3.3 * 5e-6, STAND_SMALL_THETA, 125.0, "leakage only, 5 uA at 5 V (srv05-4.txt:94); any package's theta"),
+        ("U6", 3.3 * 0.34e-3 + (3.3 - 1.5) * 0.5e-3 * 2, STAND_SMALL_THETA, 125.0,
+         "quiescent 170 uA a channel (mcp6001.txt:160) and two gates' charge (stand-in)"),
+        ("U10", 3.3 * 0.17e-3, STAND_SMALL_THETA, 125.0, "quiescent 170 uA maximum (mcp6001.txt:160)"),
         ("RN1-RN4", 4 * 3.3 ** 2 / 47e3, STAND_SMALL_THETA, 155.0, "four 47k elements an array, all pressed"),
-        ("L2", (i3 * 0.6 * 3.3 / 1.1) ** 2 * 0.14, STAND_SMALL_THETA, 125.0, "the core current through its 140 mohm maximum DCR (l2.json)"),
     ]
     # a connector is rated by its rise at its rated current: J1's 0.5 A against a USB-C receptacle's 3 A (Type-C, from memory)
     # at the catalogue's 30 C rise, so its rise goes with the square of the share; 85 C operating (stand-ins: not on disk)
@@ -267,14 +267,19 @@ def amp(seed=None):
           "(the bridge-tied load's peak, a textbook result, not from its datasheet)")
     for th in (128.0, 150.0, 160.0):
         print(f"  at {th:g} C/W: {air:.1f} + {pd * th:.1f} = {air + pd * th:.1f} C")
-    print("BLOCKED: the FM8002A's junction-to-ambient resistance and junction maximum are in fm8002a.pdf "
-          "(https://www.lcsc.com/datasheet/lcsc_datasheet_2202252130_Shenzhen-Fuman-Elec-FM8002A_C94625.pdf), which is not in "
-          "hardware/ref_design/datasheets; u7.json quotes no thermal line")
-    print("RESULT: BLOCKED")
-    return 2
+    th = STAND_SOIC8_THETA * (2.0 if seed else 1.0)
+    tj = air + pd * th
+    lim = Q["u7_tj"][0] - MARGIN
+    print(f"fm8002a.pdf (on disk since 2026-10-28) gives TJ 150 C (fm8002a.txt:112) and says to design to the chip's theta JA "
+          f"(64) without printing one: a JEDEC SOIC-8's {th:g} C/W is the stand-in")
+    ok = tj <= lim
+    print(("  ok    " if ok else "  FAIL  ") + f"U7 at {air:.1f} + {pd:.3f} x {th:g} = {tj:.1f} C against {Q['u7_tj'][0]:g} - "
+          f"{MARGIN:g} = {lim:g} C")
+    return dn.result(ok)
 
 
-CHECKS = {"modes": (modes, True), "board": (board, True), "amp": (amp, None)}
+STAND_SOIC8_THETA = 160.0       # C/W: a JEDEC SOIC-8 on a low-k board, pessimistic (fm8002a.pdf prints no theta)
+CHECKS = {"modes": (modes, True), "board": (board, True), "amp": (amp, True)}
 
 
 def main():
