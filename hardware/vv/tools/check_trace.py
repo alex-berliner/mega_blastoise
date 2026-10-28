@@ -33,7 +33,9 @@ different BOARD_REVs; a change record's 'What to re-run' lists every bench test 
 part its commits changed (O-R21); no defect is CLOSED without a check, and every defect
 names its Gate (O-R5); a RETIRED row names the commit that removed its subject, no live row
 leans on a retired check, and no live row's text cites a retired id outside 'Was: ...'
-(O-R9); an occurrence of 3 says what it is 'Similar:' to (O-R8); an inspection's evidence
+(O-R9); no defect's Status keyword is other than OPEN while its Status text says it stays OPEN
+or holds a gate (F-R1); an analysis whose procedure reads assembly.md, bom.md, bringup.md or
+pinmap.md names that doc in covers, so a doc edit stales it (F-R3); an occurrence of 3 says what it is 'Similar:' to (O-R8); an inspection's evidence
 names WHO and ARTEFACT (O-R3); README.md's design baseline names every design path, equals HEAD and equals the
 baseline commit's own blobs (DEF-47: a register that drifted off its design fails here, not
 only at a gate; F-R3: a baseline rewritten from HEAD after a design edit fails here too);
@@ -56,8 +58,8 @@ can clear them (planned ones count as GAP; tools/grid.py says which checks can c
   R3  every H-priority DFMEA row in scope is ACCEPTED for this phase or a later one, or
       DONE with every one of its 'detects' checks PASSED, fresh, and of a phase at or
       before the gate (a row with a later-phase 'detects' check needs an acceptance);
-  R4  no defect of the board whose Gate is this phase or earlier is OPEN (order, case, EVT);
-      every such one is CLOSED (DVT, PVT);
+  R4  no defect of the board whose Gate is this phase or earlier is OPEN (order, case, EVT),
+      and the FIXED ones are listed beside it (F-R1); every such one is CLOSED (DVT, PVT);
   R5  no PASSED check covers a file with uncommitted changes, and nothing under hardware/vv
       is uncommitted; a check whose evidence file is not committed does not pass (O-R2);
   R6  every commit since the newest release record that touches the design (DESIGN_PATHS:
@@ -75,15 +77,15 @@ can clear them (planned ones count as GAP; tools/grid.py says which checks can c
       and go into the release record).
   R9  (order gate, 2026-10-27) the coverage grid (grid.md, tools/grid.py) has no GAP in classes
       1-15: each subsystem has, for each class, a built check that runs before the boards exist
-      (classes 1-14: an ORDER check or an analysis, PASS, FAIL or NOT_RUN; class 15: an analysis
-      with a PASS or FAIL), a NOT_NEEDED reason in grid_reasons.csv, or a gap Alex accepted with
+      (classes 1-14: an ORDER check or an analysis that has run, PASS or FAIL (O-R6: a NOT_RUN
+      one leaves the cell planned); class 15: an analysis with a PASS or FAIL), a NOT_NEEDED reason in grid_reasons.csv, or a gap Alex accepted with
       a signed 'GRID-<class>-<subsystem>' line in releases/APPROVALS.md; a cell with only later
       bench checks or NOT_BUILT checks is planned and still a GAP; grid.md must be what the
       register gives.
 Two more results at the order gate:
   G1  the gate state Alex froze with a signed 'GATE@<commit>' line in releases/APPROVALS.md
-      (every check's phase, every defect's Gate, every criterion's Needs, every requirement's
-      Phase and Verified-by): anything moved later than that commit without a newer signed
+      (every check's phase, every defect's Gate and a defect leaving OPEN (O-R1), every
+      criterion's Needs, every requirement's Phase and Verified-by): anything moved later than that commit without a newer signed
       line fails here (O-R5); until one is signed,
   G0  (information, never a failure) every such move since README's 'Gate moves listed since'
       commit is listed, so Alex reads them before he signs GATE@ (round 3's O-S5);
@@ -853,7 +855,7 @@ UNITS = {"mv": ("V", 1e-3), "v": ("V", 1.0), "ua": ("A", 1e-6), "ma": ("A", 1e-3
 def gate_state_at(commit):
     """The register's gate state at a commit: {checks: {id: phase}, defects: {id: gate}, crit: {id: needs},
     reqs: {id: (phase, verified by)}}.  It is what a signed 'GATE@<commit>' line freezes (O-R5)."""
-    out = {"checks": {}, "defects": {}, "crit": {}, "reqs": {}}
+    out = {"checks": {}, "defects": {}, "dstatus": {}, "crit": {}, "reqs": {}}
 
     def at(*parts):
         rel = vv_rel(*parts)
@@ -872,7 +874,9 @@ def gate_state_at(commit):
                 cur = m.group(1)
             elif cur and line.startswith("- Gate:"):
                 out["defects"][cur] = line.split(":", 1)[1].strip().split()[0]
-                cur = None
+            elif cur and line.startswith("- Status:"):
+                # O-R1: the Status keyword too, so a defect taken off R4 by a status change is a move
+                out["dstatus"][cur] = (line.split(":", 1)[1].strip().split() or [""])[0]
     text = at("gates.md")
     if text:
         for line in text.splitlines():
@@ -945,6 +949,10 @@ def state_moves(db, then):
         was = then["defects"].get(did)
         if was in PHASES and d["gate"] in PHASES and PHASES.index(d["gate"]) > PHASES.index(was):
             bad.append(f"{did} moved from Gate {was} to Gate {d['gate']}")
+        # O-R1: OPEN to FIXED, CLOSED or RETIRED takes a defect off R4 at ORDER, CASE and EVT, the same as a
+        # Gate move (FIXED to CLOSED needs its check to pass on fresh evidence, so it is not listed)
+        if then.get("dstatus", {}).get(did) == "OPEN" and d["status"] != "OPEN":
+            bad.append(f"{did} went from OPEN to {d['status']}")
     for cid, was in then["crit"].items():
         c = db["crit"].get(cid)
         if c is None:
@@ -1142,6 +1150,13 @@ def load():
         if v["last_result"] == "RETIRED":          # its subject is gone: nothing to cover or prove
             vers[v["id"]] = v
             continue
+        # F-R3: an analysis that reads a board doc names it in covers, so a doc edit stales it (a doc is not a
+        # design path: it needs no change record, only the re-run); 'for pinmap.md' or 'into' it is a proposal
+        if "A" in v["method"].split("/") and v["last_result"] not in ("CUT",):
+            for doc in sorted(set(BOARD_DOC.findall(v["procedure"]))):
+                if not re.search(rf"(?:^|\s)\S*docs/(?:\*|{re.escape(doc)})\.md(?:::|\s|$)", v["covers"]):
+                    err(w, f"{v['id']}: its procedure reads {doc}.md, but covers does not name "
+                           f"hardware/ref_design/docs/{doc}.md (F-R3)")
         for kind, spec, tok in v["cov"]:
             if kind == "glob":
                 g, rx = spec
@@ -1349,6 +1364,13 @@ def load():
             for vid in d["vers"]:
                 if vid in vers and (vers[vid]["last_result"] != "PASS" or staleness(vers[vid], db)):
                     err(d["_where"], f"{d['id']}: CLOSED but {vid} has not passed on fresh evidence")
+        # F-R1: R4 reads the Status keyword only, so a Status line whose own words say the defect still holds a
+        # gate while the keyword is not OPEN takes it off the gate unseen. The text is read for this
+        # consistency check only, never by a gate rule (O-R1 (b)).
+        hold = HOLDS_GATE.search(d["f"].get("Status", ""))
+        if d["status"] != "OPEN" and hold:
+            err(d["_where"], f"{d['id']}: Status is {d['status']} but its own text says '{hold.group(0)}': "
+                             "set it OPEN or reword it (F-R1)")
 
     cross_check_approvals(db)
     check_reach(db)
@@ -1648,6 +1670,10 @@ def check_retired_citations(db):
         if bad:
             err(where, f"{rid}: cites {', '.join(bad)}, which {'is' if len(bad) == 1 else 'are'} RETIRED: name the live "
                        "row, or keep the history inside 'Was: ...'")
+
+
+BOARD_DOC = re.compile(r"(?<!for )(?<!into )\b(assembly|bom|bringup|pinmap)\.md\b")
+HOLDS_GATE = re.compile(r"stays OPEN|the \w+ gate fails on it|holds the \w+ gate|holds Gate \w+", re.I)
 
 
 def check_stale_names():
@@ -2125,8 +2151,13 @@ def gate(db, phase, board, verbose, accept_sw=False):
               and phase_le(defs[d]["gate"], phase)]
     if phase in ("ORDER", "CASE", "EVT"):
         bad = [d for d in mydefs if defs[d]["status"] == "OPEN"]
+        # F-R1 (3): the FIXED ones due by this gate are listed beside it, not failed: their closing checks are
+        # mostly EVT unit checks, and one that still holds the gate must say OPEN (a structure rule above)
+        fixed = [d for d in mydefs if defs[d]["status"] == "FIXED"]
         results.append(("R4 no open defects due by this gate", "FAIL" if bad else "PASS",
-                        [f"OPEN (Gate {phase} or earlier): {' '.join(bad)}"] if bad else []))
+                        ([f"OPEN (Gate {phase} or earlier): {' '.join(bad)}"] if bad else [])
+                        + ([f"FIXED, closing check not yet passed (listed, not failed): {' '.join(fixed)}"]
+                           if fixed else [])))
     else:
         bad = [d for d in mydefs if defs[d]["status"] not in ("CLOSED", "RETIRED")]
         results.append(("R4 every defect due by this gate closed", "FAIL" if bad else "PASS",

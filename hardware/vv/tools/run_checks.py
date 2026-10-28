@@ -72,7 +72,9 @@ CHECKS = {
     "VER-176": ("cpl", ["python3", DN, "cpl"], True),
     "VER-177": ("vbus", ["python3", DN, "vbus"], False),
     "VER-18": ("edge", ["python3", DN, "edge"], True),
-    "VER-184": ("plugs", ["python3", DN, "plugs"], True),
+    "VER-184": ("plugs", ["python3", DN, "plugs"], False),
+    "VER-202": ("spkplug", ["python3", DN, "spkplug"], True),
+    "VER-201": ("netclass", ["python3", DN, "netclass"], False),
     "VER-188": ("stale_names", ["python3", "hardware/vv/tools/stale_names.py"], False),
     # the paper checks of classes 4, 6, 9 and 11 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
     "VER-33": ("latch", ["python3", PC, "latch"], False),

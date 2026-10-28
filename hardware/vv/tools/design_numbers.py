@@ -25,7 +25,11 @@ part change in design.py makes the evidence stale through the row's part: covers
   holes      VER-114  every drilled hole 0.30 mm or larger (pcbnew)
   swell      VER-182  free height above a worst-case cell, under whatever lies over its pocket
   edge       VER-18   copper to every routed edge, pads and part bodies inside the outline (pcbnew)
-  plugs      VER-184  J2 (the cell) and J4 (the speaker) keyed apart, and how far apart they sit
+  plugs      VER-184  the cell's plug (from the cell's spec, analysis/cell.json) fits the cell's header and not
+                      the speaker's; the two headers keyed apart (their footprints' families)
+  spkplug    VER-202  the speaker's plug (bom.md's speaker row) fits J4 and not J2; its leads reach J4, not J2
+  netclass   VER-201  build_pcb.py's net classes name only the board's nets, and every net carrying 0.25 A or
+                      more sits in one
   tempwin    VER-32   the charge window TH1 gives against U2's TS thresholds, from SLUS810N
 
 Helpers (they print numbers a bench procedure uses and always exit 0):
@@ -779,7 +783,10 @@ def edge(b=None):
     outline, the cell's hole, the speaker's hole), every pad and part body inside the outline (J1 by design
     excepted; a courtyard past it is printed), every silkscreen text wholly on the board, and the narrowest FR4
     web between two routed edges, printed. The edges are the board polygon pcbnew builds from Edge.Cuts (arcs as
-    chords).  b: a pcbnew board already loaded (seed_faults.py moves a part in memory, writing no KiCad file)."""
+    chords).  b: a pcbnew board already loaded (seed_faults.py moves a part in memory, writing no KiCad file).
+    O-R2: the rule is compared with the data's distance, and each distance is printed beside its worst case, the
+    nominal less ROUTE_TOL (JLC's outline tolerance, to confirm at VER-17): whether JLC's 0.30 mm is a data rule
+    or an as-built one is what analysis/jlc_capabilities.md must say (DEF-56)."""
     pcbnew, b = board() if b is None else (__import__("pcbnew"), b)
     mm = pcbnew.ToMM
     outl = pcbnew.SHAPE_POLY_SET()
@@ -915,9 +922,13 @@ def edge(b=None):
     print(f"routed edges: {len(contours)} contours ({', '.join(c for c, _ in contours)}); copper within about 1 mm "
           f"of one: {len(rows)} features")
     for d, w, p, c in rows[:12]:
-        print(f"  {d:.3f} mm  {w} at ({p[0]:.2f}, {p[1]:.2f}), to the {c}")
-    print(f"copper closer than {COPPER_EDGE:.2f} mm to a routed edge (REQ-FAB-03): {len(bad)}"
+        print(f"  {d:.3f} mm (worst case {d - ROUTE_TOL:.3f})  {w} at ({p[0]:.2f}, {p[1]:.2f}), to the {c}")
+    print(f"copper closer than {COPPER_EDGE:.2f} mm to a routed edge in the data (REQ-FAB-03): {len(bad)}"
           + (": " + "; ".join(f"{w} {d:.3f} mm ({c})" for d, w, p, c in bad) if bad else ""))
+    worst = [r for r in rows if r[0] - ROUTE_TOL < COPPER_EDGE - 1e-6]
+    print(f"worst case, the data's distance less ROUTE_TOL {ROUTE_TOL:.2f} mm (printed, not failed: O-R2, DEF-56): "
+          f"{len(worst)} features under {COPPER_EDGE:.2f} mm"
+          + (f", the closest {rows[0][0] - ROUTE_TOL:.3f} mm ({rows[0][1]}, to the {rows[0][3]})" if rows else ""))
     print("courtyards past the outline or into a hole (J1 by design excepted; printed, not failed): "
           + (", ".join(sorted(set(courtyard_out))) or "none"))
     print("pads or part bodies past the outline or into a hole (J1 by design excepted): "
@@ -933,32 +944,167 @@ def edge(b=None):
         if best:
             webs.append((best[0], name, best[2], best[1]))
     for d, a, c, p in sorted(webs)[:3]:
-        print(f"narrowest FR4 web: {d:.2f} mm between the {a} and the {c} at ({p[0]:.1f}, {p[1]:.1f})")
+        print(f"narrowest FR4 web: {d:.2f} mm (worst case {d - 2 * ROUTE_TOL:.2f}, both edges off by ROUTE_TOL) "
+              f"between the {a} and the {c} at ({p[0]:.1f}, {p[1]:.1f})")
     return result(not bad and not body_out and not lost_text)
 
 
+FAMILY_FP = {"PicoBlade": "PicoBlade", "JST SH": "JST_SH", "JST PH": "JST_PH"}   # footprint name -> family
+CELL_SPEC = os.path.join(os.path.dirname(HERE), "analysis", "cell.json")       # the cell's spec sheet, VER-37
+
+
+def header(parts, net):
+    """(ref, family, pitch in mm) of the connector whose pins carry net, from its footprint name in design.py."""
+    for ref, p in sorted(parts.items()):
+        if re.fullmatch(r"J\d+", ref) and net in (p.get("pins") or {}).values():
+            fp = str(p.get("fp") or "")
+            fam = next((f for f, k in FAMILY_FP.items() if k in fp), None)
+            m = re.search(r"_P(\d+\.\d+)mm", fp)
+            return ref, fam, float(m.group(1)) if m else None
+    return None, None, None
+
+
+def bom_row(word):
+    """The line of docs/bom.md's parts table whose first cell names word."""
+    for line in open(os.path.join(REF, "docs", "bom.md"), encoding="utf-8"):
+        if line.startswith("|") and word in line.split("|")[1]:
+            return line
+    return ""
+
+
 def plugs():
-    """VER-184 (DF-170): the cell's plug must not fit the speaker's header. Today J2 and J4 are the same PicoBlade
-    part, so it does whatever the distances; they are printed (centre to centre, pcbnew) with the speaker's lead
-    length, to show the speaker cannot reach J2."""
+    """VER-184 (DF-170, F-R2): the cell's plug fits the cell's header and cannot enter the speaker's. The headers'
+    families and pitches come from their footprint names in design.py (the connector on CELL_P, the one on SPK_P);
+    the cell's plug comes from the cell's spec sheet, recorded in hardware/vv/analysis/cell.json ('plug_family',
+    'plug_pitch_mm', 'source') once VER-37 has it. Until then the check is BLOCKED (exit 2) and prints what bom.md
+    asks the seller for, which is an order instruction, not the part. The cells take 21 days (VER-49), so this is an
+    ORDER check."""
     parts, _ = design()
-    j2, j4 = parts["J2"], parts["J4"]
-    same = (j2["fp"], j2["lcsc"]) == (j4["fp"], j4["lcsc"])
+    c_ref, c_fam, c_p = header(parts, "CELL_P")
+    s_ref, s_fam, s_p = header(parts, "SPK_P")
+    print(f"the cell's header {c_ref}: {c_fam}, {c_p} mm pitch; the speaker's header {s_ref}: {s_fam}, {s_p} mm pitch "
+          "(footprint names in design.py)")
+    keyed = (c_fam, c_p) != (s_fam, s_p) and None not in (c_fam, s_fam)
+    print("the two headers are " + ("keyed apart: another family and another pitch" if keyed else
+                                     "NOT keyed apart: one plug fits both (DF-170)"))
+    row = bom_row("Li-ion cell")
+    asked = [f for f in FAMILY_FP if f in row] or ["no family named"]
+    print(f"bom.md asks the cell's seller for: {', '.join(asked)} (an order instruction, not the part)")
+    if not os.path.exists(CELL_SPEC):
+        print(f"the cell's plug as bought: no record ({os.path.relpath(CELL_SPEC, ROOT)} is written from the cell's "
+              "spec sheet at VER-37)")
+        print("RESULT: BLOCKED (the cell's spec sheet, VER-37)")
+        return 2 if keyed else 1
+    spec = json.load(open(CELL_SPEC, encoding="utf-8"))
+    fam, pitch = spec.get("plug_family"), spec.get("plug_pitch_mm")
+    print(f"the cell's plug as bought: {fam}, {pitch} mm pitch ({spec.get('source', 'no source')})")
+    ok = keyed and (fam, pitch) == (c_fam, c_p) and (fam, pitch) != (s_fam, s_p)
+    return result(ok)
+
+
+def speaker_hole(b, pcbnew):
+    """(x, y) of the speaker's hole: the smaller hole in the board's outline (the cell's is the larger)."""
+    mm = pcbnew.ToMM
+    outl = pcbnew.SHAPE_POLY_SET()
+    b.GetBoardPolygonOutlines(outl, False)
+    holes = []
+    for i in range(outl.OutlineCount()):
+        for k in range(outl.HoleCount(i)):
+            ring = outl.Hole(i, k)
+            xs = [mm(ring.CPoint(n).x) for n in range(ring.PointCount())]
+            ys = [mm(ring.CPoint(n).y) for n in range(ring.PointCount())]
+            holes.append(((max(xs) - min(xs)) * (max(ys) - min(ys)), ((max(xs) + min(xs)) / 2, (max(ys) + min(ys)) / 2)))
+    return min(holes)[1] if holes else None
+
+
+def spkplug():
+    """VER-202 (DF-183, DEF-64, F-R2): the speaker's plug fits its header and cannot enter the cell's, and its leads
+    reach its header but not the cell's. The plug and the lead length come from bom.md's speaker row (the part as
+    sold: '<n> mm leads with the <p> mm 2-pin plug'); a re-termination counts only once the row no longer says it is
+    not yet ordered. The places are the routed board's (pcbnew): the speaker's hole centre and each header's."""
+    parts, _ = design()
+    c_ref, c_fam, c_p = header(parts, "CELL_P")
+    s_ref, s_fam, s_p = header(parts, "SPK_P")
+    row = bom_row("Speaker")
+    lead = re.search(r"(\d+(?:\.\d+)?) mm leads", row)
+    sold = re.search(r"(\d\.\d+) mm 2-pin plug", row)
+    refit = re.search(r"(\d\.\d+) mm (SH) plug", row)
+    pending = bool(re.search(r"not yet ordered", row, re.I))
+    lead = float(lead.group(1)) if lead else None
+    print(f"bom.md's speaker row: leads {lead} mm, sold with a {sold.group(1) if sold else '?'} mm plug; "
+          + (f"to be refitted with a {refit.group(1)} mm SH plug, " + ("not yet ordered" if pending else "ordered")
+             if refit else "no refit named"))
+    if refit and not pending:
+        fam, pitch = "JST SH", float(refit.group(1))
+    else:
+        fam, pitch = None, float(sold.group(1)) if sold else None
+    print(f"the speaker's plug at assembly: {fam or 'the plug it is sold with'}, {pitch} mm pitch; its header {s_ref} "
+          f"is {s_fam}, {s_p} mm; the cell's {c_ref} is {c_fam}, {c_p} mm")
+    fits = pitch is not None and abs(pitch - (s_p or 0)) < 0.01 and fam == s_fam
+    enters_cell = pitch is not None and abs(pitch - (c_p or 0)) < 0.01 and fam in (c_fam, None)
+    print("the speaker's plug " + ("fits" if fits else "does NOT fit") + f" {s_ref}; it "
+          + ("could enter" if enters_cell else "cannot enter") + f" {c_ref}")
     pcbnew, b = board()
     mm = pcbnew.ToMM
     fps = {f.GetReference(): f for f in b.GetFootprints()}
-    pos = {r: (mm(fps[r].GetPosition().x), mm(fps[r].GetPosition().y)) for r in ("J2", "J4")}
-    sx, sy = [float(v) for v in re.search(r"SPEAKER = dict\(at=\(([\d.]+), ([\d.]+)\)",
-                                          open(os.path.join(BOARD, "placement.py")).read()).groups()]
-    lead = 35.0      # mm: the GSPK151035PN's leads (bom.md, placement.py)
-    print(f"J2 {j2['value']} ({j2['lcsc']}) at ({pos['J2'][0]:.2f}, {pos['J2'][1]:.2f}); "
-          f"J4 {j4['value']} ({j4['lcsc']}) at ({pos['J4'][0]:.2f}, {pos['J4'][1]:.2f}): "
-          f"{math.dist(pos['J2'], pos['J4']):.1f} mm apart")
-    print(f"the speaker's centre ({sx}, {sy}) is {math.dist((sx, sy), pos['J2']):.1f} mm from J2: its {lead:g} mm "
-          "leads cannot reach J2; the cell's lead length is not known until VER-37 and VER-49, and with the case open "
-          "the cell can sit anywhere")
-    print("J2 and J4 are " + ("the same part: the cell's plug fits J4 (DF-170)" if same else "different parts: keyed apart"))
-    return result(not same)
+    spk = speaker_hole(b, pcbnew)
+    reach = {}
+    for r in (s_ref, c_ref):
+        p = fps[r].GetPosition()
+        reach[r] = math.dist(spk, (mm(p.x), mm(p.y)))
+    print(f"the speaker's hole centre ({spk[0]:.2f}, {spk[1]:.2f}): {reach[s_ref]:.1f} mm to {s_ref}, "
+          f"{reach[c_ref]:.1f} mm to {c_ref}, against {lead} mm leads")
+    reaches = lead is not None and reach[s_ref] <= lead
+    short = lead is not None and reach[c_ref] > lead
+    print(f"the leads {'reach' if reaches else 'do NOT reach'} {s_ref}; they {'cannot' if short else 'CAN'} reach {c_ref}")
+    return result(fits and not enters_cell and reaches and short)
+
+
+CURRENT = {   # net: (the worst current it carries in A, where the number comes from); 0.25 A or more needs a class
+    "VBUS": (0.75, "VER-13: J1 to U2 IN at the charge current"),
+    "CELL_P": (0.75, "VER-13: J2 to JP5"), "VBAT": (0.75, "VER-13: JP5 to U2 BAT"),
+    "VSYS": (0.77, "VER-13: U3 0.15 A, LED_A 0.12 A and AMP_VDD 0.5 A"),
+    "AMP_VDD": (0.5, "VER-13: the amplifier, a stand-in until the FM8002A's datasheet"),
+    "SPK_P": (0.35, "0.5 W into 8 ohm, the peak"), "SPK_N": (0.35, "0.5 W into 8 ohm, the peak"),
+    "+3V3": (0.15, "U3's load, VER-13"), "3V3_LDO": (0.15, "U3's load, VER-13"),
+    "LED_A": (0.12, "the panel's 117.7 mA worst case, VER-137"),
+}
+CLASS_AMPS = 0.25
+
+
+def netclass():
+    """VER-201 (O-R8, DEF-68): build_pcb.py's net classes against the routed board's nets. Every net a class names
+    is a net of battler.kicad_pcb (a stale name never matches and routes nothing), and every net CURRENT gives
+    CLASS_AMPS or more sits in a class: a net in none routes at the default 0.15 mm. Read with Python's ast and a
+    text scan; nothing is imported or written."""
+    import ast
+    src = open(os.path.join(BOARD, "tools", "build_pcb.py"), encoding="utf-8").read()
+    classes, default = {}, None
+    for node in ast.walk(ast.parse(src)):
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "CLASSES" for t in node.targets):
+            for k, v in zip(node.value.keys, node.value.values):
+                kw = {x.arg: ast.literal_eval(x.value) for x in v.keywords}
+                classes[ast.literal_eval(k)] = kw
+        if isinstance(node, ast.Assign) and any(isinstance(t, ast.Name) and t.id == "DEFAULT_CLASS" for t in node.targets):
+            default = {x.arg: ast.literal_eval(x.value) for x in node.value.keywords}
+    nets = set(re.findall(r'\(net "([^"]*)"\)', open(os.path.join(BOARD, "battler.kicad_pcb"), encoding="utf-8").read()))
+    print(f"build_pcb.py: {len(classes)} classes ({', '.join(f'{k} {c.get(chr(116) + 'rack')} mm' for k, c in classes.items())}); "
+          f"default {default.get('track') if default else '?'} mm; the board has {len(nets)} nets")
+    bad = []
+    for name, c in classes.items():
+        for n in c.get("nets", []):
+            if n not in nets:
+                bad.append(f"{name} names {n}, which is no net of the board")
+    for net, (amps, why) in CURRENT.items():
+        full = next((n for n in nets if n.split("/")[-1] == net), None)
+        cls = next((k for k, c in classes.items() if full in c.get("nets", [])), None)
+        print(f"  {net} ({full}): {amps:.2f} A ({why}): " + (f"class {cls}" if cls else "no class, the default"))
+        if full is None:
+            bad.append(f"{net} is no net of the board")
+        elif amps >= CLASS_AMPS and not cls:
+            bad.append(f"{full} carries {amps:.2f} A in no class")
+    print(f"findings: {len(bad)}" + ("".join(f"\n  {x}" for x in bad)))
+    return result(not bad)
 
 
 def ntc(t_c, r25, beta):
@@ -1108,7 +1254,7 @@ def tempwin():
 
 CHECKS = {"holes": holes, "swell": swell, "inrush": inrush, "backlight": backlight, "cutoff": cutoff, "screws": screws,
           "mlcc": mlcc, "th1": th1, "cellgap": cellgap, "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom,
-          "edge": edge, "plugs": plugs, "tsband": tsband, "cvload": cvload, "tempwin": tempwin}
+          "edge": edge, "plugs": plugs, "spkplug": spkplug, "netclass": netclass, "tsband": tsband, "cvload": cvload, "tempwin": tempwin}
 
 
 def main():

@@ -37,8 +37,13 @@ the case, survives use.
 | [tools/layout_checks.py](tools/layout_checks.py) | classes 7, 10 and 12 on the routed board and its fab files: bridges VER-148 (with [bridges.csv](bridges.csv), the reviewed close-pad table), fab VER-132, jlc VER-17, ret VER-21, usbpair VER-108 | |
 | [tools/case_checks.py](tools/case_checks.py) | classes 2, 13 and 14 from case.scad's echo, in a temp copy of hardware/ref_design where positions.json is needed: arch VER-190, fit VER-06 (check_fit), placement VER-19, stack VER-20, estimates VER-152, mouths VER-165, xy VER-174 | |
 | [tools/thermal.py](tools/thermal.py) | class 15 on paper: modes VER-144, board VER-193, amp VER-200 (BLOCKED on the FM8002A's datasheet) | |
-| [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188); check_trace's default mode runs it | |
+| [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188), and a live row pairing a connector with another connector's family (VER-188's connector-family rule); check_trace's default mode runs it | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
+| [tools/paper_checks.py](tools/paper_checks.py) | paper checks of classes 4 and 6 from design.py (and the routed board for usb, core and copper), each with a --seed that must fail: latch VER-33, usb VER-191, audio VER-100, core VER-197, shelf VER-103, ampstate VER-196, hotplug VER-12, copper VER-13, mating VER-140 (no seed), mlccbias VER-30 (no seed) | |
+| [tools/check_backpower.py](tools/check_backpower.py) | the back-power path table (VER-159): in each power state, every live net that reaches an input of a part whose own supply is off; a path the ACCEPTED table does not list fails (--seed puts U1's REF back on VBUS) | |
+| [tools/check_bom_cpl.py](tools/check_bom_cpl.py) | the BOM, CPL and PCB fields against design.py (VER-130): every part on the board with design.py's value, LCSC and footprint; the BOM and CPL fab.py writes, each JLC part once; the counts in design.py, fab.py and assembly.md agree; each passive's part number decoded against its value | |
+| [tools/check_land.py](tools/check_land.py) | footprints as placed against the makers' land patterns whose drawings are on disk (VER-125): pad count, pitch, exposed pad, pin 1, numbering direction, and a QFN's pad-to-exposed-pad gap; every other part is listed BLOCKED with the drawing it waits for | |
+| [tools/check_placed_contacts.py](tools/check_placed_contacts.py) | the membrane combs (SW1-SW16) and the dome contacts (SW20-SW23) as placed (VER-162): pads equal the library footprint, the membrane checker's copper rules, no paste on a contact, no silk across a contact's mask opening | |
 
 ## How they link
 
@@ -73,7 +78,15 @@ python3 hardware/vv/tools/design_numbers.py --list        # the scripted pre-ord
 Default mode fails only on structure; check_trace.py's docstring lists every rule. A design
 baseline that differs from HEAD, or from the baseline commit's own blobs, is a structure error
 (DEF-47, F-R3): the register no longer describes the design until its rows are re-checked and
-the baseline updated. Then it
+the baseline updated. Three more structure errors since 2026-10-27: a defect whose Status
+keyword is not OPEN while its own Status text says it stays OPEN or holds a gate (F-R1: R4
+reads only the keyword, so the two must agree); an analysis whose procedure reads
+assembly.md, bom.md, bringup.md or pinmap.md without naming that doc in its covers (F-R3:
+a doc edit then stales the check, and needs no change record, since the docs are not
+copper or BOM); and a live row of requirements.md, dfmea.csv or verification.csv that pairs a
+connector with another connector's family (VER-188's connector-family rule, O-R8 and F-R5).
+At the order gate R4 lists the FIXED defects due by the gate beside its result, and G0 and
+G1 count a defect leaving OPEN as a move, like a Gate move (O-R1). Then it
 reports what is not yet true: requirements with no check, H-priority risks whose 'detects'
 checks have not passed, checks that are FAIL, NOT_RUN or NOT_BUILT, stale evidence, parts no
 DFMEA row names, and warnings (a pass band narrower than 4 x its instrument's accuracy, a

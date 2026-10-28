@@ -15,7 +15,7 @@ re-seeded them on 2026-10-26 for be437f8, and on 2026-10-27 for the board being 
 panel (ILI9488) with R61 3.74k, TH1 a 10k B4460 0805, U10 buffering VBAT/2, 74HC165s in the button
 ends with 47k pull-ups, metal domes for Start and Select, the cell along the board in a 37.8 x
 54.8 mm hole under the glass's seat-2 half, J4 a JST SH header, the speaker sunk in a hole, a
-72.4 x 151.64 mm board in a one-piece top). A requirement whose subject left
+72.4 x 151.48 mm board (73.4 mm wide across J1's tab) in a one-piece top. A requirement whose subject left
 the design is RETIRED with the commit that removed it; it keeps its ID. None is binding until
 Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md): APPROVED, REJECTED, or
 DEFERRED with a reason. A Status here that has no matching line he committed there is a
@@ -111,7 +111,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: ref_design
 - Statement: From charge-done, the device shall play for at least 4.0 h before the 3.50 V cutoff at 25 C, backlight at 50% duty and sound at -12 dBFS.
-- Rationale: about 700 mAh against an estimated 90-120 mA (core up to 50 mA, panel logic 10 mA, backlight 56 mA at 50%, amplifier 4.4 mA plus sound); the usable capacity to the cutoff is measured per lot (VER-153).
+- Rationale: about 700 mAh against an estimated 90-120 mA (core up to 50 mA, panel logic 10 mA, backlight about 54 mA at 50% duty, half its 108.2 mA nominal at 100% with R61 3.74k, amplifier 4.4 mA plus sound); the usable capacity to the cutoff is measured per lot (VER-153).
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
 - Verified by: VER-101, VER-153
@@ -204,7 +204,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: ref_design
 - Statement: The all-in cost per unit at 10 units shall be $45 or less (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament).
-- Rationale: the number comes from VER-117's re-run of cost.py with a new board quote at 72.4 x 151.64 mm; bom.md's board line is still the quote for 70.5 x 151.34 mm (3% less area).
+- Rationale: the number comes from VER-117's re-run of cost.py with a new board quote at 72.4 x 151.48 mm (73.4 mm across J1's tab; case.scad's board_l, the Edge.Cuts outline); bom.md's board line still asks for 72.4 x 151.64 mm and its price is still the quote for 70.5 x 151.34 mm (DEF-79).
 - Source: docs/bom.md; Alex's use.
 - Method: I
 - Verified by: VER-117
@@ -717,7 +717,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-02, VER-75
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM (R60 + R61, 103.9k) do not: DF-45, DF-47. Decision for Alex (PLAN.md decision DEC-11): 4.7k pull-downs (BOM only), or rely on firmware and the placed stepping (VER-75).
+- Notes: PWR_HOLD (R42 4.7k) and CHG_OFF (R44 4.7k) meet it; AMP_EN (R37 100k) and BL_PWM on GPIO28 (R60 + R61, 103.74k since R61 3.74k) do not: DF-45, DF-47. Decision for Alex (PLAN.md decision DEC-11): 4.7k pull-downs (BOM only), or rely on firmware and the placed stepping (VER-75).
 
 ### REQ-MCU-08: Chip identity
 - Level: subsystem
@@ -827,7 +827,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
-- Rationale: the panel publishes no pulse rating; the committed simulation is for this circuit again (56 mA a pin, R61 3.9k), but backlight.py reads nothing from design.py (DEF-45).
+- Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not 71737ae's 3.74k on GPIO28 (0.119 V, 54.1 mA a pin, 117.7 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05).
 - Source: board/sim/backlight_results.txt (to re-run).
 - Method: A, T
 - Verified by: VER-05, VER-62
@@ -838,7 +838,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: At the firmware's maximum duty and VSYS 3.5 V the LED current shall drop by 5% or less from its value at 4.2 V for LED Vf up to 3.2 V, and by 10% or less for Vf up to 3.4 V (the newer datasheet's maximum).
-- Rationale: brightness should not sag until the cutoff; at 18.8 mA an LED (56 mA over three) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
+- Rationale: brightness should not sag until the cutoff; at 18.0 mA an LED (54.1 mA a pin over three, nominal, R61 3.74k) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
 - Source: pin_review/panel.json; design_review.md Backlight.
 - Method: A, T
 - Verified by: VER-05, VER-137, VER-62
@@ -850,7 +850,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: ref_design
 - Statement: Each sink's loop shall have 45 degrees of phase margin or more at every simulated corner, and an 18% to 95% duty step shall show no ringing on the scope.
 - Rationale: an op-amp driving a FET gate can oscillate.
-- Source: board/sim/backlight.py (72.5 degrees or more over 720 corners, run for 56 mA a pin and R61 3.9k: this board's values again, DEF-45).
+- Source: board/sim/backlight.py (72.5 degrees or more over 720 corners, run for R61 3.9k and 56 mA a pin; to re-run for 71737ae's R61 3.74k and 54.1 mA a pin once it reads design.py: DEF-45, VER-05).
 - Method: A, T
 - Verified by: VER-05, VER-62
 - Phase: EVT
@@ -1234,7 +1234,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall dissipate 2.0 W or less in total, tabulated per mode (off, cell play, USB play, charging, charging while playing) with each part's position, and the firmware rule the table implies (for example CHG_OFF or a capped volume while the backlight is at full on USB) shall be in the bring-up image before the touch test.
-- Rationale: a rough worst case on a 5.5 V source with a 3.0 V cell is about 1.6 W (U2 about 0.66 W, U7 0.4 W, U3 0.17 W, the backlight's FETs 0.15 W at 56 mA a pin) in a 77.4 x 156.64 x 9.6 mm case, beside the glass; the table decides a firmware rule, not copper, so it is due with the bring-up image (round 2's proportionality objection).
+- Rationale: a rough worst case on a 5.5 V source with a 3.0 V cell is about 1.6 W (U2 about 0.66 W, U7 0.4 W, U3 0.17 W, the backlight's FETs about 0.15 W at 54.1 mA a pin) in a 77.4 x 156.48 x 9.6 mm case, beside the glass; the table decides a firmware rule, not copper, so it is due with the bring-up image (round 2's proportionality objection).
 - Source: Claude's analysis (O-47, F-48).
 - Method: A
 - Verified by: VER-144
@@ -1300,7 +1300,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-17, VER-18, VER-28
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: the copper to the edge is met at 71737ae: 0.308 mm at the closest, KiCad's edge clearance 0.31 mm and a 0.30 mm copper-to-NPTH rule (battler.kicad_dru), VER-18 PASS; at be437f8 GND pours sat 0.20 mm from both holes (DEF-56). The dated page itself (VER-17) and the vias' 0.10 mm ring are still open.
+- Notes: the copper to the edge is met in the data at 71737ae: 0.308 mm at the closest, KiCad's edge clearance 0.31 mm and a 0.30 mm copper-to-NPTH rule (battler.kicad_dru), VER-18 PASS; at be437f8 GND pours sat 0.20 mm from both holes. As built, with the 0.2 mm outline tolerance (ROUTE_TOL), the closest is 0.108 mm, and the narrowest FR4 web 1.00 mm can be 0.60 mm (O-R2): whether 0.30 mm is a data rule or an as-built one is the dated page's to say (VER-17, DEF-56). The dated page and the vias' 0.10 mm ring are still open.
 
 ### REQ-FAB-04: Holes
 - Level: board
@@ -1397,7 +1397,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-FAB-11: Flatness
 - Level: board
 - Board: both
-- Statement: Each board's bow and twist shall be 0.75% or less of its length (1.14 mm over the ref_design board's 151.64 mm; the Edge.Cuts outline).
+- Statement: Each board's bow and twist shall be 0.75% or less of its length (1.14 mm over the ref_design board's 151.48 mm at 71737ae; the Edge.Cuts outline).
 - Rationale: the case clamps the board flat; a bowed board cracks MLCCs.
 - Source: IPC-6012 Class 2 (bow and twist for SMT boards); validation_plan #78.
 - Method: T

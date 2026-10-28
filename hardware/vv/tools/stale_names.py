@@ -14,11 +14,19 @@ the baseline's does not. Three kinds of name, read from every design.py on the h
           ever had (a typo: R66, TP17) fails too when its letters are a prefix the baseline uses
           (R, C, U, Q, D, J, JP, TP, SW, H, RN, L, X, TH, FID); a range's ends are read, not the
           numbers between, and a number 0 is a pin name (the 74HC165's 'D0 11'), not a ref.
-  net     a net name with an underscore or a digit (LS_GATE, CHG_PROG, REV0). Bare words (TS, ILIM,
-          ISET) are also the BQ24073's pin names, so they are not read.
+  net     a net name with an underscore or a digit (LS_GATE, CHG_PROG, REV0), bare or in KiCad's path
+          form ('/USB_Charger/VBUS_D5', O-R8). Bare words (TS, ILIM, ISET) are also the BQ24073's pin
+          names, so they are not read.
   mpn     a part number's stem, its leading letters and digits (TP4056 from TP4056-42-ESOP8,
           ME6211 from ME6211C33M5G-N), when no baseline part's value or part number has that stem.
           RP2350 is the chip family's datasheet name and stays.
+
+A fourth rule reads the baseline only (O-R8, F-R5): a wire-to-board connector family a row names
+(PicoBlade or MX1.25; JST SH, an SH plug, header or housing, SHR-02V, SM0nB-SRSS) must be the family
+of a connector the row names, the family read from that connector's footprint name in design.py
+(Molex_PicoBlade, JST_SH), or be qualified as the cell's or the speaker's plug and be the family of
+the header on CELL_P or on SPK_P. 'J4, a PicoBlade plug' fails once J4 is a JST SH header; 'J4 the
+JST SH, J2 the PicoBlade' and 'the cell's PicoBlade plug does not enter J4' pass.
 
 Where: requirements.md (every block not RETIRED, every field but 'Retired'), dfmea.csv (rows not
 RETIRED, every column) and verification.csv (rows not RETIRED or CUT: title, procedure,
@@ -150,6 +158,51 @@ def rows(vv):
     return out
 
 
+# wire-to-board connector families: how a footprint name and a row's text name each one (O-R8, F-R5)
+FAMILY_FP = {"PicoBlade": re.compile(r"PicoBlade"), "JST SH": re.compile(r"JST_SH"), "JST PH": re.compile(r"JST_PH")}
+FAMILY_TEXT = {"PicoBlade": re.compile(r"PicoBlade|MX1\.25"),
+               "JST SH": re.compile(r"JST SH|\bSH (?:plug|header|housing|2-pin|1\.0)|SHR-02V|SM0\dB-SRSS"),
+               "JST PH": re.compile(r"JST PH|\bPH (?:plug|header|housing|2-pin)")}
+OWNER = {"cell": ("CELL_P", re.compile(r"\bcell'?s'? (?:\w+ ){0,2}$", re.I)),
+         "speaker": ("SPK_P", re.compile(r"\bspeaker'?s'? (?:\w+ ){0,2}$", re.I))}
+
+
+def families(sha):
+    """({ref: family} of the baseline's wire-to-board connectors, {owner: family} of the cell's and the speaker's
+    header): read from each J part's footprint name and its nets in design.py at sha."""
+    fam, own = {}, {}
+    for p in parts_at(sha) or []:
+        if not re.fullmatch(r"J\d+", p["ref"]):
+            continue
+        f = next((k for k, rx in FAMILY_FP.items() if rx.search(str(p.get("fp") or ""))), None)
+        if not f:
+            continue
+        fam[p["ref"]] = f
+        for who, (net, _) in OWNER.items():
+            if any(n and n.split("/")[-1] == net for n in p["pins"].values()):
+                own[who] = f
+    return fam, own
+
+
+def family_hits(t, fam, own):
+    """The families a row's text t names that are no named connector's and no qualified plug's."""
+    refs = set(re.findall(r"(?<![\w-])(J\d+)(?!\w)", t)) & set(fam)
+    if not refs:
+        return set()
+    have = {fam[r] for r in refs}
+    hits = set()
+    for f, rx in FAMILY_TEXT.items():
+        for m in rx.finditer(t):
+            if f in have:
+                continue
+            before = t[max(0, m.start() - 40):m.start()]
+            if any(o.search(before) and own.get(who) == f for who, (_, o) in OWNER.items()):
+                continue
+            hits.add(f"{m.group(0)} ({f}) beside {' '.join(sorted(refs))}, which design.py makes "
+                     + ", ".join(f"{r} {fam[r]}" for r in sorted(refs)) + " (connector family)")
+    return hits
+
+
 def findings(vv):
     base = baseline_commit(vv)
     if not base:
@@ -160,11 +213,12 @@ def findings(vv):
     refs = {k for k, (kind, _) in old.items() if kind == "ref"}
     nets = {k for k, (kind, _) in old.items() if kind == "net"}
     mpns = {k for k, (kind, _) in old.items() if kind == "mpn"}
-    net_rx = re.compile(r"(?<![\w/])(" + "|".join(sorted(map(re.escape, nets), key=len, reverse=True)) + r")(?!\w)") \
+    net_rx = re.compile(r"(?<![\w])(" + "|".join(sorted(map(re.escape, nets), key=len, reverse=True)) + r")(?!\w)") \
         if nets else None
     mpn_rx = re.compile(r"(?<![\w-])(" + "|".join(sorted(map(re.escape, mpns), key=len, reverse=True)) + r")\w*") \
         if mpns else None
     ever, prefixes = ever_refs(base)
+    fam, own = families(base)
     out = []
     for where, rid, text in rows(vv):
         t = WAS.sub(" ", text)
@@ -187,6 +241,7 @@ def findings(vv):
             hit |= {f"{m.group(1)} (net, last in {old[m.group(1)][1]})" for m in net_rx.finditer(t)}
         if mpn_rx:
             hit |= {f"{m.group(0)} (part number, last in {old[m.group(1)][1]})" for m in mpn_rx.finditer(t)}
+        hit |= family_hits(t, fam, own)
         if hit:
             out.append((where, rid, "names what design.py at " + base[:7] + " does not have: " + ", ".join(sorted(hit))))
     return out
@@ -204,7 +259,11 @@ def main():
     f = findings(vv)
     for where, rid, msg in f:
         print(f"  {where} {rid}: {msg}")
-    print(f"{len(f)} live rows name a part, part number or net the baseline does not have")
+    fam, own = families(base) if base else ({}, {})
+    print("connector families at the baseline: " + ", ".join(f"{r} {f}" for r, f in sorted(fam.items()))
+          + "; the cell's header " + own.get("cell", "?") + ", the speaker's " + own.get("speaker", "?"))
+    print(f"{len(f)} live rows name a part, part number or net the baseline does not have, or pair a connector "
+          "with another's family")
     print("RESULT: " + ("PASS" if not f else "FAIL"))
     return 1 if f else 0
 
