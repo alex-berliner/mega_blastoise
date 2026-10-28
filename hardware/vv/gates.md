@@ -100,7 +100,8 @@ it; a check a stage names is live. A stage is met when its exit needs and its ot
 met (NM-03 needs VER-233 too); the stage its entry names is order only, so a stage met before the one
 before it is printed as met out of order. A NOT_BUILT check here is a work item: it has no script or
 procedure for this chip yet. A check whose covers name only docs/static, the datasheets or
-hardware/vv (the chip gate's dev-board tests, the datasheet download) may PASS before the F1C200s
+hardware/vv's text (not its scripts), and whose procedure names no design file (the chip gate's
+dev-board tests, the datasheet download, the requirements review) may PASS before the F1C200s
 design is the baseline; every other F1C200s check waits for it (README, Rules).
 
 | ID | Stage | Entry | Exit | Board |

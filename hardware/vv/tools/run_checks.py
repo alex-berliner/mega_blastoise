@@ -165,12 +165,12 @@ def main():
         row = dict(zip(head, byid[vid]))
         # 2026-10-28: a check of a dropped board is not run; and while the design files at the baseline are a dropped
         # board's (README '- Baseline board:'), a check of the live board is not run on them: its result would be
-        # the dropped board's, not the F1C200s board's (check_trace refuses such a PASS or FAIL). A check whose covers
-        # name none of those files (a dev-board test, a datasheet download) runs (ct.reads_board_files)
+        # the dropped board's, not the F1C200s board's (check_trace refuses such a PASS or FAIL). A check that reads
+        # none of those files (a dev-board test, a datasheet download) runs (ct.reads_board_files)
         if row["last_result"] in ct.GONE + ("CUT",):
             print(f"{vid} {name}: not run: {row['last_result']}")
             continue
-        if row["board"] in ct.BOARDS and ct.BASELINE_BOARD in ct.DROPPED_BOARDS and ct.reads_board_files(row["covers"]):
+        if row["board"] in ct.BOARDS and ct.BASELINE_BOARD in ct.DROPPED_BOARDS and ct.reads_board_files(row["covers"], row["procedure"]):
             print(f"{vid} {name}: not run: the baseline's design files are the dropped {ct.BASELINE_BOARD} board's; "
                   f"it runs once a {row['board']} design is the baseline")
             continue

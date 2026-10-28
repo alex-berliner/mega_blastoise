@@ -264,8 +264,9 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   files the baseline is. While it is a dropped board, no check of the live board may PASS or FAIL
   (the default mode fails), run_checks.py does not run them, R7 fails at every gate and
   DFMEA:COVERAGE fails: the register describes no F1C200s design yet. The exception is a check
-  whose covers name only docs/static, hardware/ref_design/datasheets or hardware/vv: it reads none
-  of the dropped board's files, so the chip gate's dev-board tests (VER-221 to VER-225), the
+  whose covers name only docs/static, hardware/ref_design/datasheets or hardware/vv's text (not
+  its scripts under tools/, which read design.py) and whose procedure names no design file: it
+  reads none of the dropped board's files, so the chip gate's dev-board tests (VER-221 to VER-225), the
   datasheet download (VER-233) and the requirements review (VER-189) can run before the F1C200s
   design.py exists (F's audit: NM-03 could not exit before NM-05 otherwise).
 - **Every live requirement is allocated to subsystems** (2026-10-28): a `- Subsystem:` line names

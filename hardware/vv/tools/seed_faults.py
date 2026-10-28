@@ -87,9 +87,10 @@ The F1C200s re-target adds theirs (2026-10-28):
            to NM-03 when NM-01's exit is met (report).
 F's audit of the re-target adds theirs (2026-10-28):
 
-  chip gate  a dev-board check's PASS whose covers name a doc under hardware/ref_design, and one that names a part,
-             while the baseline is the dropped board's: the default mode fails (only a check that reads Alex's spec,
-             the datasheets or the register may run before the F1C200s design is the baseline).
+  chip gate  a dev-board check's PASS whose covers name a doc under hardware/ref_design, one that names a part, and one
+             that names a register script (it reads design.py), while the baseline is the dropped board's: the default
+             mode fails (only a check that reads Alex's spec, the datasheets or the register's text may run before the
+             F1C200s design is the baseline).
   entry      a stage's entry need that is not met keeps the stage open (report).
   lessons    a dropped defect that names no live DF row its lesson carries to, one whose row is itself DROPPED, and one
              that does not say what it was there: the default mode fails.
@@ -464,6 +465,11 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-233", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/vv/evidence/2026-10-28_VER-233_datasheets.txt",
                         covers="hardware/ref_design/datasheets/SOURCES.md part:U1")),
+    ("baseline board: a PASS that runs a register script is no dev-board check (the script reads design.py)",
+     "structure", "VER-189: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     lambda d: csv_edit(d, "verification.csv", "VER-189", last_result="PASS", commit=HEAD7, date=TODAY,
+                        evidence="hardware/vv/evidence/2026-10-28_VER-189_review.txt",
+                        covers="hardware/vv/requirements.md hardware/vv/tools/paper_checks.py")),
     ("new-MCU path: a stage's entry need not met keeps it open", "report",
      "NM-02 Chip selection: done, queue issue #4 (Alex, 2026-10-28: the F1C200s, the V3s as fallback): not met: entry:",
      lambda d: text_edit(d, "gates.md", "| NM-01 | DOC:docs/static/next_spin_requirements.md::^##.Chosen",

@@ -56,7 +56,8 @@ live row names a live board (f1c200s or both), never a dropped one; no live row 
 (verified by, detects, needs, an allocation) or cites one outside 'Was: ...'; every live requirement
 names its subsystems ('- Subsystem:', grid.py's SUBSYSTEMS or 'all'); while README's '- Baseline board:'
 is a dropped board, no check of the live board is PASS or FAIL (its design files are another board's) unless its
-covers name only docs/static, the datasheets or hardware/vv (a dev-board test, a datasheet download: F's audit);
+covers name only docs/static, the datasheets or hardware/vv's text (not its scripts) and whose procedure names no
+design file (a dev-board test, a datasheet download: F's audit);
 gates.md's new-MCU stages NM-01.. are numbered in order, each entry names the stage before it, each
 names an exit, and every token is an ID, DOC:<path>::<regex>, APPROVED:REQ-<AREA> or GATE:<phase> with
 no gone check among them. The report prints the stage the register is at: the first stage whose exit
@@ -1036,16 +1037,21 @@ BASELINE_BOARD = None                    # README's '- Baseline board: `<board>`
 
 
 # What a check of the live board may cover and still run while the baseline is a dropped board's files (F's audit,
-# 2026-10-28): Alex's spec, the datasheets and the register. Anything else (a part, a release, any other path under
-# hardware/ref_design or elsewhere) is taken to read the dropped board's files.
+# 2026-10-28): Alex's spec, the datasheets and the register's own text. Anything else (a part, a release, any other
+# path under hardware/ref_design, and the register's scripts, which read design.py whatever their covers say) is taken
+# to read the dropped board's files; so is a procedure that names a design file.
 OFF_BOARD_ROOTS = ("docs/static/", "hardware/ref_design/datasheets/", "hardware/vv/")
+SCRIPT_ROOT = "hardware/vv/tools/"
+DESIGN_WORDS = re.compile(r"design\.py|placement\.py|case\.scad|kicad_|hardware/vv/tools/")
 
 
-def reads_board_files(covers):
-    """Does a check's result rest on the design files at the baseline? Yes unless every 'covers' token is a path
-    under OFF_BOARD_ROOTS (a dev-board test covers next_spin_requirements.md; a datasheet download SOURCES.md)."""
-    toks = covers.split()
-    return not toks or not all(t.split("::", 1)[0].startswith(OFF_BOARD_ROOTS) for t in toks)
+def reads_board_files(covers, procedure=""):
+    """Does a check's result rest on the design files at the baseline? Yes unless every 'covers' token is a path under
+    OFF_BOARD_ROOTS but not a script (a dev-board test covers next_spin_requirements.md; a datasheet download
+    SOURCES.md) and its procedure names no design file and runs no register script outside a 'Was: ...' clause."""
+    paths = [t.split("::", 1)[0] for t in covers.split()]
+    off = paths and all(p.startswith(OFF_BOARD_ROOTS) and not p.startswith(SCRIPT_ROOT) for p in paths)
+    return not off or bool(DESIGN_WORDS.search(WAS.sub("", procedure)))
 
 
 def parse_baseline_board():
@@ -1395,7 +1401,7 @@ def load():
         if v["last_result"] == "DROPPED":
             dropped_ok(w, v["id"], v["board"], v["evidence"])
         elif (v["last_result"] in ("PASS", "FAIL") and v["board"] in BOARDS and BASELINE_BOARD in DROPPED_BOARDS
-              and reads_board_files(v["covers"])):
+              and reads_board_files(v["covers"], v["procedure"])):
             # 2026-10-28: the design files at the baseline are a dropped board's, so no result on them speaks for
             # the next spin's board: its checks wait, NOT_RUN or NOT_BUILT, until its own design is the baseline.
             # A check that reads none of them (a dev-board test, a datasheet download) may run (F's audit: the chip
