@@ -477,10 +477,10 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Symptom: board/sim/backlight_circuit.py hard-codes rs = 2.2, rg = 330, rf = 10k, cf = 1n, rtop = 100k, rbot = 3.9k and gate_pd = 100k, and its docstring says BL_REF comes from GPIO44 (GPIO28). Its values were wrong for the 2.4 in panel (R61 2.4k) from 53e21c8 and are right again since 79de1f7 (R61 3.9k, 56 mA a pin), by coincidence: nothing ties them to design.py.
 - Root cause: a sim that copies values, and line-regex freshness.
 - Why missed: nobody changed a value to see whether the evidence went stale.
-- Check added or changed: VER-05 (covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed; at EVT since 2026-10-26: the loop's parts are BOM values and the bench sees ringing on unit 1).
-- Updated: REQ-DSP-05, DF-44
+- Check added or changed: VER-05 (covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed; at EVT since 2026-10-26: the loop's parts are BOM values and the bench sees ringing on unit 1). Since 2026-10-28 VER-05 is paper_checks.py backlight, which reads every value from design.py (and is shown failing with C48/C49 seeded to 10 pF); board/sim/backlight.py still hard-codes R61 3.9k and is no longer any check's evidence.
+- Updated: REQ-DSP-05, DF-44, REQ-DSP-09
 - Gate: EVT
-- Status: OPEN
+- Status: CLOSED (VER-05 PASS on 39cc07f, 2026-10-28: the check reads design.py)
 
 ### DEF-46: Bring-up's cell emulation cannot hold 3.50 V with USB in
 - Found: two-model review (O-19), 2026-10-24
@@ -983,3 +983,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-118
 - Gate: EVT
 - Status: OPEN (Molex's own rating read from the drawing by eye, and the cell's spec sheet's discharge limit (VER-37); a firmware rule (the amplifier backed off during TX) if either is short)
+
+### DEF-96: BL_PWM low leaves the backlight glowing on a unit whose U6 offset is positive
+- Found: VER-05 (paper_checks.py backlight) at 39cc07f, 2026-10-28
+- Symptom: with 3V3 on and BL_PWM low, BL_REF is 0 V and each sink regulates its 2.2 ohm sense to U6's input offset. The MCP6002's offset is up to +4.5 mV at VCM = VSS (mcp6001.txt:135), so a unit can hold 2.07 mA a sink, 4.13 mA in all (0.69 mA an LED): a visible glow, and 4.13 mA more in the charging screen's sleep. pinmap.md says BL_PWM 'low = off' and turns the backlight off that way while charging. It is under VER-05's 5 mA limit, so the check passes.
+- Root cause: a single-supply sink with no offset trim, and a 'off' that relies on a zero reference.
+- Why missed: the ngspice run modelled the offset only at 5% duty and up; nothing looked at duty 0.
+- Check added or changed: VER-05 (prints the off-state current); VER-62 records the current through JP2 with BL_PWM low on unit 1
+- Updated: VER-62
+- Gate: EVT
+- Status: OPEN (options: a 6.2 Mohm from each BL_FB to +3V3, whose 0.53 uA through R58/R59 (10k) builds in 5.3 mV that a 4.5 mV offset cannot beat, with R61 re-tuned for the 2.4 mA a sink it removes at full duty; or firmware turns 3V3's panel load off with the panel's sleep; or accept the glow)

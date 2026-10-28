@@ -88,6 +88,9 @@ CHECKS = {
     "VER-12": ("hotplug", ["python3", PC, "hotplug"], False),
     "VER-196": ("ampstate", ["python3", PC, "ampstate"], False),
     "VER-140": ("mating", ["python3", PC, "mating"], False),
+    # 2026-10-28: the backlight on paper (was the ngspice run, DEF-45) and the cell's spec sheet against R5, TH1 and the case
+    "VER-05": ("backlight", ["python3", PC, "backlight"], False),
+    "VER-160": ("cellspec", ["python3", DN, "cellspec"], False),
     "VER-159": ("check_backpower", ["python3", "hardware/vv/tools/check_backpower.py"], False),
     "VER-162": ("check_placed_contacts", ["python3", "hardware/vv/tools/check_placed_contacts.py"], True),
     "VER-125": ("check_land", ["python3", "hardware/vv/tools/check_land.py"], True),

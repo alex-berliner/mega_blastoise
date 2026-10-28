@@ -14,6 +14,8 @@
   hotplug   VER-12   a 2 m cable plugged live into R41/C1 and U2's IN (an ODE): VBUS, EN1 and PWR_EN peaks
   mating    VER-140  the cell plugged into J2: the peak into the VBAT and VSYS capacitors, and PWR_EN through the edge
   mlccbias  VER-30   each MLCC's bias against its part's minimum: the derating the curves must show
+  backlight VER-05   the two LED current sinks: phase margin at every corner of a nodal model, DC, headroom at 3.5 V,
+                     the off states and a USB plug-in while lit (2026-10-28; was the ngspice run, DEF-45)
 
 Each check reads design.py (through design_numbers.design()) and, for 'usb' and 'core', the routed board
 (pcbnew). A datasheet number design.py does not hold is a named constant below with its file and line.
@@ -68,6 +70,19 @@ VF_01MA, VF_DECADE = 0.240, 0.080  # V: BAT54C 240 mV max at 0.1 mA, 320 mV at 1
 U1_C = 5e-12                     # F: SRV05-4 junction capacitance, maximum (srv05-4.txt:105)
 U7_ISD = 4.2e-6                  # A: FM8002A shutdown current IOFF, typical only (fm8002a.txt:123)
 SW24_R = (0.1, 0.5)              # ohm: TPS850 contact resistance, 100 mOhm and 500 mOhm max (rocpu_tps850.txt:20, 137)
+# MCP6002 (U6) and AO3400A (Q5, Q6) since 2026-10-28 (VER-05 on paper); backlight() re-reads each line through ds.quote()
+U6_GBW = 1.0e6                   # Hz: gain bandwidth product, typical only (mcp6001.txt:176)
+U6_AOL = 10 ** (88 / 20)         # DC open-loop gain, 88 dB minimum (mcp6001.txt:151)
+U6_VOS = 4.5e-3                  # V: input offset, maximum, at VCM = VSS (mcp6001.txt:135)
+U6_SWING = 0.025                 # V: output swing from either rail at VDD 5.5 V (mcp6001.txt:154)
+U6_CIN = 6e-12 + 3e-12           # F: common-mode 6 pF and differential 3 pF input capacitance (mcp6001.txt:145-146)
+U6_VDD_MIN = 1.8                 # V: supply minimum (mcp6001.txt:159)
+Q_CISS, Q_COSS, Q_CRSS = 630e-12, 75e-12, 50e-12   # F: typical, VGS 0 V, VDS 15 V, 1 MHz (ao3400a.txt:85-87)
+Q_RG_INT = 4.5                   # ohm: the AO3400A's gate resistance, maximum (ao3400a.txt:88)
+AO_VTH = (0.65, 1.45)            # V: AO3400A VGS(th) at 250 uA, minimum and maximum (ao3400a.txt:73)
+AO_RDS_25 = 0.048                # ohm: AO3400A RDS(ON) at VGS 2.5 V, maximum (ao3400a.txt:80)
+LED_VF_MAX = 3.2                 # V: the panel's backlight Vf at 120 mA, maximum (er-tft035ips-6.txt:758)
+FH12_R = 0.05                    # ohm: FH12 contact resistance, maximum (hirose_fh12.txt:56)
 # Stand-ins: no file gives these; each is pessimistic and printed as a stand-in
 STAND_U7_ISD = 2 * U7_ISD        # A: twice the FM8002A's typical, as no maximum is printed
 STAND_IDSS = 1e-6                # A: a 2N7002 or AO3400A off at a few volts (the usual 1 uA IDSS at rated VDS)
@@ -894,10 +909,363 @@ def sdinsert(seed=None):
     return dn.result(ok)
 
 
+# ---- VER-05: the backlight's two current sinks on paper (2026-10-28; the ngspice run in board/sim was DEF-45's) ------
+# Each sink: U6 (MCP6002) holds BL_Sk at BL_REF through R58/R59 (10k) with C48/C49 (1n) from its output to its - input;
+# R54/R55 (330) into the AO3400A's gate, R56/R57 (100k) to GND, R52/R53 (2.2) from the source to GND, three LEDs from
+# LED_A (VSYS through JP2) to the drain. The small-signal model below is a nodal one, solved for the loop gain (broken
+# at U6's - input) and stepped in time for a plug-in; every number is design.py's, a datasheet line read by ds.quote(),
+# or a stand-in named STAND_BL_* and printed as one.
+STAND_BL_GBW = (0.5, 1.5)        # x U6's typical GBW: the datasheet gives a typical only
+STAND_BL_P2 = (3.0, 10.0, 30.0)  # U6's second pole, x its GBW (not published)
+STAND_BL_RO = (100.0, 300.0, 1000.0)   # ohm: U6's open-loop output resistance (not published)
+STAND_BL_PM1 = 70.0              # deg: a (GBW, p2, ro) corner is kept only if it gives U6 this much phase margin at G = +1 with
+                                 # the datasheet's 60 pF and 10 kohm load: 20 deg under the 90 deg typical (mcp6001.txt:173, 177)
+STAND_BL_CMUL = ((1.0, 1.0), (2.0, 3.0))   # Cgs and Crss multipliers at the sink's VDS of a volt or two (the table is at 15 V)
+STAND_BL_RLED = (2.0, 50.0)      # ohm: three parallel LEDs' small-signal resistance at 18 mA each (no I-V slope published)
+STAND_BL_N = 1.3                 # weak-inversion slope factor: gm <= ID / (n kT/q)
+STAND_BL_LAMBDA = 0.05           # 1/V: the FET's channel-length modulation (gds = lambda x ID)
+STAND_BL_PATH_R = 0.1            # ohm: JP2 and the LED_A and LED_K tracks, each (VER-13 does not route the backlight)
+STAND_BL_EDGE_X = (1.0, 4.0)     # x the fastest VSYS rise U2's input limit allows (and a slower one)
+U2_IIN_MAX = 1.5                 # A: U2's programmable input current limit, its highest (bq24074.txt:738)
+STAND_BL_CRSS_RATIO = 0.15       # Crss / Ciss averaged over a 0-4.4 V drain swing (the 15 V table gives 0.079)
+STAND_BL_SUBVT = 0.090           # V a decade: the FET's subthreshold slope below VGS(th)
+KT_Q = 0.02585                   # V at 300 K
+SEED_BL = {"C48": "10p", "C49": "10p"}   # the local loop's capacitor nearly gone: the gate pole sets the phase
+
+
+def _solve(a, b):
+    """Gaussian elimination with partial pivoting, complex or real."""
+    n = len(b)
+    m = [row[:] + [b[i]] for i, row in enumerate(a)]
+    for k in range(n):
+        p = max(range(k, n), key=lambda i: abs(m[i][k]))
+        m[k], m[p] = m[p], m[k]
+        for i in range(k + 1, n):
+            f = m[i][k] / m[k][k]
+            if f:
+                for j in range(k, n + 1):
+                    m[i][j] -= f * m[k][j]
+    x = [0] * n
+    for i in range(n - 1, -1, -1):
+        x[i] = (m[i][n] - sum(m[i][j] * x[j] for j in range(i + 1, n))) / m[i][i]
+    return x
+
+
+class Sink:
+    """One sink's small-signal network. Nodes: FB (U6's - input side), X and Y (U6's two poles), OUT (U6's pin), G, S, D.
+    U6 is gm1 (into X: R1, C1 give AOL and the GBW), a unit stage into Y (the second pole), then Y through ro to OUT.
+    The FET is gm (G-S) from D to S, with gds, Cgs, Cgd and Cds. The LEDs are rled from D to VSYS."""
+    N = ("FB", "X", "Y", "OUT", "G", "S", "D")
+
+    def __init__(self, k):
+        self.k = k
+        i = {n: j for j, n in enumerate(self.N)}
+        n = len(self.N)
+        self.i = i
+        self.G = [[0.0] * n for _ in range(n)]
+        self.C = [[0.0] * n for _ in range(n)]
+        self.gm1 = 1e-3                           # U6's input stage reads (REF - FB): REF is 0 small-signal
+        G, C = self.G, self.C
+
+        def y(m, a, b, v):
+            ia, ib = i.get(a), i.get(b)
+            if ia is not None:
+                m[ia][ia] += v
+            if ib is not None:
+                m[ib][ib] += v
+            if ia is not None and ib is not None:
+                m[ia][ib] -= v
+                m[ib][ia] -= v
+
+        def vccs(out_p, out_n, cp, cn, g):        # current g (V(cp) - V(cn)) from out_n into out_p
+            for o, so in ((out_p, 1), (out_n, -1)):
+                if o not in i:
+                    continue
+                for cc, sc in ((cp, 1), (cn, -1)):
+                    if cc in i:
+                        G[i[o]][i[cc]] -= so * sc * g
+
+        r1 = k["aol"] / self.gm1
+        y(G, "X", None, 1 / r1)
+        y(C, "X", None, self.gm1 / (2 * math.pi * k["gbw"]))
+        y(G, "Y", None, 1.0)
+        y(C, "Y", None, 1 / (2 * math.pi * k["p2"]))
+        vccs("Y", None, "X", None, 1.0)
+        y(G, "OUT", None, 1 / k["ro"])
+        vccs("OUT", None, "Y", None, 1 / k["ro"])
+        y(C, "FB", None, U6_CIN)
+        y(G, "FB", "S", 1 / k["rf"])
+        y(C, "FB", "OUT", k["cf"])
+        y(G, "OUT", "G", 1 / (k["rg"] + Q_RG_INT))
+        y(G, "G", None, 1 / k["rpd"])
+        y(C, "G", "S", k["cgs"])
+        y(C, "G", "D", k["cgd"])
+        y(C, "D", "S", k["cds"])
+        y(G, "S", None, 1 / k["rs"])
+        vccs("S", "D", "G", "S", k["gm"])
+        y(G, "D", "S", k["gds"])
+        y(G, "D", None, 1 / k["rled"])           # to VSYS: a source node, driven through b in step()
+
+    def loop(self, f):
+        """The loop gain at U6's - input: the input stage reads a test source VT instead of FB; T = -V(FB) / VT."""
+        n, i, w = len(self.N), self.i, 2j * math.pi * f
+        a = [[self.G[r][c] + w * self.C[r][c] for c in range(n)] for r in range(n)]
+        b = [0j] * n
+        b[i["X"]] = -self.gm1 * 1.0               # gm1 x (0 - VT), VT = 1
+        v = _solve(a, b)
+        return -v[i["FB"]]
+
+    def step(self, dv, edge, t_end, h=10e-9):
+        """VSYS ramps by dv over edge seconds (into D through rled); the source's current deviation over time
+        (trapezoidal integration of G v + C v' = b)."""
+        n, i = len(self.N), self.i
+        a = [row[:] for row in self.G]
+        a[i["X"]][i["FB"]] += self.gm1           # the loop closed: gm1 x (0 - FB)
+        lhs = [[self.C[r][c] / h + a[r][c] / 2 for c in range(n)] for r in range(n)]
+        rhs_m = [[self.C[r][c] / h - a[r][c] / 2 for c in range(n)] for r in range(n)]
+        v, t, out = [0.0] * n, 0.0, []
+        gl = 1 / self.k["rled"]
+
+        def bvec(t):
+            b = [0.0] * n
+            b[i["D"]] = gl * dv * min(1.0, t / edge)
+            return b
+        b0 = bvec(0.0)
+        while t < t_end:
+            b1 = bvec(t + h)
+            rhs = [sum(rhs_m[r][c] * v[c] for c in range(n)) + (b0[r] + b1[r]) / 2 for r in range(n)]
+            v = _solve(lhs, rhs)
+            t += h
+            b0 = b1
+            out.append((t, v[i["S"]] / self.k["rs"]))
+        return out
+
+
+def follower_pm(gbw, p2, ro, cl=60e-12, rl=10e3):
+    """U6 alone as a unity-gain follower into the datasheet's AC test load (mcp6001.txt:173): its phase margin, deg."""
+    w1 = 2 * math.pi * gbw / U6_AOL
+
+    def t(f):
+        s_ = 2j * math.pi * f
+        zl = 1 / (1 / rl + s_ * cl)
+        return U6_AOL / ((1 + s_ / w1) * (1 + s_ / (2 * math.pi * p2))) * zl / (ro + zl)
+    lo, hi = 1.0, 1e9
+    for _ in range(80):
+        mid = math.sqrt(lo * hi)
+        if abs(t(mid)) >= 1:
+            lo = mid
+        else:
+            hi = mid
+    return 180 + math.degrees(cmath.phase(t(lo)))
+
+
+def phase_margin(sink, f_lo=1e3, f_hi=50e6, pts=60):
+    """(crossover Hz, phase margin deg) of the loop gain, or (None, None) when |T| never crosses 1."""
+    fs = [f_lo * (f_hi / f_lo) ** (j / pts) for j in range(pts + 1)]
+    ph_prev, last = None, None
+    for f in fs:
+        t = sink.loop(f)
+        ph = math.degrees(cmath.phase(t))
+        if ph_prev is not None:
+            while ph - ph_prev > 180:
+                ph -= 360
+            while ph - ph_prev < -180:
+                ph += 360
+        if last and abs(last[1]) >= 1 > abs(t):
+            lo, hi, plo = last[0], f, last[2]
+            for _ in range(30):
+                mid = math.sqrt(lo * hi)
+                tm = sink.loop(mid)
+                if abs(tm) >= 1:
+                    lo = mid
+                else:
+                    hi = mid
+            pm = math.degrees(cmath.phase(sink.loop(lo)))
+            while pm - plo > 180:
+                pm -= 360
+            while pm - plo < -180:
+                pm += 360
+            return lo, 180 + pm
+        last, ph_prev = (f, t, ph), ph
+    return None, None
+
+
+def backlight(seed=None):
+    """VER-05's pass limit on paper: phase margin at every corner, DC at the highest duty, headroom at VSYS 3.5 V and
+    Vf 3.2 V, the off states (BL_PWM low, IO9 at reset, 3V3 off at a VSYS edge) and a USB plug-in step while lit."""
+    import ds
+    parts, _ = load(seed)
+    ok = True
+
+    def row(good, text):
+        nonlocal ok
+        ok &= good
+        print(("  ok    " if good else "  FAIL  ") + text)
+
+    for ref, want in (("U6", "MCP6002"), ("Q5", "AO3400A"), ("Q6", "AO3400A")):
+        if parts[ref]["value"] != want:
+            sys.exit(f"paper_checks backlight: {ref} is {parts[ref]['value']}, not {want}: re-read its datasheet first")
+    print("datasheet lines:")
+    for q in (ds.quote("mcp6001", 176, "Gain Bandwidth Product", "1.0", "MHz"),
+              ds.quote("mcp6001", 177, "Phase Margin", "90", "G = +1"),
+              ds.quote("mcp6001", 151, "DC Open-Loop Gain", "88", "112"),
+              ds.quote("mcp6001", 135, "Input Offset Voltage", "4.5", "VCM = VSS"),
+              ds.quote("mcp6001", 154, "Maximum Output Voltage Swing", "25"),
+              ds.quote("mcp6001", 145, "Common-Mode Input Impedance", "6"),
+              ds.quote("mcp6001", 146, "Differential Input Impedance", "3"),
+              ds.quote("mcp6001", 159, "Supply Voltage", "1.8", "6.0"),
+              ds.quote("ao3400a", 85, "Ciss", "630"), ds.quote("ao3400a", 86, "Coss", "75", "VDS=15V"),
+              ds.quote("ao3400a", 87, "Crss", "50"), ds.quote("ao3400a", 88, "Gate resistance", "4.5"),
+              ds.quote("ao3400a", 73, "Gate Threshold Voltage", "0.65", "1.45"),
+              ds.quote("ao3400a", 80, "VGS=2.5V", "48"), ds.quote("ao3400a", 69, "VDS=30V", "1"),
+              ds.quote("er-tft035ips-6", 758, "Vf", "120mA", "3.2"),
+              ds.quote("hirose_fh12", 56, "Contact resistance", "50m ohms maximum"),
+              ds.quote("esp32-s3", 852, "GPIO9", "IE"), ds.quote("esp32-s3", 969, "GPIO9", "Low-level glitch", "60"),
+              ds.quote("esp32-s3", 3748, "IIH"), ds.quote("bq24074", 729, "4.3", "4.5")):
+        print("  " + q[:150])
+    rs = min(r(parts, "R52"), r(parts, "R53")) * (1 - R_TOL)
+    r60, r61 = r(parts, "R60"), r(parts, "R61")
+    v3 = 3.3
+    ref_hi = v3 * (1 + dn.VREG_TOL) * r61 * (1 + R_TOL) / (r60 * (1 - R_TOL) + r61 * (1 + R_TOL))
+    dmax, dsrc = dn.max_duty()
+    dmin = dn.min_duty()
+    i_hi = (ref_hi * dmax + U6_VOS) / rs
+    i_nom = v3 * r61 / (r60 + r61) / r(parts, "R52")
+
+    # (a) the loop at every corner
+    print(f"(a) loop gain broken at U6's - input; R58/R59 {parts['R58']['value']}, C48/C49 {parts['C48']['value']}, "
+          f"R54/R55 {parts['R54']['value']}, R56/R57 {parts['R56']['value']}, R52/R53 {parts['R52']['value']}")
+    worst, nocross, n = (999.0, None), [], 0
+    amps = [(g, p, ro) for g, p, ro in itertools.product(STAND_BL_GBW, STAND_BL_P2, STAND_BL_RO)
+            if follower_pm(U6_GBW * g, U6_GBW * g * p, ro) >= STAND_BL_PM1]
+    print(f"  U6's unpublished second pole and output resistance: {len(amps)} of "
+          f"{len(STAND_BL_GBW) * len(STAND_BL_P2) * len(STAND_BL_RO)} (GBW, p2, ro) corners give {STAND_BL_PM1:g} deg or "
+          "more as a follower into 60 pF and 10 kohm (the datasheet's 90 deg typical less 20); the rest are dropped: "
+          + ", ".join(f"{g}x/{p}x/{ro:g} ohm {follower_pm(U6_GBW * g, U6_GBW * g * p, ro):.0f} deg"
+                      for g, p, ro in itertools.product(STAND_BL_GBW, STAND_BL_P2, STAND_BL_RO) if (g, p, ro) not in amps))
+    for duty in (0.05, dmin, 0.5, dmax):
+        idd = max(i_nom * duty, 1e-4)
+        gm_hi = idd / (STAND_BL_N * KT_Q)          # the weak-inversion bound; a quarter of it the low corner
+        for (gbw, p2, ro), (mg, md), rled, gm, cft in itertools.product(
+                amps, STAND_BL_CMUL, STAND_BL_RLED, (gm_hi, gm_hi / 4),
+                (1 - ctol(parts, "C48"), 1 + ctol(parts, "C48"))):
+            k = dict(aol=U6_AOL, gbw=U6_GBW * gbw, p2=U6_GBW * gbw * p2, ro=ro, rf=r(parts, "R58"),
+                     cf=c(parts, "C48") * cft, rg=r(parts, "R54"), rpd=r(parts, "R56"), rs=r(parts, "R52"),
+                     cgs=(Q_CISS - Q_CRSS) * mg, cgd=Q_CRSS * md, cds=Q_COSS - Q_CRSS, gm=gm,
+                     gds=STAND_BL_LAMBDA * idd, rled=rled)
+            fc, pm = phase_margin(Sink(k))
+            n += 1
+            if fc is None:
+                nocross.append((duty, gbw, ro))
+                continue
+            if pm < worst[0]:
+                worst = (pm, dict(duty=duty, gbw_MHz=k["gbw"] / 1e6, p2_x=p2, ro=ro, cgs_x=mg, crss_x=md, rled=rled,
+                                  gm=round(gm, 4), cf_nF=round(k["cf"] * 1e9, 3), fc_kHz=round(fc / 1e3, 1)))
+    print(f"  {n} corners (duty, U6's GBW, second pole and output resistance, the FET's capacitances and gm, the LEDs' "
+          "resistance, C48's tolerance); stand-ins: " + ", ".join(
+              f"{a} {b}" for a, b in (("GBW x", STAND_BL_GBW), ("p2 x GBW", STAND_BL_P2), ("ro ohm", STAND_BL_RO),
+                                      ("Cgs/Crss x", STAND_BL_CMUL), ("rled ohm", STAND_BL_RLED))))
+    if nocross:
+        print(f"  no crossover at {len(nocross)} corners (|T| < 1 everywhere: no loop to ring)")
+    row(worst[0] >= 45, f"worst phase margin {worst[0]:.1f} deg at {worst[1]} (limit 45 deg)")
+
+    # (b) DC at the highest duty: VER-137's sum
+    row(2 * i_hi * 1e3 <= dn.PANEL_MAX_MA,
+        f"(b) DC at {dmax:.0%} duty ({dsrc}), 3V3 +{dn.VREG_TOL:.1%}, R61 +1%, R60 -1%, U6 +{U6_VOS * 1e3:.1f} mV, sense -1%: "
+        f"{i_hi * 1e3:.1f} mA a sink, {2 * i_hi * 1e3:.1f} mA in all (limit {dn.PANEL_MAX_MA:g} mA, er-tft035ips-6.txt:760)")
+
+    # (c) headroom at VSYS 3.5 V and the panel's maximum Vf
+    vsys = 3.5
+    vg_max = v3 * (1 - dn.VREG_TOL) - U6_SWING
+    rds = AO_RDS_25                                 # at VGS 2.5 V; U6 can drive the gate to vg_max - Vs, above that
+    for vf, lim in ((LED_VF_MAX, 0.05), (3.4, 0.10)):
+        spare = vsys - vf - 2 * i_hi * (FH12_R + STAND_BL_PATH_R) - i_hi * (FH12_R + STAND_BL_PATH_R) - i_hi * rs - i_hi * rds
+        if spare >= 0:
+            drop = 0.0
+        else:                                       # out of regulation: the LEDs' slope and the sense take the shortfall
+            drop = min(1.0, -spare / (STAND_BL_RLED[0] + rs + rds) / i_hi)
+        vgs_need = AO_VTH[1] + math.sqrt(2 * i_hi / (1 / (AO_RDS_25 * (2.5 - AO_VTH[1]))))
+        txt = (f"(c) VSYS {vsys} V, Vf {vf} V{' (REQ-DSP-07: the newer datasheet; the one on disk says 3.2)' if vf > 3.2 else ''}: "
+               f"{spare * 1e3:+.0f} mV to spare after the sense ({i_hi * rs * 1e3:.0f} mV), the FET at {rds * 1e3:.0f} mOhm, "
+               f"FH12 {FH12_R * 1e3:.0f} mOhm a contact and {STAND_BL_PATH_R} ohm of path (stand-in); the gate needs "
+               f"{i_hi * rs + vgs_need:.2f} V of U6's {vg_max:.2f} V; current drop {drop:.1%} (limit {lim:.0%})")
+        if vf == LED_VF_MAX:
+            row(drop <= lim, txt)
+        else:
+            print("  info  " + txt + "; not VER-05's limit, printed for REQ-DSP-07")
+
+    # (d) the off states
+    i_off = U6_VOS / rs
+    row(2 * i_off * 1e3 < 5,
+        f"(d) BL_PWM low, 3V3 on: BL_REF 0 V, U6's offset up to {U6_VOS * 1e3:.1f} mV at VCM = VSS holds "
+        f"{i_off * 1e3:.2f} mA a sink, {2 * i_off * 1e3:.2f} mA in all (limit 5 mA); {i_off / dn.LEDS_PER_PIN * 1e3:.2f} mA an "
+        "LED is a visible glow: 'BL_PWM low = off' (pinmap.md) holds only for a unit whose offset is negative")
+    i_rst = (ESP_IIN * r61 + U6_VOS) / rs
+    row(2 * i_rst * 1e3 < 5,
+        f"(d) IO9 at reset (input, no pull: esp32-s3.txt:852): BL_REF = {ESP_IIN * 1e9:.0f} nA x R61 = "
+        f"{ESP_IIN * r61 * 1e3:.2f} mV; {2 * i_rst * 1e3:.2f} mA in all with the offset; its 60 us low glitch at power-up "
+        "(esp32-s3.txt:969) only pulls BL_REF lower")
+    # 3V3 off: U6 unpowered, the gate held by R56/R57; a VSYS edge kicks the gate through Crss. Printed, not judged: the
+    # result turns on Crss at a volt or two (a figure, not a table line) and on how far the drain moves, so VER-62 measures it
+    tau = r(parts, "R56") * Q_CISS
+    for dvd, why in ((4.4, "the drain taken to move the whole step"), (4.4 - 2.5, "the drain held about 2.5 V under VSYS "
+                                                                               "by the unlit LEDs' knee (stand-in)")):
+        vg = dvd * STAND_BL_CRSS_RATIO
+        i_kick = 250e-6 * 10 ** ((vg - AO_VTH[0]) / STAND_BL_SUBVT)
+        print(f"  info  (d) 3V3 off, a fast VSYS edge to 4.4 V (a cell mating), {why}: the gate kicked to {vg:.2f} V "
+              f"(Crss/Ciss {STAND_BL_CRSS_RATIO}, stand-in) against VGS(th) {AO_VTH[0]} V minimum: about "
+              f"{2 * i_kick * 1e3:.2g} mA in all at {STAND_BL_SUBVT * 1e3:.0f} mV a decade (stand-in), decaying through "
+              f"R56/R57 with tau {tau * 1e6:.0f} us; REQ-DSP-09's 5 mA is VER-62's to measure (cell and USB plugged with "
+              "3V3 off, JP2's current on the scope)")
+    print(f"  info  3V3 rising: U6 is unspecified under its {U6_VDD_MIN} V minimum supply (mcp6001.txt:159), so the "
+          "ramp itself is not on paper: VER-62 watches JP2's current on the scope at power-on with BL_PWM low")
+
+    # (e) a USB plug-in while lit: VSYS from 3.5 V up to U2's 4.5 V at most, no faster than U2's input current limit
+    # can charge the VSYS capacitors (each at its -tolerance and DC-bias curve at 4.4 V, half of it with no curve)
+    dv = U2_VO_REG[1] - 3.5
+    cv = 0.0
+    for ref, p in parts.items():
+        if p["lib"] == "Device:C" and p["bom"] and "VSYS" in p["pins"].values() and "GND" in p["pins"].values():
+            cur = bias_curve(p["mpn"])
+            cv += c(parts, ref) * (1 - ctol(parts, ref)) * ((1 + at_bias(cur, 4.4) / 100) if cur else 0.5)
+    edge0 = dv * cv / U2_IIN_MAX
+    print(f"  (e) VSYS's capacitance at 4.4 V: {cv * 1e6:.1f} uF at least; at U2's {U2_IIN_MAX} A highest input limit "
+          f"(bq24074.txt:738) a {dv:.1f} V rise takes {edge0 * 1e6:.1f} us or more")
+    idd = i_nom * dmax
+    gm = idd / (STAND_BL_N * KT_Q)
+    worst = None
+    slow = [a for a in amps if a[0] == min(x[0] for x in amps)]
+    for edge, (mg, md), rled, (g0, p2, ro), g in itertools.product([edge0 * x for x in STAND_BL_EDGE_X], STAND_BL_CMUL,
+                                                                   STAND_BL_RLED, slow, (gm, gm / 4)):
+        k = dict(aol=U6_AOL, gbw=U6_GBW * g0, p2=U6_GBW * g0 * p2, ro=ro,
+                 rf=r(parts, "R58"), cf=c(parts, "C48"), rg=r(parts, "R54"), rpd=r(parts, "R56"), rs=r(parts, "R52"),
+                 cgs=(Q_CISS - Q_CRSS) * mg, cgd=Q_CRSS * md, cds=Q_COSS - Q_CRSS, gm=g, gds=STAND_BL_LAMBDA * idd,
+                 rled=rled)
+        tr = Sink(k).step(dv, edge, edge + 6e-6, h=max(10e-9, edge / 400))
+        hh = tr[1][0] - tr[0][0]
+        peak = max(x for _, x in tr)
+        at5 = max(x for t, x in tr if t >= 5e-6)
+        over = sum(hh for _, x in tr if 2 * (i_hi + x) > dn.PANEL_MAX_MA / 1e3)
+        cand = (over, 2 * peak, 2 * at5, dict(edge_us=round(edge * 1e6, 2), cgs_x=mg, crss_x=md, rled=rled, ro=ro,
+                                              gm=round(g, 4)))
+        if worst is None or cand[:2] > worst[:2]:
+            worst = cand
+    # REQ-DSP-06: over 120 mA in total for 5 us or less at any event (the time above it, wherever it falls in the ramp)
+    row(worst[0] <= 5e-6,
+        f"(e) USB plugged in while lit: VSYS +{dv:.1f} V (3.5 V to U2's 4.5 V, bq24074.txt:729) at U6's slowest corners: "
+        f"both sinks {worst[1] * 1e3:+.2f} mA at the peak ({2 * i_hi * 1e3 + worst[1] * 1e3:.1f} mA in all on the worst-case "
+        f"DC of {2 * i_hi * 1e3:.1f}), {worst[2] * 1e3:+.2f} mA 5 us after the ramp's start; over {dn.PANEL_MAX_MA:g} mA "
+        f"for {worst[0] * 1e6:.2f} us in all (limit 5 us, REQ-DSP-06) at {worst[3]}; the deviation is C48's current "
+        "through R58 while U6's output ramps to undo the FET's gds, and Crss's kick into the gate on a fast ramp")
+    print("  the ngspice run (board/sim/backlight.py, about 40 min, vendor models) is not this check's evidence: it still "
+          "hard-codes R61 3.9k (DEF-45); its last run gave 72.5 deg over 720 corners")
+    return dn.result(ok)
+
+
 CHECKS = {"latch": (latch, SEED_LATCH), "usb": (usb, SEED_USB), "audio": (audio, SEED_AUDIO), "module": (module, SEED_MODULE),
           "shelf": (shelf, SEED_SHELF), "ampstate": (ampstate, SEED_AMP), "hotplug": (hotplug, SEED_HOTPLUG),
           "copper": (copper, SEED_COPPER), "mating": (mating, None), "mlccbias": (mlccbias, None),
-          "sdinsert": (sdinsert, SEED_SD)}
+          "sdinsert": (sdinsert, SEED_SD), "backlight": (backlight, SEED_BL)}
 
 
 def main():

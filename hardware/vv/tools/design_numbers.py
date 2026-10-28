@@ -31,6 +31,8 @@ part change in design.py makes the evidence stale through the row's part: covers
   netclass   VER-201  build_pcb.py's net classes name only the board's nets, and every net carrying 0.25 A or
                       more sits in one
   tempwin    VER-32   the charge window TH1 gives against U2's TS thresholds, from SLUS810N
+  cellspec   VER-160  the cell's spec sheet (analysis/cell.json, VER-37) against R5's charge current, TH1's window and
+                      case.scad's cell size; BLOCKED until VER-37 writes cell.json
 
 Helpers (they print numbers a bench procedure uses and always exit 0):
   tsband [C] the TS voltage band VER-133, VER-135 and VER-68 accept at the measured ambient
@@ -1248,6 +1250,60 @@ def cvload():
     return 0
 
 
+def charge_window():
+    """(cold C, hot C): the charge window TH1 gives at the worst corner of U2's TS limits and TH1's tolerance
+    (tempwin's last row; VER-160 compares it with the cell's own charge range)."""
+    def temp_at(r, beta, r25):
+        return 1 / (1 / 298.15 + math.log(r / r25) / beta) - 273.15
+    r25, beta, _ = th1_spec()
+    i_lo, i_hi = I_TS * (1 - I_TS_TOL), I_TS * (1 + I_TS_TOL)
+    return (temp_at(V_COLD[1] / i_lo, beta * (1 - TH1_B_TOL), r25 * (1 - TH1_TOL)),
+            temp_at(V_HOT[0] / i_hi, beta * (1 - TH1_B_TOL), r25 * (1 + TH1_TOL)))
+
+
+def cellspec():
+    """VER-160 (O-S6, carry-over C3 and C4): the cell's spec sheet, recorded by VER-37 in hardware/vv/analysis/cell.json,
+    against the three numbers the board and the case freeze: the charge current R5 sets (KISET / R5 at its worst, under
+    half the capacity in C and under the standard charge current), the charge window TH1 gives (tempwin's worst corner,
+    inside the cell's charge range) and the cell case.scad's pocket is drawn for (its nominal and largest size equal the
+    sheet's). cell.json's keys: model, source, capacity_mah, std_charge_ma, charge_temp_c [lo, hi], size_mm [l, w, t]
+    (nominal) and size_max_mm [l, w, t]. BLOCKED (exit 2) until VER-37 writes it."""
+    parts, _ = design()
+    r5 = ohms(parts["R5"]["value"])
+    ichg_hi = KISET[1] / (r5 * (1 - R_TOL))
+    cold, hot = charge_window()
+    e = scad()
+    print(f"R5 {r5:g} 1%: ICHG up to {ichg_hi * 1e3:.0f} mA (KISET {KISET[1]:g} A-ohm, bq24074.txt:785); TH1's charge window "
+          f"{cold:.1f} C to {hot:.1f} C at the worst corner (tempwin); case.scad's cell: nominal "
+          + " x ".join(f"{v:g}" for v in e["cell_nom"]) + " mm, largest " + " x ".join(f"{v:g}" for v in e["cell"]) + " mm")
+    if not os.path.exists(CELL_SPEC):
+        print(f"BLOCKED: {os.path.relpath(CELL_SPEC, ROOT)} does not exist: VER-37 writes it from the cell's spec sheet "
+              "(the 403450 seller's, or a cell sold with one: DEC-23)")
+        print("RESULT: BLOCKED")
+        return 2
+    spec = json.load(open(CELL_SPEC, encoding="utf-8"))
+    need = ("model", "source", "capacity_mah", "std_charge_ma", "charge_temp_c", "size_mm", "size_max_mm")
+    miss = [k for k in need if k not in spec]
+    if miss:
+        print(f"cell.json lacks {', '.join(miss)}")
+        return result(False)
+    print(f"the cell: {spec['model']} ({spec['source']}): {spec['capacity_mah']} mAh, standard charge "
+          f"{spec['std_charge_ma']} mA, charge {spec['charge_temp_c'][0]}-{spec['charge_temp_c'][1]} C, "
+          + " x ".join(str(v) for v in spec["size_mm"]) + " mm, at most "
+          + " x ".join(str(v) for v in spec["size_max_mm"]) + " mm")
+    lim = min(0.5 * spec["capacity_mah"], spec["std_charge_ma"]) / 1e3
+    rows = [(ichg_hi <= lim, f"ICHG {ichg_hi * 1e3:.0f} mA against min(0.5 C, the standard charge current) {lim * 1e3:.0f} mA"),
+            (spec["charge_temp_c"][0] <= cold and hot <= spec["charge_temp_c"][1],
+             f"TH1's window {cold:.1f}-{hot:.1f} C inside the cell's {spec['charge_temp_c'][0]}-{spec['charge_temp_c'][1]} C"),
+            (all(abs(a - b) < 1e-6 for a, b in zip(e["cell_nom"], spec["size_mm"])),
+             f"case.scad's nominal cell {e['cell_nom']} equals the sheet's {spec['size_mm']}"),
+            (all(abs(a - b) < 1e-6 for a, b in zip(e["cell"], spec["size_max_mm"])),
+             f"case.scad's largest cell {e['cell']} equals the sheet's {spec['size_max_mm']}")]
+    for good, txt in rows:
+        print(("  ok    " if good else "  FAIL  ") + txt)
+    return result(all(g for g, _ in rows))
+
+
 def tempwin():
     """O-R3: the charge window TH1 gives against U2's fixed TS thresholds, from SLUS810N's limits.
 
@@ -1301,7 +1357,8 @@ def tempwin():
 
 CHECKS = {"holes": holes, "swell": swell, "inrush": inrush, "backlight": backlight, "cutoff": cutoff, "screws": screws,
           "mlcc": mlcc, "th1": th1, "cellgap": cellgap, "cpl": cpl, "drill": drill, "vbus": vbus, "bom": bom,
-          "edge": edge, "plugs": plugs, "spkplug": spkplug, "netclass": netclass, "tsband": tsband, "cvload": cvload, "tempwin": tempwin}
+          "edge": edge, "plugs": plugs, "spkplug": spkplug, "netclass": netclass, "tsband": tsband, "cvload": cvload, "tempwin": tempwin,
+          "cellspec": cellspec}
 
 
 def main():

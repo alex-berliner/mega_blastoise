@@ -919,9 +919,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: ref_design
 - Statement: With 3V3 off, a VSYS hot plug shall produce less than 5 mA of LED current for less than 10 us.
 - Rationale: no flash at plug-in while the device is off.
-- Source: board/sim/backlight_results.txt (4.7 mA peak).
-- Method: A
-- Verified by: VER-05
+- Source: board/sim/backlight_results.txt (4.7 mA peak, an older circuit); since 2026-10-28 VER-05 prints only an estimate (the gate's kick through Crss turns on the AO3400A's capacitance curve, a figure, and on how far the unlit LEDs let the drain move), so VER-62 measures it.
+- Method: T
+- Verified by: VER-62
 - Phase: EVT
 - Status: PROPOSED
 
