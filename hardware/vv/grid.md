@@ -614,4 +614,4 @@ The order gate holds 126 cells of classes 1-15 (0 GAP, 126 planned); classes 16-
 - 12 Signals and timing / cell: The cell's subsystem carries DC only: the cell's voltage into its sense divider and the thermistor's level. No clock or data passes through it; how the sense settles is read on unit 1 against a meter (VER-67). Was: the ESP32-S3 board's reason named its VBAT buffer; the 12 power reason left with that board's linear power path (the F1C200s board's rails may switch).
 - 12 Signals and timing / case: The case carries no signal: nothing on it is wired, and since the F1C200s re-target the board has no radio whose antenna the case would hold (Was: the ESP32-S3 board's flex antenna on the left wall).
 
-Last updated: 2026-10-28 16:12 EDT (generated)
+Last updated: 2026-10-28 16:26 EDT (generated)
