@@ -72,7 +72,7 @@ The order gate holds 9 cells of classes 1-15 (0 GAP, 9 planned); classes 16-18 h
 - 1 Requirements / storage: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
 - 1 Requirements / usb_debug: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
 
-## FAIL (38)
+## FAIL (39)
 
 - VER-13 Copper resistance and IR drop on the power paths (IPC-2152) (EVT): classes 4 5 15; power cell
 - VER-20 Case Z stack worst case and RSS (check_stack.py) (CASE): classes 13; case display cell buttons
@@ -87,6 +87,7 @@ The order gate holds 9 cells of classes 1-15 (0 GAP, 9 planned); classes 16-18 h
 - VER-100 Audio chain simulation (filter, coupling, FM8002A input) (EVT): classes 4; audio
 - VER-103 Shelf and deep-discharge estimate (EVT): classes 4 6; cell power
 - VER-108 USB D+/D- stub and pair length (ORDER): classes 12; usb_debug
+- VER-112 Part heights from drawings, not guesses (check_fit truth) (CASE): classes 13; power cell mcu display audio buttons usb_debug case
 - VER-125 Footprints against the manufacturers' land patterns (ORDER): classes 9; power cell mcu display audio buttons usb_debug storage
 - VER-130 BOM, CPL and PCB fields against design.py (check_bom_cpl.py) (EVT): classes 8 11; power cell mcu display audio buttons usb_debug storage
 - VER-138 Cutoff accuracy analysis: the calibrated reading against the true cell voltage (EVT): classes 4; cell power
@@ -133,4 +134,4 @@ The order gate holds 9 cells of classes 1-15 (0 GAP, 9 planned); classes 16-18 h
 - 12 Signals and timing / power: Power is a linear charger (BQ24073) and an LDO (the TLV75733P since 39cc07f): no switching node, no clock and no data line. Its changing signals are the 2 Hz status pins and the power key's 1 s hold, which are class 6, and the Wi-Fi bursts' load steps on 3V3, which are classes 4 and 6 (VER-204, VER-208).
 - 12 Signals and timing / cell: The cell's subsystem carries DC only: VBAT_DIV is filtered by C8 (100 nF) and copied to VBAT_SENSE by U10, a unity buffer, at DC, and TH1's TS node is a DC level. No clock or data passes through it; how U10 settles the ADC's sample charge is read on unit 1 by VER-67 (the ADC against a meter).
 
-Last updated: 2026-10-28 10:35 EDT (generated)
+Last updated: 2026-10-28 10:38 EDT (generated)
