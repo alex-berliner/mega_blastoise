@@ -17,6 +17,6 @@ with each spin. Decided with Alex on 2026-10-28 (queue issues
 | Online play against Showdown as a guest, no login | must-have, new | a network: Wi-Fi only if nearly free, else USB host for a phone tether or a Wi-Fi dongle |
 | Load games and saves from a computer, over USB or SD | must-have, new | USB mass storage or an SD card, and room for a 16 MB ROM plus saves |
 | Fast boot: Linux allowed if tuned, bare-metal Rust boot required | must-have, new | a Rust target and documented boot ROM and RAM init |
-| Pocketable: no bigger than a smartphone in its case; a size-minimization pass every spin | must-have | small packages, no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen) |
+| Pocketable: about today's size or smaller; a size-minimization pass every spin | must-have | small packages, no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen) |
 
 Last updated: 2026-10-28

@@ -62,7 +62,7 @@ What the physical device is.
 - The buttons are DS Lite silicone pads (the soft rubber button sheets) pressing on bare contacts on the circuit board. (2026-09-21)
 - Each seat has a D-pad, A/B/X/Y, Start and Select. (2026-10-19)
 - Power is the DS Lite power slider in the right edge, taken from the DS Lite button kit: slide it to turn on, hold it to turn off. If no board switch fits the slider, seat 1's Start is the power key instead: press to turn on, hold to turn off. (2026-10-28)
-- It is never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)
+- It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)
 - The circuit board has two layers (the cheaper kind) and is assembled by a factory (JLCPCB) in batches. (2026-09-24)
 - There are no indicator lights on the board. (2026-09-24)
 - There is no separate reset button. (2026-10-28)
