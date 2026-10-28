@@ -4,11 +4,11 @@ The boards and cases for the two-player handheld, newest first.
 
 | Folder | What it is | Whose | Status |
 |---|---|---|---|
-| [`ref_design/`](./ref_design/README.md) | The reference design (REF-A): RP2354B, 3.5in IPS panel, DS Lite buttons (D-pad, A/B/X/Y, Start, Select per seat), one Li-ion cell; the schematic, routed 2-layer board, JLCPCB fab files, printable case, fit kit and docs, all generated from `board/design.py`, `board/placement.py` and `case/case.scad` | Claude, built alongside Alex's own board | Designed and checked, not yet ordered; parts marked ESTIMATE need a real sample first ([PLAN.md](./ref_design/PLAN.md)) |
-| [`prod_board/`](./prod_board/), [`prod_case/`](./prod_case/README.md) | Alex's own production board and case, made by hand in KiCad and OpenSCAD to learn the tools | Alex | In progress |
-| [`membrane/`](./membrane/README.md) | DS Lite membrane contact footprints and the generator for them, shared by both boards | shared | In use |
-| [`ds_lite/`](./ds_lite/README.md) | Research on how the Nintendo DS Lite is built and what makes its bottom half look and feel like one: a dossier, its sourced notes, and recommendations for the case | Claude | Research; the owner's caliper and scale checks still to fold in |
-| [`stripboard_v2/`](./stripboard_v2/BUILD.md) | The working prototype: Pico 2, ST7796 panel, 16 direct buttons on stripboard; the firmware's `board_v2` target | Alex and Claude | Built; the firmware's current target |
+| [`ref_design/`](ref_design/README.md) | The reference design (REF-A): RP2354B, 3.5in IPS panel, DS Lite buttons (D-pad, A/B/X/Y, Start, Select per seat), one Li-ion cell; the schematic, routed 2-layer board, JLCPCB fab files, printable case, fit kit and docs, all generated from `board/design.py`, `board/placement.py` and `case/case.scad` | Claude, built alongside Alex's own board | Designed and checked, not yet ordered; parts marked ESTIMATE need a real sample first ([PLAN.md](ref_design/PLAN.md)) |
+| [`prod_board/`](prod_board/), [`prod_case/`](prod_case/README.md) | Alex's own production board and case, made by hand in KiCad and OpenSCAD to learn the tools | Alex | In progress |
+| [`membrane/`](membrane/README.md) | DS Lite membrane contact footprints and the generator for them, shared by both boards | shared | In use |
+| [`ds_lite/`](ds_lite/README.md) | Research on how the Nintendo DS Lite is built and what makes its bottom half look and feel like one: a dossier, its sourced notes, and recommendations for the case | Claude | Research; the owner's caliper and scale checks still to fold in |
+| [`stripboard_v2/`](stripboard_v2/BUILD.md) | The working prototype: Pico 2, ST7796 panel, 16 direct buttons on stripboard; the firmware's `board_v2` target | Alex and Claude | Built; the firmware's current target |
 
 The v1 device (Pico, two OLEDs, button matrix: its KiCad board, stripboard and case) is out of
 the tree; tag `v1-archive` has it, and [docs/archive/v1/](../docs/archive/v1/) its notes.
@@ -49,11 +49,11 @@ Milestones:
 | 2026-05-15 | Hand-written `gen1_battle` replaces `battler` on the device: about 40 times less heap |
 | 2026-07-09 | `ChoiceCollector` and the shared OLED controller move all input and display semantics into core; the zero-drift rule is written down |
 | 2026-07-13 | `gen1_battle` ports Showdown's Gen 1 mechanics and format rules |
-| 2026-08-06 | Single-screen redesign specified ([09-single-screen.md](../docs/architecture/09-single-screen.md)) and a working web client built; tag `mono-renderer-final` marks the last mono renderer |
+| 2026-08-06 | Single-screen redesign specified ([09-single-screen.md](../docs/reference/architecture/09-single-screen.md)) and a working web client built; tag `mono-renderer-final` marks the last mono renderer |
 | 2026-08-15 to 08-19 | `gen3_battle` added; Showdown parity and fuzz suites; Gen 3 moves, abilities and held items brought in under the fuzzer |
 | 2026-08-20 | Stripboard v2 generated end to end from one layout script |
 | 2026-08-26 to 08-28 | The game runs on the stripboard's panel; the game loop moves into core as `DeviceRunner`; dirty-tile updates |
-| 2026-09-17 to 09-21 | Production board planned ([10-production-board.md](../docs/architecture/10-production-board.md)): DS Lite membranes, bare RP2350B, 3.5 in IPS class |
+| 2026-09-17 to 09-21 | Production board planned ([10-production-board.md](../docs/living/10-production-board.md)): DS Lite membranes, bare RP2350B, 3.5 in IPS class |
 | 2026-09-24 | Reference design started; on the same day its 4-layer first version (tag `archive/ref-design-4layer`) became a cheaper 2-layer build on `main` |
 | 2026-09-25/26 | Three audit rounds and a two-model debate settle the open circuit decisions; printable fit kit |
 | 2026-10-05 | First case print and fixes; joint validation plan; datasheet pin-review gate; exploded 3D viewer on Pages |

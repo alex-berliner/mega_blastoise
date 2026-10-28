@@ -191,7 +191,7 @@ must be measured before ordering: [docs/design_review.md](docs/design_review.md)
 
 ## IP and regulatory stance
 
-Decided so far (2026-09-17, [10-production-board.md](../../docs/architecture/10-production-board.md)
+Decided so far (2026-09-17, [10-production-board.md](../../docs/living/10-production-board.md)
 section 6):
 
 - **Rename before selling.** "Mega Blastoise" is a Pokemon name; that includes the USB
@@ -199,7 +199,7 @@ section 6):
 - **No Pokemon markings on the device.**
 - **No preloaded firmware.** Units ship blank and the owner downloads the game, which keeps
   species names, sprites and move text off the product. Today's builds fetch those assets at
-  compile time (docs/architecture/01-system-overview.md) and the web build publishes them; how a buyer would get them is open.
+  compile time (docs/reference/architecture/01-system-overview.md) and the web build publishes them; how a buyer would get them is open.
 - **Real USB IDs.** The firmware uses a placeholder VID:PID; Raspberry Pi allocates product IDs
   under its vendor ID for products on its silicon.
 - **Engines.** `gen1_battle` and `gen3_battle` are written in-house from the published mechanics

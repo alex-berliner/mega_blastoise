@@ -1,7 +1,7 @@
 //! Every gen 1 and gen 3 entry of the generated tables, field by field,
 //! against the JSON dumps it was built from (`tools/ps-diff/dump-dex.js`),
 //! and the counts against design section 6 of
-//! `docs/architecture/showdown-split-plan.md`.
+//! `docs/living/showdown-split-plan.md`.
 
 use std::fs;
 use std::path::PathBuf;

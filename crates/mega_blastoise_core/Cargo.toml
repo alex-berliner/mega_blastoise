@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 embedded-graphics = { version = "0.8", default-features = false }
-# The Showdown split (docs/architecture/showdown-split-plan.md): the PS
+# The Showdown split (docs/living/showdown-split-plan.md): the PS
 # server, its client and their protocol, behind `runner::ps`.
 ps_client = { path = "../ps_client" }
 ps_dex = { path = "../ps_dex" }

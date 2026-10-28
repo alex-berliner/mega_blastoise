@@ -2,7 +2,7 @@
 
 Target design for a board that can be batch produced and sold, replacing the
 hand-wired `hardware/stripboard_v2/`. Same device as
-[09-single-screen.md](./09-single-screen.md); this page only covers what changes
+[09-single-screen.md](../reference/architecture/09-single-screen.md); this page only covers what changes
 when the thing stops being a one-off.
 
 Decisions here were made on 2026-09-17. Where a number was measured from a

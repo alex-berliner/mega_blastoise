@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The coverage gate (V-1, docs/architecture/showdown-split-execution.md):
+# The coverage gate (V-1, docs/living/showdown-split-execution.md):
 # plays a protocol-diff sweep against an instrumented ps_sim_cli and prints
 #
 # The sweep also plays the targeted battles (`diff.js --targeted genN`,

@@ -1,6 +1,6 @@
 # ESP32-S3 build: differences from the proposal's pin map
 
-The proposal is `docs/esp32s3_board_proposal.md` (Pin map table). The generated map is `docs/pinmap.md`
+The proposal is `docs/living/esp32s3_board_proposal.md` (Pin map table). The generated map is `docs/pinmap.md`
 (`board/tools/pinmap.py`). Compared row by row on 2026-10-27:
 
 **GPIO assignments: no differences.** Every GPIO in the proposal's table carries the same net in `board/design.py`

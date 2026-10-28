@@ -1,37 +1,37 @@
 # Architecture Docs
 
-This directory contains the architecture documentation for the Mega Blastoise workspace. For build instructions see [README.md](../../README.md); for software internals see [TECHNICAL.md](../TECHNICAL.md).
+This directory contains the architecture documentation for the Mega Blastoise workspace. For build instructions see [README.md](../../../README.md); for software internals see [TECHNICAL.md](../TECHNICAL.md).
 
 ## Reading Order
 
-1. [System Overview](./01-system-overview.md)
-2. [Core Battle Engine Flow](./02-core-battle-flow.md)
-3. [Firmware Runtime (RP2350)](./03-firmware-runtime.md)
-4. [Host Runtime and Test Harness](./04-host-runtime.md)
-5. [Events and Input Contracts](./05-events-and-input.md)
-6. [Memory and Debugging](./06-memory-and-debugging.md)
-7. [Design Principles and Extension Guide](./07-design-principles.md)
-8. [Feature Map: Core vs. Target-Specific](./08-feature-map.md)
-9. [Single-Screen Redesign](./09-single-screen.md) — target design for the next hardware generation
-10. [Production Board](./10-production-board.md) — what changes when the device becomes a sellable product
+1. [System Overview](01-system-overview.md)
+2. [Core Battle Engine Flow](02-core-battle-flow.md)
+3. [Firmware Runtime (RP2350)](03-firmware-runtime.md)
+4. [Host Runtime and Test Harness](04-host-runtime.md)
+5. [Events and Input Contracts](05-events-and-input.md)
+6. [Memory and Debugging](06-memory-and-debugging.md)
+7. [Design Principles and Extension Guide](07-design-principles.md)
+8. [Feature Map: Core vs. Target-Specific](08-feature-map.md)
+9. [Single-Screen Redesign](09-single-screen.md) — target design for the next hardware generation
+10. [Production Board](../../living/10-production-board.md) — what changes when the device becomes a sellable product
 
 ## Quick Links
 
-- Core crate: [`mega_blastoise_core`](../../crates/mega_blastoise_core/)
-- Firmware crate: [`mega_blastoise_fw`](../../crates/mega_blastoise_fw/)
-- Host/test crate: [`mega_blastoise_test`](../../crates/mega_blastoise_test/)
+- Core crate: [`mega_blastoise_core`](../../../crates/mega_blastoise_core/)
+- Firmware crate: [`mega_blastoise_fw`](../../../crates/mega_blastoise_fw/)
+- Host/test crate: [`mega_blastoise_test`](../../../crates/mega_blastoise_test/)
 
 ## Where things live
 
 | Path | What |
 |---|---|
-| [README.md](../../README.md) | Build and run instructions |
-| [CLAUDE.md](../../CLAUDE.md) | The zero-drift rule and project rules for Claude Code |
-| [docs/architecture/](README.md) | Software architecture pages |
-| [docs/archive/architecture/](09-single-screen.md) | Superseded plans: [09](09-single-screen.md) single-screen redesign, [10](10-production-board.md) production board |
-| [docs/TECHNICAL.md](../TECHNICAL.md) | Software internals overview |
-| [docs/archive/v1/](../archive/v1/DESIGN.md) | The v1 device: design, electronics, firmware interactions, original plan |
-| [docs/hardware/openscad-methodology.md](../hardware/openscad-methodology.md) | How the cases are modelled and checked |
+| [README.md](../../../README.md) | Build and run instructions |
+| [CLAUDE.md](../../../CLAUDE.md) | The zero-drift rule and project rules for Claude Code |
+| [docs/reference/architecture/](README.md) | Software architecture pages |
+| [docs/archive/architecture/](09-single-screen.md) | Superseded plans: [09](09-single-screen.md) single-screen redesign, [10](../../living/10-production-board.md) production board |
+| [docs/reference/TECHNICAL.md](../TECHNICAL.md) | Software internals overview |
+| [docs/archive/v1/](../../archive/v1/DESIGN.md) | The v1 device: design, electronics, firmware interactions, original plan |
+| [docs/reference/openscad-methodology.md](../openscad-methodology.md) | How the cases are modelled and checked |
 | `crates/gen1_battle/`, `crates/gen3_battle/`, `crates/battle_types/` | Battle engines; Gen 1 spec |
 | `crates/mega_blastoise_core/` | The shared game: loop, input, screens, renderer, generated data |
 | `crates/mega_blastoise_fw/` | Firmware for the stripboard v2 |
@@ -43,12 +43,12 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 | `scripts/` | The gate, UI probe, console, build and publish helpers |
 | `firmware/bringup/` | Standalone bring-up crates |
 | `site/` | The Pages front page |
-| [hardware/README.md](../../hardware/README.md) | Hardware index |
-| [hardware/stripboard_v2/](../../hardware/stripboard_v2/BUILD.md) | The built board: generator, build guide, assembly stages, models |
-| [hardware/ref_design/](../../hardware/ref_design/README.md) | The reference design: `board/`, `case/`, `docs/`, `datasheets/`, `tools/quotes/`, `viewer/` |
-| `hardware/prod_board/`, [hardware/prod_case/](../../hardware/prod_case/README.md) | Alex's own board and case (read only for others) |
-| [hardware/membrane/](../../hardware/membrane/README.md) | Membrane contact footprints and their generator and checker |
-| [hardware/ds_lite/](../../hardware/ds_lite/README.md) | DS Lite construction research |
+| [hardware/README.md](../../../hardware/README.md) | Hardware index |
+| [hardware/stripboard_v2/](../../../hardware/stripboard_v2/BUILD.md) | The built board: generator, build guide, assembly stages, models |
+| [hardware/ref_design/](../../../hardware/ref_design/README.md) | The reference design: `board/`, `case/`, `docs/`, `datasheets/`, `tools/quotes/`, `viewer/` |
+| `hardware/prod_board/`, [hardware/prod_case/](../../../hardware/prod_case/README.md) | Alex's own board and case (read only for others) |
+| [hardware/membrane/](../../../hardware/membrane/README.md) | Membrane contact footprints and their generator and checker |
+| [hardware/ds_lite/](../../../hardware/ds_lite/README.md) | DS Lite construction research |
 
 ## Glossary (software and the game)
 
@@ -95,10 +95,10 @@ Terms used in these documents, alphabetical.
 - <a id="g-exploded"></a>**Exploded view**: A 3D drawing with the parts pulled apart along the assembly direction so each one shows. REF-A's is published on Pages at `/assembly/`. More: [Wikipedia](https://en.wikipedia.org/wiki/Exploded-view_drawing).
 - <a id="g-feature"></a>**Feature (Cargo)**: A named build option of a Rust crate. The firmware has `input-debug`, `mem-profile` and `trace`; embassy-rp picks the chip with `rp235xa` or `rp235xb`. More: [Cargo book](https://doc.rust-lang.org/cargo/reference/features.html).
 - <a id="g-firmware"></a>**Firmware**: The program stored in the device's flash and run by its microcontroller; here `mega_blastoise_fw`, core plus the RP2350's raw IO. More: [Wikipedia](https://en.wikipedia.org/wiki/Firmware).
-- <a id="g-fit-kit"></a>**Fit kit**: Printed board mock, part dummies and case coupons to test real parts before boards are ordered. More: [fit kit README](../../hardware/ref_design/case/fitkit/README.md).
+- <a id="g-fit-kit"></a>**Fit kit**: Printed board mock, part dummies and case coupons to test real parts before boards are ordered. More: [fit kit README](../../../hardware/ref_design/case/fitkit/README.md).
 - <a id="g-framebuffer"></a>**Framebuffer**: A copy of the whole screen image in the MCU's RAM. Not needed here: the panel keeps its own frame memory, so the firmware sends only what changes. More: [Wikipedia](https://en.wikipedia.org/wiki/Framebuffer).
 - <a id="g-fuzz"></a>**Fuzz testing**: Comparing the engines with Showdown on seeded random battles (`showdown_fuzz`), with hit, crit and damage roll scripted on both sides. The fuzz pool is the set of moves it draws from; a sweep runs many seeds, 2000 before an engine change is pushed. More: [Wikipedia](https://en.wikipedia.org/wiki/Fuzzing).
-- <a id="g-the-gate"></a>**The gate (`check.sh`)**: `scripts/check.sh`, run before every code commit: host tests, a firmware `cargo check`, the WASM build and the headless UI probe. More: [check.sh](../../scripts/check.sh).
+- <a id="g-the-gate"></a>**The gate (`check.sh`)**: `scripts/check.sh`, run before every code commit: host tests, a firmware `cargo check`, the WASM build and the headless UI probe. More: [check.sh](../../../scripts/check.sh).
 - <a id="g-gate"></a>**Gate, drain and source**: A MOSFET's three terminals. The gate's voltage, measured from the source, sets how well current flows between drain and source; the gate itself draws almost no steady current. More: [Wikipedia](https://en.wikipedia.org/wiki/MOSFET).
 - <a id="g-gen"></a>**Gen 1, Gen 3**: Generations of the Pokemon games, each with its own battle rules. Gen 1 is Red, Blue and Yellow (1996 to 1999); Gen 3 is Ruby, Sapphire, Emerald, FireRed and LeafGreen (2002 to 2004). More: [Bulbapedia](https://bulbapedia.bulbagarden.net/wiki/Generation).
 - <a id="g-ghosting"></a>**Ghosting**: A button matrix reporting a press that didn't happen, when several held buttons close a path through another position. v1's matrix ghosted presses across players. More: [Wikipedia](https://en.wikipedia.org/wiki/Keyboard_matrix_circuit).
@@ -166,7 +166,7 @@ Terms used in these documents, alphabetical.
 - <a id="g-un383"></a>**UN38.3**: The UN transport test standard for lithium cells; the cell supplier provides the test documents. More: [Wikipedia](https://en.wikipedia.org/wiki/UN38.3).
 - <a id="g-usb-cdc"></a>**USB CDC**: The USB class for a serial port; the firmware's console shows up on the computer as one. More: [Wikipedia](https://en.wikipedia.org/wiki/USB_communications_device_class).
 - <a id="g-usb-c"></a>**USB-C**: The reversible USB connector. REF-A's J1 carries charging, firmware loading and the console, on USB 2.0 data; its SBU (sideband) pins are left open. More: [Wikipedia](https://en.wikipedia.org/wiki/USB-C).
-- <a id="g-validation-plan"></a>**Validation plan**: `validation_plan.md` (2026-10-05): a joint plan from two models' cross-examination, with a 13-item go/no-go gate to pass before boards are ordered. More: [validation_plan.md](../../hardware/ref_design/docs/validation_plan.md).
+- <a id="g-validation-plan"></a>**Validation plan**: `validation_plan.md` (2026-10-05): a joint plan from two models' cross-examination, with a 13-item go/no-go gate to pass before boards are ordered. More: [validation_plan.md](../../living/validation_plan.md).
 - <a id="g-vendored"></a>**Vendored**: Copied into this repository from an outside source rather than fetched when needed, such as the Gen 3 random battle sets and the membrane footprints.
 - <a id="g-vid-pid"></a>**VID and PID**: The vendor and product IDs a USB device reports. The firmware uses placeholders; Raspberry Pi gives out product IDs under its vendor ID for products on its chips. More: [Raspberry Pi usb-pid](https://github.com/raspberrypi/usb-pid).
 - <a id="g-wasm"></a>**WASM**: WebAssembly: a compact code format that browsers run at near-native speed. The web build is core compiled to it. More: [webassembly.org](https://webassembly.org/).

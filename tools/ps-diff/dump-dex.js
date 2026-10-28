@@ -18,7 +18,7 @@
 // (PS marks entries from later gens 'Future' and retired ones 'Past'), in
 // `all()` order, which is `for (id in dex.data.<Table>)` order. That order is
 // the `u16` id. The counts match design section 6 of
-// docs/architecture/showdown-split-plan.md.
+// docs/living/showdown-split-plan.md.
 //
 // Schema: every entry has every key (null where PS has nothing), so the Rust
 // side is a straight table and `crates/ps_dex/tests/roundtrip.rs` can check
@@ -32,7 +32,7 @@ const path = require('path');
 const { Dex } = require('pokemon-showdown/dist/sim');
 
 const PS_VERSION = require('pokemon-showdown/package.json').version;
-// The pin is an upstream commit (docs/architecture/showdown-resync.md
+// The pin is an upstream commit (docs/living/showdown-resync.md
 // section 9): master's package.json still says 0.11.11, so the dump also
 // records the commit the lockfile resolved, or null for an npm release.
 const PS_RESOLVED = require('./package-lock.json').packages['node_modules/pokemon-showdown'].resolved;

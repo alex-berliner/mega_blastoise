@@ -2,7 +2,7 @@
 
 Branch ref-design-esp32s3. The RP2354B core, its crystal, inductor and 1V1 parts are gone; the board carries an
 ESP32-S3-WROOM-1U-N16R8 (LCSC C3013946) with its antenna off the board. Everything below is generated or checked by the scripts in
-`board/tools`; the pin map is `docs/pinmap.md`, its differences from the proposal `docs/esp32s3_pinmap_diff.md`, the V&V carry-over rows
+`board/tools`; the pin map is `docs/pinmap.md`, its differences from the proposal `docs/living/esp32s3_pinmap_diff.md`, the V&V carry-over rows
 `carryover_status.md` (in the session's scratchpad).
 
 ## Board
@@ -23,7 +23,7 @@ ESP32-S3-WROOM-1U-N16R8 (LCSC C3013946) with its antenna off the board. Everythi
 - Power: a dedicated button SW24 (ROCPU TPS850 J14K, C2759975, top actuated, 1.4 mm) at KiCad (103.25, 162.75) under seat 1's deck, between U8 and the
   Start/Select frame (H6's boss takes the centre line). The cap is printed (case.scad pwr_cap; pin in a 3.0 hole, flange in an underside recess, top 0.5
   under the face inside a 6 mm pocket, so it cannot be pressed lying face down). Both Starts are plain dome buttons to GND now; Q7, D8, R62 are gone;
-  P1 Start is bit 22 of the chain, bit 16 is the power button (docs/esp32s3_pinmap_diff.md).
+  P1 Start is bit 22 of the chain, bit 16 is the power button (docs/living/esp32s3_pinmap_diff.md).
 - BOOT and RESET buttons and their pinholes are not on this board (the left bezel is the module, antenna and slot; the right has no room);
   J7 (3V3, EN, BOOT, GND pads on the back) stays. A question for Alex (scratchpad esp32_build/report.md).
 - H4 moved from (67.5, 140) to (67, 151), a deck screw with the end screws' pilot; the cell hole is 38.2 x 55.2 (extra 0.4 on the left and at seat 1's end).

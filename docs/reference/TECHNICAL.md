@@ -2,7 +2,7 @@
 
 Software internals for the Mega Blastoise firmware and host test harness.
 
-For project overview and hardware, see [DESIGN.md](./archive/v1/DESIGN.md) (the v1 device).
+For project overview and hardware, see [DESIGN.md](../archive/v1/DESIGN.md) (the v1 device).
 
 ---
 
@@ -24,7 +24,7 @@ mega_blastoise/
 
 ## Battle Engine
 
-Battles run on `ps_sim`, a `no_std` port of the Pokémon Showdown simulator, read by `ps_client` (see `docs/architecture/showdown-split-plan.md`). Both generations play on it; the legacy per-generation engines are gone (G1-10 took Gen 1's, G3-9 Gen 3's). The firmware is purely presentation and input.
+Battles run on `ps_sim`, a `no_std` port of the Pokémon Showdown simulator, read by `ps_client` (see `docs/living/showdown-split-plan.md`). Both generations play on it; the legacy per-generation engines are gone (G1-10 took Gen 1's, G3-9 Gen 3's). The firmware is purely presentation and input.
 
 Both compile directly for the RP2350.
 
@@ -55,7 +55,7 @@ All shared state crosses future/task boundaries through Embassy's channel and si
 
 When the battle engine resolves a turn it emits a log of what happened. The firmware parses those log lines into typed `BoardEvent` values — `Damage`, `Faint`, `SwitchIn`, `Win`, etc. — and dispatches them to the hardware layer, which drives the LEDs and display accordingly.
 
-See [architecture/05-events-and-input.md](./architecture/05-events-and-input.md) for the full event contract.
+See [architecture/05-events-and-input.md](architecture/05-events-and-input.md) for the full event contract.
 
 ---
 
@@ -78,11 +78,11 @@ cargo build --release
 cargo run --release
 ```
 
-For build scripts and size stats, see `scripts/fw-build.sh`. Full architecture docs are in [architecture/](./architecture/README.md).
+For build scripts and size stats, see `scripts/fw-build.sh`. Full architecture docs are in [architecture/](architecture/README.md).
 
 ## Verification: software
 
-- **The gate:** [scripts/check.sh](../scripts/check.sh) runs before every code commit: all host
+- **The gate:** [scripts/check.sh](../../scripts/check.sh) runs before every code commit: all host
   tests, a firmware `cargo check` for its real target, the WASM build, and the headless UI probe
   (`--fast` skips the last two). It exists because two test binaries once rotted silently.
 - **Showdown parity:** tools/showdown-parity/ runs the real
@@ -90,13 +90,13 @@ For build scripts and size stats, see `scripts/fw-build.sh`. Full architecture d
   `showdown_fuzz` compares seeded random ones (`FUZZ_N`, `FUZZ_SEED`, `FUZZ_ONLY`), with hit,
   crit and damage roll scripted on both sides so every branch is compared. Unarmed checkouts skip
   these suites loudly. Engine changes get a 2000-seed sweep before they are pushed.
-- **Headless UI probe:** [scripts/ui-probe.sh](../scripts/ui-probe.sh) boots the web page in headless
+- **Headless UI probe:** [scripts/ui-probe.sh](../../scripts/ui-probe.sh) boots the web page in headless
   Chromium on a pinned seed, plays real turns in both generations through the same exports the
   touch controls use, and asserts on a per-seat state trace. It catches wiring bugs that unit
   tests cannot see.
 - **Screens:** the `screens` binary renders every UI state to image files on a host.
-- **Device debugging:** [scripts/mb-console.py](../scripts/mb-console.py) merges RTT and USB console
-  output and forwards typed lines; [scripts/fw-build.sh](../scripts/fw-build.sh) reports flash and RAM
+- **Device debugging:** [scripts/mb-console.py](../../scripts/mb-console.py) merges RTT and USB console
+  output and forwards typed lines; [scripts/fw-build.sh](../../scripts/fw-build.sh) reports flash and RAM
   use; `scripts/commands.sh` defines shell helpers; `.claude/commands/fwdebug.md` is the firmware
   debug loop for Claude Code.
 

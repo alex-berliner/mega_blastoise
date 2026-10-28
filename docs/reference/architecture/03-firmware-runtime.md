@@ -7,14 +7,14 @@ A plain `cargo build` in the crate builds it (default features `rp2350`,
 
 ## Startup Sequence
 
-[`main.rs`](../../crates/mega_blastoise_fw/src/main.rs) does the following:
+[`main.rs`](../../../crates/mega_blastoise_fw/src/main.rs) does the following:
 
 1. Initialize the RP2350 peripherals via `embassy_rp::init`.
 2. Initialize the heap (`mem_profile::init_heap`, 384 KB: one 320x480 frame in flight).
 3. Configure the RTT/defmt channel.
 4. Spawn the ST7796 display task, the button task, the sprite-bob pulse task,
    the USB CDC console and the battery task.
-5. Hand over to [`board_v2::run`](../../crates/mega_blastoise_fw/src/board_v2.rs),
+5. Hand over to [`board_v2::run`](../../../crates/mega_blastoise_fw/src/board_v2.rs),
    which runs core's `DeviceRunner` forever.
 
 ## Long-Lived Tasks
@@ -28,16 +28,16 @@ A plain `cargo build` in the crate builds it (default features `rp2350`,
 
 ## Firmware Adapters
 
-- [`board_v2.rs`](../../crates/mega_blastoise_fw/src/board_v2.rs)
+- [`board_v2.rs`](../../../crates/mega_blastoise_fw/src/board_v2.rs)
   - implements core's `DevicePort`: clock, timers, console lines, frame
     presentation, entropy and battery level.
   - everything the device does (lobby, ready sequence, battles, narration) is
     `mega_blastoise_core::device_runner`, shared with the web build.
 
 The v1 firmware (two OLEDs, LED strips, buzzer, button matrix) is described in
-[docs/archive/v1/firmware/](../../docs/archive/v1/firmware/INTERACTIONS.md).
+[docs/archive/v1/firmware/](../../archive/v1/firmware/INTERACTIONS.md).
 
-Continue with [Host Runtime and Test Harness](./04-host-runtime.md).
+Continue with [Host Runtime and Test Harness](04-host-runtime.md).
 
 ## Firmware
 
@@ -45,11 +45,11 @@ Continue with [Host Runtime and Test Harness](./04-host-runtime.md).
 crate builds the device; [03-firmware-runtime.md](03-firmware-runtime.md) has
 the startup and task list. In short: Embassy async tasks for the ST7796 panel (PIO SPI with DMA),
 the 16 buttons (debounce, A tap versus hold), the USB CDC console, battery sensing and the sprite
-bob, and [`board_v2.rs`](../../crates/mega_blastoise_fw/src/board_v2.rs) implements core's
+bob, and [`board_v2.rs`](../../../crates/mega_blastoise_fw/src/board_v2.rs) implements core's
 `DevicePort` and runs `DeviceRunner` forever. A panic lights the Pico's GP25 LED and its message
 survives a reset. Features: `input-debug` (held-key overlay), `mem-profile`, `trace`.
 
 There is no firmware yet for the reference design: it needs the `rp235xb` chip feature, its pin
 map, an ILI9488 panel driver (18-bit colour over SPI, unlike the ST7796), audio and power control.
 Bring-up tools (an RP2350 blink and a recovery-reset helper) are in
-[firmware/bringup/](../../firmware/bringup/rp2350_blink/README.md).
+[firmware/bringup/](../../../firmware/bringup/rp2350_blink/README.md).

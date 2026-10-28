@@ -29,7 +29,7 @@ runs `layout.py`.
 
 ## The loop
 
-Same one as [docs/hardware/openscad-methodology.md](../../../docs/hardware/openscad-methodology.md), which this follows:
+Same one as [docs/reference/openscad-methodology.md](../../../docs/reference/openscad-methodology.md), which this follows:
 
 1. **Change the geometry in `../layout.py`.** Never in the `.scad`.
 2. **`./build.sh render`** and **actually look at every PNG.** A model that

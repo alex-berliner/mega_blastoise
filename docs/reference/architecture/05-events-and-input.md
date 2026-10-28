@@ -4,7 +4,7 @@ This page documents the primary contracts connecting core and platform code.
 
 ## `BoardEvent` Contract
 
-[`BoardEvent`](../../crates/mega_blastoise_core/src/board_event.rs) is the typed event model the runners produce from the PS protocol (through `ps_client`), plus injected prompts.
+[`BoardEvent`](../../../crates/mega_blastoise_core/src/board_event.rs) is the typed event model the runners produce from the PS protocol (through `ps_client`), plus injected prompts.
 
 Examples:
 
@@ -32,10 +32,10 @@ Returned strings use the shared choice grammar (`move N`, `switch N`, etc.), whi
 
 ## Event Queue Semantics
 
-[`BoardEventQueue`](../../crates/mega_blastoise_core/src/battle_effects.rs):
+[`BoardEventQueue`](../../../crates/mega_blastoise_core/src/battle_effects.rs):
 
 - buffers events in FIFO order
 - handles `split` behavior where private/public rows occur in sequence
 - dispatches events in order to a `BoardEffects` sink
 
-Continue with [Memory and Debugging](./06-memory-and-debugging.md).
+Continue with [Memory and Debugging](06-memory-and-debugging.md).

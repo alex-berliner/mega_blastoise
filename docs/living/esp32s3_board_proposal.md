@@ -2,8 +2,8 @@
 
 Status: chosen by Alex on 2026-10-27 as the next board. Nothing in `board/design.py`, the
 KiCad files, the case or the firmware has changed yet. Where this conflicts with
-`docs/next_revision_proposal.md` (written for the RP2354B), this file wins. The 60 fps panel
-link is `docs/display_parallel_proposal.md`, with the pins below instead of its RP2350 ones.
+`docs/living/next_revision_proposal.md` (written for the RP2354B), this file wins. The 60 fps panel
+link is `docs/living/display_parallel_proposal.md`, with the pins below instead of its RP2350 ones.
 
 ## Why the MCU changes
 

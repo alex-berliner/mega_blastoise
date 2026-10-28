@@ -27,7 +27,7 @@ Goals:
 6. **It can be built in batches and sold** at a low price.
 
 The technical requirements for the next spin, and what each one needs from the chip, are in
-[docs/next_spin_requirements.md](docs/next_spin_requirements.md).
+[docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md).
 
 ## 2. How it plays
 
@@ -70,7 +70,7 @@ What the physical device is.
 - Nothing is soldered when a unit is put together: the battery and the speaker both plug in. (2026-10-20)
 - The case is 3D printed and built from two parts: a tub and one flowing top piece. (2026-10-25)
 - The top piece is a full-width band at the screen, with the DS Lite slope at its two button ends only. (2026-10-26)
-- The chip is being chosen (queue issue #4). The current reference design uses the RP2354B (a Raspberry Pi microcontroller with its flash memory inside). (2026-10-28)
+- The current reference design uses the RP2354B (a Raspberry Pi microcontroller with its flash memory inside). (2026-10-28)
 
 ## 4. The software
 
@@ -87,26 +87,6 @@ How it behaves.
 
 ## 5. Next spin
 
-The next hardware spin's requirements, and what each needs from its chip, are in [docs/next_spin_requirements.md](docs/next_spin_requirements.md). (2026-10-28)
+The next hardware spin's requirements, and what each needs from its chip, are in [docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md). (2026-10-28)
 
-Waiting on Alex:
-
-- **Which chip, and which storage.** Being chosen in queue issue #4. (2026-10-28)
-- **How Pokemon and GBA share the chip.** Either a boot select (the bare-metal battler starts by default, and Linux with the GBA emulator is a selectable boot), or everything on Linux. (2026-10-28)
-- **One USB-C port has four jobs:** charging, the computer link, a phone or dongle, and console-to-console link play. It needs role switching. (2026-10-28)
-- **The phone-in-case size limit** in millimetres is still to be measured. (2026-10-28)
-
-## 6. Confirm or cut
-
-Tick what stays and strike what goes. Each of these is probably important, or was decided earlier, but I could not tie it clearly to a current decision of yours.
-
-- [ ] **No on-device interpreter.** On 2026-10-27 you said definitely no WebAssembly or interpreter on the device. Does it still hold with a Linux option?
-- [ ] **Relay server.** On 2026-10-25 the plan was a small relay server run by us. On 2026-10-26 you chose guest play on Showdown's own servers. Drop the relay?
-- [ ] **Power on.** The reference design lets either seat's Start turn the console on, but you specified seat 1's Start. Which one is it?
-- [ ] **Reset button.** An older note wants a dedicated hold-to-reset button. The reference design has only a pinhole reset. Keep or cut?
-- [ ] **Flash logging.** An older note wants every battle line saved to flash and shown on the next boot. Keep or cut?
-- [ ] **Poke Ball frame.** Each private half is framed red or white so the whole screen reads as a Poke Ball. Keep or cut?
-- [ ] **Lobby shortcut and tutorial.** Holding A in the lobby summons the computer opponent, and a tutorial shows before the first game. Keep both?
-- [ ] **Gen 3 labelled "preview"** in the picker. Keep or drop the label?
-
-Last updated: 2026-10-28 13:03 EDT
+Last updated: 2026-10-28 13:40 EDT

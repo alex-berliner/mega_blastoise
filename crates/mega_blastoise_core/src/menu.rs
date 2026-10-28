@@ -2,7 +2,7 @@
 //!
 //! Both are shown before a battle starts, drawn head-to-head like every other
 //! screen so either seat can read and change them, per
-//! `docs/architecture/09-single-screen.md`. Keeping the state machine in core means
+//! `docs/reference/architecture/09-single-screen.md`. Keeping the state machine in core means
 //! the browser and the firmware present identical menus and identical
 //! defaults, the same rule the battle screens already follow.
 

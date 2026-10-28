@@ -1,5 +1,5 @@
 //! The memory and speed budget, on the host (task P2-4; design section 6,
-//! `docs/architecture/showdown-split-budget.md`).
+//! `docs/living/showdown-split-budget.md`).
 //!
 //! Every number here is a host proxy, and the gates are soft until a board
 //! exists: the RP2350 measurement (`sim_bench` over RTT) is deferred.

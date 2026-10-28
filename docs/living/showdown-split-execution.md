@@ -382,7 +382,7 @@ depends: none · || anything
 depends: P1-8 · || P2-2
 - Touches: new `crates/mega_blastoise_fw/src/bin/sim_bench.rs`, new
   `crates/ps_sim/tests/budget.rs`, new `scripts/sim-budget.sh`, new
-  `docs/architecture/showdown-split-budget.md`.
+  `docs/living/showdown-split-budget.md`.
 - Read first: `crates/mega_blastoise_fw/src/mem_profile.rs`,
   `scripts/fw-build.sh`, `.claude/commands/fwdebug.md`, design 6.
 - Method: (1) host: `size_of` of `Battle`, `Side`, `Pokemon`, `EffectState`
@@ -485,7 +485,7 @@ feed the phase gates in section 2.
   `common.gen(n)`, `Dex.mod('gen1')`, a `gen1customgame` or `gen3customgame`
   format). They encode what the Showdown authors consider the tricky lines,
   so they make a second corpus aimed at the corners.
-- Touches: new `docs/ps-tests-gen1-gen3.md` (the inventory), new entries in
+- Touches: new `docs/reference/ps-tests-gen1-gen3.md` (the inventory), new entries in
   `crates/ps_harness/targeted/gen1.json` and `gen3.json`, `tools/ps-diff`
   only to read them.
 - Deliverable: (1) an inventory of every test that can run under Gen 1 or
@@ -612,7 +612,7 @@ checklist) · depends: G1-9, Alex's device smoke battle
 **R-1 Re-sync survey** · C2 (judging which upstream changes matter) ·
 depends: G1-10
 - Touches: `tools/ps-diff/package.json` (new pin, on the branch only),
-  new `docs/architecture/showdown-resync.md`.
+  new `docs/living/showdown-resync.md`.
 - Read first: upstream changelog and the source diff 0.11.11 to the new release
   for `sim/*.ts`, `data/mods/gen{1,2,3,4}/*`, and base `data/{moves,items,abilities,conditions,rulesets}.ts`
   entries that gen 1 or gen 3 resolve to.
@@ -825,7 +825,7 @@ other batches. With three concurrent runs the path is about 17 runs deep.
 | Budget overrun (stack depth, flash, turn time) | Measured in phase 2 before the bulk port; `budget.rs` in check.sh keeps RAM honest; fallbacks: smaller caps, `#[inline(never)]` on handlers, colder data in tables |
 | Parallel batches collide in registry files | One file per effect; registries are sorted lists; the orchestrator resolves conflicts at landing |
 | The re-sync is larger than expected (protocol or PRNG change upstream) | R-1 sizes it first; anything beyond a few days goes to Alex before R-2 |
-| Faithful port reproduces PS bugs | Intended (decision 5); each known one is noted with the PS line in `docs/architecture/ps-quirks.md` |
+| Faithful port reproduces PS bugs | Intended (decision 5); each known one is noted with the PS line in `docs/reference/architecture/ps-quirks.md` |
 | UX drifts during the cut-over | Runner and client only translate (checklist); golden `BoardEvent` tests (P2-1, P2-2); UI probe on both engines until deletion |
 | Board measurements need the probe, which this WSL1 machine cannot reach | On-board runs batched at phase exits on the probe machine (question to Alex) |
 | Random choices rarely play strategically, so rare lines go untested | Human choices from public replays (V-3, V-4); per-handler coverage counts with focus teams aimed at the gaps (V-1); a background sweep of 100,000+ battles a day (V-2) |

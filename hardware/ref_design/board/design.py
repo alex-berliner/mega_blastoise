@@ -22,7 +22,7 @@ Symbols are KiCad's own for the real part where its library has one (the
 RP2354B, 2N7002, AO3400A, AO3401A); generic ones (Device:R, Device:D_Schottky)
 carry the part number as their value.
 
-This is the 2-layer ESP32-S3 build (2026-10-27, docs/esp32s3_board_proposal.md): an ESP32-S3-WROOM-1U-N16R8
+This is the 2-layer ESP32-S3 build (2026-10-27, docs/living/esp32s3_board_proposal.md): an ESP32-S3-WROOM-1U-N16R8
 module (16 MB flash, 8 MB octal PSRAM, Wi-Fi on, its antenna a flex antenna on a U.FL cable), BQ24073 power-path
 charger, TLV75733P 3V3 (1 A), a microSD slot, PWM audio into an FM8002A, either seat's Start as the power button, a
 board thermistor at the cell's hole (no LEDs), every hole >= 0.3 mm, and an ER-TFT035IPS-6 panel on its 8-bit 8080
@@ -284,7 +284,7 @@ DNP("C43", "usb_charger.kicad_sch", "C", "CC2", "GND")
 S = "mcu.kicad_sch"
 BOARD_REV = 2             # this board's revision number, on the silkscreen
 # module pin -> net. The module's own pin numbers (datasheet table 3-1); GPIOn is "IOn" on the module. The pins are the proposal's
-# (docs/esp32s3_board_proposal.md), see docs/esp32s3_pinmap_diff.md for what differs and why
+# (docs/living/esp32s3_board_proposal.md), see docs/living/esp32s3_pinmap_diff.md for what differs and why
 ESP32 = {
     1: "GND", 2: "+3V3", 3: "EN",
     27: "BOOT",                                  # IO0: strapping pin, low at reset = download mode
@@ -324,7 +324,7 @@ part("J7", "debug.kicad_sch", "Connector_Generic:Conn_01x04", "DEBUG PADS", "bat
 
 # =================================================================================
 # Display: EastRising ER-TFT035IPS-6 (3.5in IPS 320x480, ILI9488), its FPC in a 50-pin ZIF
-# connector, on its 8-bit 8080 bus since 2026-10-27 (docs/display_parallel_proposal.md); the panel's six parallel
+# connector, on its 8-bit 8080 bus since 2026-10-27 (docs/living/display_parallel_proposal.md); the panel's six parallel
 # backlight LEDs (common anode on VSYS, two cathode pins of three LEDs each) sink through two op-amp current regulators,
 # one per cathode pin
 # =================================================================================

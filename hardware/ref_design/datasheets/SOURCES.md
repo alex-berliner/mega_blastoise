@@ -35,7 +35,7 @@ The file names below are what the notes and tools refer to; the source column is
 | `samsung_cl10a106kp8nnnc_dcbias.csv` | Samsung CL10A106KP8NNNC 10 uF 10 V X5R 0603: DC bias curve, as above | https://weblib.samsungsem.com/mlcc/mlcc-ec-data-sheet.do?partNumber=CL10A106KP8NNN |
 | `samsung_cl10a106ma8nrnc_dcbias.csv` | Samsung CL10A106MA8NRNC 10 uF 25 V X5R 0603: DC bias curve, as above | https://weblib.samsungsem.com/mlcc/mlcc-ec-data-sheet.do?partNumber=CL10A106MA8NRN |
 | `srv05-4a.pdf` | Zhuhai Hongjiacheng SRV05-4A USB ESD array (U1 2026-10-20 to 10-22), Rev 2.0 | https://datasheet.lcsc.com/datasheet/pdf/896c5101b23d5999ade9616dd078e12f.pdf?productCode=C20615829 |
-| `esp32-s3.pdf` | Espressif ESP32-S3 series datasheet v2.2 (candidate MCU, see docs/next_revision_proposal.md) | https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf |
+| `esp32-s3.pdf` | Espressif ESP32-S3 series datasheet v2.2 (candidate MCU, see docs/living/next_revision_proposal.md) | https://www.espressif.com/sites/default/files/documentation/esp32-s3_datasheet_en.pdf |
 | `esp32-s3-trm.pdf` | ESP32-S3 Technical Reference Manual (LCD_CAM, MMU, GPIO matrix) | https://www.espressif.com/sites/default/files/documentation/esp32-s3_technical_reference_manual_en.pdf |
 | `esp32-s3-hw-design-guidelines.pdf` | ESP32-S3 hardware design guidelines (power, antenna keepout) | https://docs.espressif.com/projects/esp-hardware-design-guidelines/en/latest/esp32s3/esp-hardware-design-guidelines-en-master-esp32s3.pdf |
 | `esp32-s3-mini-1.pdf` | ESP32-S3-MINI-1 / MINI-1U module datasheet | https://www.espressif.com/sites/default/files/documentation/esp32-s3-mini-1_mini-1u_datasheet_en.pdf |

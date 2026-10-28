@@ -4,13 +4,13 @@ Mega Blastoise is organized as a shared battle core plus platform adapters.
 
 ## Workspace Components
 
-- [`mega_blastoise_core`](../../crates/mega_blastoise_core/) (`no_std`)
+- [`mega_blastoise_core`](../../../crates/mega_blastoise_core/) (`no_std`)
   - Battle runner, typed events, input trait, demo teams, and data store.
-- [`mega_blastoise_fw`](../../crates/mega_blastoise_fw/) (`no_std`, RP2350 / Pico 2)
+- [`mega_blastoise_fw`](../../../crates/mega_blastoise_fw/) (`no_std`, RP2350 / Pico 2)
   - Embassy runtime, ST7796 panel, 16 direct buttons, USB CDC console, battery sense, defmt logging.
-- [`mega_blastoise_web`](../../crates/mega_blastoise_web/) (wasm)
+- [`mega_blastoise_web`](../../../crates/mega_blastoise_web/) (wasm)
   - The same device in a browser page (`www/device.html`).
-- [`mega_blastoise_test`](../../crates/mega_blastoise_test/) (host/std)
+- [`mega_blastoise_test`](../../../crates/mega_blastoise_test/) (host/std)
   - Stdin-based interactive harness and tests reusing the same core pipeline.
 
 ## Architectural Goal
@@ -30,7 +30,7 @@ One battle/event model should drive all runtimes. Platform-specific code should 
 (Both generations run the same loop, on the PS engine: the legacy Gen 1
 and Gen 3 engines are gone.)
 
-Continue with [Core Battle Engine Flow](./02-core-battle-flow.md).
+Continue with [Core Battle Engine Flow](02-core-battle-flow.md).
 
 ## Shape
 
@@ -62,9 +62,9 @@ protocol. Three thin platforms wrap the core.
 | `mega_blastoise_web` | The same device in a browser page; its own WASM workspace |
 | `mega_blastoise_test` | Interactive stdin battle, unit and integration tests, the Showdown parity and fuzz suites, a renderer that dumps every screen to image files |
 
-More detail: [docs/architecture/](README.md) and the
+More detail: [docs/reference/architecture/](README.md) and the
 "where does new code go" guide in [08-feature-map.md](08-feature-map.md).
-Toolchain: nightly Rust pinned in [rust-toolchain.toml](../../rust-toolchain.toml).
+Toolchain: nightly Rust pinned in [rust-toolchain.toml](../../../rust-toolchain.toml).
 
 ## The battle engines
 
@@ -100,11 +100,11 @@ battles do not yet exercise what the engine models.
 
 ## Data and assets
 
-Core's [build script](../../crates/mega_blastoise_core/build.rs) generates static tables at compile
+Core's [build script](../../../crates/mega_blastoise_core/build.rs) generates static tables at compile
 time, so nothing is loaded at run time and there is no file system: Gen 1 data from `battler`'s
 data files, the random battle roster, move descriptions from Showdown's text data, 1-bit sprites
 for the old mono renderer, and colour sprites for every Gen 3 species (Emerald art from the
 PokeAPI sprite repository, packed losslessly as 4 bits per pixel with a per-species palette).
 Downloads are cached under `crates/mega_blastoise_core/vendor/` so later builds are offline.
 Gen 3 art is used for both generations. Move icons for the attack effects come from
-[scripts/gen_move_sprites.py](../../scripts/gen_move_sprites.py).
+[scripts/gen_move_sprites.py](../../../scripts/gen_move_sprites.py).

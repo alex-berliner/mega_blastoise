@@ -420,7 +420,7 @@ Opus's correction is right: design.py:201-205 shows PWR_HOLD reaching PWR_EN thr
 
 ## Verification tooling (hardware)
 
-- **Reference design checks**, all scripted ([design_review.md](design_review.md),
+- **Reference design checks**, all scripted ([design_review.md](../../hardware/ref_design/docs/design_review.md),
   "Checks run"): every assembled part's every pin reviewed against its current datasheet
   (`check_pins.py`), schematic netlist equal to `design.py`, ERC and DRC clean with schematic
   parity, hole sizes, the membrane contact pattern, every part's 3D model inside the case
@@ -435,5 +435,5 @@ Opus's correction is right: design.py:201-205 shows PWR_HOLD reaching PWR_EN thr
   coupon, a latch replica, measured stack heights, a JLC dry run, an outside review, and live stock
   on order day. Several of its board changes are already in `design.py`; the physical items are
   still listed as open in PLAN.md.
-- **Bring-up:** [bringup.md](bringup.md) is the step-by-step first power
+- **Bring-up:** [bringup.md](../../hardware/ref_design/docs/bringup.md) is the step-by-step first power
   of a new board, ending with the USB hand-over and power switch.

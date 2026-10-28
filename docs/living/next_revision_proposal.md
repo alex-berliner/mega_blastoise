@@ -7,13 +7,13 @@ or a live source.
 
 **MCU change (2026-10-27):** the next board uses the ESP32-S3-WROOM-1-N16R8, not the
 RP2354B, for its 16 MB of flash. Its board changes and pin map are in
-`docs/esp32s3_board_proposal.md`, which wins where it conflicts with this file. The
+`docs/living/esp32s3_board_proposal.md`, which wins where it conflicts with this file. The
 RP2350-specific parts here (bootrom partitions, PIO, the section 6 GPIO budget) are
 superseded; the launcher on the S3 uses a factory partition plus one OTA game slot. Wi-Fi
 is on from that board (Alex, 2026-10-27), so section 3's "no radio" no longer holds: the
 device talks to Showdown over Wi-Fi and the USB bridge is the fallback.
 
-Related: `docs/display_parallel_proposal.md` (the 60 fps display link, in full detail),
+Related: `docs/living/display_parallel_proposal.md` (the 60 fps display link, in full detail),
 `docs/bom.md`. The GPIO map this file uses is the 3.5 in board's `docs/pinmap.md`, merged
 to main in bfe9609.
 
@@ -196,7 +196,7 @@ header footprint (3 GPIOs; section 6 has room).
 
 ## 5. Display: 60 fps
 
-Full detail in `docs/display_parallel_proposal.md`. Summary:
+Full detail in `docs/living/display_parallel_proposal.md`. Summary:
 
 - The panel link is the limit, not the MCU. SPI at the datasheet's 20 MHz is about 5 fps full
   frame; 60 fps needs 221 Mbit/s.

@@ -4,16 +4,16 @@ This page describes shared logic inside `mega_blastoise_core`.
 
 ## Primary Modules
 
-- [`runner/`](../../crates/mega_blastoise_core/src/runner/mod.rs) (the PS engine, every
+- [`runner/`](../../../crates/mega_blastoise_core/src/runner/mod.rs) (the PS engine, every
   battle in both generations)
   - `run_battle` is the main orchestration loop.
   - setup: `ps::BattleSetup::local`.
-- [`board_event.rs`](../../crates/mega_blastoise_core/src/board_event.rs)
+- [`board_event.rs`](../../../crates/mega_blastoise_core/src/board_event.rs)
   - the `BoardEvent` model (re-exported from `ps_client`) and its helpers.
-- [`battle_effects.rs`](../../crates/mega_blastoise_core/src/battle_effects.rs)
+- [`battle_effects.rs`](../../../crates/mega_blastoise_core/src/battle_effects.rs)
   - defines `BoardEffects`.
   - provides `BoardEventQueue` and split/private/public handling.
-- [`battle_input.rs`](../../crates/mega_blastoise_core/src/battle_input.rs)
+- [`battle_input.rs`](../../../crates/mega_blastoise_core/src/battle_input.rs)
   - defines async `BattleInput::read_choice`.
   - formats move/switch command strings.
 
@@ -32,7 +32,7 @@ no data store object.
    choice and send it.
 5. Repeat until the server's `end`.
 
-Continue with [Firmware Runtime (RP2350)](./03-firmware-runtime.md).
+Continue with [Firmware Runtime (RP2350)](03-firmware-runtime.md).
 
 ## How a turn flows
 

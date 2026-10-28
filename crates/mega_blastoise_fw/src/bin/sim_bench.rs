@@ -1,5 +1,5 @@
 //! The battle server's budget on the board (task P2-4, design section 6,
-//! `docs/architecture/showdown-split-budget.md`).
+//! `docs/living/showdown-split-budget.md`).
 //!
 //! Plays the 200 seeded random battles per ported gen of
 //! `crates/ps_sim/tests/common/bench_driver.rs` (the same file the host

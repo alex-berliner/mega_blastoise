@@ -9,17 +9,17 @@ Layout:
   port: server, client, dex and protocol), `ps_harness` (the protocol diff), `mega_blastoise_core` (no_std + battle data), `mega_blastoise_fw` (firmware), `mega_blastoise_test` (PC),
   and `mega_blastoise_web` (its own wasm workspace, the browser build).
 - `firmware/bringup/`: standalone bring-up tools (`rp2350_blink`, `esp32_reset`).
-- `hardware/`: the boards and cases ([index](./hardware/README.md)). `docs/`: notes, including `docs/architecture/`. `scripts/`: dev scripts.
+- `hardware/`: the boards and cases ([index](hardware/README.md)). `docs/`: notes, including `docs/reference/architecture/`. `scripts/`: dev scripts.
 
-Architecture overview: see [docs/architecture/README.md](./docs/architecture/README.md).
+Architecture overview: see [docs/reference/architecture/README.md](docs/reference/architecture/README.md).
 
 ## Documentation
 
-- [docs/TECHNICAL.md](./docs/TECHNICAL.md): software internals, crate layout, interfaces, data flow
-- [docs/architecture/](./docs/architecture/README.md): deep-dive architecture docs
-- [hardware/ref_design/](./hardware/ref_design/README.md): the reference design (board, case, docs)
-- [docs/hardware/openscad-methodology.md](./docs/hardware/openscad-methodology.md): how the OpenSCAD cases are built and checked
-- [docs/archive/v1/](./docs/archive/v1/): the v1 device (Pico, two OLEDs, button matrix): its design and electronics notes.
+- [docs/reference/TECHNICAL.md](docs/reference/TECHNICAL.md): software internals, crate layout, interfaces, data flow
+- [docs/reference/architecture/](docs/reference/architecture/README.md): deep-dive architecture docs
+- [hardware/ref_design/](hardware/ref_design/README.md): the reference design (board, case, docs)
+- [docs/reference/openscad-methodology.md](docs/reference/openscad-methodology.md): how the OpenSCAD cases are built and checked
+- [docs/archive/v1/](docs/archive/v1/): the v1 device (Pico, two OLEDs, button matrix): its design and electronics notes.
   Its board, stripboard and case files were removed from the tree; tag `v1-archive` has them.
 
 ## Run modes (`mega-blastoise-test`)
