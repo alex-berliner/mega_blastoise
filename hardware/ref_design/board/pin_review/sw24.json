@@ -1,0 +1,51 @@
+{
+ "part": "SW24",
+ "refs": [
+  "SW24"
+ ],
+ "mpn": "TPS850 J14K V SMTR LFS",
+ "lcsc": "C2759975",
+ "manufacturer": "ROCPU",
+ "datasheet": {
+  "url": "https://www.lcsc.com/datasheet/C2759975.pdf",
+  "revision_or_date": "ROCPU TPS 850 series (local: datasheets/rocpu_tps850.pdf)",
+  "local": "datasheets/rocpu_tps850.pdf"
+ },
+ "ratings": [
+  {
+   "what": "contact",
+   "limit": "12 VDC, 50 mA (page 1); the drawing's note says 15 V 20 mA",
+   "design": "VSYS 4.4 V max into R13 33k and the latch: about 0.1 mA",
+   "ok": true,
+   "cite": "p1 Specifications, p2 note 1"
+  }
+ ],
+ "pins": [
+  {
+   "pin": "1",
+   "ds_name": "contacts 1 and 3 (top pads)",
+   "type": "switch",
+   "requirement": "normally open SPST; the two top pads are one side, the two bottom pads the other",
+   "cite": "p2 schematic and land drawing",
+   "quote": "",
+   "nets": {
+    "SW24": "PWR_BTN_RAW"
+   },
+   "ok": true,
+   "issue": ""
+  },
+  {
+   "pin": "2",
+   "ds_name": "contacts 2 and 4 (bottom pads)",
+   "type": "switch",
+   "requirement": "normally open",
+   "cite": "p2 schematic",
+   "quote": "",
+   "nets": {
+    "SW24": "VSYS"
+   },
+   "ok": true,
+   "issue": ""
+  }
+ ]
+}

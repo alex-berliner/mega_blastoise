@@ -19,17 +19,17 @@ import pcbnew
 HERE = os.path.dirname(os.path.abspath(__file__))
 BOARD_DIR = os.path.dirname(HERE)
 sys.path.insert(0, BOARD_DIR)
-from placement import CASE, CUTOUTS, PINHOLES, SPEAKER  # noqa: E402
+from placement import CASE, CUTOUTS, SPEAKER  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-323", "D_SOD-123", "C_0805", "L_1008",
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
 # parts whose label below says more than their reference would
-LABELLED = {"J2", "J3", "J5", "J7", "TP1", "TP2", "TP3", "TP4", "TP5",
+LABELLED = {"J2", "J3", "J7", "TP1", "TP2", "TP3", "TP4", "TP5",
             "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15", "TP16"}
 # the probe pads added for bring-up (2026-10-19): the name printed beside each
-PROBE_NAMES = {"TP9": "1V1", "TP10": "BLREF", "TP11": "SCK", "TP12": "MOSI", "TP13": "CS", "TP14": "DC",
+PROBE_NAMES = {"TP9": "APWM", "TP10": "BLREF", "TP11": "WR", "TP12": "DC", "TP13": "D0", "TP14": "TE",
                "TP15": "GND", "TP16": "GND"}
 
 
@@ -136,7 +136,7 @@ def main():
     # each line takes the clear spot nearest (100, 40) on the back, anywhere on the board, outside every hole
     grid = sorted(((x, y) for x in [66 + 1.0 * i for i in range(69)] for y in [26 + 0.5 * k for k in range(250)]),
                   key=lambda t: (t[0] - 100.0) ** 2 + (t[1] - 40.0) ** 2)
-    for s_, h, w in (("TWO-PLAYER HANDHELD  REF-A", 1.2, 16.5), (f"REV {design.BOARD_REV}", 2.0, 6.5), ("2 LAYERS  1.6 MM  ENIG", 0.8, 10.0)):
+    for s_, h, w in (("TWO-PLAYER HANDHELD  REF-A", 1.2, 16.5), (f"REV {design.BOARD_REV}", 2.0, 6.5), ("2 LAYERS  1.6 MM  ENIG", 0.8, 10.0), ("JLCJLCJLCJLC", 0.8, 5.0)):   # (the last: JLC's order-number marker, V&V DEF-55)
         for x, y in grid:
             bx = (x - w, y - h / 2 - 0.1, x + w, y + h / 2 + 0.1)
             if inner[0] <= bx[0] and bx[2] <= inner[2] and inner[1] <= bx[1] and bx[3] <= inner[3] and \
@@ -155,10 +155,10 @@ def main():
         tp = board.FindFootprintByReference(ref)
         layer = back if tp.IsFlipped() else pcbnew.F_SilkS
         x, y = pcbnew.ToMM(tp.GetPosition().x), pcbnew.ToMM(tp.GetPosition().y)
-        text(name, x, y + 1.5 if name not in ("1V1", "BLREF") else y - 1.5, layer)
+        text(name, x, y + 1.5 if name not in ("APWM", "BLREF") else y - 1.5, layer)
     j7 = board.FindFootprintByReference("J7")
     jb = box(j7)
-    text("SWD PADS", (jb[0] + jb[2]) / 2, jb[1] - 0.9, back)
+    text("3V3 EN BOOT GND", (jb[0] + jb[2]) / 2, jb[1] - 0.9, back)
     # front: connectors and buttons people solder to or press during bring-up
     j2 = board.FindFootprintByReference("J2")
     p1 = next(p for p in j2.Pads() if p.GetNumber() == "1")
@@ -169,15 +169,8 @@ def main():
     j3 = board.FindFootprintByReference("J3")
     row = [xy for xy in ((pcbnew.ToMM(p.GetPosition().x), pcbnew.ToMM(p.GetPosition().y)) for p in j3.Pads())]
     text("PANEL", min(x for x, _ in row) - 5.2, row[0][1])
-    for ref, name in (("J5", "SWD"),):
-        jb = box(board.FindFootprintByReference(ref))
-        text(name, (jb[0] + jb[2]) / 2 - 0.6, (jb[1] + jb[3]) / 2)     # on its body: right of it is the hole
     # the speaker, hand-fitted on the top (build_pcb.py draws its outline): its name inside it
     # (the speaker's hole takes no text since 2026-10-27: nothing is printed in a hole)
-    # the pinholes' names (placement.PINHOLES is in the case frame, y up: KiCad's x + 100, 100 - y)
-    px = [(100 + x, 100 - y) for x, y in PINHOLES]
-    text("BOOT", px[0][0] + 0.0, px[0][1] - 2.3, h=0.8)   # above the upper one, below the lower one
-    text("RST", px[1][0] - 1.0, px[1][1] + 2.3, h=0.8)
     if clashes:
         print("labels over pads or other text:", clashes)
     pcbnew.SaveBoard(PCB, board)

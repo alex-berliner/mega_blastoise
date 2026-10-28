@@ -4014,8 +4014,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "72f2ff7e-4571-57c3-a476-7a22faaa5737")
-		(property "Reference" "#PWR059"
+		(uuid "156acd8a-6776-50c6-8f80-8a4fe60c0e23")
+		(property "Reference" "#PWR056"
 			(at 139.7 71.12 0)
 			(hide yes)
 			(show_name no)
@@ -4070,12 +4070,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "6fd0e35d-d569-5f50-9bf5-9342112141a9")
+			(uuid "0f2f555c-cc71-5858-a4a5-aae04f4041c8")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR059")
+					(reference "#PWR056")
 					(unit 1)
 				)
 			)
@@ -4091,8 +4091,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "541039bb-1b5f-5f9c-851b-61c4d7beb40a")
-		(property "Reference" "#PWR060"
+		(uuid "3ba80eec-95c0-5a36-884a-f6eb5cf866c0")
+		(property "Reference" "#PWR057"
 			(at 139.7 132.08 0)
 			(hide yes)
 			(show_name no)
@@ -4147,12 +4147,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "4ffe73a7-9a04-5584-ac02-e21addb0b74d")
+			(uuid "6c4cc0b7-6737-54e5-803e-74e674781feb")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR060")
+					(reference "#PWR057")
 					(unit 1)
 				)
 			)
@@ -4168,8 +4168,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "c6b98674-756b-5e1e-949b-ab6c9e1b5d7b")
-		(property "Reference" "#PWR061"
+		(uuid "918c7594-bc3a-5010-9723-c262a304bf66")
+		(property "Reference" "#PWR058"
 			(at 30.48 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -4224,12 +4224,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "37d4a072-fadc-581b-83bb-54dcaaee83b2")
+			(uuid "28a8a2a3-62bb-5a2b-8a87-4c84983c4eef")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR061")
+					(reference "#PWR058")
 					(unit 1)
 				)
 			)
@@ -4245,8 +4245,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "4bfc044e-33af-517c-9bd4-42a2c52b799a")
-		(property "Reference" "#PWR062"
+		(uuid "72f2ff7e-4571-57c3-a476-7a22faaa5737")
+		(property "Reference" "#PWR059"
 			(at 30.48 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -4301,12 +4301,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d0770881-bd7d-57c1-93c1-b012e2fac165")
+			(uuid "6fd0e35d-d569-5f50-9bf5-9342112141a9")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR062")
+					(reference "#PWR059")
 					(unit 1)
 				)
 			)
@@ -4322,8 +4322,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "15b01cc0-ea4f-582b-b221-2cecee885de5")
-		(property "Reference" "#PWR063"
+		(uuid "541039bb-1b5f-5f9c-851b-61c4d7beb40a")
+		(property "Reference" "#PWR060"
 			(at 45.72 39.37 0)
 			(hide yes)
 			(show_name no)
@@ -4378,12 +4378,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "53c82f9d-8627-563d-a1c8-1bb76ccfe084")
+			(uuid "4ffe73a7-9a04-5584-ac02-e21addb0b74d")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR063")
+					(reference "#PWR060")
 					(unit 1)
 				)
 			)
@@ -4399,8 +4399,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "0d5cfade-ecd6-549a-a4be-7ac7fd1139f5")
-		(property "Reference" "#PWR064"
+		(uuid "c6b98674-756b-5e1e-949b-ab6c9e1b5d7b")
+		(property "Reference" "#PWR061"
 			(at 45.72 52.07 0)
 			(hide yes)
 			(show_name no)
@@ -4455,12 +4455,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "fa173d2b-cebc-5181-97e6-aa2c3eb69423")
+			(uuid "37d4a072-fadc-581b-83bb-54dcaaee83b2")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR064")
+					(reference "#PWR061")
 					(unit 1)
 				)
 			)
@@ -4476,8 +4476,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "abe786c2-cf40-582b-be57-6bb9874a25b6")
-		(property "Reference" "#PWR065"
+		(uuid "4bfc044e-33af-517c-9bd4-42a2c52b799a")
+		(property "Reference" "#PWR062"
 			(at 30.48 77.47 0)
 			(hide yes)
 			(show_name no)
@@ -4532,12 +4532,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "33a9b8a2-c9d1-5ff0-8938-56c0f1ab6a5e")
+			(uuid "d0770881-bd7d-57c1-93c1-b012e2fac165")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR065")
+					(reference "#PWR062")
 					(unit 1)
 				)
 			)
@@ -4553,8 +4553,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "81762a27-e3d5-5819-9433-177632512d1b")
-		(property "Reference" "#PWR066"
+		(uuid "15b01cc0-ea4f-582b-b221-2cecee885de5")
+		(property "Reference" "#PWR063"
 			(at 45.72 90.17 0)
 			(hide yes)
 			(show_name no)
@@ -4609,12 +4609,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "9c72fb7e-7e0c-5398-994b-6c88839fc954")
+			(uuid "53c82f9d-8627-563d-a1c8-1bb76ccfe084")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR066")
+					(reference "#PWR063")
 					(unit 1)
 				)
 			)
@@ -4630,8 +4630,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "51d40891-d57e-5b6d-ad79-17ccb7596484")
-		(property "Reference" "#PWR067"
+		(uuid "0d5cfade-ecd6-549a-a4be-7ac7fd1139f5")
+		(property "Reference" "#PWR064"
 			(at 60.96 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -4686,12 +4686,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "787d59fd-9587-5b45-a852-35dda4e96753")
+			(uuid "fa173d2b-cebc-5181-97e6-aa2c3eb69423")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR067")
+					(reference "#PWR064")
 					(unit 1)
 				)
 			)
@@ -4707,8 +4707,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "3945cb1b-f366-5444-8a27-9ca0f3a68b47")
-		(property "Reference" "#PWR068"
+		(uuid "abe786c2-cf40-582b-be57-6bb9874a25b6")
+		(property "Reference" "#PWR065"
 			(at 76.2 140.97 0)
 			(hide yes)
 			(show_name no)
@@ -4763,12 +4763,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "d298bd3f-761b-5726-aa0f-8e889f1f3535")
+			(uuid "33a9b8a2-c9d1-5ff0-8938-56c0f1ab6a5e")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/aa8f4b61-4c36-5dda-b850-0bd2b7465442"
-					(reference "#PWR068")
+					(reference "#PWR065")
 					(unit 1)
 				)
 			)

@@ -37,13 +37,14 @@ def buttons():
         x0 = 35.56 + col * 124.46
         sh.heading(x0 - 17.78, 22.86, f"Seat {col + 1}: D-pad and face buttons")
         column([f"SW{first + i}" for i in range(8)], x0, 35.56)
-    # Start and Select: the smaller contacts; seat 1's Start is also the power button
-    sh.heading(86.36, 22.86, "Seat 1 Start/Select")
+    # Start and Select: the smaller contacts; the power button (SW24) is its own part under seat 1's deck
+    sh.heading(86.36, 22.86, "Seat 1 Start/Select, power")
     column(["SW20"], 104.14, 35.56)
     column(["SW21"], 104.14, 50.8)
-    sh.text(86.36, 63.5, "P1 START is the power button: it joins VSYS")
-    sh.text(86.36, 67.31, "to PWR_BTN_RAW (Power sheet); the MCU reads")
-    sh.text(86.36, 71.12, "it through Q1 as PWR_BTN_N.")
+    column(["SW24"], 104.14, 66.04)
+    sh.text(86.36, 78.74, "SW24 is the power button: it joins VSYS to")
+    sh.text(86.36, 82.55, "PWR_BTN_RAW (Power sheet); the MCU reads it")
+    sh.text(86.36, 86.36, "through Q1 as PWR_BTN_N (bit 16).")
     sh.heading(231.14, 22.86, "Seat 2 Start/Select")
     column(["SW22", "SW23"], 248.92, 35.56)
     # the two shift registers and their pull-up arrays
@@ -59,7 +60,7 @@ def buttons():
             sh.place(rn, x0 + 12.7 + k * 20.32, 129.54, 0, f=(0, -10.16))
             for n in "12345678":
                 sh.tag(f"{rn}.{n}", 5.08)
-    # the third register: both Starts, both Selects and the charger's two status lines
+    # the third register: the power button, both Starts, both Selects and the charger's two status lines
     sh.heading(248.92, 70.0, "Third register: Start/Select and charger status")
     sh.place("U11", 284.48, 104.14, 0, f=(0, -15.24))
     for n in ("1", "2", "15", "8", "16", "10", "9", "11", "12", "13", "14", "3", "4", "5", "6"):
@@ -67,7 +68,7 @@ def buttons():
     sh.nc("U11.7")
     sh.place("C62", 304.8, 104.14, 0, f=("r", G))
     sh.tag("C62.1", G); sh.tag("C62.2", G)
-    for k, r in enumerate(("R86", "R87")):
+    for k, r in enumerate(("R86", "R87", "R88", "R63")):
         sh.place(r, 256.54 + k * 12.7, 160.02, 0, f=("r", G))
         sh.tag(f"{r}.1", G); sh.tag(f"{r}.2", G)
     # the clock's series resistor (on the board by the module pin)
@@ -77,7 +78,7 @@ def buttons():
     sh.tag("R65.2", 5.08)
     sh.text(17.78, 165.1, "D-pad and face buttons: bare ENIG combs under DS Lite silicone, read through a 74HC165 per seat (chained: U11 to U9 to U8, U9's")
     sh.text(17.78, 168.91, "Q7 into U8's DS; SR_PL low loads, 16 SR_CLK rises shift P1 Y..UP then P2 Y..UP out of SR_DATA, low = pressed; 8 more give U11).")
-    sh.text(17.78, 172.72, "Start/Select: 4 mm metal domes (HYP 600-415S-260), read by U11 (24-clock read: the extra 8 bits: Start/Select/charger); both Starts sit on VSYS (Power sheet).")
+    sh.text(17.78, 172.72, "Start/Select: 4 mm metal domes (HYP 600-415S-260), read by U11 (24-clock read: the extra 8 bits: power, Starts, Selects, charger); their contacts go to GND, 47k pull-ups. The power button is SW24.")
     return sh
 
 
@@ -337,13 +338,6 @@ def power():
     sh.tag("R16.2", 0)
     sh.wire("Q1.3", (Qx + 7.62, Qy - 5.08))
     sh.label("PWR_BTN_N", (Qx + 7.62, Qy - 5.08), "right")
-    # ---- seat 2's Start (row 1, 2026-10-21): D8 ORs it into PWR_EN, Q7 reads it for GPIO2
-    sh.heading(101.6, 121.92, "Seat 2 Start: power on and sense")
-    for i, ref in enumerate(("D8", "R62", "Q7", "R63")):
-        x = 109.22 + i * 17.78
-        sh.place(ref, x, 139.7, 0 if ref != "D8" else 90, f=("r", G) if ref != "Q7" else "r")
-        for n in (("1", "2") if ref != "Q7" else ("1", "2", "3")):
-            sh.tag(f"{ref}.{n}", G)
     # ---- cell voltage divider
     bx, by = 172.72, 86.36
     sh.heading(160.02, 68.58, "Cell voltage sense")
@@ -371,7 +365,7 @@ def power():
     for i, ref in enumerate(("TP5", "TP15", "TP16")):
         a = tp(sh, ref, (200.66 + i * 15.24, 139.7))
         sh.gnd(sh.wire(a, (a[0], a[1] + G)))
-    sh.text(17.78, 177.8, "Power: either seat's Start contact, the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
+    sh.text(17.78, 177.8, "Power: the power button (SW24, Buttons sheet), the MCU (PWR_HOLD) or USB raise PWR_EN. Releasing it with")
     sh.text(17.78, 181.61, "PWR_HOLD low turns the device off. A reset drops PWR_HOLD, so a crash turns it off.")
     sh.text(17.78, 185.42, "Q1 lets the MCU see the button (PWR_BTN_N low = pressed) without exposing a pin to VSYS.")
     return sh

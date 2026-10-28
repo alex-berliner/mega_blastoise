@@ -2,8 +2,8 @@
 
     python3 tools/check_pcb.py
 
-Errors fail the check. Warnings are listed by kind; silkscreen warnings don't
-fail it (JLCPCB clips silk off pads, and none of it is visible in the case).
+Every violation fails the check, errors and warnings alike (V&V DEF-36: 13 warning types were never failed), except the
+named cosmetic ones (silkscreen: JLCPCB clips silk off pads, and none of it is visible in the case).
 """
 import collections
 import json
@@ -28,7 +28,7 @@ def main():
     viol = d.get("violations", [])
     unconn = d.get("unconnected_items", [])
     parity = d.get("schematic_parity", [])
-    errors = [v for v in viol if v["severity"] == "error" and v["type"] not in COSMETIC]
+    errors = [v for v in viol if v["type"] not in COSMETIC]
     by = collections.Counter((v["severity"], v["type"]) for v in viol)
     lines.append(f"DRC: {len(viol)} violations, {len(unconn)} unconnected, {len(parity)} schematic parity issues")
     for (sev, typ), n in sorted(by.items()):

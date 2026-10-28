@@ -57,3 +57,6 @@ microSD slots (2026-10-27, SD slot sizing for the ESP32-S3 board): `tf-01a_C9114
 download); `jmeconn_5001B-TF128-054_C53278151.pdf` is the JMEconn 1.28 mm push-push drawing (LCSC C53278151,
 https://datasheet.lcsc.com/datasheet/pdf/e7a21fcb804bb8d9a0644d5e97087279.pdf?productCode=C53278151). The TF-01A and JMEconn
 drawings are images (no text layer): read by eye.
+
+`rocpu_tps850.pdf`: ROCPU TPS 850 series, top actuated (2 pages; LCSC C2759975, the J14K 250 gf 1.4 mm), copied from the power-button analysis's download
+(scratchpad esp32_pwrbtn/ds/C2759975): land drawing on page 2, which battler:Tact_ROCPU_TPS850 (tools/fp_tact.py) follows.

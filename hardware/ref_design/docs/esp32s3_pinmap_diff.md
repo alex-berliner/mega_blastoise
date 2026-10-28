@@ -12,7 +12,7 @@ Differences that are not GPIOs, for the firmware session:
 
 1. **Buttons: 24-bit chain, not 16.** The proposal left the Starts and Selects on GPIOs; the build puts them, with the
    charger status lines, on a third 74HC165 (U11, chain U11 -> U9 -> U8). Bits 0-15 are unchanged; bit 16 PWR_BTN_N
-   (seat 1 Start), 17 P2_START, 18 P1_SELECT, 19 P2_SELECT, 20 CHG_STAT_N, 21 CHG_PG_N, 22-23 always 1. No GPIO is used
+   (the POWER button SW24, through Q1; not a Start), 17 P2_START, 18 P1_SELECT, 19 P2_SELECT, 20 CHG_STAT_N, 21 CHG_PG_N, 22 P1_START, 23 always 1. No GPIO is used
    by these (the proposal's table has no such rows either: the six GPIOs it needed are the ones counted spare).
 2. **Series resistors.** 33 ohm R70-R77 on D0-D7 and R78 on WR (by the module), none on DC/RST/TE. SR_CLK has R65 (33 ohm).
 3. **USB.** 22 ohm in series (R21/R22) next to the module; the capacitor pads C13/C14 are unfitted (guidelines).
@@ -28,3 +28,18 @@ Differences that are not GPIOs, for the firmware session:
 
 Not verified in this session: JLC Basic/Extended and stock of any of the new parts (the parts database was not
 reachable); the DM3AT card-detect pin order against Hirose's drawing.
+
+## Firmware map delta from the dedicated power button (2026-10-28, Alex)
+
+SW24 (ROCPU TPS850 J14K) in seat 1's deck is the only power contact. Both Starts are plain buttons to GND with 47k pull-ups
+(R88, R63); Q7, D8 and R62 are gone. Chain order U11 -> U9 -> U8, 24 bits, 0 = pressed:
+
+| Bit | Before | Now |
+|---|---|---|
+| 16 | P1 Start and power (PWR_BTN_N) | **power button only** (PWR_BTN_N, through Q1); not a Start |
+| 17 | P2 Start and power (P2_START) | P2 Start only; it no longer wakes the device |
+| 22 | tied high | **P1 Start** (new) |
+| 23 | tied high | tied high |
+| 0-15, 18-21 | | unchanged |
+
+Firmware: P1 Start moves from bit 16 to bit 22; bit 16 is Power (hold to turn off, and the boot-cause read); bit 17 is a plain Start.

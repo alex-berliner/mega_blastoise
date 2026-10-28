@@ -68,7 +68,7 @@ Load a bring-up build (UF2) that does each of these and reports over USB (CDC) o
 J5 (the UART connector J6 went on 2026-10-24):
 
 1. Print all 20 buttons (internal pull-ups): short each contact's combs with tweezers.
-   The table in [pinmap.md](pinmap.md) says which GPIO is which contact; seat 1's Start
+   The table in [pinmap.md](pinmap.md) says which GPIO is which contact; the power button (SW24)
    (the power button) reads on GPIO3 (PWR_BTN_N).
 2. Read ADC7 (GPIO47): with no cell it reads whatever the charger leaves on its output, not a
    cell voltage.
@@ -154,8 +154,8 @@ firmware while VSYS is above 4 V.
 
 With the cell connected and USB unplugged:
 
-1. Press seat 1's Start button: 3V3 comes up while it's held. The firmware sets PWR_HOLD
-   (GPIO44) high once Start has been held for about a second: release it, it stays on.
+1. Press the power button (SW24): 3V3 comes up while it's held. The firmware sets PWR_HOLD
+   (GPIO44) high once the power button has been held for about a second: release it, it stays on.
    Release before that and the board turns off again.
 2. PWR_BTN_N (GPIO3) reads low while Y is held.
 3. Firmware drops PWR_HOLD after a long press: the board turns off when Y is released.

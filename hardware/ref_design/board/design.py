@@ -229,7 +229,7 @@ C("C7", S, "10u", "3V3_LDO")
 # JP1: cut it at bring-up to check the regulator alone before the rest of the board sees 3V3
 JP("JP1", S, "3V3_LDO", "+3V3")
 part("#FLG07", S, "power:PWR_FLAG", "PWR_FLAG", "", {"1": "+3V3"}, bom=False)   # fed through JP1
-# the power button is seat 1's Start contact (SW21, on the Buttons sheet): it joins VSYS to PWR_BTN_RAW
+# the power button is SW24 (2026-10-28, Alex: a dedicated button in seat 1's deck, Starts are plain buttons; Buttons sheet): it joins VSYS to PWR_BTN_RAW
 R("R13", S, "33k", "PWR_BTN_RAW", "GND")       # 33k, not 100k: about twice the surface leakage (sweat,
                                                # condensation) before the Start contact lifts PWR_EN
 part("D2", S, "Diode:BAT54C", "BAT54C", "Package_TO_SOT_SMD:SOT-23",
@@ -249,14 +249,7 @@ R("R42", S, "4.7k", "PWR_HOLD", "GND")
 part("Q1", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
      {"1": "PWR_BTN_RAW", "2": "GND", "3": "PWR_BTN_N"}, "C8545", "2N7002", "Changjiang")
 R("R16", S, "100k", "PWR_BTN_N", "+3V3")
-# 2026-10-21 (row 1): seat 2's Start turns the device on too. SW23 joins VSYS to P2_START_RAW,
-# D8 ORs it into PWR_EN, and Q7 reads it into GPIO2 (P2_START, low = pressed)
-R("R62", S, "33k", "P2_START_RAW", "GND")
-part("D8", S, "Device:D_Schottky", "BAT54WS", "Diode_SMD:D_SOD-323",
-     {"1": "PWR_EN", "2": "P2_START_RAW"}, "C7502694", "BAT54WS", "")
-part("Q7", S, "Transistor_FET:2N7002", "2N7002", "Package_TO_SOT_SMD:SOT-23",
-     {"1": "P2_START_RAW", "2": "GND", "3": "P2_START"}, "C8545", "2N7002", "Changjiang")
-R("R63", S, "100k", "P2_START", "+3V3")
+# (until 2026-10-28 seat 2's Start also turned the device on: D8, R62 and Q7 are gone with the dedicated power button)
 # VBAT/2 into a unity buffer (U10, MCP6001 SOT-23-5 from 3V3), so GPIO47's pad leakage (1 uA at most) flows from the op-amp's output and not
 # through 235 kohm (0.47 V of VBAT, nine times REQ-BAT-12's window: V&V DEF-40, DEC-07). Off, U10 is unpowered and the pin reads 0 V
 R("R17", S, "470k", "VBAT", "VBAT_DIV")
@@ -471,16 +464,18 @@ for u, seat, ds, q7 in (("U8", "P1", "SR_CHAIN", "SR_DATA"), ("U9", "P2", "SR_CH
     part(u, S, "74xx:74HC165", "SN74HC165PWR", SR, pins, "C43420", "SN74HC165PWR", "Texas Instruments")
 # U11 (2026-10-27, the ESP32-S3 board) is the third register, 8 more bits after seat 2's: both Starts and both Selects (their
 # GPIOs went to the SD bus), the charger's PGOOD and CHG status; its two spare inputs are tied high. 24 clocks read the lot:
-# bits 0 to 15 are as before (P1 Y .. UP, then P2), bits 16 to 23 are U11's D7 .. D0: P1 START (PWR_BTN_N), P2 START, P1 SELECT,
-# P2 SELECT, CHG_STAT_N, CHG_PG_N, 1, 1. Start and the charger's lines already have their pull-ups (R16, R63, R9, R10)
+# bits 0 to 15 are as before (P1 Y .. UP, then P2), bits 16 to 23 are U11's D7 .. D0: POWER (PWR_BTN_N, Q1 from SW24), P2 START, P1 SELECT,
+# P2 SELECT, CHG_STAT_N, CHG_PG_N, P1 START, 1. The Starts have 47k pull-ups (R88, R63) and the charger's lines theirs (R9, R10)
 part("U11", S, "74xx:74HC165", "SN74HC165PWR", SR,
      {"1": "SR_PL", "2": "SR_CLK", "15": "GND", "8": "GND", "16": "+3V3", "10": "+3V3", "9": "SR_CHAIN2", "7": None,
-      "11": "+3V3", "12": "+3V3", "13": "CHG_PG_N", "14": "CHG_STAT_N", "3": "P2_SELECT", "4": "P1_SELECT",
+      "11": "+3V3", "12": "P1_START", "13": "CHG_PG_N", "14": "CHG_STAT_N", "3": "P2_SELECT", "4": "P1_SELECT",
       "5": "P2_START", "6": "PWR_BTN_N"},
      "C43420", "SN74HC165PWR", "Texas Instruments")
 C("C62", S, "100n", "+3V3")                    # U11 supply
 R("R86", S, "47k", "+3V3", "P1_SELECT")        # the Selects had the MCU's own pull-ups
 R("R87", S, "47k", "+3V3", "P2_SELECT")
+R("R88", S, "47k", "+3V3", "P1_START")
+R("R63", S, "47k", "+3V3", "P2_START")           # 47k like R86-R88: the pill's contact-resistance margin (V&V DEC-24)
 # SR_CLK crosses the whole board to both registers: R65, at the RP2354B's end, slows its edges
 # (source termination) so they ring less and couple less into SR_PL and SR_DATA, which run beside
 # it up the left strip (a clearance rule for that left SR_CLK or SR_PL to U9 unrouted, 2026-10-22)
@@ -500,12 +495,14 @@ for k, rn in enumerate(("RN1", "RN2", "RN3", "RN4")):
 # so the dome screens the signal pad
 SMALL = "battler:Dome_4mm_Round"
 part("SW20", S, "Switch:SW_Push", "P1 SELECT", SMALL, {"1": "P1_SELECT", "2": "GND"}, bom=False)
-# the power button (2026-10-19, was seat 1's Y): this contact joins VSYS to PWR_BTN_RAW (the latch
-# on the Power sheet); the MCU reads it as Start through Q1 on GPIO3 (PWR_BTN_N)
-part("SW21", S, "Switch:SW_Push", "P1 START / PWR", SMALL, {"1": "PWR_BTN_RAW", "2": "VSYS"}, bom=False)
+part("SW21", S, "Switch:SW_Push", "P1 START", SMALL, {"1": "P1_START", "2": "GND"}, bom=False)
 part("SW22", S, "Switch:SW_Push", "P2 SELECT", SMALL, {"1": "P2_SELECT", "2": "GND"}, bom=False)
-# seat 2's Start turns the device on as well (row 1): through D8 and Q7 on the Power sheet
-part("SW23", S, "Switch:SW_Push", "P2 START / PWR", SMALL, {"1": "P2_START_RAW", "2": "VSYS"}, bom=False)
+part("SW23", S, "Switch:SW_Push", "P2 START", SMALL, {"1": "P2_START", "2": "GND"}, bom=False)
+# The power button (2026-10-28): a top-actuated ROCPU TPS850 J14K (C2759975, 250 gf, 1.4 mm) under seat 1's deck between U8 and the Start/Select
+# frame, its cap through a recessed pocket in the deck. It joins VSYS to PWR_BTN_RAW (the latch on the Power sheet); the MCU reads it
+# through Q1 as PWR_BTN_N (bit 16 of the chain). Pads 1 (two) and 2 (two) are the switch's contact pairs
+part("SW24", S, "Switch:SW_Push", "POWER", "battler:Tact_ROCPU_TPS850", {"1": "PWR_BTN_RAW", "2": "VSYS"},
+     "C2759975", "TPS850 J14K V SMTR LFS", "ROCPU")
 
 # =================================================================================
 # Root sheet: mechanical parts

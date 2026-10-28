@@ -60,7 +60,7 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 BOARD_DIR = os.path.dirname(HERE)
 sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
-from placement import CASE, CORE, CUTOUTS  # noqa: E402
+from placement import ANTENNA_KEEPOUT, BOARD_X0, BOARD_X1, CASE, CORE, CUTOUTS, P  # noqa: E402
 from build_pcb import core_layer, core_xy, net_class  # noqa: E402
 from maze import Maze  # noqa: E402
 
@@ -126,7 +126,7 @@ def pads_of(fp):
 def board_polygon(inset):
     """Board outline as a polygon (corners in 15 degree steps), inset by `inset`."""
     bw, bl, r = CASE["board"]["w"], CASE["board"]["l"], CASE["board"]["r"]
-    x0, y0, x1, y1 = 100 - bw / 2 + inset, 100 - bl / 2 + inset, 100 + bw / 2 - inset, 100 + bl / 2 - inset
+    x0, y0, x1, y1 = BOARD_X0 + inset, 100 - bl / 2 + inset, BOARD_X1 - inset, 100 + bl / 2 - inset
     r = max(r - inset, 0.1)
     pts = []
     for cx, cy, a0 in ((x1 - r, y0 + r, -90), (x1 - r, y1 - r, 0), (x0 + r, y1 - r, 90), (x0 + r, y0 + r, 180)):
@@ -172,7 +172,7 @@ def add_zone(board, net, layer, pts, priority, name, keepout=None):
 
 def core_box(board, grow=0.8):
     xs, ys = [], []
-    for ref in CORE.values():
+    for ref in (list(CORE.values()) or ["U4"]):      # the module is the 'core' of the ESP32-S3 board
         b = board.FindFootprintByReference(ref).GetBoundingBox(False)
         xs += [pcbnew.ToMM(b.GetX()), pcbnew.ToMM(b.GetRight())]
         ys += [pcbnew.ToMM(b.GetY()), pcbnew.ToMM(b.GetBottom())]
@@ -181,6 +181,8 @@ def core_box(board, grow=0.8):
 
 def core_fences():
     out = []
+    if not CORE:
+        return out
     for a, b in CORE_FENCES_REF:
         pa, pb = core_xy(*a), core_xy(*b)
         out.append((min(pa[0], pb[0]), min(pa[1], pb[1]), max(pa[0], pb[0]), max(pa[1], pb[1])))
@@ -193,6 +195,8 @@ PLANE_NETS = ("GND",)       # nets the pours carry; everything else is routed
 def planes(board):
     for ref, (x, y) in CASE["buttons"].items():
         add_zone(board, None, pcbnew.F_Cu, circle(x, y, CONTACT_R / math.cos(math.radians(7.5))), 0, f"{ref} contact", keepout=("pour", "vias"))
+    if not CORE:                     # (the RP2354B's 3V3 pour inside its pads: not for the module)
+        return
     u4 = board.FindFootprintByReference("U4")
     cx, cy = xy(u4.GetPosition())
     add_zone(board, "+3V3", core_layer(pcbnew.F_Cu), rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,
@@ -240,6 +244,8 @@ def core_3v3_stubs(board):
     """Every 3V3 pin of the chip reaches the 3V3 pour between its pads and the 1.1 V ring
     through a short stub inwards. The copied routing has one on most of them; a pin
     without one gets it here (touching the pour's edge isn't enough for the fill)."""
+    if not CORE:
+        return []
     u4 = board.FindFootprintByReference("U4")
     cx, cy = xy(u4.GetPosition())
     ring = lambda p: max(abs(p[0] - cx), abs(p[1] - cy))
@@ -445,8 +451,8 @@ def strips():
     out = []
     for x0, y0, x1, y1 in slot_boxes():
         r = next(c.get("r", 0) for c in CUTOUTS if tuple(c["box"]) == (x0, y0, x1, y1))
-        out.append((x0 - 0.65, y0 + r, y1 - r, 100 - bw / 2, x0))
-        out.append((x1 + 0.65, y0 + r, y1 - r, x1, 100 + bw / 2))
+        out.append((x0 - 0.65, y0 + r, y1 - r, BOARD_X0, x0))
+        out.append((x1 + 0.65, y0 + r, y1 - r, x1, BOARD_X1))
     return out
 
 
@@ -514,8 +520,8 @@ class Space:
                       if fp.GetReference().startswith("H")]
         self.contacts = [((x, y), 3.3) for x, y in CASE["buttons"].values()]
         bw, bl = CASE["board"]["w"], CASE["board"]["l"]
-        self.edge = (100 - bw / 2 + 0.6, 100 - bl / 2 + 0.6, 100 + bw / 2 - 0.6, 100 + bl / 2 - 0.6)
-        self.slots = [(b[0] - 0.6, b[1] - 0.6, b[2] + 0.6, b[3] + 0.6) for b in slot_boxes()]
+        self.edge = (BOARD_X0 + 0.6, 100 - bl / 2 + 0.6, BOARD_X1 - 0.6, 100 + bl / 2 - 0.6)
+        self.slots = [(b[0] - 0.6, b[1] - 0.6, b[2] + 0.6, b[3] + 0.6) for b in slot_boxes()] + [(b[0] - 0.2, b[1] - 0.2, b[2] + 0.2, b[3] + 0.2) for b in keepout_boxes()]
         self.fences = core_fences()
 
     def clear_at(self, p, r, net, via=False):
@@ -663,12 +669,35 @@ def fanout(board, nets=PLANE_NETS):
 
 def edge_box(inset=0.6):
     bw, bl = CASE["board"]["w"], CASE["board"]["l"]
-    return (100 - bw / 2 + inset, 100 - bl / 2 + inset, 100 + bw / 2 - inset, 100 + bl / 2 - inset)
+    return (BOARD_X0 + inset, 100 - bl / 2 + inset, BOARD_X1 - inset, 100 + bl / 2 - inset)
 
 
 def slot_boxes():
     """The board's cutouts (the cell's and the speaker's holes), as (x0, y0, x1, y1)."""
     return [tuple(c["box"]) for c in CUTOUTS]
+
+
+_KEEPOUTS = []
+
+
+def keepout_boxes():
+    """Copper-free boxes the router must keep out of, both layers: the antenna's rule area (placement.ANTENNA_KEEPOUT) and the
+    microSD slot footprint's own 'no conductive traces' areas (Hirose's land pattern, as KiCad draws them), bounding boxes at the
+    slot's placed pose. Freerouting doesn't read rule areas (dsn_for_router drops them), so they come back as fences."""
+    if not _KEEPOUTS:
+        import design
+        from build_pcb import load_fp
+        _KEEPOUTS.append(tuple(ANTENNA_KEEPOUT))
+        fpid = next(p["fp"] for p in design.PARTS if p["ref"] == "J8")
+        fp = load_fp(fpid)
+        x, y, rot, _side = P["J8"]
+        fp.SetPosition(V(x, y))
+        fp.SetOrientationDegrees(rot)
+        for z in fp.Zones():
+            if z.GetIsRuleArea() and z.GetDoNotAllowTracks():
+                bb = z.GetBoundingBox()
+                _KEEPOUTS.append((pcbnew.ToMM(bb.GetX()), pcbnew.ToMM(bb.GetY()), pcbnew.ToMM(bb.GetRight()), pcbnew.ToMM(bb.GetBottom())))
+    return list(_KEEPOUTS)
 
 
 MAX_RIPPED = 12           # connections the maze pass may take other nets' copper up for
@@ -681,7 +710,7 @@ def maze_for(board, net, a, b, reach=6.0, ignore=(), blocks=()):
     box = (max(min(a[0], b[0]) - rx, e[0]), max(min(a[1], b[1]) - ry, e[1]),
            min(max(a[0], b[0]) + rx, e[2]), min(max(a[1], b[1]) + ry, e[3]))
     return Maze(board, net, box, (pcbnew.F_Cu, pcbnew.B_Cu), c["track"], c["clear"], c["via"], c["drill"],
-                fences=core_fences(), fence_layer=core_layer(pcbnew.F_Cu), blocks=slot_boxes() + list(blocks), edge=e,
+                fences=core_fences(), fence_layer=core_layer(pcbnew.F_Cu), blocks=slot_boxes() + keepout_boxes() + list(blocks), edge=e,
                 ignore=set(ignore),
                 discs=[((x, y), CONTACT_R) for x, y in CASE["buttons"].values()])
 
@@ -979,6 +1008,10 @@ def dsn_for_router(text, contacts, fences, circles=(), npth=()):
     # gets a keep-out on both layers, 0.22 out (+ 0.155 clearance + half a track = 0.45 centre to edge; the rule needs 0.375)
     for sx0, sy0, sx1, sy1 in slot_boxes():
         pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.22, sy0 - 0.22, sx1 + 0.22, sy1 + 0.22))
+        for layer in ("F.Cu", "B.Cu"):
+            extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
+    for kx0, ky0, kx1, ky1 in keepout_boxes():
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(kx0 - 0.2, ky0 - 0.2, kx1 + 0.2, ky1 + 0.2))
         for layer in ("F.Cu", "B.Cu"):
             extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     i = text.index("  (placement")
