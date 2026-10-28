@@ -2252,11 +2252,11 @@ def gate(db, phase, board, verbose, accept_sw=False):
     for cid, c in sorted(crit.items()):
         if c["phase"] != phase:
             continue
+        if c["retired"]:                            # before the board: prod_board's keep their column (574c94c)
+            results.append((cid, "RETIRED", [c["text"][:90]]))
+            continue
         if not for_board(c["board"], board):
             results.append((cid, "N/A", [f"a {c['board']} criterion"]))
-            continue
-        if c["retired"]:
-            results.append((cid, "RETIRED", [c["text"][:90]]))
             continue
         checked = [need_ok(t) for t in c["needs"]]
         reasons = [r for ok, r in checked if ok is False]

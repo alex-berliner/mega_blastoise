@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-28
-COMMIT: 8d5e4565263eaf6117f67ab31270a355173d8fdf
+COMMIT: 321c1829a1899f3ec80aa504465bb3dff3557397
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -17,7 +17,7 @@ ok  structure CLOSED defect with no check
 ok  structure covers glob matching nothing
 ok  structure covers regex matching no line
 ok  structure covers part not in design.py
-ok  structure a 'both' check covering one board
+ok  structure a 'both' check covering neither the board nor the register
 ok  structure CUT check with no reason
 ok  structure RETIRED check with no commit
 ok  structure a live requirement verified by a retired check
@@ -53,6 +53,8 @@ ok  structure F-R4: a JLC_FIXED entry with no evidence file does not count
 ok  structure round 2 (F): a requirement whose only check moved to a later phase
 ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
 ok  structure round 2 (F): detection rating 2 on a single 'detects' check
+ok  structure VER-220: a procedure names a path main moved (hardware/membrane)
+ok  structure VER-220: a deleted file pinned at a commit that does not have it
 ok  structure VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')
 ok  structure VER-188: a live check names a net that left design.py (LS_GATE)
 ok  structure VER-188: a live requirement names a part that left design.py (D5 outside 'Was:')
@@ -123,7 +125,7 @@ ok  gate_no   accept: a check outside the accepted defect's list stays FAIL (DEF
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
-117 seeded faults, 117 caught
+119 seeded faults, 119 caught
 RESULT: PASS
 
 exit 0
