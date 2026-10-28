@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-28
-COMMIT: 3cd3f4297118bf44d79ff9a1584716918d1c6b03
+COMMIT: 8fbda5cf4419bd17ea991807403707253635fb68
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -52,6 +52,7 @@ ok  structure O-R11: an ORDER check named only in the plan's 'what moved where' 
 ok  structure F-R4: a JLC_FIXED entry with no evidence file does not count
 ok  structure round 2 (F): a requirement whose only check moved to a later phase
 ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
+ok  gate      2026-10-28: DFMEA:COVERAGE fails while design.py is a dropped board's
 ok  structure round 2 (F): detection rating 2 on a single 'detects' check
 ok  structure VER-220: a procedure names a path main moved (hardware/membrane)
 ok  structure VER-220: a deleted file pinned at a commit that does not have it
@@ -69,13 +70,33 @@ ok  report    grid: a class 15 analysis that has not run is no paper estimate
 ok  structure VER-188: a live check names a ref no design.py ever had (R666, a typo)
 ok  structure F-R1: a defect marked FIXED while its own Status text says it stays OPEN
 ok  structure F-R3: an analysis that reads pinmap.md without naming it in covers
-ok  structure F-R5: a live row pairs J4 with the PicoBlade family (DF-48 before its rewrite)
+ok  structure F-R5: a live row pairs J4 with the PicoBlade family
 ok  structure O-R8: a live check names a gone net in KiCad's path form (/USB_Charger/VBUS_D5)
-ok  gate      O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)
+ok  report    O-R6: an analysis that has not run does not clear a class 1-14 cell (case, class 2)
 ok  structure accept: a defect ACCEPTED with no DF-ACCEPT line at all
 ok  gate      sources: a PASS whose datasheet is not on disk is BLOCKED at the order gate
 ok  report    sources: the default mode reports a PASS on a datasheet not on disk as BLOCKED
 ok  structure sources: a source that is a path, not a file in the datasheets directory
+ok  structure DROPPED: a dropped check that names no board and tag
+ok  structure DROPPED: a dropped defect that names no board and tag
+ok  structure DROPPED: a DFMEA row DROPPED on the live board
+ok  structure DROPPED: a gate criterion DROPPED on the live board
+ok  structure DROPPED: a live check on a dropped board
+ok  structure DROPPED: a live requirement verified by a dropped check
+ok  structure DROPPED: a live risk detected by a dropped check
+ok  structure DROPPED: a live parent allocated to its dropped child
+ok  structure DROPPED: a live row cites a dropped row outside 'Was:'
+ok  structure baseline board: an F1C200s PASS on the dropped board's files
+ok  structure baseline board: README names no baseline board
+ok  structure subsystems: a live requirement that names none
+ok  structure subsystems: a live requirement on the dropped board's subsystem
+ok  structure subsystems: a live check on the dropped board's subsystem
+ok  structure new-MCU path: a stage that names a dropped check
+ok  structure new-MCU path: a stage whose entry skips the stage before it
+ok  structure new-MCU path: a stage token that is no need
+ok  structure new-MCU path: the stages out of order
+ok  report    new-MCU path: the chip selection's evidence gone from next_spin_requirements.md
+ok  report    new-MCU path: the stage the register is at moves when a stage's exit is met
 ok      clean clone exits 0
 ok  structure row result disagrees with its evidence (git)
 ok  report    evidence past its valid_days (git)
@@ -120,12 +141,12 @@ ok  dn        VER-18: a connector's pad past the board's outline fails edge (a c
 ok  gate_line O-R1: a defect taken from OPEN to FIXED with no GATE@ line is listed by the order gate (G0) (git)
 ok  gate      O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1) (git)
 ok  structure accept: a defect ACCEPTED on an unsigned DF-ACCEPT line (git)
-ok  gate_no   accept (control): a signed DF-ACCEPT line moves DEF-84 past the order gate and lets VER-125 through (git)
-ok  gate_no   accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-125) (git)
+ok  gate_no   accept (control): a signed DF-ACCEPT line moves DEF-103 past the order gate and lets VER-125 through (git)
+ok  gate_no   accept: a check outside the accepted defect's list is not let through (DEF-104 names VER-164, not VER-125) (git)
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
-119 seeded faults, 119 caught
+140 seeded faults, 140 caught
 RESULT: PASS
 
 exit 0
