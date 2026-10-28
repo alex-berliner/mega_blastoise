@@ -353,3 +353,7 @@ Housekeeping:
   ribs' hold (`grip_reach`) and the corner posts' push
 - The 403450 cell: length with its protection board, plug polarity
 
+
+
+## 2026-10-28: ESP32-S3 board build (branch ref-design-esp32s3)
+Module WROOM-1U-N16R8 with an external antenna, TLV75733P, 8-bit panel bus, microSD (Hirose DM3AT), third 74HC165, dedicated power button. Case: left wall +1.5 mm (grow_l), cell hole 38.2 x 55.2, H4 in seat 1's deck, power key pocket and cap. See docs/esp32s3_build.md.
