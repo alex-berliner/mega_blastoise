@@ -98,7 +98,10 @@ def mesh_min(m):
     tp = tp[region(tp)]
     inner = tp[cKDTree(opw).query(tp)[0] >= 0.2]         # not on the outside
     usb = (op[:, 0] > 36) & (op[:, 1] > -6) & (op[:, 1] < 10)
-    o = op[(op[:, 2] > 4.95) & ((np.abs(op[:, 0]) > CASE_W / 2 - 2.75) | (np.abs(op[:, 1]) > CASE_L / 2 - 2.75)) & ~usb]
+    # the SD slot's opening in the left wall (case.scad's sd_y; KiCad y -> case y): its edge is a cut, not a round
+    sd_y0, sd_y1 = [100 - v for v in POS["sd"]["y"][::-1]]
+    sd = (op[:, 0] < -36) & (op[:, 1] > sd_y0 - 1.0) & (op[:, 1] < sd_y1 + 1.0)
+    o = op[(op[:, 2] > 4.95) & ((np.abs(op[:, 0]) > CASE_W / 2 - 2.75) | (np.abs(op[:, 1]) > CASE_L / 2 - 2.75)) & ~usb & ~sd]
     d = cKDTree(inner).query(o)[0]
     # the island's slopes (all four sides and the ears'): the outside above the ends' face, beyond the panel's pocket, clear of the
     # speaker's grille, the pinholes and the USB-C opening

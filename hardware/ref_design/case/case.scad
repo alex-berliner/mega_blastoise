@@ -302,6 +302,14 @@ ss_lip_z = retainer_z + ss_lift;                        // the Start/Select flan
 ss_cap_d = 3.2;  ss_flange_d = 5.0;  ss_cap_h = 3.0;    // cap body, flange, flange bottom to top (ESTIMATES: the body
                                                         // and flange from the faceplate's openings; were 4.5 and 6.0)
 
+// ---------------- the ESP32-S3 board's microSD slot: the left wall out (2026-10-28, Alex: "Hirose, one side") ----------------
+// The Hirose DM3AT-SF-PEJM5 (15.95 deep, its back to stay out from under the panel's FPC at x >= 78.05 KiCad, case -21.95) sits below
+// the module with its front at the left wall: the left wall, and only it, moves grow_l out (outline, back, skirts, tongue, rounds,
+// the board's edge and ribs, the crush ribs and grips on it). The right edge, the panel, the clusters, the screws and everything
+// else stay where they were, so the screen sits grow_l / 2 off the case's centre.
+grow_l = 1.3;
+wall_l = case_w / 2 + grow_l;                           // the left wall's outside, from the panel's centre (case_w / 2 on the right)
+
 // ---------------- derived ----------------
 cluster_spacing = case_w - piece_d - 2 * edge_margin_x;
 band = edge_margin + piece_d + piece_to_glass;
@@ -347,11 +355,14 @@ ss_centres = [[0, -ss_y], [0, ss_y]];
 // the right bezel between the speaker and J4, H4 in the left bezel between J2 and the LDO
 // (2026-10-26, the 3.5 in panel: all four at the glass's corners, x +-32.5 (beyond the panel's frame, 28.75) and y +-40, under the
 // island's side slope and the deck beside it, where the ends' ceiling holds their bosses)
-side_pins = [[32.5, 40.0], [-32.5, 40.0], [32.5, -40.0], [-32.5, -40.0]];
+side_pins = [[32.5, 40.0], [-32.5, 40.0], [32.5, -40.0]];
+// H4 left the glass's corner (y -40) for the SD slot (below the module, y -27.2 to -41.2): it stands in seat 1's deck now, 0.4 past the
+// slope's foot (48.1) and clear of the D-pad's piece (16.0 from its centre, 15.5 needed), with the end screws' pilot and boss
+h4_pin = [-33.0, -51.0];
 pin_key = 3.0;            // the end bosses sit off the centre line (seat 1's board hole is there)
 pin_out = 1.4;            // and this much further out than the clusters
 // seat 2's end boss is seat 1's turned round (2026-10-20)
-pins = concat(side_pins, [[pin_key, seat_y + pin_out], [-pin_key, -seat_y - pin_out]]);
+pins = concat(side_pins, [h4_pin], [[pin_key, seat_y + pin_out], [-pin_key, -seat_y - pin_out]]);
 boss_d = 5.0;  hole_d = 2.2;
 // The tub's bosses under the board (0.7 tall, board_lift) are 6.0, except at H2 and H4, where 6.0
 // would come within 0.8 of the cell's hole (H2) and 0.2 of the board's edge (H4): there they are
@@ -400,7 +411,7 @@ plug_len_min = 6.55;  usb_mate = 6.20;
 // levers, CELLCUT_FOR_CASE.md) out of the left strip into the left bezel below H4, one above the other, each
 // lying across the bezel (TS-1088, its 3D model 4.8 x 2.9 x 1.95: pin_sw its half size in the plan, pin_sw_h
 // its height). A floor rib in the tub under them (pin_rib) carries a pin's press into the floor
-pin_pos = [[-31.0, -30.2], [-31.0, -33.85]];
+pin_pos = [];   // BOOT and RESET lost their pinholes: the SD slot took the left bezel (a question for Alex, progress.md)
 pin_sw = [2.4, 1.45];  pin_sw_h = 1.95;
 pin_guide_d = 3.0;  pin_guide_z = 2.4;                  // the guides round the pinholes, down to this over the board
 // J5 (SWD), JST SH, its mouth towards the left edge (the board's, 2026-10-22): plugged with the case open (the
@@ -482,7 +493,7 @@ for (s = side_pins) assert(rect_dist(s, j2_plug) >= boss_d / 2 + 0.6 && rect_dis
 // asserts). Along the left wall (the key at y -21, the grip ribs, the band's end): in the joints' asserts
 function pin_rect(p) = [p - pin_sw, p + pin_sw];
 assert(pin_guide_z >= pin_sw_h + 0.3 && z_ceil - z_top_cu - pin_guide_z >= 1.0, "a pinhole's guide lands on its switch or is too short");
-assert(pin_pos[0][0] == pin_pos[1][0] && abs(pin_pos[0][1] - pin_pos[1][1]) >= 2 * pin_sw[1] + 0.3 && abs(pin_pos[0][1] - pin_pos[1][1]) >= pin_guide_d + 0.6,
+assert(len(pin_pos) < 2 || (pin_pos[0][0] == pin_pos[1][0] && abs(pin_pos[0][1] - pin_pos[1][1]) >= 2 * pin_sw[1] + 0.3 && abs(pin_pos[0][1] - pin_pos[1][1]) >= pin_guide_d + 0.6),
        "the debug switches or their guides run into each other");
 for (p = pin_pos) {
   assert(abs(p[1] - swd_pos[1]) >= 3.5 + pin_sw[1] + 0.3, "a debug switch runs into J5");
@@ -623,6 +634,8 @@ for (c = [dpad1, dpad2]) assert(tune || abs(c[1]) - dpad_arm_l / 2 - dpad_gap - 
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "screw boss under a silicone piece");
 assert(seat_y + pin_out - boss_d / 2 >= spine_end + 0.5, "an end boss runs under the spine");
 assert(seat_y + pin_out + boss_d / 2 + 0.3 <= ss_y - (ss_cell + 2 * ss_frame_w) / 2, "an end boss runs into Start/Select's frame");
+assert(abs(h4_pin[1]) - boss_d / 2 >= uni_foot + 0.3 && abs(h4_pin[0]) + boss_d / 2 <= in_x - 1.0, "H4's boss runs into the slope or the wall");
+assert(h4_pin[1] < 0 && abs(h4_pin[1]) + boss_d / 2 <= ss_y - (ss_cell + 2 * ss_frame_w) / 2, "H4's boss is not in seat 1's deck");
 assert(pins[4] == rot180(pins[5]), "the end bosses aren't each other turned round");
 assert(ss_y - ss_mem[1] / 2 - 0.75 >= spine_end, "Start/Select under the spine");
 assert(ss_y + ss_mem[1] / 2 + 1 <= board_l / 2, "Start/Select off the board's end");
@@ -635,9 +648,9 @@ function join(l, i = 0) = i >= len(l) ? "" : str(i ? ", " : "", l[i], join(l, i 
 function fpc_y(in) = -(panel_l / 2 - in);               // y of a point `in` from the seat-1 glass edge
 echo(str("CASE ", case_w, " x ", case_l, " x ", case_h, " mm   board ", board_w, " x ", board_l, " r ", board_r));
 echo(str("JSON {",
-  "\"case\": {\"w\": ", jnum(case_w), ", \"l\": ", jnum(case_l), ", \"h\": ", jnum(case_h), ", \"deck_h\": ", jnum(deck_face),
+  "\"case\": {\"w\": ", jnum(case_w + grow_l), ", \"l\": ", jnum(case_l), ", \"h\": ", jnum(case_h), ", \"deck_h\": ", jnum(deck_face),
     ", \"seam\": ", jnum(z_seam), ", \"z_board\": ", jnum(z_board), "}, ",
-  "\"board\": {\"w\": ", jnum(board_w), ", \"l\": ", jnum(board_l), ", \"r\": ", jnum(board_r), ", \"t\": ", pcb_t, "}, ",
+  "\"board\": {\"w\": ", jnum(board_w + grow_l), ", \"l\": ", jnum(board_l), ", \"r\": ", jnum(board_r), ", \"t\": ", pcb_t, ", \"grow_l\": ", grow_l, "}, \"sd\": {\"y\": [", jnum(kicad([0, sd_y[1]])[1]), ", ", jnum(kicad([0, sd_y[0]])[1]), "], \"z\": [", jnum(sd_z[0] - z_top_cu), ", ", jnum(sd_z[1] - z_top_cu), "]}, ",
   "\"glass\": [", jpt([-(panel_w + panel_fit) / 2, (panel_l + panel_fit) / 2]), ", ", jpt([(panel_w + panel_fit) / 2, -(panel_l + panel_fit) / 2]), "], ",
   "\"fpc_low\": ", fpc_low, ", \"fpc_neck_y\": ", jnum(kicad([0, fpc_y(fpc_neck_keep)])[1]), ", ",
   "\"glass_limit\": ", glass_gap - 0.2, ", ",
@@ -658,7 +671,7 @@ echo(str("JSON {",
   "\"usb\": {\"y\": ", jnum(kicad([0, usb_y])[1]), ", \"front_x\": ", jnum(kicad([usb_front, 0])[0]),
     ", \"tab\": [", jpt([board_w / 2, usb_y + usb_tab_w / 2]), ", ", jpt([board_w / 2 + usb_tab, usb_y - usb_tab_w / 2]), "]}, ",
   "\"rib_free\": [", join([for (r = rib_free) str("[", jpt([r[0], r[3]]), ", ", jpt([r[2], r[1]]), "]")]), "], ",
-  "\"pinholes\": [", jpt(pin_pos[0]), ", ", jpt(pin_pos[1]), "], ",
+  "\"pinholes\": [", join([for (p = pin_pos) jpt(p)]), "], ",
   "\"swd\": ", jpt(swd_pos), ", ",
   "\"cell_hole\": [", jpt([cell_hole[0][0], cell_hole[1][1]]), ", ", jpt([cell_hole[1][0], cell_hole[0][1]]), "], \"cell_top\": ", cell_top, ", ",
   "\"back_limit\": ", jnum(board_lift - 0.2), ", ",
@@ -671,7 +684,7 @@ echo(str("JSON {",
     "], \"limit\": ", jnum(z_ceil - z_top_cu - frame_h - 0.3), ", \"notches\": [",
     join([for (n = frame_notches) str("[", jpt([n[0] > 0 ? 27 : -31, n[2]]), ", ", jpt([n[0] > 0 ? 31 : -27, n[1]]), "]")]), "]}, ",
   "\"decks\": [", join(concat([for (sy = [-1, 1], sx = [-1, 1]) str("[", jpt([sx * (spine_w / 2 - joint_w), sy * (joint_y - joint_w)]), ", ",
-    jpt([sx * case_w / 2, sy * case_l / 2]), "]")], [for (sy = [-1, 1]) str("[", jpt([-spine_w / 2, sy * (spine_end - joint_w)]), ", ",
+    jpt([sx < 0 ? -wall_l : case_w / 2, sy * case_l / 2]), "]")], [for (sy = [-1, 1]) str("[", jpt([-spine_w / 2, sy * (spine_end - joint_w)]), ", ",
     jpt([spine_w / 2, sy * case_l / 2]), "]")])), "], \"deck_limit\": ", jnum(z_deck_under - z_top_cu - 0.3),
   "}"));
 // the USB-C opening for check_fit.py (KiCad x, y; z over the board's top), not in positions.json
@@ -740,7 +753,7 @@ module cross(w, l) union() { square([l, w], center = true); square([w, l], cente
 module window() translate([0, aa_off]) square([aa_w + 2 * window_margin, aa_l + 2 * window_margin], center = true);
 // The top's plan at the screen's height (the layout view): the band across the case, to its slope's foot
 module top_region2d() square([4 * case_w, 2 * uni_foot], center = true);
-module outline2d() rrect(case_w, case_l, corner_r);
+module outline2d() translate([-grow_l / 2, 0]) rrect(case_w + grow_l, case_l, corner_r);
 module inner2d(grow = 0) offset(delta = -wall + grow) outline2d();
 // how far in from an edge's wall line a round is at depth dd under the face it rolls into: an arc of
 // radius r into the wall, and where the arc would be flatter than `overhang` from vertical, its
@@ -754,9 +767,10 @@ function back_in(z, ov = overhang) = edge_in(z, back_r, ov);
 module corners2d(c, r = 0, grow = 0) translate(c[0] - [grow, grow]) offset(r = r + grow) offset(delta = -(r + grow))
   square(c[1] - c[0] + 2 * [grow, grow]);
 module cell_hole2d(grow = 0) corners2d(cell_hole, cell_hole_r, grow);
+module board_rr() translate([-grow_l / 2, 0]) rrect(board_w + grow_l, board_l, board_r);   // the board's outline, its left edge out
 module board_outline() difference() {
   union() {
-    rrect(board_w, board_l, board_r);
+    board_rr();
     if (usb_tab > 0) translate([board_w / 2 - 1, usb_y - usb_tab_w / 2]) square([usb_tab + 1, usb_tab_w]);
   }
   cell_hole2d();
@@ -790,7 +804,7 @@ in_x = case_w / 2 - wall;  in_y = case_l / 2 - wall;
 // wall], each with a 45 degree lead-in at its upper end, where the board meets it as the tub goes on.
 // The board lies inside the tub's walls since the cell went into it (2026-10-22): until then the
 // ribs were on the top's walls (the board was over the seam)
-crush = [[in_x, 28, 0], [in_x, -28, 0], [-in_x, 28, 180], [-in_x, -28, 180],
+crush = [[in_x, 28, 0], [in_x, -28, 0], [-in_x - grow_l, 28, 180], [-in_x - grow_l, -44.5, 180],
          [22, in_y, 90], [-22, in_y, 90], [22, -in_y, -90], [-22, -in_y, -90]];
 crush_reach = board_clear - 0.05;   // how far a rib stands off the wall: 0.05 mm short of the board
 module crush_rib(c) at(c) rotate(c[2]) rotate([90, 0, 0]) linear_extrude(1.2, center = true)
@@ -890,7 +904,7 @@ grips = concat([for (sx = [-1, 1], sy = [-1, 1], y = [54, 66]) [sx, sy * y, z_de
 // a rib runs up the tongue to 0.1 short of where its outside starts to lean in, its top a 45 degree lead-in
 function grip_top(zt) = max([for (k = [0:800]) let(z = z_seam + 0.01 * k) if (z <= zt && tongue_out(z, deck_face, zt) <= wall / 2 + seam_fit + 1e-6) z]);
 module grip(g) let(sx = g[0], w = len(g) > 3 ? g[3] : grip_w, z1 = grip_top(g[2]) - 0.1)
-  translate([sx * (case_w / 2 - wall / 2 - seam_fit), g[1], 0]) scale([sx, 1, 1]) rotate([90, 0, 0]) linear_extrude(w, center = true)
+  translate([sx * ((sx < 0 ? wall_l : case_w / 2) - wall / 2 - seam_fit), g[1], 0]) scale([sx, 1, 1]) rotate([90, 0, 0]) linear_extrude(w, center = true)
     polygon([[-0.1, z_seam - 0.3], [grip_reach, z_seam - 0.3], [grip_reach, z1 - grip_reach - 0.05], [-0.05, z1], [-0.1, z1]]);
 
 
@@ -917,10 +931,7 @@ strip_ribs = [[[-31.2 - 0.6, cell_hole[0][1]], [-31.2 + 0.6, cell_hole[1][1]]],
 // and one under the debug switches (2026-10-24) in the left bezel, along under both plungers and into H4's boss:
 // a pin's press goes into the floor, not into bending the board
 // (2026-10-26: H4 stands at the glass's corner now, y -40, below both switches: the rib runs from under the upper one down into H4's boss)
-pin_rib_y1 = max(pin_pos[0][1], pin_pos[1][1]) + pin_sw[1] + 0.5;
-pin_rib = [[pin_pos[0][0] - 0.6, side_pins[3][1] + tub_boss_d[3] / 2 - 0.5], [pin_pos[0][0] + 0.6, pin_rib_y1]];
-assert(side_pins[3][1] < min(pin_pos[0][1], pin_pos[1][1]) && abs(side_pins[3][0] - pin_pos[0][0]) + 0.6 <= tub_boss_d[3] / 2 - 0.3
-       && pin_rib[1][1] >= max(pin_pos[0][1], pin_pos[1][1]) + pin_sw[1] + 0.3, "the debug switches' floor rib doesn't run under both into H4's boss");
+pin_rib = [[999, 999], [1000, 1000]];       // (the debug switches' floor rib went with them)
 for (r = rib_free) assert(r[2] <= pin_rib[0][0] || r[0] >= pin_rib[1][0] || r[3] <= pin_rib[0][1] || r[1] >= pin_rib[1][1],
                           "the debug switches' floor rib is cut by a keep-out");
 // the speaker's outline in the plan, a racetrack along y (grow: out from it), and its grille: slots
@@ -937,6 +948,12 @@ cell_x1 = cell_pocket_box[1][0];                                   // its right 
 // (the hole's extra 1.0 there) to J2 in the right strip
 module cell2d(size) translate([cell_x1 - size[1], cell_pocket_box[0][1]]) square([size[1], size[0]]);
 
+// The SD slot's opening in the left wall (Hirose DM3AT-SF-PEJM5, front 0.4 past the board's edge, the card's tip 1.6 further: 0.5 short
+// of the outside): 14 wide over the slot's 13.85, from the board's top up 2.6, through the skirt and the tongue; the slot's centre
+// y -34.2 (KiCad 134.2: placement.py), its back to stay under x -21.95
+sd_y = [-41.2, -27.2];  sd_z = [z_top_cu - 0.2, z_top_cu + 2.6];
+module sd_cut() translate([-wall_l - 2, sd_y[0], sd_z[0]]) cube([wall + board_clear + 2 - 0.3, sd_y[1] - sd_y[0], sd_z[1] - sd_z[0]]);
+
 // ---- the tub (the back): printed back down, as exported ----
 // its outside: the back rolls into the walls (in 0.1 mm layers up the round), up to the seam
 // Smooth, not in steps: one solid lofted through the outline every 0.1 up the round (the outline
@@ -947,8 +964,8 @@ module cell2d(size) translate([cell_x1 - size[1], cell_pocket_box[0][1]]) square
 // bottom edge)
 back_n = round(back_r / 0.1);                           // the loft's levels: every 0.1 up the round
 corner_n = 18;                                          // points on each corner's quarter arc
-function rr_pts(d, z) = let(hx = case_w / 2 - corner_r, hy = case_l / 2 - corner_r, r = corner_r - d)
-  [for (q = [0:3]) let(cx = (q == 0 || q == 3) ? hx : -hx, cy = q < 2 ? hy : -hy)
+function rr_pts(d, z) = let(hx = case_w / 2 - corner_r, hxl = wall_l - corner_r, hy = case_l / 2 - corner_r, r = corner_r - d)
+  [for (q = [0:3]) let(cx = (q == 0 || q == 3) ? hx : -hxl, cy = q < 2 ? hy : -hy)
      for (i = [0:corner_n]) let(a = 90 * q + 90 * i / corner_n) [cx + r * cos(a), cy + r * sin(a), z]];
 // a solid lofted through rings of points (each ring convex, the same count, counter-clockwise about
 // the axis they are stacked along). Its sides run each edge the other way round from the caps (the
@@ -974,6 +991,10 @@ function back_levels(z0, z1, grow = 0, ov = overhang) = let(k0 = floor(z0 / (bac
 // (one loft: a straight prism on its top left non-manifold edges where the USB-C tab met the joint)
 module tub_outside(h = z_seam, shrink = 0, ov = overhang) rr_loft(concat(back_levels(0, min(h, back_r), shrink, ov), h > back_r ? [[h, shrink]] : []));
 module tub() difference() {
+  tub_body();
+  sd_cut();
+}
+module tub_body() difference() {
   union() {
     difference() {
       tub_outside();
@@ -1003,11 +1024,11 @@ module tub() difference() {
     // domes' vents
     translate([0, 0, floor_t - 0.01]) linear_extrude(board_lift + 0.01) difference() {
       intersection() {
-        offset(delta = -1.5) rrect(board_w, board_l, board_r);
+        offset(delta = -1.5) board_rr();
         union() {
-          difference() { offset(delta = -1.5) rrect(board_w, board_l, board_r); offset(delta = -2.7) rrect(board_w, board_l, board_r); }
+          difference() { offset(delta = -1.5) board_rr(); offset(delta = -2.7) board_rr(); }
           for (x = [-board_w / 2:support_pitch:board_w / 2]) translate([x - 0.6, -board_l / 2]) square([1.2, board_l]);
-          for (y = [-board_l / 2:support_pitch:board_l / 2]) translate([-board_w / 2, y - 0.6]) square([board_w, 1.2]);
+          for (y = [-board_l / 2:support_pitch:board_l / 2]) translate([-board_w / 2 - grow_l, y - 0.6]) square([board_w + grow_l, 1.2]);
           for (r = strip_ribs) corners2d(r);
           corners2d(pin_rib);
         }
@@ -1144,6 +1165,7 @@ module end_inner(sy) {
   for (c = ss_centres) if (c[1] * sy > 0) at(c, retainer_bot) linear_extrude(z_deck_under - retainer_bot + 0.01) ss_frame2d();
   // its boss, down to the board: the end screw pulls the top onto the board
   at(end_pin(sy), z_top_cu) cylinder(d = boss_d, h = z_deck_under - z_top_cu + 0.01);
+  if (sy < 0) at(h4_pin, z_top_cu) cylinder(d = boss_d, h = z_deck_under - z_top_cu + 0.01);     // H4's
 }
 // and its buttons' openings, the pads' reliefs and its pilot
 module end_cuts(sy) {
@@ -1163,6 +1185,7 @@ module end_cuts(sy) {
   for (c = [abxy1, abxy2]) if (c[1] * sy > 0) at(c, retainer_bot - 0.01)  // the A/B/X/Y pad's centre square
     linear_extrude(z_top_cu + abxy_square[2] - retainer_bot + 0.01) square(abxy_square[0], center = true);
   at(end_pin(sy), z_top_cu - 0.01) cylinder(d = screw_pilot, h = deck_engage);
+  if (sy < 0) at(h4_pin, z_top_cu - 0.01) cylinder(d = screw_pilot, h = deck_engage);
 }
 
 
@@ -1211,8 +1234,8 @@ function uni_h(t) = t <= 0 ? step_d : t >= uni_run ? 0 : uni_r * (1 - cos(asin(s
 // the ends' section (the side rounds and the flat between) lifted by h, out past the outline for the case's shell
 // to cut: each slice of the step
 function uni_section(h) = let(cz = deck_face - face_r + h, zb = deck_face - face_r - 1, n = 18)
-  concat([[-(uni_x_r + face_r + 0.5), zb]],
-         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + face_r * sin(a)), cz + face_r * cos(a)]],
+  concat([[-(uni_x_r + grow_l + face_r + 0.5), zb]],
+         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + grow_l + face_r * sin(a)), cz + face_r * cos(a)]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + face_r * sin(a), cz + face_r * cos(a)]],
          [[uni_x_r + face_r + 0.5, zb]]);
 // (inner: the section of the inside's limit, uni_isection, instead of the outside's)
@@ -1259,8 +1282,8 @@ module uni_limit() {
 uni_in_r = face_r - uni_skin - 0.16;   // (0.01: the outside's chords, every 5 degrees, lie 0.003 inside its arcs; another 0.15 since the slope went to 54 degrees
                                        // (2026-10-27): where the steeper slope meets the side round the wall was 0.586 (needs 0.62), now 0.66; the outside is untouched)
 function uni_isection(h) = let(cz = deck_face - face_r + h, zb = z_seam - 2, n = 18, x = uni_x_r + uni_in_r + 0.5)
-  concat([[-x, zb]],
-         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + uni_in_r * sin(a)), cz + uni_in_r * cos(a)]],
+  concat([[-x - grow_l, zb]],
+         [for (k = [0:n]) let(a = 90 - 90 * k / n) [-(uni_x_r + grow_l + uni_in_r * sin(a)), cz + uni_in_r * cos(a)]],
          [for (k = [0:n]) let(a = 90 * k / n) [uni_x_r + uni_in_r * sin(a), cz + uni_in_r * cos(a)]],
          [[x, zb]]);
 module uni_in_limit() {
@@ -1355,6 +1378,10 @@ if (!tune) {
   }
 }
 module top() difference() {
+  top_body();
+  sd_cut();
+}
+module top_body() difference() {
   union() {
     difference() {
       uni_outer();
