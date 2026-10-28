@@ -93,6 +93,9 @@ CHECKS = {
     "VER-160": ("cellspec", ["python3", DN, "cellspec"], False),
     "VER-159": ("check_backpower", ["python3", "hardware/vv/tools/check_backpower.py"], False),
     "VER-162": ("check_placed_contacts", ["python3", "hardware/vv/tools/check_placed_contacts.py"], True),
+    # 2026-10-28: prod_board's placed contacts (read only) and the dome footprint against the dome's drawing
+    "VER-163": ("check_placed_contacts_prod", ["python3", "hardware/vv/tools/check_placed_contacts.py", "--prod"], True),
+    "VER-178": ("check_dome", ["python3", "hardware/vv/tools/check_dome.py"], True),
     "VER-125": ("check_land", ["python3", "hardware/vv/tools/check_land.py"], True),
     "VER-130": ("check_bom_cpl", ["python3", "hardware/vv/tools/check_bom_cpl.py"], True),
     # the checks of classes 2, 3, 5, 7, 10 and 12-15 (2026-10-27); exit 2 is BLOCKED: nothing is recorded

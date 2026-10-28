@@ -3,6 +3,7 @@
 
     python3 hardware/vv/tools/check_placed_contacts.py          # exit 1 on any failure
     python3 hardware/vv/tools/check_placed_contacts.py --seed   # moves SW7's pad 2 by 0.1 mm in memory: must exit 1
+    python3 hardware/vv/tools/check_placed_contacts.py --prod   # the same over prod_board.kicad_pcb (VER-163), read only
 
 For every membrane contact on the board (SW1-SW16, DSL_button_4ring) and every dome contact (SW20-SW23,
 Dome_4mm_Round) it takes the footprint as the board holds it, turns it back to 0 degrees at the origin,
@@ -13,12 +14,17 @@ and:
   2. saves it to a scratch .kicad_mod and runs hardware/membrane/tools/check_contact_fp.py on it for the
      4-ring contacts (copper gap >= 0.20 mm, bridging spot <= 1.60 mm, mask covers the comb, each pad one piece);
   3. checks that no contact pad has paste and that no silk crosses a contact's mask opening.
-The dome's own rule (the dome's rim and dimple against the pads) is VER-178's: its drawing is not on disk.
+The dome's own rule (the dome's rim and dimple against the pads) is VER-178's (check_dome.py).
+
+--prod (VER-163, 2026-10-28) reads Alex's hardware/prod_board/prod_board/prod_board.kicad_pcb and its prod.pretty
+library instead, and never writes either: prod_board has no design.py, so its contacts are the footprints whose
+library name is DSL_button_4ring or Dome_4mm_Round, and the scratch copies go to a temp dir as above.
 
 Python 3 standard library and pcbnew.
 """
 import math
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -27,6 +33,10 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import design_numbers as dn  # noqa: E402
 
 LIB = os.path.join(dn.BOARD, "lib", "battler.pretty")
+PROD = os.path.join(dn.ROOT, "hardware", "prod_board", "prod_board")
+PROD_PCB = os.path.join(PROD, "prod_board.kicad_pcb")
+PROD_LIB = os.path.join(PROD, "prod.pretty")
+CONTACTS = ("DSL_button_4ring", "Dome_4mm_Round")
 CHECK_FP = os.path.join(dn.ROOT, "hardware", "membrane", "tools", "check_contact_fp.py")
 TOL = 0.001                      # mm
 
@@ -71,21 +81,33 @@ def diff(a, b):
 
 
 def main():
-    pcb, b = dn.board()
-    parts, _ = dn.design()
+    prod = "--prod" in sys.argv
+    if prod:
+        import pcbnew as pcb
+        b = pcb.LoadBoard(PROD_PCB)               # read only: nothing below saves the board
+        lib = PROD_LIB
+        names = {f.GetReference(): f.GetFPID().GetLibItemName().wx_str() for f in b.GetFootprints()}
+        refs = sorted((r for r, n in names.items() if n in CONTACTS), key=lambda r: (re.sub(r"\d", "", r), int(re.sub(r"\D", "", r) or 0)))
+        print(f"prod_board: {os.path.relpath(PROD_PCB, dn.ROOT)} and {os.path.relpath(PROD_LIB, dn.ROOT)} (read only)")
+    else:
+        pcb, b = dn.board()
+        parts, _ = dn.design()
+        lib = LIB
+        names = {r: p["fp"].split(":")[1] for r, p in parts.items() if p["fp"]}
     seed = "--seed" in sys.argv
     bad = 0
     tmp = tempfile.mkdtemp(prefix="vv_contacts_") + "/placed.pretty"
     io = pcb.PCB_IO_KICAD_SEXPR()
     io.CreateLibrary(tmp)
     fps = {f.GetReference(): f for f in b.GetFootprints()}
-    refs = sorted((r for r, p in parts.items() if p["fp"] in ("battler:DSL_button_4ring", "battler:Dome_4mm_Round")),
-                  key=lambda r: int(r[2:]))
+    if not prod:
+        refs = sorted((r for r, p in parts.items() if p["fp"] in ("battler:DSL_button_4ring", "battler:Dome_4mm_Round")),
+                      key=lambda r: int(r[2:]))
     lib_fp = {}
     for ref in refs:
-        name = parts[ref]["fp"].split(":")[1]
+        name = names[ref]
         if name not in lib_fp:
-            lib_fp[name] = pcb.FootprintLoad(LIB, name)
+            lib_fp[name] = pcb.FootprintLoad(lib, name)
         placed = normalised(pcb, fps[ref])
         if seed and ref == "SW7":
             p2 = next(p for p in placed.Pads() if p.GetNumber() == "2")
@@ -134,7 +156,10 @@ def main():
         print(("  ok    " if not problems else "  FAIL  ") + line)
         bad += bool(problems)
     print(f"{len(refs)} contacts, {bad} failing; the dome footprint's rule against the dome's drawing is VER-178 "
-          "(BLOCKED: the HYP 600-415S-260 drawing, LCSC C256258, is not on disk)")
+          "(check_dome.py)")
+    if not refs:
+        print("no contact footprint found: nothing was checked")
+        bad = 1
     print("RESULT: " + ("PASS" if not bad else "FAIL"))
     return 1 if bad else 0
 

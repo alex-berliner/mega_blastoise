@@ -992,4 +992,14 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-05 (prints the off-state current); VER-62 records the current through JP2 with BL_PWM low on unit 1
 - Updated: VER-62
 - Gate: EVT
-- Status: OPEN (options: a 6.2 Mohm from each BL_FB to +3V3, whose 0.53 uA through R58/R59 (10k) builds in 5.3 mV that a 4.5 mV offset cannot beat, with R61 re-tuned for the 2.4 mA a sink it removes at full duty; or firmware turns 3V3's panel load off with the panel's sleep; or accept the glow)
+- Status: OPEN (options: a 6.2 Mohm from each BL_FB to +3V3, whose 0.53 uA through R58/R59 (10k) builds in 5.3 mV that a 4.5 mV offset cannot beat, with R61 re-tuned for the 2.4 mA a sink it removes at full duty; or accept the glow and its 4.13 mA)
+
+### DEF-97: The smallest 4 mm dome's rim sits 0.171 mm inside the ring pad's inner edge
+- Found: VER-178 (check_dome.py) at 39cc07f, 2026-10-28, the first run on the dome's drawing
+- Symptom: the HYP 600-415S-260 drawing gives D 4.0 +0/-0.05 mm (dome_600-415s-260.pdf page 1, row 600-4***-***). Dome_4mm_Round's ring runs r 1.704 to 2.300 mm as KiCad fills it. At 0.1 mm of placement error the smallest dome's rim (r 1.975) is 0.171 mm inside the ring's inner edge, against VER-178's and REQ-BTN-08's 0.2 mm; the outer side has 0.200 mm. At the hand placement's 0.3 mm the near side of the rim is 0.029 mm off the ring (the far side stays on it, so the dome still makes contact). The apex, the gap, the vent, the pads' layers and the Kapton dot pass.
+- Root cause: the ring was centred on the nominal 4.0 mm rim (r 2.0), with no allowance for the drawing's -0.05 mm.
+- Why missed: the drawing was not on disk until 2026-10-28.
+- Check added or changed: VER-178 (built: check_dome.py)
+- Updated: DF-168
+- Gate: ORDER
+- Status: OPEN (proposed: accept, since the dome touches the ring at every placement up to 0.3 mm and the rule's 0.2 mm is a margin, not a contact limit; or fp_dome.py's ring from r 1.65 with a 0.4 mm vent, which keeps the vent 0.30 mm from both pads; copper, so before the order)
