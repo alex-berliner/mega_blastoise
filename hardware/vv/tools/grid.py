@@ -8,7 +8,7 @@ It reads verification.csv (each check's 'classes', 'subsystems' and 'sources', s
 grid_reasons.csv (class, subsystem, status NOT_NEEDED or ACCEPTED_GAP, reason). Nothing in
 grid.md is typed: re-run this after any change to either file (run_checks.py does).
 
-A cell is the checks of board ref_design or both, not CUT or RETIRED, tagged with that class and
+A cell is the checks of board f1c200s or both, not CUT, RETIRED or DROPPED, tagged with that class and
 that subsystem (the tags are a cross product: tag a check only with classes it really targets for
 every subsystem it names). A cell is:
 
@@ -77,8 +77,12 @@ CLASSES = {
 }
 GROUPS = {1: "A", 2: "A", 3: "B", 4: "B", 5: "B", 6: "B", 7: "B", 8: "C", 9: "C", 10: "C", 11: "C", 12: "C",
           13: "D", 14: "D", 15: "D", 16: "E", 17: "E", 18: "E", 19: "E", 20: "E"}
-# 'storage' since 39cc07f: the microSD slot J8, its bus, its supply through JP6 and its opening in the left wall
-SUBSYSTEMS = ["power", "cell", "mcu", "display", "audio", "buttons", "usb_debug", "storage", "case"]
+# 2026-10-28, the F1C200s re-seed: the next spin's subsystems. power: USB in, the charger and the rails for the
+# F1C200s's core, DRAM and IO; cell: the cell, its sense and protection; soc: the F1C200s, its crystal, boot and
+# reset; storage: the microSD card it boots from; usbc: the USB-C port's roles (the FUSB303B), host and device and
+# the link cable; display: the ILI9488 on the 8080 bus and its backlight; audio; buttons; case.
+# Was: mcu (the ESP32-S3 module) and usb_debug (its USB Serial/JTAG), both with the ESP32-S3 board
+SUBSYSTEMS = ["power", "cell", "soc", "storage", "usbc", "display", "audio", "buttons", "case"]
 REGISTER = "register"                    # the whole register: classes 19 and 20
 WHOLE = (19, 20)
 ORDER_CLASSES = range(1, 16)             # 1-14, and 15 by a paper estimate
@@ -90,7 +94,24 @@ WORST = ["FAIL", "BLOCKED", "NOT_BUILT", "NOT_RUN", "ACCEPTED", "PASS"]
 BUILT = ("PASS", "FAIL", "NOT_RUN")      # classes 16-18: any built check
 RESULTS = ("PASS", "FAIL")               # classes 1-15: a clearing check counts once it has run (O-R6)
 PHASES = ["ORDER", "CASE", "EVT", "DVT", "PVT", "SALE"]
-LIVE_BOARDS = ("ref_design", "both")
+LIVE_BOARDS = ("f1c200s", "both")
+GONE = ("CUT", "RETIRED", "DROPPED")
+LAST_REQS = []                           # the live requirements read() found: (id, board, subsystems)
+
+
+def read_reqs(vv):
+    """(id, board, subsystems) for every live requirement of requirements.md ('- Subsystem:', 2026-10-28)."""
+    path = os.path.join(vv, "requirements.md")
+    out = []
+    if not os.path.exists(path):
+        return out
+    for blk in re.split(r"\n(?=### REQ-)", open(path, encoding="utf-8").read())[1:]:
+        rid = blk.split(":", 1)[0][4:].strip()
+        f = dict(re.findall(r"^- ([A-Za-z][A-Za-z ]*?): (.*)$", blk, re.M))
+        if f.get("Status") in ("RETIRED", "DROPPED"):
+            continue
+        out.append((rid, f.get("Board", ""), f.get("Subsystem", "").split()))
+    return out
 
 
 def missing_sources(v, ds=DATASHEETS):
@@ -153,13 +174,15 @@ def read(vv):
             problems.append((v["_where"], "verification.csv has no 'classes', 'subsystems' and 'sources' columns"))
             break
         v["missing"] = missing_sources(v) if v["last_result"] == "PASS" else []
-        live = v["last_result"] not in ("CUT", "RETIRED")
+        live = v["last_result"] not in GONE
         for tok in v["classes"].split():
             if not re.fullmatch(r"\d{1,2}", tok) or int(tok) not in CLASSES:
                 problems.append((v["_where"], f"{v['id']}: class {tok!r} is not 1-20"))
             else:
                 v["cls"].append(int(tok))
         for tok in v["subsystems"].split():
+            if not live:
+                continue                     # a gone row keeps the subsystems of its own board (mcu, usb_debug)
             if tok not in SUBSYSTEMS + [REGISTER]:
                 problems.append((v["_where"], f"{v['id']}: subsystem {tok!r} is not one of "
                                               f"{' '.join(SUBSYSTEMS + [REGISTER])}"))
@@ -191,6 +214,7 @@ def read(vv):
             problems.append((w, f"duplicate cell {r['class']} {r['subsystem']}"))
         seen.add(key)
         r["c"] = c
+    LAST_REQS[:] = read_reqs(vv)
     return vers, reasons, problems
 
 
@@ -198,7 +222,7 @@ def cells(vers, reasons, signed=frozenset(), accepted=None):
     """{(class, subsystem): cell}. signed: the 'GRID-<class>-<subsystem>' items Alex has signed ACCEPTED.
     accepted: {VER id: why} for the checks an ACCEPTED defect lets through the order gate (check_trace)."""
     accepted = accepted or {}
-    live = [v for v in vers if v.get("board") in LIVE_BOARDS and v["last_result"] not in ("CUT", "RETIRED")]
+    live = [v for v in vers if v.get("board") in LIVE_BOARDS and v["last_result"] not in GONE]
     for v in live:
         v["shown"] = shown(v, accepted)
     why = {(r.get("c"), r["subsystem"]): r for r in reasons}
@@ -283,8 +307,8 @@ def text_cell(cell):
 
 def render(vers, reasons, grid, accepted=None, signed=frozenset()):
     accepted = accepted or {}
-    live = [v for v in vers if v.get("board") in LIVE_BOARDS and v["last_result"] not in ("CUT", "RETIRED")]
-    L = ["# Coverage grid: check classes by subsystem (REF-A, hardware/ref_design)", "",
+    live = [v for v in vers if v.get("board") in LIVE_BOARDS and v["last_result"] not in GONE]
+    L = ["# Coverage grid: check classes by subsystem (the F1C200s board, hardware/ref_design's next design)", "",
          "Generated by `python3 hardware/vv/tools/grid.py` from verification.csv (each check's `classes` and "
          "`subsystems`) and grid_reasons.csv. Do not edit by hand: change those files and re-run it. "
          "`check_trace.py --gate order` fails (R9) while any cell of classes 1-15 is GAP or planned. "
@@ -293,8 +317,8 @@ def render(vers, reasons, grid, accepted=None, signed=frozenset()):
          "(VER-05@EVT); a NOT_RUN one leaves the cell planned; a later bench test, inspection or demonstration measures it but does not "
          "clear it. Class 15 is cleared only by a paper estimate that has run: an analysis with a PASS or FAIL. "
          "Classes 16-18 belong to EVT, DVT and PVT and are shown, not gated by the order; 19 and 20 are "
-         "whole-register classes, listed below. Only checks of board ref_design or both count; CUT and RETIRED "
-         "checks never do.", "",
+         "whole-register classes, listed below. Only checks of board f1c200s or both count; CUT, RETIRED and "
+         "DROPPED checks never do (DROPPED: the ESP32-S3 or RP2354B board's, at its tag).", "",
          "A cell reads: COVERED, worst <status> (FAIL, BLOCKED, NOT_BUILT, NOT_RUN, ACCEPTED, PASS) among the checks "
          "that can clear it (classes 16-18: among all its checks) and, when no clearing check is an ORDER check, the "
          "earliest phase, then the later checks that measure it but cannot clear it; planned (the checks that could clear it "
@@ -314,6 +338,15 @@ def render(vers, reasons, grid, accepted=None, signed=frozenset()):
             continue
         L.append(f"| {GROUPS[c]}{c} {CLASSES[c]}{' (' + LATER[c] + ')' if c in LATER else ''} | "
                  + " | ".join(text_cell(grid[(c, s)]) for s in SUBSYSTEMS) + " |")
+    L += ["", "## Requirements per subsystem", "",
+          "Each live requirement's '- Subsystem:' in requirements.md ('all': every subsystem). A subsystem with no "
+          "requirement has nothing to verify against: class 1's cell for it is a GAP in substance whatever its checks.",
+          "", "| Subsystem | requirements | IDs |", "|---|---|---|"]
+    for s in SUBSYSTEMS:
+        ids = [r for r, _, subs in LAST_REQS if s in subs]
+        L.append(f"| {s} | {len(ids)} | {' '.join(ids) or '-'} |")
+    alls = [r for r, _, subs in LAST_REQS if "all" in subs]
+    L.append(f"| all | {len(alls)} | {' '.join(alls) or '-'} |")
     L += ["", "## Counts per class", "",
           "| Class | covered | planned | gap | not needed | accepted gap | held by the order gate |",
           "|---|---|---|---|---|---|---|"]

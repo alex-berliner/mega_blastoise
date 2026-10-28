@@ -38,7 +38,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-159 (check_backpower.py over design.nets(), seeded with this very fault: U1 pin 5 back on VBUS must fail it)
 - Updated: REQ-PWR-07, DF-98
 - Gate: ORDER
-- Status: CLOSED (REF on 3V3; VER-159 PASS 2026-10-28 at 39cc07f: the back-power table of six states, its seeded DEF-01 fails. Was: VER-127 with the Debug Probe, which left with J5)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-223 on the F1C200s board.
 
 ### DEF-02: R15 cut to 10k removed the Start contact's pill margin
 - Found: model audit, round 2, design phase (d049b35, 2026-09-25)
@@ -48,7 +49,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-33 (latch state table: the largest series resistance that still turns on) and VER-211 (1 kohm in series with the power key on the real board)
 - Updated: REQ-PWR-08, REQ-PWR-11, DF-27
 - Gate: ORDER
-- Status: FIXED at 39cc07f: the power key SW24 alone turns the device on; VER-33 PASS 2026-10-28 (sure on to 5.0 kohm at VSYS 3.0 V, Q1's gate 0.38 V over 2.5 V through 1 kohm); VER-211 on unit 1
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-03: The unplug hand-over took tens of ms, not microseconds
 - Found: model audit, round 3, design phase (5095356, 2026-09-25)
@@ -98,7 +100,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-02 (check_pins.py fails when a reviewed pin's net changes).
 - Updated: REQ-MCU-04, DF-63
 - Gate: ORDER
-- Status: CLOSED (VER-02 PASS 2026-10-25 at 4a86173). J6 itself left in 86bf694.
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-08: USB series resistors were 22 ohm; the RP2350 requires 27
 - Found: datasheet pin review (check_pins.py, pin_review/u4.json pins 66 and 67), design phase (4c4d846)
@@ -108,7 +111,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-02 (passives.json checks each resistor's value and LCSC number). The stale comments are DEF-21's.
 - Updated: REQ-MCU-02
 - Gate: ORDER
-- Status: CLOSED (VER-02 PASS 2026-10-25 at 4a86173)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-09: The ME6211's CE could rise above its VIN at a live plug-in
 - Found: datasheet pin review (pin_review/u3.json), design phase (4c4d846)
@@ -138,7 +142,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-37 (cell spec sheet; not run); VER-160 (cell.json and an assert that recomputes the limit when the cell or R5 changes; not built: it would have failed at 950afcf and 226bbb6); VER-66 (charge current per unit; not run).
 - Updated: REQ-BAT-02, DF-07
 - Gate: ORDER
-- Status: FIXED (R5 3.3k: 242-295 mA on the BQ24073, unchanged at 39cc07f); the cell's own limit is still unknown (VER-37)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-216 on the F1C200s board.
 
 ### DEF-12: AP3156 backlight charge pump out of stock
 - Found: stock check before ordering (b7a6238, 2026-10-07)
@@ -148,7 +153,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-41 (order-day stock and pre-orders; not run); VER-14 (LCSC identity and stock class; not built).
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
-- Status: FIXED (two discrete current sinks, all Basic or Preferred, simulated first: VER-05)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 on the F1C200s board.
 
 ### DEF-13: ProTek SRV05-4 out of stock
 - Found: stock check (eea0ee8, 2026-10-07)
@@ -158,7 +164,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-41; VER-14.
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
-- Status: FIXED (Semtech SRV05-4.TCT, C13612)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 on the F1C200s board.
 
 ### DEF-14: U1's JLC footprint may be turned 180 degrees from KiCad's
 - Found: on another branch, 1fd0956 (2026-10-22): "JLC's footprint for C13612 is KiCad's SOT-23-6 turned 180 degrees". This branch's eea0ee8 (2026-10-07) says "the same JLC library footprint ... so the CPL rotation is unchanged". The review (F-19) reads both as true: eea0ee8 means unchanged against the ProTek C85364 it replaced, which shared JLC's footprint, and JLC's SOT-23-6 zero differs from KiCad's by 180 degrees. So the CPL with KiCad's angle places U1 reversed unless corrected.
@@ -168,7 +175,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-29 (rotation table from the kicad-jlcpcb-tools plugin's corrections, applied to fab.py's CPL; not built); VER-28 (dry run with screenshots; not run).
 - Updated: REQ-FAB-07.R, DF-67, DF-68 (U1 is Semtech's C13612 again since 1fd0956; assembly.md says JLC's footprint is KiCad's turned 180 degrees)
 - Gate: ORDER
-- Status: OPEN (round 3's O-S7: it closes on VER-28's placement-preview screenshot of U1 with pin 1 on the silk's mark; any correction goes only through a JLC_FIXED entry naming that committed screenshot (F-R4). No CPL row's angle changes before the preview; VER-29's table is DVT's and advisory at ORDER)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-234 on the F1C200s board.
 
 ### DEF-15: First PLA print: hooks snapped, lid tight, pins bound
 - Found: first full print of the case (88eec7c, 2026-10-05)
@@ -178,7 +186,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: none that runs; VER-48 (current shell with real parts) and VER-92 (open/close cycles) not run.
 - Updated: REQ-MEC-05, DF-89
 - Gate: CASE
-- Status: FIXED (pins removed, hooks tapered, 0.3 mm at the steps, lid 2.0 mm, PETG recommended)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-16: D-pad opening too tight for Alex's AliExpress D-pad
 - Found: fit print with real caps (7606442, 2026-10-19)
@@ -188,7 +197,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: the fit kit's tune_openings coupon; VER-126 (incoming caps per lot; not run).
 - Updated: REQ-MEC-03
 - Gate: CASE
-- Status: FIXED (gap 0.5 to 0.8 mm)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-17: Deck insert would not go on over the silicone
 - Found: insert print (73c3686, 2026-10-19)
@@ -198,7 +208,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-07 (check_buttons.py, added 269dc87, shown to fail on a cap that does not fit its slot).
 - Updated: REQ-MEC-03
 - Gate: CASE
-- Status: FIXED (it was CLOSED on VER-07's PASS at 269dc87, which rests on a commit message; it closes again when VER-07 passes with saved evidence)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-18: Start/Select pad's square wells hit round flange pockets
 - Found: silicone pad model (86e81e2, 2026-10-19)
@@ -208,7 +219,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-07 (caps_silicone and silicone_shell checks).
 - Updated: REQ-MEC-03
 - Gate: CASE
-- Status: FIXED (as DEF-17: closes again when VER-07 passes with saved evidence)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-19: Holes through the lid
 - Found: Alex, on the live 3D view (177123c, 2026-10-19)
@@ -218,7 +230,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: none on this branch; VER-113 (openings check; not built). Another branch has check_manifold.py. The same class (the stack moved and a fastener was not recomputed) is DEF-31.
 - Updated: REQ-MEC-08, DF-90
 - Gate: CASE
-- Status: FIXED (pilots stop 0.8 mm under the face; notch only in the frame)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-20: J6's mouth faced J5's back
 - Found: model audit, round 1 (4495595)
@@ -238,7 +251,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-39 (stale-doc sweep, now also design.py's and placement.py's comments and the case documents case/*.md: FAIL 2026-10-26 at be437f8, the list above; its scope is hardware/ref_design/docs/*.md, hardware/ref_design/case/*.md, hardware/ref_design/README.md, hardware/ref_design/PLAN.md, design.py and placement.py); VER-161 (check_claims.py: the numbers, GPIOs and lists compared with design.py, case.scad and pin_review; not built) is the real fix; VER-130 (check_bom_cpl.py) fails on (x) until assembly.md agrees. For (s): the PDF is on disk, so VER-152 reads the FPC neck, body, tail and tip range off its outline drawing now and cites the lines (tools/datasheet_hashes.py records the file's sha256); the ESTIMATE stays in case.scad until the case pass, and the real panel's measurement stays the closing check. bringup.md matching the design is now also a precondition of first power (G-EVT-02, round 2's objection).
 - Updated: REQ-TST-01, DF-102, DF-169
 - Gate: CASE
-- Status: OPEN (39cc07f adds: bom.md, assembly.md and bringup.md still describe the RP2354B board (docs/living/esp32s3_build.md says so); bom.md buys no antenna or U.FL cable (DEF-85); pinmap.md says EN has 'the RESET button' and leaves U10 out of 'Battery voltage'; design.py's comments still cite E9, GPIO47, the ME6211's CE and 'either seat's Start as the power button'; assembly.md counts 117 placements and 49 part numbers against design.py's 114 and 45, VER-130)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 on the F1C200s board.
 
 ### DEF-22: The validation plan's statuses went stale
 - Found: task brief and this register (2026-10-24)
@@ -248,7 +262,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: vp_map.csv holds the statuses with evidence as a one-time mapping; validation_plan.md is archived and check_trace no longer compares the two (O-11), so editing the old plan can no longer break the register. No check proves a status right; the live statuses are the VER rows.
 - Updated: none
 - Gate: ORDER
-- Status: FIXED (plan archived; statuses in vp_map.csv and verification.csv)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-23: JST PH J2 too tall for the lowered lid
 - Found: print preparation (f231998, 2026-10-19)
@@ -258,7 +273,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-06 (check_fit, J2 pocket rule)
 - Updated: REQ-MEC-01
 - Gate: ORDER
-- Status: CLOSED (Molex PicoBlade, 3.4 mm; VER-06 PASS 2026-10-27 at b3c9f2a on 71737ae's design: 127 parts, no collision. F-R1's sweep: it was FIXED with its check passing)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-24: Audio numbers in the docs were wrong
 - Found: review panel of seven model families, checked by Fable (7768a97, 2026-09-25)
@@ -268,7 +284,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-100 (audio chain simulation; not in the repo); VER-64 on the real board.
 - Updated: REQ-AUD-01, REQ-AUD-03, REQ-AUD-05
 - Gate: CASE
-- Status: FIXED (docs corrected; C37/C38 to 4.7 nF and 8-bit PWM in ad291a8)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-25: Lid window too tight for the panel's float and tolerance
 - Found: model audits, rounds 1-3 (4495595, d049b35, 5095356)
@@ -278,7 +295,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: check_fit learned the lid's panel frame (d049b35): VER-06 (stale); VER-20 (stack; not built).
 - Updated: REQ-MEC-02, REQ-PRD-06
 - Gate: CASE
-- Status: FIXED (frame 0.8 mm, window 1.0 mm)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-26: The datasheet gate passes with open questions in it
 - Found: while seeding this register (2026-10-24)
@@ -288,7 +306,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-36 (read both rating schemas; fail on ok false or null without a waiver, on a waiver that cites no A-NNN line, on an IC's or connector's lcsc or mpn that differs from design.py, on a review of a ref absent from design.py, on open-question text, on a passive rated under 1.25 x its net; not built). Its acceptance test is the failure list it generates from the current files, never a typed list.
 - Updated: REQ-FAB-02, REQ-PWR-14, REQ-MCU-09, DF-94, DF-95, DF-96
 - Gate: EVT
-- Status: OPEN (2026-10-28: VER-36 FAIL at 39cc07f: pin_review/u3.json still describes the RT9013 (DEF-88), seven orphan review files for parts that left (d5, j5, j6, l2, q2, r47, x1, and refs D6, D8, Q4, Q7 inside others), j8.json's detect pins 9 and 10 unverified, u10.json UNVERIFIED, panel VCI and VDDI. VER-36's own bug is fixed: it counted every 'A-NNN' in APPROVALS.md, examples included, as signed (4 at fd1f6e8); it now counts what check_trace counts (0))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-211 on the F1C200s board.
 
 ### DEF-27: check_fit guesses part heights silently
 - Found: validation plan #96 (2026-10-05); still true at 76955d2
@@ -298,7 +317,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-112 (heights from drawings; unknown package fails; not built, at CASE); VER-22 (seeded faults; not built).
 - Updated: REQ-MEC-01, DF-91
 - Gate: CASE
-- Status: OPEN (F-R2(e): the case's fit check moves to CASE; the drawings are in hand by then)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
 
 ### DEF-28: Design analyses are not in the repo
 - Found: while seeding this register (2026-10-24)
@@ -308,7 +328,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-12, VER-13, VER-100 carry the missing ones as NOT_BUILT; VER-99, VER-114, VER-131, VER-137, VER-138, VER-142, VER-147, VER-164, VER-167, VER-176, VER-177 and VER-20 (in part) now run design_numbers.py through run_checks.py; the README's evidence rule: an analysis or test PASS needs a saved output under evidence/ whose header names its commit, tools and result.
 - Updated: REQ-PWR-02, REQ-PWR-05, REQ-AUD-03
 - Gate: EVT
-- Status: OPEN (F-R2(e): the missing analyses move to EVT, where their outcome is a DVT value; the pre-order numbers that come from design_numbers.py stay at ORDER)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-29: RP2354B and L2 out of stock at JLC and LCSC
 - Found: BOM audit on another branch (67e3d13, 2026-10-21): "RP2354B and L2 out at JLC and LCSC, U1 3 left, J5/J6 2 left, U3 724". This branch's bom.md still shows 1665 RP2354B in stock (2026-10-07).
@@ -328,7 +349,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-42 (release record: tag, commit, fab zip hash; not run); check_trace.py's rule R7 fails any gate when HEAD's design files differ from README's design baseline ("gate evaluated against a design it does not describe", F-1); evidence goes stale when HEAD moves past changes it covers, or its commit is not an ancestor of HEAD.
 - Updated: REQ-FAB-08, DF-76
 - Gate: ORDER
-- Status: OPEN (the release record names 39cc07f on ref-design-esp32s3 or the commit after the last design pass; R7 and the default mode fail on anything after the baseline)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-31: The case screws engage 1.4 mm of the lid's pilots
 - Found: two-model review (O-52), 2026-10-24, from case.scad
@@ -338,7 +360,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-147 (design_numbers.py screws: FAIL at 3.2 mm); VER-92 counts stripped bosses after 20 cycles; VER-190 (the case's architecture, 2026-10-27) maps REQ-MEC-09 to screw_l and fails on the same 3.2 mm.
 - Updated: REQ-MEC-09, DF-119
 - Gate: CASE
-- Status: OPEN (39cc07f: the three side pilots H1-H3 still give M2 x 6 3.2 mm against 4.0 (M2 x 7 or x 8 pass); H4 moved to a deck pilot, 3.2 mm against 3.0: ok; DEC-18)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-232 on the F1C200s board.
 
 ### DEF-32: The drill file mixes plated and unplated holes
 - Found: two-model review (O-14), 2026-10-24, from a scratch export with fab.py's own kicad-cli arguments
@@ -348,7 +371,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-131 (design_numbers.py drill: FAIL until fab.py passes --excellon-separate-th; then parse both files); VER-114 (every hole >= 0.30 mm: PASS).
 - Updated: REQ-FAB-04, DF-127
 - Gate: ORDER
-- Status: CLOSED (VER-131 PASS 2026-10-27 at 71737ae's design: fab.py passes --excellon-separate-th since 40281b8; battler-PTH.drl holds 738 holes and 4 slots, battler-NPTH.drl 12 holes, J1's pegs, SW20-SW23's vents and H1-H6, every board hole in the right file. Was: one MixedPlating file of 628 holes at be437f8)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-33: The CPL uses footprint origins, and J1's and J2's are off their pads
 - Found: two-model review (O-16), 2026-10-24, measured with pcbnew
@@ -358,7 +382,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-176 (origin against the pads' centre: FAIL; J1-J4 pass only through a JLC_FIXED entry naming the placement preview screenshot and the offset JLC's library applies, which may be zero); VER-29 (the rotation table, at DVT; not built); VER-28 screenshots J1-J4 and is the reference.
 - Updated: REQ-FAB-07.R, DF-128
 - Gate: ORDER
-- Status: FIXED (fab.py writes each footprint's pads' centre: VER-176 PASS 2026-10-28 at 39cc07f; it closes on VER-28's preview of J1-J4, J8, U4 and SW24 (O-R7))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-234 on the F1C200s board.
 
 ### DEF-34: No firmware can run on the ordered board
 - Found: two-model review (O-56, F-44), 2026-10-24
@@ -368,7 +393,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-149 (the generated pin file against design.py) and VER-215 (the ESP32-S3 build)
 - Updated: REQ-MCU-10, REQ-MCU-11, DF-121, DF-122
 - Gate: EVT
-- Status: OPEN (2026-10-28: VER-149 FAIL at 39cc07f: no crates/mega_blastoise_fw/src/board_ref_a.rs for the ESP32-S3; the image is VER-215's)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-35: The trace gate could pass on evidence that did not show what it claimed
 - Board: both
@@ -389,7 +415,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-04 (fail on any type not in COSMETIC, and silk_edge_clearance out of COSMETIC), VER-22 (a seeded hole_to_hole fault; DVT); not built. VER-18 now reads the silk texts against the outline itself (FAIL). At ORDER, VER-04's evidence lists every DRC warning type and count, read by hand (F-R2(e)).
 - Updated: vp_map #19
 - Gate: EVT
-- Status: FIXED at 39cc07f: check_pcb.py fails every violation type but COSMETIC (silk_overlap, silk_over_copper, silk_edge_clearance, text_height, text_thickness); VER-04 PASS 2026-10-28. It closes when VER-22 seeds a non-cosmetic type and check_pcb fails on it
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-37: TH1 sits at the cell's edge, and four bare pads face the pouch
 - Found: two-model review (O-30, F-36), 2026-10-24, from placement.py and case.scad
@@ -399,7 +426,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-164 (design_numbers.py th1: the geometry, PASS); VER-87 (two thermocouples: the lag; not built).
 - Updated: REQ-THM-02, REQ-BAT-08, DF-04
 - Gate: CASE
-- Status: OPEN (unchanged at 39cc07f: TH1 at (119.95, 79.0), 1.05 mm from the hole's edge and 1.95 mm or more from the cell's face, VER-164 FAIL; DEC-25)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-218 on the F1C200s board.
 
 ### DEF-38: C9 sits 0.9 mm from a screw boss's edge
 - Found: two-model review (O-43), 2026-10-24, measured with pcbnew
@@ -419,7 +447,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-137 (design_numbers.py backlight: the tolerance sum from design.py's values, now with the six-LED panel's 120 mA and the firmware's highest duty read from pinmap.md: FAIL 2026-10-26, 122.4 mA; it prints the duty cap, 97.9%, and the R61 that would pass, 3.74k).
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
 - Gate: ORDER
-- Status: CLOSED (VER-137 PASS 2026-10-27: R61 3.74k, C15172, in design.py at 71737ae gives 117.7 mA worst case at 100% duty, 108.2 mA nominal, 19.6 mA an LED on average, under the panel's 120 mA. A duty cap is DF-130's and binds at EVT, where VER-62 measures the current on a unit at the firmware's highest duty. Was: reopened 2026-10-26; F-R1 reworded this line's old ending, which contradicted its keyword)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-228 on the F1C200s board.
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
@@ -429,7 +458,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-138 (design_numbers.py cutoff: FAIL), VER-139 (bench sweep without USB), VER-155 (bench calibration at 3.50 V)
 - Updated: REQ-BAT-12, REQ-TST-06, DF-116, DF-117
 - Gate: EVT
-- Status: OPEN (re-run 2026-10-28 at 39cc07f, the cause changed: the ESP32-S3's ADC has its own reference, so the dropout knee is gone, but its total error is +-50 mV at the pin (+-100 mV of VBAT, esp32-s3.txt:3804) and a gain set at charge-done keeps the CV's 3.465-3.535 V: VER-138 FAIL. The per-unit point at 3.50 V (VER-155) is the fix, DEC-07)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-225 on the F1C200s board.
 
 ### DEF-41: Assembly works next to a live cell
 - Found: two-model review (O-29, F-37), 2026-10-24, from assembly.md
@@ -439,7 +469,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-91 (records the step order: speaker on the bare board, iron cold, FPC latched, cell last; not run).
 - Updated: DF-102, DF-112
 - Gate: CASE
-- Status: FIXED (assembly.md's order; closes when VER-91 records it on a unit); DF-169's change to the opening steps is still to make
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-42: The Start/Select pills and caps are not in the BOM
 - Found: two-model review (F-40), 2026-10-24
@@ -449,7 +480,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-167 (design_numbers.py bom: FAIL); VER-126 (incoming silicone, caps and domes).
 - Updated: DF-167, DF-168
 - Gate: CASE
-- Status: OPEN
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-43: Plug-in inrush is over USB 2.0's 50 uC
 - Found: two-model review (F-24), 2026-10-24, by arithmetic
@@ -459,7 +491,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-99 (design_numbers.py inrush: the VBUS capacitance and the parts between VBUS and VSYS, changed for the BQ24073).
 - Updated: REQ-PWR-13
 - Gate: ORDER
-- Status: CLOSED (VER-99 re-run 2026-10-27 at c1c61f0 after the grid's audit changed design_numbers.py: PASS, the same output as at fec2fc4; first PASS 2026-10-25: VBUS 10 uF, U2 the only path to VSYS; U2's start-up current on the scope is VER-71 in G-EVT-04)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-224 on the F1C200s board.
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -480,7 +513,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-05 (covers part:R52-R61, C48-C51, Q5, Q6, U6; backlight.py to assert its defaults against design.PARTS; re-run needed; at EVT since 2026-10-26: the loop's parts are BOM values and the bench sees ringing on unit 1). Since 2026-10-28 VER-05 is paper_checks.py backlight, which reads every value from design.py (and is shown failing with C48/C49 seeded to 10 pF); board/sim/backlight.py still hard-codes R61 3.9k and is no longer any check's evidence.
 - Updated: REQ-DSP-05, DF-44, REQ-DSP-09
 - Gate: EVT
-- Status: CLOSED (VER-05 PASS on 39cc07f, 2026-10-28: the check reads design.py)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-46: Bring-up's cell emulation cannot hold 3.50 V with USB in
 - Found: two-model review (O-19), 2026-10-24
@@ -490,7 +524,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-70 and VER-67 revised (CHG_OFF held high, or 10 ohm 5 W across the supply; VBAT recorded at the trigger instant).
 - Updated: REQ-PWR-05, DF-34
 - Gate: EVT
-- Status: FIXED (procedures revised; bringup.md to follow); closes when VER-70 passes
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-226 on the F1C200s board.
 
 ### DEF-47: The register drifted off the design it was meant to describe
 - Board: both
@@ -511,7 +546,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-32 (design_numbers.py tempwin, the window at SLUS810N's TS limits: FAIL, 1.4-51.5 C at the worst corner); VER-135 (per unit, now with a finger-warm step: TH1 is an NTC).
 - Updated: REQ-BAT-03, DF-147, DF-146
 - Gate: ORDER
-- Status: OPEN (unchanged at 39cc07f: TH1 B4460, 3.9-48.2 C at the worst corner, VER-32 FAIL; the B tolerance is now read from the part number, tctr0805.txt:260; DEC-05)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-217 on the F1C200s board.
 
 ### DEF-49: The shift registers cut the pill margin from 10 kohm to about 3.7 kohm
 - Found: re-seeding for 684a609 (2026-10-25)
@@ -521,7 +557,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision DEC-24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
 - Updated: REQ-BTN-01, DF-164
 - Gate: ORDER
-- Status: OPEN (unchanged at 39cc07f: RN1-RN4 47k for the combs and R86-R88, R63 47k for the Starts and Selects: a pill reads pressed under about 17 kohm; VER-45 on a bare board)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 on the F1C200s board.
 
 ### DEF-50: A faulty USB source reaches the regulator's enable ahead of the charger's OVP
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py vbus
@@ -531,7 +568,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-177 (design_numbers.py vbus: FAIL at 6.9 V).
 - Updated: REQ-PWR-17, DF-101
 - Gate: ORDER
-- Status: OPEN (39cc07f: U3 is the TLV75733P, its EN 6.0 V absolute (tlv757p.txt:179): VER-177 FAIL at 9.1 V, U2's EN1 at 12.4 V, against 20 V; DEC-17)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-222 on the F1C200s board.
 
 ### DEF-51: A worst-case cell had 0.30 mm to swell under the deck
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py swell
@@ -541,7 +579,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-182 (design_numbers.py swell, rewritten 2026-10-26 to read what case.scad puts over the tub's pocket instead of assuming a deck: PASS, 0.80 mm).
 - Updated: REQ-BAT-07, DF-84
 - Gate: CASE
-- Status: CLOSED (VER-182 PASS 2026-10-27 at c1c61f0 on be437f8's case.scad: 0.80 mm under the panel's back, the same output as at fec2fc4)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-215 on the F1C200s board.
 
 ### DEF-52: The trace gate and the fab checks still passed on words, typed results and unsigned approvals
 - Board: both
@@ -562,7 +601,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap: every side, and what would pass: FAIL).
 - Updated: REQ-BAT-08, DF-85 (now H)
 - Gate: ORDER
-- Status: CLOSED (VER-181 PASS 2026-10-28 at 39cc07f: the 55.2 x 38.2 mm hole leaves every gap at REQ-BAT-08's after tolerances and the pocket 0.40 mm over the worst-case cell)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-214 on the F1C200s board.
 
 ### DEF-54: Rows still written for 76955d2 after the re-seed
 - Found: two-model review (O-R9, O-R10, F-R2, F-R4, F-R5, F-R7, F-R9, F-R10, F-R11, F-R14, F-R16), 2026-10-25
@@ -572,7 +612,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-161 (check_claims.py, moved to ORDER; not built); check_trace's structure rule against a live row citing a RETIRED id outside 'Was:' (seeded in VER-129).
 - Updated: VER-28, VER-29, VER-33, VER-36, VER-52, VER-68, VER-77, VER-78, VER-79, VER-89, VER-90, VER-91, VER-130, VER-148, VER-159, VER-166; REQ-ASM-01, REQ-FAB-11, REQ-PWR-08, REQ-PWR-11; DF-45, DF-144
 - Gate: ORDER
-- Status: FIXED (rows rewritten against design.py at 684a609, and again at be437f8 on 2026-10-26); VER-161 not built
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-55: JLC's order-number marker is not on the board
 - Found: two-model review (O-R19), 2026-10-25: `grep -c JLCJLC` on battler.kicad_pcb and silk.py gives 0 and 0
@@ -582,7 +623,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-132 (k) (the marker on B.Silkscreen, or JLC's paid removal option in the release record; built 2026-10-27, FAIL at 71737ae: absent among the 20 back-silk texts).
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
-- Status: CLOSED (VER-132 PASS 2026-10-28 at 39cc07f: 'JLCJLCJLCJLC' on B.Silkscreen, silk.py)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-56: Copper within 0.20 mm of the cell's and the speaker's routed edges
 - Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge)
@@ -592,7 +634,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-18 (design_numbers.py edge: copper, courtyards and silk against every routed edge; since O-R2 each distance printed beside its worst case); VER-17 (JLC's dated page decides which of the two the rule applies to).
 - Updated: REQ-FAB-03, DF-179, DF-178
 - Gate: ORDER
-- Status: OPEN (unchanged at 39cc07f: the closest copper 0.308 mm in the data, 0.108 mm with the outline tolerance, the GND pour by the speaker's hole; J8's shell tab 0.350 mm from the left edge; VER-18 PASS in the data, JLC's dated page decides)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-236 on the F1C200s board.
 
 ### DEF-57: The board's name, BOARD_REV and build text sit in the cell's hole
 - Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge reads the silk texts)
@@ -602,7 +645,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-18 (every silk text wholly on the board; FAIL); VER-109 (the FAI reads BOARD_REV).
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
-- Status: FIXED (VER-18 PASS 2026-10-27 at 71737ae; it closes on VER-109, the first article reading BOARD_REV off the silk: silk.py places each of the three lines on the clear spot nearest (100, 40) on the back, and BOOT and RST at the pinholes in the board's frame; no silk text is off the board or in a hole, and the speaker's hole takes none. The JLC marker that was to go with them is still missing: DEF-55. Was: OPEN, DEC-28)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-236 on the F1C200s board.
 
 ### DEF-58: The cell's lead end is held by a piece of tape, not by the pocket
 - Found: two-model review (O-R8), 2026-10-26, from case.scad and assembly.md step 5
@@ -612,7 +656,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap, now printing and failing on the unpushed lead end as well: FAIL).
 - Updated: REQ-BAT-08, DF-04, DF-85
 - Gate: CASE
-- Status: CLOSED (VER-181 PASS 2026-10-28 at 39cc07f: the pocket's walls hold the cell off every edge, the lead end 1.50 mm after tolerances)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-214 on the F1C200s board.
 
 ### DEF-59: case.scad's panel numbers are not the drawing's
 - Found: two-model review (O-R6), 2026-10-26, from the datasheet downloaded 2026-10-26 to the main checkout (untracked)
@@ -622,7 +667,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-152 (the ESTIMATE ledger: the panel's outline, active area, thickness and FPC neck, body, tail and tip range each need a measured value and an evidence file; not built); VER-136 (the real FPC's reach and seating at J3).
 - Updated: REQ-MEC-11, DF-61, DF-123
 - Gate: CASE
-- Status: FIXED (case.scad at 71737ae takes the outline 54.56 x 82.84, the neck 4.47 and the active area's 2.22 mm border from the drawing (datasheets/er-tft035ips-6.pdf page 6, now committed); panel_t stays 2.45, the drawing's 2.30 maximum plus 0.15 for the glass's flatness; fpc_low is marked ESTIMATE (O-S8). bom.md still quotes 54.50 x 83.00 x 2.30 mm: DEF-21 (u). It closes on VER-152's ledger and VER-136's real panel)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
 
 ### DEF-60: A GND via was moved by hand in the board file
 - Found: two-model review (O-R10), 2026-10-26, from the git log at 62b01f2
@@ -632,7 +678,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-143 (rebuild from design.py at the tag, re-run the DRC and diff the rebuilt copper against the committed file with the dated lines stripped; not built).
 - Updated: DF-179
 - Gate: ORDER
-- Status: FIXED (the board at 71737ae was generated whole by the scripts in 40281b8, place_search.py route with seed 32, and no later commit touches battler.kicad_pcb: `git log --oneline 40281b8..71737ae -- hardware/ref_design/board/battler.kicad_pcb` prints nothing; 7d35933's route.py drops core vias that fail clearance instead of leaving them to a hand edit. It closes on VER-143, which now rebuilds twice with route.py --reuse and the committed last_route.ses and compares the copper (O-S2, F-S2))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-237 on the F1C200s board.
 
 ### DEF-61: Two pin-review findings that set the BOM are unanswered
 - Found: two-model review (F-R2(d)), 2026-10-26, split from DEF-26
@@ -642,7 +689,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-34 (the datasheet audit quotes the panel's table and answers VCI and VDDI in writing); VER-23 (the overlay against RP-010329 answers the +1V1 capacitor in writing); VER-198 (2026-10-27: the application-circuit script reads er-tft035ips-6.txt:747 and fails on the 3.366 V until Alex accepts it or the supply changes).
 - Updated: REQ-PWR-14, DF-96
 - Gate: ORDER
-- Status: OPEN (39cc07f: the panel's VCI and VDDI up to 3.333 V (the TLV75733P's +1% to TJ 85 C, tlv757p.txt:252; 3.350 V at +1.5%) against 3.3 V; proposed: accept, DEC-09. The +1V1 capacitor's half left with the RP2354B)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-227 on the F1C200s board.
 
 ### DEF-62: The cell's pocket has no fit for a worst-case cell
 - Found: round 3's sign-off (O-S1), 2026-10-26, against DEC-27's geometry; confirmed at 71737ae on 2026-10-27 by design_numbers.py cellgap
@@ -652,7 +700,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap now checks the fit: the pocket 0.4 mm longer and wider than the cell, 0.1 mm print and 0.1 mm fit a side; FAIL at 71737ae, 0.00 mm spare; seeded in VER-129 with a 51.7 mm cell, and its 51.6 x 35.6 mm control passes); REQ-BAT-08's fit clause (PROPOSED).
 - Updated: REQ-BAT-08, DF-85, DF-04
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-28 at 3cd3f42 after the path fixes, prod_board's retirement and VER-220's seeds: 119 of 119 seeded faults caught; VER-129 PASS 2026-10-28 at 8d5e456 after the class 2, 5, 10, 13 and 14 round: 117 of 117 seeded faults caught, two G-ORD-12 seeds moved with VER-27; VER-129 PASS 2026-10-28 at 35f1ab8 after the class 4, 6, 9 and 11 round: 117 of 117 seeded faults caught, the O-R6 seed now un-running VER-05 too; VER-129 PASS 2026-10-28 at 0eabbd4 on the 39cc07f re-seed: 117 of 117 seeded faults caught, nine seeds moved to live rows; VER-181 PASS 2026-10-28 at 39cc07f: the hole 55.2 x 38.2 mm, the pocket 52.4 x 36.4, 0.40 mm over the worst-case 52 x 36 cell: DEC-27 taken as (b))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-214 on the F1C200s board.
 
 ### DEF-63: U10 went on the board without its datasheet
 - Found: re-seeding for 71737ae (2026-10-27), from pin_review/u10.json
@@ -662,7 +711,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-34 (the audit now names U10, TH1's TCTR0805 and J4's SH header first, and replaces design_numbers.py's stand-ins for U10's bias, output resistance and drift); VER-138 prints the stand-ins it uses; VER-159 lists U10's input as a back-power path.
 - Updated: DF-182, DF-98, DF-138, REQ-BAT-12, REQ-PWR-07
 - Gate: ORDER
-- Status: FIXED (2026-10-28: mcp6001.pdf on disk; its SOT-23-5 pinout VOUT 1, VSS 2, VIN+ 3, VIN- 4, VDD 5 (mcp6001.txt:813-816) is design.py's U10; its off-state input limits (2 mA, VDD + 1.0 V, 115-117) cover the 7.9 uA; it closes when VER-36 passes with u10.json re-read, the board session's)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-211 on the F1C200s board.
 
 ### DEF-64: The speaker's plug no longer fits J4, and its replacement is not bought
 - Found: re-seeding for 71737ae (2026-10-27), from bom.md's speaker line
@@ -672,7 +722,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-128 (the SH plug latched in an SM02B-SRSS-TB sample, the cell's plug refused by it; its needs list the SH parts and a crimper); DF-183; VER-202 (design_numbers.py spkplug, F-R2: the speaker's plug and leads against J4 and J2 from bom.md's row and the routed board; FAIL while the row says the SH plug is not yet ordered).
 - Updated: DF-183, DF-170, DF-118, REQ-MEC-11
 - Gate: CASE
-- Status: OPEN (order pre-crimped SH 2-pin leads, or housings, contacts and a crimper, with the speakers in PLAN.md step 0.2; assembly.md's step is DEF-21 (t))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-231 on the F1C200s board.
 
 ### DEF-65: The swelling check used the old decks' line, not the one-piece top's ceiling
 - Found: re-seeding for 71737ae (2026-10-27): design_numbers.py swell failed at 0.30 mm when the cell's pocket reached case y 46.1
@@ -682,7 +733,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-182 (design_numbers.py swell now evaluates case.scad's degree trigonometry and its uni_lim and uni_foot, and prints the slope's ceiling over the cell).
 - Updated: REQ-BAT-07
 - Gate: CASE
-- Status: CLOSED (VER-182 PASS 2026-10-27 at 737e54e on 71737ae's case.scad: 0.80 mm under the panel's back, and 1.80 mm under the slope's inside over the cell's seat-2 end)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-215 on the F1C200s board.
 
 ### DEF-66: J2's polarity mark overlaps its label, and the PANEL label sits on U4's pads
 - Found: re-seeding for 71737ae (2026-10-27), reading VER-04's six DRC warnings by hand (DEF-36)
@@ -692,7 +744,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-04 (its evidence lists the six warnings; this re-seed read them); VER-132 (the fab content check: every silk text clear of other silk and of pads; not built).
 - Updated: REQ-BAT-05.R, DF-125
 - Gate: ORDER
-- Status: OPEN (39cc07f: the build reports 6 cosmetic silk warnings (VER-04's evidence lists them); J2's '+' and 'PANEL' to be read against them; or Alex accepts them for EVT)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-67: Three of U4's supply pins have no capacitor near them, and the far DVDD pin has no 4.7 uF
 - Found: VER-197 (paper_checks.py core), built 2026-10-27 for the coverage grid's class 4 / mcu cell, at 71737ae
@@ -712,7 +765,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-13 (built; --seed narrows CELL_P to 0.05 mm); VER-201 (design_numbers.py netclass, O-R8: build_pcb.py's class lists against the board's nets and the nets that carry 0.25 A or more; FAIL on VBUS_D5's stale entry, CELL_P and AMP_VDD)
 - Updated: REQ-BAT-12, DF-138
 - Gate: ORDER
-- Status: OPEN (39cc07f: CELL_P, VBUS_C1 and AMP_VDD joined the PWR class (0.3 mm) and VBUS_D5 left, so the class names only real nets (VER-201 PASS); but VSYS reaches U3 through 221 mohm of 0.24 mm track (137 mV at the Wi-Fi peak's 0.62 A) and VBAT to VSYS is 178.8 mV against 30 mV (VER-13 FAIL); DEF-86)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-221 on the F1C200s board.
 
 ### DEF-69: A cell cut off at 3.50 V can reach its PCM's under-voltage trip in under a month
 - Found: VER-103 (paper_checks.py shelf), built 2026-10-27, at 71737ae
@@ -722,7 +776,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-103 (built; --seed stiffens the divider and must fail)
 - Updated: REQ-BAT-10, REQ-PWR-07
 - Gate: EVT
-- Status: OPEN (unchanged at 39cc07f: 0.8 months from the cutoff to the PCM's UVP at the worst case, VER-103 FAIL)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-223 on the F1C200s board.
 
 ### DEF-70: C24, the core regulator's input capacitor, is under the RP2350's 4.7 uF minimum at its own tolerance
 - Found: VER-30 (paper_checks.py mlccbias), built 2026-10-27, at 71737ae
@@ -752,7 +807,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-125 (built; --seed shrinks the exposed pad and must fail)
 - Updated: DF-148
 - Gate: ORDER
-- Status: FIXED at 39cc07f: U2 on TI's RGT0016C land (tools/fp_u2.py): pads 0.60 x 0.24 at 2.80, 0.26 mm to the exposed pad, equal to TI's (VER-125's U2 line ok); it closes when VER-125 passes, held today by U4's thermal pad (DEF-84)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-220 on the F1C200s board.
 
 ### DEF-73: VBUS on J1's CC or data pins overstresses the CC parts above 3.9 V and the whole 3V3 domain above 4 V
 - Found: VER-195 (circuit_checks.py usbfault), built 2026-10-27, at 71737ae
@@ -762,7 +818,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-195 (built; FAIL at 71737ae, so no seed is needed to show it can fail)
 - Updated: DF-101, DF-51
 - Gate: EVT
-- Status: OPEN (unchanged in kind at 39cc07f: the CC paths over from about 4.0 V (IO2, IO4 behind 10k) and 17.9 V (R1, R2), the 3V3 domain from about 3.9 V through U1, VER-195 FAIL; DEC-17)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-222 on the F1C200s board.
 
 ### DEF-74: The F.Cu GND pour comes 2.875 mm from every comb's centre, inside REQ-BTN-04's 2.9 mm
 - Found: VER-132 (layout_checks.py fab, item (b)), built 2026-10-27, at 71737ae
@@ -772,7 +829,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-132 (built; its seed puts paste in SW7's circle and must fail)
 - Updated: REQ-BTN-04
 - Gate: ORDER
-- Status: CLOSED (VER-132 PASS 2026-10-28 at 39cc07f: route.py's comb keep-out is 2.9 mm across its flats, the pour 2.900 mm from every comb's centre)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 on the F1C200s board.
 
 ### DEF-75: The fast nets cross gaps in the ground under them, and D+ and D- differ by 3.6 mm
 - Found: VER-21 (layout_checks.py ret) and VER-108 (layout_checks.py usbpair), built 2026-10-27, at 71737ae
@@ -782,7 +840,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-21, VER-108 (built; their seeds drop the ground fill and lengthen a stub, and must fail)
 - Updated: DF-51, DF-184
 - Gate: ORDER
-- Status: OPEN (39cc07f: the longest runs over no ground are SD_D3 14.22 mm, SR_CLK 13.94, AUDIO_PWM 13.22, SD_D0 10.73, SD_CLK 10.56, USB_DP_MCU 8.64 (VER-21 FAIL); D+ 83.65 and D- 87.25 mm, 3.60 mm apart against 2.0 (VER-108 FAIL))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-209 on the F1C200s board.
 
 ### DEF-76: pinmap.md states no clock limits for the panel's SPI or the buttons' shift registers
 - Found: VER-199 (circuit_checks.py timing), built 2026-10-27, at 71737ae
@@ -792,7 +851,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-199 (built; its seed puts 1k in LCD_SCK and must fail)
 - Updated: REQ-DSP-11, DF-180
 - Gate: EVT
-- Status: OPEN (39cc07f: pinmap.md states the panel bus's 25 MHz and its 40 ns cycle; it still states no SR_CLK rate or SR_PL widths, VER-199 FAIL)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-77: J5's mouth faces the side wall 2 mm away: no SWD cable with the board in the tub
 - Found: VER-165 (case_checks.py mouths), built 2026-10-27, at 71737ae
@@ -812,7 +872,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-152 (built; its seed adds an unmeasured copper-setting estimate and must fail)
 - Updated: DF-61
 - Gate: ORDER
-- Status: OPEN (39cc07f: the same seven ESTIMATEs set copper (VER-152 FAIL); fpc_low now also bounds J8, whose body reaches 0.175 mm into the folded FPC's zone at 1.675 mm tall: DEF-90)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
 
 ### DEF-79: bom.md's order line and its cost table are not the board being ordered
 - Found: the review's O-R3 and F-R4 (2026-10-27), reading hardware/ref_design/docs/bom.md at 71737ae
@@ -822,7 +883,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-39 (its scope now names bom.md's order line, counts and cost rows, and case/*.md; to re-run); VER-130 (the BOM and CPL counts against design.py); VER-117 (the re-quote replaces the snapshot)
 - Updated: REQ-FAB-11, REQ-PRD-09
 - Gate: ORDER
-- Status: OPEN (39cc07f: bom.md still describes the RP2354B board's order: the board is now 73.9 x 151.48 mm (75.0 mm across J1's tab; Edge.Cuts' extent 75.00 x 151.58 with the line), 114 placements and 45 part numbers (VER-130); Alex types the Gerbers' extent into the order)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 on the F1C200s board.
 
 ### DEF-80: The flex antenna sits within 15 mm of the panel, the cell and a screw
 - Found: VER-205 (layout_checks.py antenna), built 2026-10-28, at 39cc07f
@@ -832,7 +894,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-205 (built; its seed puts a pour inside the keep-out and must fail); VER-207 (range in the closed case, unit 1)
 - Updated: REQ-RF-01, REQ-RF-02, REQ-RF-03, DF-192
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision DEC-40: accept for EVT with VER-207 as the measurement (no copper), or move the module and the antenna (copper and case))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-81: The new parts' JLC class and stock were never checked
 - Found: docs/living/esp32s3_build.md 'Not verified' and docs/living/esp32s3_pinmap_diff.md, read at this re-seed (2026-10-28)
@@ -842,7 +905,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-41 (order-day stock and class, the four first); VER-14 (LCSC identity); VER-186 (check_lcsc.py over Konnect's 2026-07-13 snapshot, 2026-10-28: the four are in JLC's database as designed, all Extended, stock 18078, 30038, 9158 and 2979 against 33 for 30 boards; a snapshot, so VER-41 still decides on order day)
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
-- Status: OPEN
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 on the F1C200s board.
 
 ### DEF-82: The module's 22 uF sits 23.6 mm from its 3V3 pin
 - Found: VER-204 (paper_checks.py module), built 2026-10-28, at 39cc07f
@@ -852,7 +916,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-204 (built; its seed makes C11 1 uF and must fail); VER-208 (3V3 at C11 in TX bursts, unit 1)
 - Updated: REQ-MCU-09, DF-187
 - Gate: ORDER
-- Status: OPEN (copper: C10 within 5 mm of pin 2; or Alex accepts for EVT with VER-208 as the measurement, DEC-43)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-210 on the F1C200s board.
 
 ### DEF-83: C3, U2's BAT capacitor, is under its 4.7 uF minimum at 4.2 V
 - Found: VER-30 (paper_checks.py mlccbias), rewritten 2026-10-28 with Samsung's DC-bias curves on disk
@@ -862,7 +927,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-30 (now reads the curves; BLOCKED only on C10's, CL21A226MAQNNNE)
 - Updated: DF-136
 - Gate: ORDER
-- Status: OPEN (a BOM change: a second 10 uF on VBAT, or a 22 uF 0805, or a 25 V part with less loss; or Alex accepts for EVT, since the cell is in parallel with C3 whenever it is plugged)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-235 on the F1C200s board.
 
 ### DEF-84: U4's thermal pad is 3.9 mm square against the module's 3.7
 - Found: VER-125 (check_land.py), rewritten 2026-10-28 with the module's land pattern
@@ -872,7 +938,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-125 (a 'module' land row; its seed is U2's); VER-27 (2026-10-28: the pad's paste, nine 0.9 mm windows, prints 47.9% of the 3.90 mm pad against VER-27's 50-80%; it would be 53% of a 3.7 mm pad; Espressif asks only for 'the correct amount', esp32-s3-wroom-1.txt:2972-2974)
 - Updated: DF-185
 - Gate: ORDER
-- Status: OPEN (the board session reads Figure 11-2 by eye: if 3.7 mm is the pad, the footprint changes (copper), or its paste is windowed to the module's pad)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-220 on the F1C200s board.
 
 ### DEF-85: No antenna or U.FL cable is on any buy list, and the case has no place for it
 - Found: VER-167 (design_numbers.py bom), extended 2026-10-28, at 39cc07f
@@ -882,7 +949,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-167 (now asks for the antenna and the cable); VER-207
 - Updated: REQ-RF-02, DF-197
 - Gate: CASE
-- Status: OPEN
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-86: 3V3 falls to 2.976 V at the module in a Wi-Fi burst at the 3.50 V cutoff
 - Found: VER-204 with VER-13's copper solver, 2026-10-28, at 39cc07f
@@ -892,7 +960,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-204 (built); VER-13; VER-208 on unit 1
 - Updated: REQ-PWR-05, REQ-MCU-09, DF-187
 - Gate: ORDER
-- Status: OPEN (copper: VSYS to U3 at 0.5 mm or a pour; or a firmware rule (TX power capped below about 3.6 V, or the cutoff at 3.6 V) accepted for EVT with VER-208, DEC-43)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-210 on the F1C200s board.
 
 ### DEF-87: Wi-Fi's heat takes the module's air over its 65 C and U3 over its junction limit on paper
 - Found: VER-144, VER-193 and VER-200 (thermal.py), rewritten 2026-10-28 at 39cc07f
@@ -902,7 +971,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-144, VER-193, VER-200 (rewritten); VER-86 on unit 2
 - Updated: REQ-THM-04, REQ-MCU-13, DF-31, DF-193
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision DEC-44: a firmware heat rule (modem sleep, 80-160 MHz, the PSRAM's ECC for 85 C, CHG_OFF while hot) accepted for EVT with VER-86 measuring; copper for U3 only if the bench shows it)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-213 on the F1C200s board.
 
 ### DEF-88: pin_review/u3.json describes the RT9013, not the TLV75733P on the board
 - Found: VER-36 (circuit_checks.py pinreview) at 39cc07f, 2026-10-28
@@ -912,7 +982,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-36 (its identity rule fires; its A-line count fixed)
 - Updated: REQ-FAB-02, DEF-26
 - Gate: ORDER
-- Status: OPEN (the board session rewrites u3.json from tlv757p.pdf and deletes the orphan files; pin_review is outside hardware/vv)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-211 on the F1C200s board.
 
 ### DEF-89: The microSD slot's body has 0.075 mm a side in the case's opening
 - Found: VER-165 (case_checks.py mouths), extended 2026-10-28, at 39cc07f
@@ -922,7 +993,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-165
 - Updated: REQ-STO-03, REQ-MEC-11, DF-195
 - Gate: CASE
-- Status: OPEN (case.scad: sd_y 0.4 mm wider, no copper)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-233 on the F1C200s board.
 
 ### DEF-90: J8 reaches 0.175 mm into the folded FPC's zone, 1.675 mm tall against fpc_low's 1.05
 - Found: VER-20 (case_checks.py stack) at 39cc07f, 2026-10-28
@@ -932,7 +1004,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-20; VER-152 (fpc_low is an ESTIMATE)
 - Updated: DF-123
 - Gate: ORDER
-- Status: OPEN (measure fpc_low and the FPC's fold on a real panel (VER-136) or move J8 0.2 mm left (copper))
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
 
 ### DEF-91: A microSD card plugged in while running can dip 3V3 under 3.0 V
 - Found: VER-206 (paper_checks.py sdinsert), built 2026-10-28, at 39cc07f
@@ -942,7 +1015,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-206 (built; its seed takes the bulk away); VER-209 (three cards on the scope)
 - Updated: REQ-STO-02, DF-194
 - Gate: EVT
-- Status: OPEN (VER-209 decides; a load switch or a series resistor at DVT if a card resets the module)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-245 on the F1C200s board.
 
 ### DEF-92: J7's 3V3 pad back-feeds U3 when a jig powers it
 - Found: VER-159 (check_backpower.py), its jig state added 2026-10-28
@@ -952,7 +1026,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-159 (the jig state, listed with DF-189); VER-212 (the recovery procedure)
 - Updated: REQ-PWR-19, DF-189
 - Gate: EVT
-- Status: OPEN (bringup.md: power a jig from USB-C, or cut JP1 first)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-241 on the F1C200s board.
 
 ### DEF-93: The audio filter's bandwidth is 8.2 kHz at the worst corner against 10 kHz
 - Found: VER-100 (paper_checks.py audio) at 39cc07f, 2026-10-28
@@ -962,7 +1037,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-100
 - Updated: REQ-AUD-03
 - Gate: ORDER
-- Status: OPEN (Alex restates REQ-AUD-03 to 8 kHz (no copper), or the filter's values change (BOM), DEC-42)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-94: USB's series resistors are 11.5 mm from the module
 - Found: VER-191 (paper_checks.py usb) at 39cc07f, 2026-10-28
@@ -972,7 +1048,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-191
 - Updated: REQ-MCU-02, DF-198
 - Gate: ORDER
-- Status: OPEN (proposed: accept for EVT, since a 20 mm stub is 0.13 ns at full speed's 4-20 ns edges; VER-80 and VER-96 measure; the resistors under the pins at DVT)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-95: J2 carries up to 1.24 A against a 1 A catalogue rating
 - Found: VER-31 (circuit_checks.py ratings) at 39cc07f, 2026-10-28
@@ -982,7 +1059,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-31
 - Updated: DF-118
 - Gate: EVT
-- Status: OPEN (Molex's own rating read from the drawing by eye, and the cell's spec sheet's discharge limit (VER-37); a firmware rule (the amplifier backed off during TX) if either is short)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-221 on the F1C200s board.
 
 ### DEF-96: BL_PWM low leaves the backlight glowing on a unit whose U6 offset is positive
 - Found: VER-05 (paper_checks.py backlight) at 39cc07f, 2026-10-28
@@ -992,7 +1070,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-05 (prints the off-state current); VER-62 records the current through JP2 with BL_PWM low on unit 1
 - Updated: VER-62
 - Gate: EVT
-- Status: OPEN (options: a 6.2 Mohm from each BL_FB to +3V3, whose 0.53 uA through R58/R59 (10k) builds in 5.3 mV that a 4.5 mV offset cannot beat, with R61 re-tuned for the 2.4 mA a sink it removes at full duty; or accept the glow and its 4.13 mA)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-228 on the F1C200s board.
 
 ### DEF-97: The smallest 4 mm dome's rim sits 0.171 mm inside the ring pad's inner edge
 - Found: VER-178 (check_dome.py) at 39cc07f, 2026-10-28, the first run on the dome's drawing
@@ -1002,7 +1081,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-178 (built: check_dome.py)
 - Updated: DF-168
 - Gate: ORDER
-- Status: OPEN (proposed: accept, since the dome touches the ring at every placement up to 0.3 mm and the rule's 0.2 mm is a margin, not a contact limit; or fp_dome.py's ring from r 1.65 with a 0.4 mm vent, which keeps the vent 0.30 mm from both pads; copper, so before the order)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 on the F1C200s board.
 
 ### DEF-98: design.py names Samsung as the maker of the four Fenghua X7R capacitors
 - Found: VER-186 (check_lcsc.py) at 39cc07f, 2026-10-28, against Konnect's JLC snapshot of 2026-07-13
@@ -1012,7 +1092,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-186 (built)
 - Updated: none
 - Gate: EVT
-- Status: OPEN (fix: C() names 'FH' for every MPN starting '0402', or CAP carries the maker per line; a field change, no copper)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-99: The PLA case over U2 runs past PLA's heat deflection when charging while playing
 - Found: VER-192 (thermal.py casemat) at 39cc07f, 2026-10-28, its first run
@@ -1022,7 +1103,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-192 (built: thermal.py casemat)
 - Updated: DF-202
 - Gate: CASE
-- Status: OPEN (options: PETG or ASA for the top over U2 (a heat deflection near 70 C and 95 C, from memory: the sheet decides), or the firmware heat rule of DEF-87 (CHG_OFF while hot, a lower charge current with the game running), or both; VER-86 measures the skin on unit 1)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-213 on the F1C200s board.
 
 ### DEF-100: U2's exposed pad gets no paste, and its four paste windows sit between U2's pins
 - Found: VER-27 (layout_checks.py gerbers) at 39cc07f, 2026-10-28, its first run
@@ -1032,7 +1114,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-27 (built: layout_checks.py gerbers; binding at G-ORD-09 since 2026-10-28)
 - Updated: DF-08, DF-149
 - Gate: ORDER
-- Status: OPEN (fix in fp_u2.py: skip the unnumbered paste pads, or delete them and add TI's single 1.55 x 1.55 mm window at the centre (85%, bq24074.txt:3176-3180); regenerate the library footprint and the board, then VER-27, VER-125, VER-04 and VER-132; copper and paste, so before the order)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-219 on the F1C200s board.
 
 ### DEF-101: At its drawing's 3.35 mm the module breaks the glass's 0.2 mm clearance; check_fit checks it at the nominal 3.2
 - Found: VER-112 (case_checks.py heights) at 39cc07f, 2026-10-28, its first run
@@ -1042,7 +1125,8 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-112 (built: case_checks.py heights)
 - Updated: DF-91, REQ-MEC-01
 - Gate: CASE
-- Status: OPEN (case only: glass_gap 3.55 mm or more, with check_fit's BODY_LOCAL height at 3.35 and KNOWN_HEIGHT entries for U8, U9 and U11 at 1.2; VER-20's stack re-run after it)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board.
 
 ### DEF-102: The panel's FPC tail is 25.5 +-0.15 mm wide against the FH12-50S's recommended 25.5 +-0.07
 - Found: VER-219 (case_checks.py fpc) at 39cc07f, 2026-10-28, its first run
@@ -1052,4 +1136,5 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-219 (built: case_checks.py fpc)
 - Updated: REQ-DSP-04
 - Gate: ORDER
-- Status: OPEN (proposed: accept for EVT; VER-44 measures each bought tail (a tail over 25.57 mm is trimmed along its edge, outside the contacts) and VER-136 seats one in a breakout before the order; a connector change would move copper)
+- Board: esp32s3
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-206 on the F1C200s board.

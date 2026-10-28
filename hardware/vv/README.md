@@ -319,6 +319,7 @@ equals the same path at fd66be9. The gate-moves line names the register state be
 (fd1f6e8, vv-rp2354b-final's successor): until Alex signs a `GATE@` line, the order gate prints
 every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before he signs.
 
+- Baseline board: `esp32s3`
 - Order branch: `main` from `fd66be9`
 - Gate moves listed since: `fd1f6e8`
 - `hardware/ref_design/board/design.py` e4cc953e06891cc000ee5dc951765aceacb5ba25

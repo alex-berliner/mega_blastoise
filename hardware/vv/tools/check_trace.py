@@ -49,6 +49,17 @@ it targets, grid_reasons.csv is well formed and no NOT_NEEDED cell has a check (
 a defect whose Status is ACCEPTED has Alex's signed 'DF-ACCEPT:DEF-nn' line in APPROVALS.md, whose scope
 (the gate it moves to) is later than its Gate (2026-10-28: an unsigned ACCEPTED fails); a check's
 'sources' are file names in hardware/ref_design/datasheets.
+Since 2026-10-28 (the F1C200s re-target) also: a DROPPED row (a requirement, DFMEA row, check, defect or
+gate criterion of a dropped board) names that board in its board column and says 'DROPPED with <board>
+(tag <tag>): <why>' with the tag that holds the board's register (DROPPED_BOARDS), and the tag exists; a
+live row names a live board (f1c200s or both), never a dropped one; no live row leans on a DROPPED row
+(verified by, detects, needs, an allocation) or cites one outside 'Was: ...'; every live requirement
+names its subsystems ('- Subsystem:', grid.py's SUBSYSTEMS or 'all'); while README's '- Baseline board:'
+is a dropped board, no check of the live board is PASS or FAIL (its design files are another board's);
+gates.md's new-MCU stages NM-01.. are numbered in order, each entry names the stage before it, each
+names an exit, and every token is an ID, DOC:<path>::<regex>, APPROVED:REQ-<AREA> or GATE:<phase> with
+no gone check among them. The report prints the stage the register is at: the first stage whose exit
+is not met.
 Everything else is a report, with warnings for evidence not committed, for design commits on
 the order branch after the baseline, for architecture proposal commits on it (docs/living/*proposal*.md,
 2026-10-28), for a GRID line signed with no ACCEPTED_GAP row and for a grid.md that is not what
@@ -167,21 +178,30 @@ PHASES = ["ORDER", "CASE", "EVT", "DVT", "PVT", "SALE"]
 GATE_ARG = {"order": "ORDER", "case": "CASE", "evt": "EVT", "dvt": "DVT", "pvt": "PVT"}
 GATE_PREFIX = {"ORDER": "G-ORD", "CASE": "G-CASE", "EVT": "G-EVT", "DVT": "G-DVT", "PVT": "G-PVT"}
 PREFIX_PHASE = {v: k for k, v in GATE_PREFIX.items()}
-# 2026-10-28: prod_board and prod_case left the repository in 574c94c (Alex: not needed); ref_design is the one board
-BOARDS = ("ref_design",)
-BOARD_VALUES = ("ref_design", "both")
-# a RETIRED row keeps the board it was written for, so its history reads as it was (574c94c: prod_board's rows)
-RETIRED_BOARDS = ("prod_board",)
-BOARD_ROOTS = {"ref_design": ("hardware/ref_design/",)}
+# 2026-10-28: prod_board and prod_case left the repository in 574c94c (Alex: not needed). Later the same day the
+# ESP32-S3 board and the RP2354B board were both dropped: the register targets the next spin, the Allwinner F1C200s
+# board, whose design will replace the files under hardware/ref_design (docs/static/next_spin_requirements.md)
+BOARDS = ("f1c200s",)
+BOARD_VALUES = ("f1c200s", "both")
+# a RETIRED or CUT row keeps the board it was written for, so its history reads as it was (574c94c: prod_board's
+# rows; 'ref_design' is REF-A as it stood when the row left, the RP2354B or the ESP32-S3 board)
+RETIRED_BOARDS = ("prod_board", "ref_design")
+# DROPPED (2026-10-28): a row that belonged to a dropped board. It is neither a PASS nor a CLOSED: it names the
+# board and the tag holding that board's register, and no gate of the next spin counts it
+DROPPED_BOARDS = {"esp32s3": "vv-esp32s3-final", "rp2354b": "vv-rp2354b-final"}
+GONE = ("RETIRED", "DROPPED")            # out of every gate: the subject left the design, or its board was dropped
+BOARD_ROOTS = {"f1c200s": ("hardware/ref_design/",)}
 SHARED_ROOTS = ("hardware/vv/",)
 METHODS = set("TAID")
 LEVELS = ("product", "subsystem", "board")
-REQ_STATUS = ("PROPOSED", "APPROVED", "REJECTED", "DEFERRED", "RETIRED")
-VER_RESULT = ("PASS", "FAIL", "NOT_RUN", "NOT_BUILT", "CUT", "RETIRED")
-DF_STATUS = ("OPEN", "DONE", "ACCEPTED", "RETIRED")
+REQ_STATUS = ("PROPOSED", "APPROVED", "REJECTED", "DEFERRED", "RETIRED", "DROPPED")
+VER_RESULT = ("PASS", "FAIL", "NOT_RUN", "NOT_BUILT", "CUT", "RETIRED", "DROPPED")
+DF_STATUS = ("OPEN", "DONE", "ACCEPTED", "RETIRED", "DROPPED")
 # ACCEPTED (2026-10-28, both sign-off reviewers of vv-rp2354b-final): a defect Alex moves to a later gate with a
 # signed 'DF-ACCEPT:DEF-nn' line; before that gate R4 and the gate's criteria let it and the checks it names through
-DEF_STATUS = ("OPEN", "FIXED", "CLOSED", "ACCEPTED", "RETIRED")
+DEF_STATUS = ("OPEN", "FIXED", "CLOSED", "ACCEPTED", "RETIRED", "DROPPED")
+# a requirement's allocation to a board: '.F' the F1C200s board's; '.R' was the ESP32-S3 board's (DROPPED with it)
+ALLOC_SUFFIX = {"F": "f1c200s", "R": "esp32s3"}
 VP_STATUS = ("yes", "partly", "no", "simulated")
 VP_METHODS = 218                         # validation_plan.md is archived with 218 methods
 DESIGN_PY = "hardware/ref_design/board/design.py"
@@ -209,7 +229,7 @@ CLAUDE_TRAILER = re.compile(r"^(Co-Authored-By: Claude|Claude-Session:)", re.M |
 HARD_KEY_TYPES = ("sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com")
 
 RE = {
-    "REQ": r"REQ-[A-Z]{2,4}-\d{2}(?:\.R)?",            # .P (prod_board's allocation) left with it, 574c94c
+    "REQ": r"REQ-[A-Z]{2,4}-\d{2}(?:\.[RF])?",         # .P (prod_board's allocation) left with it, 574c94c; .F the F1C200s's
     "DF": r"DF-\d{2,3}",
     "VER": r"VER-\d{2,3}",
     "DEF": r"DEF-\d{2,3}",
@@ -218,8 +238,9 @@ RE = {
     "G": r"G-(?:ORD|CASE|EVT|DVT|PVT)-\d{2}",
     "W": r"W-\d{2}",
     "A": r"A-\d{3}",
+    "NM": r"NM-\d{2}",                                  # a stage of gates.md's new-MCU path (2026-10-28)
 }
-ANY_ID = re.compile(r"(?<![\w-])(" + "|".join(RE[k] for k in ("REQ", "DF", "VER", "DEF", "CHG", "G", "W"))
+ANY_ID = re.compile(r"(?<![\w-])(" + "|".join(RE[k] for k in ("REQ", "DF", "VER", "DEF", "CHG", "G", "W", "NM"))
                     + r"|REL-[A-Z0-9]+(?:-[A-Z0-9]+)+)(?![\w-])")
 VER_ID = re.compile(r"(?<![\w-])VER-\d{2,3}(?![\w-])")
 REQ_ID = re.compile(r"(?<![\w-])" + RE["REQ"] + r"(?![\w-])")
@@ -235,6 +256,34 @@ def retired_ok(where, rid, text):
     hs = [h for h in HASH.findall(text or "") if resolve(h)]
     if "RETIRED" not in (text or "") or not hs:
         err(where, f"{rid}: RETIRED needs 'RETIRED in <commit>: <why>' naming a commit in this repository")
+
+
+def dropped_ok(where, rid, board, text):
+    """A DROPPED row (2026-10-28) belonged to a dropped board: its board column is that board, and its text says
+    'DROPPED with <board> (tag <tag>): <why>' naming the tag that holds the board's register, which must exist."""
+    tag = DROPPED_BOARDS.get(board)
+    if tag is None:
+        err(where, f"{rid}: DROPPED, but its board {board!r} is not a dropped board ({', '.join(DROPPED_BOARDS)})")
+        return
+    if f"DROPPED with {board} (tag {tag})" not in (text or ""):
+        err(where, f"{rid}: DROPPED needs 'DROPPED with {board} (tag {tag}): <why>' (the board and the tag that "
+                   "holds its register)")
+    elif not resolve(f"{tag}^{{commit}}"):
+        err(where, f"{rid}: DROPPED names tag {tag}, which is not in this repository")
+
+
+def board_ok(where, rid, board, status):
+    """A live row names a live board; a RETIRED or CUT row may keep the board it was written for; a DROPPED row names
+    its dropped board (and a dropped board names only DROPPED, RETIRED or CUT rows)."""
+    if status == "DROPPED":
+        return                                   # dropped_ok says what is wrong with it
+    if board in BOARD_VALUES or (status in ("RETIRED", "CUT") and board in RETIRED_BOARDS + tuple(DROPPED_BOARDS)):
+        return
+    if board in DROPPED_BOARDS:
+        err(where, f"{rid}: board {board!r} was dropped: a live row of it is DROPPED, or it moves to "
+                   f"{' or '.join(BOARD_VALUES)}")
+    else:
+        err(where, f"{rid}: board {board!r} not in {BOARD_VALUES}")
 
 
 def err(where, msg):
@@ -588,20 +637,120 @@ def parse_gates():
             if cells[0] in crit:
                 err(f"gates.md:{n}", f"duplicate ID {cells[0]}")
                 continue
-            if cells[3] not in BOARD_VALUES and not (cells[2].split() == ["RETIRED"] and cells[3] in RETIRED_BOARDS):
-                err(f"gates.md:{n}", f"{cells[0]}: board {cells[3]!r} not in {BOARD_VALUES}")
+            gone = cells[2].split()[0] if cells[2].split() in (["RETIRED"], ["DROPPED"]) else ""
+            board_ok(f"gates.md:{n}", cells[0], cells[3], gone)
             phase = PREFIX_PHASE[cells[0].rsplit("-", 1)[0]]
             crit[cells[0]] = {"id": cells[0], "text": cells[1], "needs": cells[2].split(), "board": cells[3],
                               "phase": phase, "advisory": "ADVISORY" in cells[2].split(),
-                              "retired": cells[2].split() == ["RETIRED"], "_where": f"gates.md:{n}"}
-            if crit[cells[0]]["retired"]:
+                              "retired": bool(gone), "_where": f"gates.md:{n}"}
+            if gone == "RETIRED":
                 retired_ok(f"gates.md:{n}", cells[0], cells[1])
+            elif gone == "DROPPED":
+                dropped_ok(f"gates.md:{n}", cells[0], cells[3], cells[1])
         elif re.match(r"W-", cells[0]):
             if not re.fullmatch(RE["W"], cells[0]) or len(cells) < 3:
                 err(f"gates.md:{n}", "waiver row wants | W-NN | G-... | reason |")
                 continue
             waivers.append({"id": cells[0], "crit": cells[1], "reason": cells[2], "_where": f"gates.md:{n}"})
+        elif re.match(r"NM-", cells[0]):
+            # 2026-10-28: the new-MCU path, one row a stage: | NM-nn | stage | entry needs | exit needs | board |
+            if not re.fullmatch(RE["NM"], cells[0]) or len(cells) < 5:
+                err(f"gates.md:{n}", f"{cells[0]}: a stage row wants | NM-nn | stage | entry | exit | board |")
+                continue
+            if cells[0] in STAGES:
+                err(f"gates.md:{n}", f"duplicate ID {cells[0]}")
+                continue
+            board_ok(f"gates.md:{n}", cells[0], cells[4], "")
+            STAGES[cells[0]] = {"id": cells[0], "name": cells[1], "entry": cells[2].split(), "exit": cells[3].split(),
+                                "board": cells[4], "_where": f"gates.md:{n}"}
     return crit, waivers
+
+
+STAGES = {}                                  # gates.md's new-MCU path, filled by parse_gates (2026-10-28)
+STAGE_TOKEN = re.compile(r"(?:DOC:\S+::\S+|APPROVED:REQ-[A-Z]{2,4}|GATE:(?:order|case|evt|dvt|pvt))$")
+
+
+def check_stages(db):
+    """2026-10-28: gates.md's new-MCU path is a numbered list of stages, NM-01 first, each with entry and exit needs.
+    A stage's entry names the stage before it; every token is an ID this register defines, 'DOC:<path>::<regex>' (a
+    line of a committed file), 'APPROVED:REQ-<AREA>' (every live requirement of that area approved) or
+    'GATE:<phase>' (that gate met); a check a stage names is live, not DROPPED, RETIRED or CUT."""
+    ids = sorted(STAGES)
+    want = [f"NM-{i:02d}" for i in range(1, len(ids) + 1)]
+    if ids and ids != want:
+        err("gates.md", f"the new-MCU stages are {' '.join(ids)}: number them NM-01 to NM-{len(ids):02d} in order")
+    for i, sid in enumerate(ids):
+        s = STAGES[sid]
+        if not s["exit"]:
+            err(s["_where"], f"{sid}: a stage names at least one exit need")
+        if i and ids[i - 1] not in s["entry"]:
+            err(s["_where"], f"{sid}: its entry needs the stage before it ({ids[i - 1]})")
+        for t in s["entry"] + s["exit"]:
+            if ANY_ID.fullmatch(t):
+                v = db["vers"].get(t)
+                if v and v["last_result"] in GONE + ("CUT",):
+                    err(s["_where"], f"{sid}: needs {t}, which is {v['last_result']}: name the live check")
+            elif not STAGE_TOKEN.fullmatch(t):
+                err(s["_where"], f"{sid}: token {t!r} is not an ID, DOC:<path>::<regex>, APPROVED:REQ-<AREA> or "
+                                 "GATE:<phase>")
+            elif t.startswith("DOC:"):
+                path, rx = t[4:].split("::", 1)
+                if path not in TRACKED:
+                    err(s["_where"], f"{sid}: {t}: {path} is not a committed file")
+
+
+def stage_need(db, tok, gates_cache):
+    """(met, why) for one need of a new-MCU stage."""
+    if tok.startswith("DOC:"):
+        path, rx = tok[4:].split("::", 1)
+        full = os.path.join(ROOT, path)
+        text = open(full, encoding="utf-8", errors="replace").read() if os.path.exists(full) else ""
+        return bool(re.search(rx, text, re.M)), f"{path} has no line matching {rx!r}"
+    if tok.startswith("APPROVED:"):
+        area = tok.split(":", 1)[1] + "-"
+        live = [k for k, r in db["reqs"].items() if k.startswith(area) and r["f"].get("Status") not in GONE]
+        bad = [k for k in live if eff_req_status(db, k) != "APPROVED"]
+        return not bad, f"{len(bad)} of {len(live)} {area}* not APPROVED by Alex"
+    if tok.startswith("GATE:"):
+        ph = GATE_ARG[tok[5:]]
+        if ph not in gates_cache:
+            with open(os.devnull, "w") as null, __import__("contextlib").redirect_stdout(null):
+                gates_cache[ph] = gate(db, ph, BOARDS[0], False)
+        return gates_cache[ph], f"the {tok[5:]} gate is not met (check_trace.py --gate {tok[5:]})"
+    if tok in STAGES:
+        return tok in db.get("stages_met", ()), f"{tok} not exited"
+    if tok.startswith("VER-"):
+        v = db["vers"].get(tok)
+        ok = bool(v) and v["last_result"] == "PASS" and not v["missing"] and not staleness(v, db)
+        return ok, f"{tok} {v['last_result'] if v else 'undefined'}"
+    if tok.startswith("REQ-"):
+        return eff_req_status(db, tok) == "APPROVED", f"{tok} {eff_req_status(db, tok)}"
+    if tok.startswith("DEF-"):
+        d = db["defs"].get(tok)
+        return bool(d) and d["status"] == "CLOSED", f"{tok} {d['status'] if d else 'undefined'}"
+    if tok.startswith("DF-"):
+        d = db["dfs"].get(tok)
+        return bool(d) and d["status"] == "DONE", f"{tok} {d['status'] if d else 'undefined'}"
+    return False, f"{tok}: cannot evaluate"
+
+
+def stage_report(db):
+    """Which new-MCU stage the register is at: the first stage whose exit is not met. A later stage's exit met out of
+    order is listed; the gate tokens of stages after the first open one are not evaluated."""
+    db["stages_met"], cache, lines, at = set(), {}, [], None
+    for sid in sorted(STAGES):
+        s = STAGES[sid]
+        if at and any(t.startswith("GATE:") for t in s["exit"]):
+            lines.append(f"    {sid} {s['name']}: not evaluated (an earlier stage is open)")
+            continue
+        miss = [why for t in s["exit"] for ok, why in [stage_need(db, t, cache)] if not ok]
+        if miss:
+            at = at or sid
+            lines.append(f"    {sid} {s['name']}: exit not met: " + "; ".join(miss[:4]) + (" ..." if len(miss) > 4 else ""))
+        else:
+            db["stages_met"].add(sid)
+            lines.append(f"    {sid} {s['name']}: exit met" + (" (out of order: an earlier stage is open)" if at else ""))
+    return at, lines
 
 
 def parse_records():
@@ -694,7 +843,7 @@ def hrows_at(commit):
     out = {}
     if text:
         for r in csv.DictReader(io.StringIO(text)):
-            if r.get("action_priority") == "H" and r.get("status") != "RETIRED":
+            if r.get("action_priority") == "H" and r.get("status") not in GONE:
                 out[r["id"]] = (r["failure_mode"], r["effect"], r["severity"])
     return out
 
@@ -860,6 +1009,24 @@ def parse_baseline():
     return out, branch
 
 
+BASELINE_BOARD = None                    # README's '- Baseline board: `<board>`', read by load() (2026-10-28)
+
+
+def parse_baseline_board():
+    """The board whose design files the baseline names (README '- Baseline board: `<board>`'). Since 2026-10-28 they
+    are the dropped ESP32-S3 board's until an F1C200s design replaces them; a live board's check may not PASS or FAIL
+    on them."""
+    path = os.path.join(VV, "README.md")
+    m = re.search(r"^- Baseline board: `([\w-]+)`", open(path, encoding="utf-8").read(), re.M) \
+        if os.path.exists(path) else None
+    if not m:
+        err("README.md", "the design baseline names no board ('- Baseline board: `<board>`')")
+        return None
+    if m.group(1) not in BOARDS and m.group(1) not in DROPPED_BOARDS:
+        err("README.md", f"baseline board {m.group(1)!r} is neither {' nor '.join(BOARDS)} nor a dropped board")
+    return m.group(1)
+
+
 def branch_drift(db, paths=None):
     """O-R13: design commits on the order branch after the baseline commit, or why it cannot be read.
     A local branch wins over origin's (a scratch clone has only origin's). paths: the design paths that
@@ -947,7 +1114,7 @@ def gate_state_at(commit):
     if text:
         cur, fields = None, {}
         for line in text.splitlines():
-            m = re.match(r"^### (REQ-[A-Z]{2,4}-\d{2}(?:\.[RP])?):", line)
+            m = re.match(r"^### (REQ-[A-Z]{2,4}-\d{2}(?:\.[RPF])?):", line)
             if m:
                 if cur:
                     out["reqs"][cur] = (fields.get("Phase", ""), fields.get("Verified by", ""))
@@ -1001,7 +1168,7 @@ def state_moves(db, then):
             continue
         if was in PHASES and v["phase"] in PHASES and PHASES.index(v["phase"]) > PHASES.index(was):
             bad.append(f"{vid} moved from {was} to {v['phase']}")
-        if v["last_result"] in ("CUT", "RETIRED") and res not in ("CUT", "RETIRED"):
+        if v["last_result"] in ("CUT",) + GONE and res not in ("CUT",) + GONE:
             bad.append(f"{vid} became {v['last_result']}")
     for did, d in db["defs"].items():
         was = then["defects"].get(did)
@@ -1022,7 +1189,7 @@ def state_moves(db, then):
         if not was <= now:
             bad.append(f"{cid} no longer needs {', '.join(sorted(was - now))}")
         # a criterion made advisory, retired, or one of its checks made advisory: each weakens what the gate counts
-        for tok in sorted((now - was) & ({"ADVISORY", "RETIRED"} | {t for t in now if t.startswith("ADVISORY:")})):
+        for tok in sorted((now - was) & ({"ADVISORY", "RETIRED", "DROPPED"} | {t for t in now if t.startswith("ADVISORY:")})):
             bad.append(f"{cid} gained {tok}")
     for rid, (p_then, vb_then) in then["reqs"].items():
         r = db["reqs"].get(rid)
@@ -1130,14 +1297,26 @@ def in_board(path, board):
 
 
 def load():
+    global BASELINE_BOARD
+    BASELINE_BOARD = parse_baseline_board()
     reqs = parse_blocks("requirements.md", RE["REQ"], REQ_FIELDS)
     for r in reqs.values():
         f, w = r["f"], r["_where"]
         if f.get("Level") and f["Level"] not in LEVELS:
             err(w, f"{r['id']}: Level {f['Level']!r} not in {LEVELS}")
-        if f.get("Board") and f["Board"] not in BOARD_VALUES and not (f.get("Status") == "RETIRED"
-                                                                    and f["Board"] in RETIRED_BOARDS):
-            err(w, f"{r['id']}: Board {f['Board']!r} not in {BOARD_VALUES}")
+        if f.get("Board"):
+            board_ok(w, r["id"], f["Board"], f.get("Status", ""))
+        if f.get("Status") == "DROPPED":
+            dropped_ok(w, r["id"], f.get("Board", ""), f.get("Dropped", ""))
+        elif f.get("Status") != "RETIRED":
+            # 2026-10-28: every live requirement is allocated to the subsystems of grid.md it falls in
+            subs = f.get("Subsystem", "").split()
+            if not subs:
+                err(w, f"{r['id']}: a live requirement names its subsystems ('- Subsystem: ...', of "
+                       f"{' '.join(cgrid.SUBSYSTEMS)}, or 'all')")
+            for s in subs:
+                if s not in cgrid.SUBSYSTEMS + ["all"]:
+                    err(w, f"{r['id']}: subsystem {s!r} is not one of {' '.join(cgrid.SUBSYSTEMS)} (or 'all')")
         meth = set(re.split(r"[,\s/]+", f.get("Method", ""))) - {""}
         if not meth or not meth <= METHODS:
             err(w, f"{r['id']}: Method {f.get('Method')!r}: use T, A, I, D")
@@ -1147,7 +1326,7 @@ def load():
             err(w, f"{r['id']}: Status {f['Status']!r} not in {REQ_STATUS}")
         if f.get("Status") == "RETIRED":
             retired_ok(w, r["id"], "RETIRED " + f.get("Retired", ""))
-        vb = f.get("Verified by", "")
+        vb = WAS.sub("", f.get("Verified by", ""))      # a 'Was: ...' clause is history, not a check or a child
         r["vers"] = VER_ID.findall(vb)
         r["children"] = [c for c in REQ_ID.findall(vb) if c.startswith(r["id"] + ".")]
         if vb and vb.lower() != "none" and not r["vers"] and not r["children"]:
@@ -1156,8 +1335,8 @@ def load():
             parent, suffix = r["id"].rsplit(".", 1)
             if parent not in reqs:
                 err(w, f"{r['id']}: allocation of {parent}, which does not exist")
-            if f.get("Board") != "ref_design":
-                err(w, f"{r['id']}: a .{suffix} allocation is Board: ref_design")
+            if f.get("Board") != ALLOC_SUFFIX.get(suffix):
+                err(w, f"{r['id']}: a .{suffix} allocation is Board: {ALLOC_SUFFIX.get(suffix)}")
     for r in reqs.values():
         r["alloc"] = {reqs[c]["f"].get("Board"): c for c in reqs if c.startswith(r["id"] + ".")}
         for c in r["children"]:
@@ -1176,8 +1355,15 @@ def load():
         meth = set(v["method"].split("/")) - {""}
         if not meth or not meth <= METHODS:
             err(w, f"{v['id']}: method {v['method']!r}: use T, A, I, D or e.g. I/D")
-        if v["board"] not in BOARD_VALUES and not (v["last_result"] == "RETIRED" and v["board"] in RETIRED_BOARDS):
-            err(w, f"{v['id']}: board {v['board']!r}")
+        board_ok(w, v["id"], v["board"], v["last_result"])
+        if v["last_result"] == "DROPPED":
+            dropped_ok(w, v["id"], v["board"], v["evidence"])
+        elif v["last_result"] in ("PASS", "FAIL") and v["board"] in BOARDS and BASELINE_BOARD in DROPPED_BOARDS:
+            # 2026-10-28: the design files at the baseline are a dropped board's, so no result on them speaks for
+            # the next spin's board: its checks wait, NOT_RUN or NOT_BUILT, until its own design is the baseline
+            err(w, f"{v['id']}: {v['last_result']} for {v['board']}, but the design baseline is the dropped "
+                   f"{BASELINE_BOARD} board's files (README '- Baseline board:'): no {v['board']} design exists to "
+                   "check yet")
         if v["phase"] not in PHASES:
             err(w, f"{v['id']}: phase {v['phase']!r}")
         if v["last_result"] not in VER_RESULT:
@@ -1214,7 +1400,7 @@ def load():
         v["missing"] = cgrid.missing_sources(v) if v["last_result"] == "PASS" else []
         v["cov"] = parse_covers(v["covers"])
         v["release"] = [s for k, s, _ in v["cov"] if k == "release"]
-        if v["last_result"] == "RETIRED":          # its subject is gone: nothing to cover or prove
+        if v["last_result"] in GONE:               # its subject or its board is gone: nothing to cover or prove
             vers[v["id"]] = v
             continue
         # F-R3: an analysis that reads a board doc names it in covers, so a doc edit stales it (a doc is not a
@@ -1255,11 +1441,16 @@ def load():
         vers[v["id"]] = v
 
     for r in reqs.values():
-        if r["f"].get("Status") in ("RETIRED", "REJECTED"):
+        if r["f"].get("Status") in GONE + ("REJECTED",):
             continue
         for t in r["vers"]:
-            if t in vers and vers[t]["last_result"] == "RETIRED":
-                err(r["_where"], f"{r['id']}: verified by {t}, which is RETIRED: name the check that replaced it")
+            if t in vers and vers[t]["last_result"] in GONE:
+                err(r["_where"], f"{r['id']}: verified by {t}, which is {vers[t]['last_result']}: name the check that "
+                                 "replaced it")
+        for c in r["children"]:
+            if c in reqs and reqs[c]["f"].get("Status") in GONE:
+                err(r["_where"], f"{r['id']}: allocated to {c}, which is {reqs[c]['f']['Status']}: name the live "
+                                 "allocation (keep the old one inside 'Was: ...')")
 
     dfs = {}
     for d in read_csv("dfmea.csv", DF_COLS):
@@ -1270,8 +1461,7 @@ def load():
         if d["id"] in dfs:
             err(w, f"duplicate ID {d['id']}")
             continue
-        if d["board"] not in BOARD_VALUES and not (d["status"] == "RETIRED" and d["board"] in RETIRED_BOARDS):
-            err(w, f"{d['id']}: board {d['board']!r}")
+        board_ok(w, d["id"], d["board"], d["status"])
         try:
             s, o, dt = int(d["severity"]), int(d["occurrence"]), int(d["detection_rating"])
             if not all(1 <= x <= 10 for x in (s, o, dt)):
@@ -1292,9 +1482,11 @@ def load():
                 err(w, f"{d['id']}: {k} is empty")
         d["vers"] = VER_ID.findall(d["detection"])
         d["det"] = d["detects"].split()
-        d["live"] = d["status"] != "RETIRED"
-        if not d["live"]:
+        d["live"] = d["status"] not in GONE
+        if d["status"] == "RETIRED":
             retired_ok(w, d["id"], d["action"])
+        elif d["status"] == "DROPPED":
+            dropped_ok(w, d["id"], d["board"], d["action"])
         for t in d["det"]:
             if not VER_ID.fullmatch(t):
                 err(w, f"{d['id']}: detects token {t!r} is not a VER id")
@@ -1307,9 +1499,10 @@ def load():
         if not d["live"]:
             continue
         for t in d["det"]:
-            if t in vers and vers[t]["last_result"] == "RETIRED":
-                err(d["_where"], f"{d['id']}: detects {t}, which is RETIRED: name the check that replaced it")
-        w, live = d["_where"], [t for t in d["det"] if t in vers and vers[t]["last_result"] not in ("CUT", "RETIRED")]
+            if t in vers and vers[t]["last_result"] in GONE:
+                err(d["_where"], f"{d['id']}: detects {t}, which is {vers[t]['last_result']}: name the check that "
+                                 "replaced it")
+        w, live = d["_where"], [t for t in d["det"] if t in vers and vers[t]["last_result"] not in ("CUT",) + GONE]
         if not live and d["D"] != 10:
             err(w, f"{d['id']}: no live 'detects' check, so detection_rating must be 10 (it is {d['D']})")
         elif live and all(vers[t]["last_result"] == "NOT_BUILT" for t in live) and d["D"] < 8:
@@ -1372,9 +1565,8 @@ def load():
     for d in defs.values():
         st = d["f"].get("Status", "").split()[0] if d["f"].get("Status") else ""
         d["status"] = st
-        d["board"] = d["f"].get("Board", "ref_design")
-        if d["board"] not in BOARD_VALUES:
-            err(d["_where"], f"{d['id']}: Board {d['board']!r} not in {BOARD_VALUES}")
+        d["board"] = d["f"].get("Board", "ref_design")     # a defect with no Board line is REF-A's, as it was
+        board_ok(d["_where"], d["id"], d["board"], st)
         if st not in DEF_STATUS:
             err(d["_where"], f"{d['id']}: Status must start with one of {DEF_STATUS}")
         d["vers"] = VER_ID.findall(d["f"].get("Check added or changed", ""))
@@ -1383,9 +1575,12 @@ def load():
             err(d["_where"], f"{d['id']}: Gate {d['gate']!r}: the first gate it must be fixed by, one of {PHASES} (O-R5)")
         if st == "RETIRED":
             retired_ok(d["_where"], d["id"], d["f"].get("Status", ""))
+        elif st == "DROPPED":
+            dropped_ok(d["_where"], d["id"], d["board"], d["f"].get("Status", ""))
         if st == "CLOSED" and not d["vers"]:
             err(d["_where"], f"{d['id']}: CLOSED with no VER in 'Check added or changed' (no defect closes without a check)")
 
+    STAGES.clear()
     crit, waivers = parse_gates()
     recs = parse_records()
     approvals, eff, gate_lines = parse_approvals()
@@ -1416,8 +1611,9 @@ def load():
                               "proposal describes, or the baseline moves past it")
     for c in crit.values():
         for t in c["needs"]:
-            if t in vers and vers[t]["last_result"] == "RETIRED":
-                err(c["_where"], f"{c['id']}: needs {t}, which is RETIRED: name the check that replaced it")
+            if t in vers and vers[t]["last_result"] in GONE and not c["retired"]:
+                err(c["_where"], f"{c['id']}: needs {t}, which is {vers[t]['last_result']}: name the check that "
+                                 "replaced it")
     db["advisory_only"] = advisory_only(db)
     for v in vers.values():
         check_evidence(v, recs)
@@ -1452,9 +1648,11 @@ def load():
     check_plan_steps(db)
     check_releases(db)
     check_change_reruns(db)
+    check_stages(db)
 
     # every ID referenced anywhere must be defined somewhere
-    defined = (set(reqs) | set(dfs) | set(vers) | set(defs) | set(crit) | set(recs) | {w["id"] for w in waivers})
+    defined = (set(reqs) | set(dfs) | set(vers) | set(defs) | set(crit) | set(recs) | {w["id"] for w in waivers}
+               | set(STAGES))
     texts = []
     for r in reqs.values():
         texts += [(r["_where"], v) for v in r["f"].values()]
@@ -1471,12 +1669,15 @@ def load():
         for t in c["needs"]:
             if not (ANY_ID.fullmatch(t) or re.fullmatch(r"PHASE:(" + "|".join(PHASES) + ")", t)
                     or t in ("DEFECTS:CLOSED", "DFMEA:COVERAGE", "ADVISORY")
-                    or re.fullmatch(r"ADVISORY:VER-\d{2,3}", t) or (t == "RETIRED" and c["retired"])):
+                    or re.fullmatch(r"ADVISORY:VER-\d{2,3}", t) or (t in GONE and c["retired"])):
                 err(c["_where"], f"{c['id']}: needs token {t!r} is not an ID, PHASE:<phase>, "
-                                 "DEFECTS:CLOSED, DFMEA:COVERAGE, ADVISORY, ADVISORY:<VER id> or (alone) RETIRED")
+                                 "DEFECTS:CLOSED, DFMEA:COVERAGE, ADVISORY, ADVISORY:<VER id> or (alone) RETIRED or "
+                                 "DROPPED")
             texts.append((c["_where"], t))
     for w in waivers:
         texts.append((w["_where"], w["crit"] + " " + w["reason"]))
+    for s in STAGES.values():
+        texts.append((s["_where"], " ".join(s["entry"] + s["exit"])))
     for rr in recs.values():
         texts.append((rr["_where"], rr["text"]))
     for a in approvals:
@@ -1564,8 +1765,9 @@ def check_evidence(v, recs):
 def eff_req_status(db, rid, phase=None):
     """Alex's decision for a requirement; at a gate (phase given) a deferral counts only up to
     the phase it names, after which the requirement is PROPOSED again."""
-    if db["reqs"].get(rid, {}).get("f", {}).get("Status") == "RETIRED" and rid not in db["eff"]:
-        return "RETIRED"
+    st = db["reqs"].get(rid, {}).get("f", {}).get("Status")
+    if st in GONE and rid not in db["eff"]:
+        return st
     a = db["eff"].get(rid)
     if not a:
         return "PROPOSED"
@@ -1613,8 +1815,8 @@ def cross_check_approvals(db):
     """O-45: statuses that need Alex must match a line he committed in APPROVALS.md."""
     for r in db["reqs"].values():
         st, eff = r["f"].get("Status"), eff_req_status(db, r["id"])
-        if st == "RETIRED" and eff != "RETIRED":
-            err(r["_where"], f"{r['id']}: RETIRED, but Alex decided it ({db['eff'][r['id']]['id']}): he rejects it instead")
+        if st in GONE and eff != st:
+            err(r["_where"], f"{r['id']}: {st}, but Alex decided it ({db['eff'][r['id']]['id']}): he rejects it instead")
         elif st != "PROPOSED" and st != eff:
             pend = [f"{a['id']} pending: {a['pending']}" for a in db["approvals"] if a["item"] == r["id"] and not a["committed"]]
             err(r["_where"], f"{r['id']}: Status {st} but releases/APPROVALS.md "
@@ -1663,7 +1865,7 @@ def binding_reach(db):
     """Checks a requirement (not REJECTED or RETIRED: a deferral ends) or a live H row lists."""
     out = set()
     for r in db["reqs"].values():
-        if eff_req_status(db, r["id"]) not in ("REJECTED", "RETIRED"):
+        if eff_req_status(db, r["id"]) not in ("REJECTED",) + GONE:
             out |= set(r["vers"])
     for d in db["dfs"].values():
         if d["action_priority"] == "H" and d["live"]:
@@ -1699,7 +1901,7 @@ def check_reach(db):
             if vid in c["needs"] or any(t.startswith("PHASE:") and phase_le(v["phase"], t[6:]) for t in c["needs"]):
                 reached.add(vid)
     for vid, v in vers.items():
-        if v["last_result"] not in ("CUT", "RETIRED") and vid not in reached:
+        if v["last_result"] not in ("CUT",) + GONE and vid not in reached:
             err(v["_where"], f"{vid}: phase {v['phase']}, but no gate criterion at or before {v['phase']}, "
                              "requirement or H-priority risk reaches it: that gate can pass without it")
 
@@ -1709,10 +1911,10 @@ def check_req_phase(db):
     moved to a later phase cannot quietly leave a requirement that still says it is proven earlier (R2 would
     pass it there on no evidence)."""
     for r in db["reqs"].values():
-        if r["f"].get("Status") in ("RETIRED", "REJECTED") or r["f"].get("Phase") not in PHASES:
+        if r["f"].get("Status") in ("REJECTED",) + GONE or r["f"].get("Phase") not in PHASES:
             continue
         live = [(PHASES.index(db["vers"][v]["phase"]), v) for v in r["vers"]
-                if v in db["vers"] and db["vers"][v]["last_result"] not in ("CUT", "RETIRED")]
+                if v in db["vers"] and db["vers"][v]["last_result"] not in ("CUT",) + GONE]
         if not live:
             continue
         first, vid = min(live)
@@ -1743,7 +1945,7 @@ def check_plan_steps(db):
             continue
         named |= set(VER_ID.findall(line))
     for vid, v in db["vers"].items():
-        if (v["phase"] == "ORDER" and v["last_result"] not in ("CUT", "RETIRED")
+        if (v["phase"] == "ORDER" and v["last_result"] not in ("CUT",) + GONE
                 and vid not in db["advisory_only"] and vid not in named):
             err(v["_where"], f"{vid}: an ORDER check that no numbered step of PLAN.md section (d) names: add it to a "
                              "step (with its effort) or move it to the phase where it matters")
@@ -1770,24 +1972,25 @@ def refs_named(text):
 def check_retired_citations(db):
     """O-R9, F-R14: a live row may not lean on a RETIRED requirement, DFMEA row or check in its text,
     except inside a 'Was: ...' clause (history). Defects are history and are not read."""
-    retired = ({k for k, r in db["reqs"].items() if r["f"].get("Status") == "RETIRED"}
-               | {k for k, d in db["dfs"].items() if not d["live"]}
-               | {k for k, v in db["vers"].items() if v["last_result"] == "RETIRED"})
+    gone = ({k: r["f"]["Status"] for k, r in db["reqs"].items() if r["f"].get("Status") in GONE}
+            | {k: d["status"] for k, d in db["dfs"].items() if not d["live"]}
+            | {k: v["last_result"] for k, v in db["vers"].items() if v["last_result"] in GONE})
     texts = []
     for r in db["reqs"].values():
-        if r["f"].get("Status") != "RETIRED":
-            texts += [(r["_where"], r["id"], v) for k, v in r["f"].items() if k != "Retired"]
+        if r["f"].get("Status") not in GONE:
+            texts += [(r["_where"], r["id"], v) for k, v in r["f"].items() if k not in ("Retired", "Dropped")]
     for d in db["dfs"].values():
         if d["live"]:
             texts += [(d["_where"], d["id"], d[k]) for k in DF_COLS if k != "id"]
     for v in db["vers"].values():
-        if v["last_result"] not in ("RETIRED", "CUT"):
+        if v["last_result"] not in GONE + ("CUT",):
             texts += [(v["_where"], v["id"], v[k]) for k in ("title", "procedure", "pass_limit", "covers")]
     for where, rid, t in texts:
-        bad = sorted({i for i in ANY_ID.findall(WAS.sub("", t)) if i in retired and i != rid})
+        bad = sorted({i for i in ANY_ID.findall(WAS.sub("", t)) if i in gone and i != rid})
         if bad:
-            err(where, f"{rid}: cites {', '.join(bad)}, which {'is' if len(bad) == 1 else 'are'} RETIRED: name the live "
-                       "row, or keep the history inside 'Was: ...'")
+            what = " or ".join(sorted({gone[i] for i in bad}))
+            err(where, f"{rid}: cites {', '.join(bad)}, which {'is' if len(bad) == 1 else 'are'} {what}: name the "
+                       "live row, or keep the history inside 'Was: ...'")
 
 
 BOARD_DOC = re.compile(r"(?<!for )(?<!into )\b(assembly|bom|bringup|pinmap)\.md\b")
@@ -1849,7 +2052,7 @@ def check_change_reruns(db):
     must be listed, or the old units' results would stay fresh for a board that is no longer theirs."""
     vers = db["vers"]
     bench = [v for v in vers.values() if "T" in v["method"].split("/") and v["release"]
-             and v["last_result"] not in ("CUT", "RETIRED")]
+             and v["last_result"] not in ("CUT",) + GONE]
     for ch in db["recs"].values():
         if ch["kind"] != "CHG":
             continue
@@ -1950,12 +2153,12 @@ def phase_le(a, b):
 def req_scope(db, board):
     """Requirements a board's gate evaluates (O-7)."""
     reqs = db["reqs"]
-    live = {k: r for k, r in reqs.items() if r["f"].get("Status") != "RETIRED"}
+    live = {k: r for k, r in reqs.items() if r["f"].get("Status") not in GONE}
     return {k: r for k, r in live.items() if r["f"].get("Board") in (board, "both")}
 
 
 def df_scope(db, board):
-    return [d for d in db["dfs"].values() if d["board"] in ("ref_design", "both") and d["live"]]
+    return [d for d in db["dfs"].values() if d["board"] in (board, "both") and d["live"]]
 
 
 def coverage(db):
@@ -2064,14 +2267,18 @@ def report(db, verbose):
         show(f"in scope for {b} with no check for it",
              [r for r, q in scope.items() if not q["alloc"].get(b) and not any(
                  for_board(vers[v]["board"], b) for v in q["vers"] if v in vers)], verbose)
-    live = {k: q for k, q in reqs.items() if q["f"].get("Status") != "RETIRED"}
+    live = {k: q for k, q in reqs.items() if q["f"].get("Status") not in GONE}
     show("no listed check has passed", [r for r in live if live[r]["vers"] and not any(
         vers.get(v, {}).get("last_result") == "PASS" for v in live[r]["vers"])], verbose)
     show("statement has no number (INCOSE: state a value and tolerance)",
          [r for r in live if not re.search(r"\d", live[r]["f"].get("Statement", ""))], verbose)
-    show("RETIRED (their subject left the design)", [r for r in reqs if r not in live], verbose)
+    show("RETIRED (their subject left the design)", [r for r in reqs if reqs[r]["f"].get("Status") == "RETIRED"],
+         verbose)
+    show("DROPPED (they belonged to a dropped board; its tag holds them)",
+         [r for r in reqs if reqs[r]["f"].get("Status") == "DROPPED"], verbose)
     print("DFMEA")
-    show("RETIRED rows", [d["id"] for d in dfs.values() if not d["live"]], verbose)
+    show("RETIRED rows", [d["id"] for d in dfs.values() if d["status"] == "RETIRED"], verbose)
+    show("DROPPED rows", [d["id"] for d in dfs.values() if d["status"] == "DROPPED"], verbose)
     hi = [d for d in dfs.values() if d["action_priority"] == "H" and d["live"]]
     show("H rows", [d["id"] for d in hi], verbose)
     show("H rows with no 'detects' check", [d["id"] for d in hi if not d["det"]], verbose)
@@ -2080,10 +2287,14 @@ def report(db, verbose):
              vers.get(v, {}).get("last_result") == "PASS" and not staleness(vers[v], db) for v in d["det"])
           and not eff_df_accept(db, d["id"])], verbose)
     show("severity 9-10 rows", [d["id"] for d in dfs.values() if d["S"] >= 9 and d["live"]], verbose)
-    want, miss = coverage(db)
-    show(f"design.py parts and contacts named in no row (of {len(want)})", miss, verbose)
+    if BASELINE_BOARD in BOARDS:
+        want, miss = coverage(db)
+        show(f"design.py parts and contacts named in no row (of {len(want)})", miss, verbose)
+    else:
+        print(f"  design.py parts named in no row: not counted (design.py is the {BASELINE_BOARD} board's; "
+              f"no {BOARDS[0]} design.py yet)")
     print("checks")
-    for res in ("FAIL", "NOT_RUN", "NOT_BUILT", "CUT", "RETIRED"):
+    for res in ("FAIL", "NOT_RUN", "NOT_BUILT", "CUT", "RETIRED", "DROPPED"):
         show(res, [v for v in vers if vers[v]["last_result"] == res], verbose)
     show("advisory only (named only by ADVISORY criteria; PHASE: does not count them)",
          sorted(db["advisory_only"]), verbose)
@@ -2111,6 +2322,13 @@ def report(db, verbose):
           for d in defs if defs[d]["status"] == "ACCEPTED"], verbose)
     show("RETIRED (the part or function it concerned left the design)",
          [d for d in defs if defs[d]["status"] == "RETIRED"], verbose)
+    show("DROPPED (it belonged to a dropped board: not fixed, not closed; its tag holds it)",
+         [d for d in defs if defs[d]["status"] == "DROPPED"], verbose)
+    at, lines = stage_report(db)
+    print(f"new-MCU path (gates.md): at stage {at or 'none open'}"
+          + (f" ({STAGES[at]['name']})" if at in STAGES else ""))
+    for ln in lines:
+        print(ln)
     if WARNINGS:
         print(f"warnings: {len(WARNINGS)}")
         for wn in WARNINGS if verbose else WARNINGS[:15]:
@@ -2203,7 +2421,7 @@ def gate(db, phase, board, verbose, accept_sw=False):
         if tok.startswith("PHASE:"):
             p = tok.split(":")[1]
             mine = [v for v in vers if for_board(vers[v]["board"], board) and phase_le(vers[v]["phase"], p)
-                    and vers[v]["last_result"] not in ("CUT", "RETIRED") and v not in db["advisory_only"]
+                    and vers[v]["last_result"] not in ("CUT",) + GONE and v not in db["advisory_only"]
                     and not ver_ok(v)[0]]
             bad = [v for v in mine if not ver_ok(v, honour=True)[0]]
             acc = [f"{v} ({accepted[v]})" for v in mine if v not in bad]
@@ -2213,12 +2431,13 @@ def gate(db, phase, board, verbose, accept_sw=False):
                 msg = (msg + "; " if msg else "") + f"accepted: {len(acc)} ACCEPTED: " + "; ".join(acc)
             return (not bad), msg
         if tok == "DEFECTS:CLOSED":
-            bad = [d for d in defs if for_board(defs[d]["board"], board) and defs[d]["status"] not in ("CLOSED", "RETIRED")
+            bad = [d for d in defs if for_board(defs[d]["board"], board) and defs[d]["status"] not in ("CLOSED",) + GONE
                    and not def_moved(db, d, phase)]
             return (not bad), (f"not CLOSED: {' '.join(bad[:8])}" + (" ..." if len(bad) > 8 else "")) if bad else ""
         if tok == "DFMEA:COVERAGE":
-            if board != "ref_design":
-                return None, "DFMEA:COVERAGE reads ref_design's design.py"
+            if BASELINE_BOARD != board:
+                return False, (f"DFMEA:COVERAGE reads design.py, which is the {BASELINE_BOARD} board's: no {board} "
+                               "design.py exists to cover yet")
             _, miss = coverage(db)
             return (not miss), (f"{len(miss)} parts in no DFMEA row: " + " ".join(miss[:10])) if miss else ""
         if tok.startswith("VER-"):
@@ -2253,7 +2472,7 @@ def gate(db, phase, board, verbose, accept_sw=False):
         if c["phase"] != phase:
             continue
         if c["retired"]:                            # before the board: prod_board's keep their column (574c94c)
-            results.append((cid, "RETIRED", [c["text"][:90]]))
+            results.append((cid, c["needs"][0], [c["text"][:90]]))
             continue
         if not for_board(c["board"], board):
             results.append((cid, "N/A", [f"a {c['board']} criterion"]))
@@ -2327,7 +2546,7 @@ def gate(db, phase, board, verbose, accept_sw=False):
                         + ([f"FIXED, closing check not yet passed (listed, not failed): {' '.join(fixed)}"]
                            if fixed else []) + acc_note))
     else:
-        bad = [d for d in mydefs if defs[d]["status"] not in ("CLOSED", "RETIRED") and not moved.get(d)]
+        bad = [d for d in mydefs if defs[d]["status"] not in ("CLOSED",) + GONE and not moved.get(d)]
         results.append(("R4 every defect due by this gate closed", "FAIL" if bad else "PASS",
                         ([f"not CLOSED: {' '.join(bad)}"] if bad else []) + acc_note))
     dirty_hits = sorted({f for v in vers.values() if v["last_result"] == "PASS"
@@ -2367,8 +2586,8 @@ def gate(db, phase, board, verbose, accept_sw=False):
                             [f"{pin} is a software key ({kt}): any process running as alex can sign with it. "
                              f"Pin a hardware key (README, 'Approvals'; DEC-30) or run the gate with "
                              f"--accept-software-key and record that in the release record"]))
-    if board == "ref_design":
-        rels = [r for r in db["recs"].values() if r["kind"] == "REL" and r["board"] == "ref_design"
+    if board in BOARDS:
+        rels = [r for r in db["recs"].values() if r["kind"] == "REL" and r["board"] in (board, "ref_design")
                 and r["commit"] and resolve(r["commit"]) and is_ancestor(resolve(r["commit"]))]
         unrec = []
         if rels:
@@ -2383,6 +2602,9 @@ def gate(db, phase, board, verbose, accept_sw=False):
         which = None if phase not in BASELINE_FOR else BASELINE_FOR[phase]
         head_drift, base_drift = baseline_diff(db, which) if db["baseline"] else (["README.md has no design baseline"], [])
         bd = head_drift + [f"{p} (not at {base7(db)})" for p in base_drift]
+        if BASELINE_BOARD != board:
+            # 2026-10-28: the baseline's files are the dropped board's; the register does not describe them
+            bd.append(f"the baseline is the {BASELINE_BOARD} board's files (README '- Baseline board:'), not {board}'s")
         results.append(("R7 the register describes this design", "FAIL" if bd else "PASS",
                         ["gate evaluated against a design it does not describe: " + " ".join(bd)] if bd else []))
         if phase in ("ORDER", "CASE"):
@@ -2425,15 +2647,16 @@ def gate(db, phase, board, verbose, accept_sw=False):
     # printed even on a PASS (O-R4, O-R12; an acceptance, 2026-10-28)
     always = ("waived by", "case positions:", "--accept-software-key used", "accepted:")
     for cid, state, reasons in results:
-        print(f"  {state:4}  {cid}" + (f"  {crit[cid]['text'][:70]}" if cid in crit and state != "RETIRED" else ""))
-        for r in reasons if (verbose or state in ("FAIL", "INFO", "RETIRED")) else [x for x in reasons if x.startswith(always)]:
+        print(f"  {state:4}  {cid}" + (f"  {crit[cid]['text'][:70]}" if cid in crit and state not in GONE else ""))
+        for r in reasons if (verbose or state in ("FAIL", "INFO") + GONE) else [x for x in reasons if x.startswith(always)]:
             print(f"          {r}")
     counted = [s for _, s, _ in results if s in ("PASS", "FAIL")]
     n_bad = counted.count("FAIL")
     print(f"RESULT: {'PASS' if not n_bad else f'FAIL ({n_bad} of {len(counted)} not met)'}"
           + (f"; {sum(1 for _, s, _ in results if s == 'N/A')} N/A, "
              f"{sum(1 for _, s, _ in results if s == 'INFO')} advisory, "
-             f"{sum(1 for _, s, _ in results if s == 'RETIRED')} retired" if len(counted) < len(results) else ""))
+             f"{sum(1 for _, s, _ in results if s == 'RETIRED')} retired, "
+             f"{sum(1 for _, s, _ in results if s == 'DROPPED')} dropped" if len(counted) < len(results) else ""))
     return n_bad == 0
 
 
@@ -2448,7 +2671,7 @@ def main():
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--vv", help=argparse.SUPPRESS)        # another copy of hardware/vv (seed_faults.py)
     a = ap.parse_args()
-    a.board = "ref_design"                                 # the one board since 574c94c deleted prod_board
+    a.board = BOARDS[0]                                    # the one board: the F1C200s board since 2026-10-28
     if a.vv:
         VV = os.path.abspath(a.vv)
     db = load()

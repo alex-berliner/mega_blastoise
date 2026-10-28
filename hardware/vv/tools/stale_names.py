@@ -28,8 +28,8 @@ of a connector the row names, the family read from that connector's footprint na
 the header on CELL_P or on SPK_P. 'J4, a PicoBlade plug' fails once J4 is a JST SH header; 'J4 the
 JST SH, J2 the PicoBlade' and 'the cell's PicoBlade plug does not enter J4' pass.
 
-Where: requirements.md (every block not RETIRED, every field but 'Retired'), dfmea.csv (rows not
-RETIRED, every column) and verification.csv (rows not RETIRED or CUT: title, procedure,
+Where: requirements.md (every block not RETIRED or DROPPED, every field but 'Retired'), dfmea.csv (rows
+not RETIRED or DROPPED, every column) and verification.csv (rows not RETIRED, DROPPED or CUT: title, procedure,
 pass_limit, covers, needs). Text inside a 'Was: ...' clause is history and is not read (the
 rule check_trace applies to retired IDs, O-R9).
 
@@ -139,20 +139,20 @@ def rows(vv):
     """[(where, id, text)] of every live row's text."""
     out = []
     s = open(os.path.join(vv, "requirements.md"), encoding="utf-8").read()
-    for m in re.finditer(r"^### (REQ-[A-Z]{2,4}-\d{2}(?:\.[RP])?): (.*?)(?=^### |^## |\Z)", s, re.M | re.S):
+    for m in re.finditer(r"^### (REQ-[A-Z]{2,4}-\d{2}(?:\.[RPF])?): (.*?)(?=^### |^## |\Z)", s, re.M | re.S):
         blk = m.group(0)
-        if re.search(r"^- Status: RETIRED", blk, re.M):
+        if re.search(r"^- Status: (?:RETIRED|DROPPED)", blk, re.M):
             continue
         line = s[:m.start()].count("\n") + 1
         text = "\n".join(ln for ln in blk.splitlines() if not ln.startswith("- Retired:"))
         out.append((f"requirements.md:{line}", m.group(1), text))
     with open(os.path.join(vv, "dfmea.csv"), newline="", encoding="utf-8") as f:
         for n, r in enumerate(csv.DictReader(f), 2):
-            if r.get("status") != "RETIRED":
+            if r.get("status") not in ("RETIRED", "DROPPED"):
                 out.append((f"dfmea.csv:{n}", r["id"], " | ".join(v for k, v in r.items() if k != "id")))
     with open(os.path.join(vv, "verification.csv"), newline="", encoding="utf-8") as f:
         for n, r in enumerate(csv.DictReader(f), 2):
-            if r.get("last_result") not in ("RETIRED", "CUT"):
+            if r.get("last_result") not in ("RETIRED", "DROPPED", "CUT"):
                 out.append((f"verification.csv:{n}", r["id"],
                             " | ".join(r.get(k, "") for k in ("title", "procedure", "pass_limit", "covers", "needs"))))
     return out
