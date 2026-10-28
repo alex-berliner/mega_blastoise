@@ -379,7 +379,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-28 at 086da04, after the framework fixes: 117 of 117 seeded faults caught, 10 of them new; VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006, after the class 2-15 round changed grid.py and seed_faults.py: 100 of 100 seeded faults caught; VER-129 PASS 2026-10-27 at 5ae8eba, after seed_faults.py's class 15 count and signed-waiver seed followed VER-13 and VER-33: 100 of 100 seeded faults caught; at 449dcb9, after check_trace's docstring edit: 100 of 100 seeded faults caught; reopened 2026-10-25 by the second review, O-R2, with its holes logged as DEF-52; VER-129 PASS 2026-10-27 at 7880d0e on the 71737ae re-seed: 100 of 100 seeded faults caught, 5 of them new for round 3's sign-off and the body rule; 95 of 95 at 6289d2a before it)
+- Status: FIXED (closes when VER-129 passes again after the 39cc07f re-seed's tool edits; VER-129 PASS 2026-10-28 at 086da04, after the framework fixes: 117 of 117 seeded faults caught, 10 of them new; VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006, after the class 2-15 round changed grid.py and seed_faults.py: 100 of 100 seeded faults caught; VER-129 PASS 2026-10-27 at 5ae8eba, after seed_faults.py's class 15 count and signed-waiver seed followed VER-13 and VER-33: 100 of 100 seeded faults caught; at 449dcb9, after check_trace's docstring edit: 100 of 100 seeded faults caught; reopened 2026-10-25 by the second review, O-R2, with its holes logged as DEF-52; VER-129 PASS 2026-10-27 at 7880d0e on the 71737ae re-seed: 100 of 100 seeded faults caught, 5 of them new for round 3's sign-off and the body rule; 95 of 95 at 6289d2a before it)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -552,7 +552,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a live row citing a RETIRED id, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole). The drill and CPL checks (design_numbers.py drill and cpl) now run fab.py's own export into a temp dir and read what it writes; they fail on the board's real output, which DEF-32 and DEF-33 hold, not this defect.
 - Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-28 at 086da04, after the framework fixes: 117 of 117 seeded faults caught, 10 of them new; VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006: 100 of 100 seeded faults caught; at 5ae8eba: 100 of 100 seeded faults caught; at 449dcb9: 100 of 100 seeded faults caught, as at 7880d0e on the 71737ae re-seed. Was: VER-129 PASS 2026-10-27 at 6289d2a after the grid's audit: 95 of 95 seeded faults caught, 16 of them this defect's, 8 from round 2's objections, 11 from round 3's findings, 10 for the grid and VER-188 and 3 for the grid's audit; the claims script's fault waits for VER-161, DEF-54)
+- Status: FIXED (closes when VER-129 passes again after the 39cc07f re-seed's tool edits; VER-129 PASS 2026-10-28 at 086da04, after the framework fixes: 117 of 117 seeded faults caught, 10 of them new; VER-129 PASS 2026-10-27 at 69e9c0c, after the review's tool edits: 107 of 107 seeded faults caught; VER-129 PASS 2026-10-27 at cff6006: 100 of 100 seeded faults caught; at 5ae8eba: 100 of 100 seeded faults caught; at 449dcb9: 100 of 100 seeded faults caught, as at 7880d0e on the 71737ae re-seed. Was: VER-129 PASS 2026-10-27 at 6289d2a after the grid's audit: 95 of 95 seeded faults caught, 16 of them this defect's, 8 from round 2's objections, 11 from round 3's findings, 10 for the grid and VER-188 and 3 for the grid's audit; the claims script's fault waits for VER-161, DEF-54)
 
 ### DEF-53: A worst-case cell sits 0.25 mm from the routed FR4 edge on every side
 - Found: two-model review (O-R7), 2026-10-25, from case.scad and assembly.md step 5; restated on every side by round 2's sign-off objections (O, F), 2026-10-26
@@ -652,7 +652,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-181 (design_numbers.py cellgap now checks the fit: the pocket 0.4 mm longer and wider than the cell, 0.1 mm print and 0.1 mm fit a side; FAIL at 71737ae, 0.00 mm spare; seeded in VER-129 with a 51.7 mm cell, and its 51.6 x 35.6 mm control passes); REQ-BAT-08's fit clause (PROPOSED).
 - Updated: REQ-BAT-08, DF-85, DF-04
 - Gate: ORDER
-- Status: CLOSED (VER-181 PASS 2026-10-28 at 39cc07f: the hole 55.2 x 38.2 mm, the pocket 52.4 x 36.4, 0.40 mm over the worst-case 52 x 36 cell: DEC-27 taken as (b))
+- Status: FIXED (closes when VER-129 passes again after the 39cc07f re-seed's tool edits; VER-181 PASS 2026-10-28 at 39cc07f: the hole 55.2 x 38.2 mm, the pocket 52.4 x 36.4, 0.40 mm over the worst-case 52 x 36 cell: DEC-27 taken as (b))
 
 ### DEF-63: U10 went on the board without its datasheet
 - Found: re-seeding for 71737ae (2026-10-27), from pin_review/u10.json
@@ -832,7 +832,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-205 (built; its seed puts a pour inside the keep-out and must fail); VER-207 (range in the closed case, unit 1)
 - Updated: REQ-RF-01, REQ-RF-02, REQ-RF-03, DF-192
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision DEC-38: accept for EVT with VER-207 as the measurement (no copper), or move the module and the antenna (copper and case))
+- Status: OPEN (PLAN.md decision DEC-40: accept for EVT with VER-207 as the measurement (no copper), or move the module and the antenna (copper and case))
 
 ### DEF-81: The new parts' JLC class and stock were never checked
 - Found: docs/esp32s3_build.md 'Not verified' and docs/esp32s3_pinmap_diff.md, read at this re-seed (2026-10-28)
@@ -852,7 +852,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-204 (built; its seed makes C11 1 uF and must fail); VER-208 (3V3 at C11 in TX bursts, unit 1)
 - Updated: REQ-MCU-09, DF-187
 - Gate: ORDER
-- Status: OPEN (copper: C10 within 5 mm of pin 2; or Alex accepts for EVT with VER-208 as the measurement, DEC-39)
+- Status: OPEN (copper: C10 within 5 mm of pin 2; or Alex accepts for EVT with VER-208 as the measurement, DEC-43)
 
 ### DEF-83: C3, U2's BAT capacitor, is under its 4.7 uF minimum at 4.2 V
 - Found: VER-30 (paper_checks.py mlccbias), rewritten 2026-10-28 with Samsung's DC-bias curves on disk
@@ -892,7 +892,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-204 (built); VER-13; VER-208 on unit 1
 - Updated: REQ-PWR-05, REQ-MCU-09, DF-187
 - Gate: ORDER
-- Status: OPEN (copper: VSYS to U3 at 0.5 mm or a pour; or a firmware rule (TX power capped below about 3.6 V, or the cutoff at 3.6 V) accepted for EVT with VER-208, DEC-39)
+- Status: OPEN (copper: VSYS to U3 at 0.5 mm or a pour; or a firmware rule (TX power capped below about 3.6 V, or the cutoff at 3.6 V) accepted for EVT with VER-208, DEC-43)
 
 ### DEF-87: Wi-Fi's heat takes the module's air over its 65 C and U3 over its junction limit on paper
 - Found: VER-144, VER-193 and VER-200 (thermal.py), rewritten 2026-10-28 at 39cc07f
@@ -902,7 +902,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-144, VER-193, VER-200 (rewritten); VER-86 on unit 2
 - Updated: REQ-THM-04, REQ-MCU-13, DF-31, DF-193
 - Gate: ORDER
-- Status: OPEN (PLAN.md decision DEC-40: a firmware heat rule (modem sleep, 80-160 MHz, the PSRAM's ECC for 85 C, CHG_OFF while hot) accepted for EVT with VER-86 measuring; copper for U3 only if the bench shows it)
+- Status: OPEN (PLAN.md decision DEC-44: a firmware heat rule (modem sleep, 80-160 MHz, the PSRAM's ECC for 85 C, CHG_OFF while hot) accepted for EVT with VER-86 measuring; copper for U3 only if the bench shows it)
 
 ### DEF-88: pin_review/u3.json describes the RT9013, not the TLV75733P on the board
 - Found: VER-36 (circuit_checks.py pinreview) at 39cc07f, 2026-10-28

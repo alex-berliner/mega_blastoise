@@ -1,0 +1,43 @@
+# VER-06 check_fit
+DATE: 2026-10-28
+COMMIT: 82eddf5d29daf0134e2427cf04a991f7271724c1
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/case_checks.py fit
+case/check_fit.py run in a temp copy of hardware/ref_design with positions.json from case.scad's echo
+Board-in-case check (part boxes against case/positions.json)
+
+checked 124 parts
+  no collisions
+  note: U2: no 3D model in this KiCad install, checked as its courtyard at 1.0 mm (VQFN-16-1EP_3x3mm_RGT0016C)
+  note: U4: no 3D model in this KiCad install, checked as its datasheet body (check_fit.BODY_LOCAL)
+  note: JP1: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP6: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: SW24: no 3D model in this KiCad install, checked as its courtyard at 1.5 mm (Tact_ROCPU_TPS850)
+  note: JP4: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP2: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP3: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP5: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: the strip between the clusters under the top's ends: 0 parts in it, the tallest 0.00 (it allows 1.60; 2.85 in a pocket)
+  note: USB-C: J1's mouth 8.94 x 3.20, the opening round it -y 0.25, +y 0.25, -z 0.29, +z 0.25, off centre y 0.00 z 0.02; a mated plug's overmold 0.16 off the wall
+RESULT: PASS
+--- fit_report.txt
+Board-in-case check (part boxes against case/positions.json)
+
+checked 124 parts
+  no collisions
+  note: U2: no 3D model in this KiCad install, checked as its courtyard at 1.0 mm (VQFN-16-1EP_3x3mm_RGT0016C)
+  note: U4: no 3D model in this KiCad install, checked as its datasheet body (check_fit.BODY_LOCAL)
+  note: JP1: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP6: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: SW24: no 3D model in this KiCad install, checked as its courtyard at 1.5 mm (Tact_ROCPU_TPS850)
+  note: JP4: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP2: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP3: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: JP5: no 3D model in this KiCad install, checked as its courtyard at 0.05 mm (SolderJumper-2_P1.3mm_Bridged_Pad1.0x1.5mm)
+  note: the strip between the clusters under the top's ends: 0 parts in it, the tallest 0.00 (it allows 1.60; 2.85 in a pocket)
+  note: USB-C: J1's mouth 8.94 x 3.20, the opening round it -y 0.25, +y 0.25, -z 0.29, +z 0.25, off centre y 0.00 z 0.02; a mated plug's overmold 0.16 off the wall
+RESULT: PASS
+
+exit 0
+RESULT: PASS

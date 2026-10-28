@@ -27,7 +27,7 @@ the case, survives use.
 |---|---|---|
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
 | [HISTORY.md](HISTORY.md) | the earlier rounds' ledgers and findings, moved out of PLAN.md (O-S9); check_trace does not read it | |
-| [carryover.md](carryover.md) | what the RP2354B rounds found that the ESP32-S3 board must also satisfy: one row a finding, its number, the check that found it and the rule; the re-seed turns each row into requirements and checks; check_trace does not read it | |
+| [carryover.md](carryover.md) | what the RP2354B rounds found that the ESP32-S3 board must also satisfy: one row a finding, its number, the check that found it and the rule; its first table gives each row's requirement, check and verdict at 39cc07f with the number; check_trace does not read it | |
 | [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.R / .P |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
 | [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, the check classes and subsystems it targets, and the datasheet files it relies on ('sources') | VER-NN |
@@ -45,13 +45,13 @@ the case, survives use.
 | [tools/design_numbers.py](tools/design_numbers.py) | recomputes the pre-order numbers from the design files (inrush, backlight, cutoff, screws per pilot, MLCC keep-out, TH1, the cell's gap on every side and its fit in the pocket, VBUS fault reach, BOM coverage, holes, swelling, copper and silk against the routed edges, the cell's plug against J4, the charge window TH1 gives against U2's TS limits) and prints two bench numbers (the TS band at an ambient, and the CV load that holds the charge without terminating: there is no resistive window); the CPL and drill checks run fab.py's own export into a temp dir and read what it writes | |
 | [tools/grid.py](tools/grid.py) | writes grid.md from verification.csv and grid_reasons.csv; check_trace's R9 reads the same grid | |
 | [tools/ds.py](tools/ds.py) | datasheet quotes read from the PDFs in hardware/ref_design/datasheets (pdftotext -layout, the same lines the '.txt:N' citations count): a quote not on its line fails the check that uses it | |
-| [tools/circuit_checks.py](tools/circuit_checks.py) | classes 2, 3, 5, 7 and 12 (2026-10-27): appcircuit VER-198, gpio VER-15, pinreview VER-36, fwpins VER-149, ratings VER-31, usbfault VER-195, timing VER-199 | |
-| [tools/layout_checks.py](tools/layout_checks.py) | classes 7, 10 and 12 on the routed board and its fab files: bridges VER-148 (with [bridges.csv](bridges.csv), the reviewed close-pad table), fab VER-132, jlc VER-17, ret VER-21, usbpair VER-108 | |
+| [tools/circuit_checks.py](tools/circuit_checks.py) | classes 2, 3, 5, 7 and 12 (2026-10-27): appcircuit VER-198, gpio VER-203 (the module's pins and strapping), pinreview VER-36, fwpins VER-149, ratings VER-31, usbfault VER-195, timing VER-199 | |
+| [tools/layout_checks.py](tools/layout_checks.py) | classes 7, 10 and 12 on the routed board and its fab files: bridges VER-148 (with [bridges.csv](bridges.csv), the reviewed close-pad table), fab VER-132, jlc VER-17, ret VER-21, usbpair VER-108, antenna VER-205 (the antenna's keep-out and what sits near it) | |
 | [tools/case_checks.py](tools/case_checks.py) | classes 2, 13 and 14 from case.scad's echo, in a temp copy of hardware/ref_design where positions.json is needed: arch VER-190, fit VER-06 (check_fit), placement VER-19, stack VER-20, estimates VER-152, mouths VER-165, xy VER-174 | |
-| [tools/thermal.py](tools/thermal.py) | class 15 on paper: modes VER-144, board VER-193, amp VER-200 (BLOCKED on the FM8002A's datasheet) | |
+| [tools/thermal.py](tools/thermal.py) | class 15 on paper: modes VER-144, board VER-193, amp VER-200 (fm8002a.pdf on disk; its package theta a stand-in) | |
 | [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188), and a live row pairing a connector with another connector's family (VER-188's connector-family rule); check_trace's default mode runs it | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
-| [tools/paper_checks.py](tools/paper_checks.py) | paper checks of classes 4 and 6 from design.py (and the routed board for usb, core and copper), each with a --seed that must fail: latch VER-33, usb VER-191, audio VER-100, core VER-197, shelf VER-103, ampstate VER-196, hotplug VER-12, copper VER-13, mating VER-140 (no seed), mlccbias VER-30 (no seed) | |
+| [tools/paper_checks.py](tools/paper_checks.py) | paper checks of classes 4 and 6 from design.py (and the routed board for usb, core and copper), each with a --seed that must fail: latch VER-33, usb VER-191, audio VER-100, module VER-204 (the module's 3V3, C10's distance, EN), sdinsert VER-206 (a card plugged in while running), shelf VER-103, ampstate VER-196, hotplug VER-12, copper VER-13, mating VER-140 (no seed), mlccbias VER-30 (no seed) | |
 | [tools/check_backpower.py](tools/check_backpower.py) | the back-power path table (VER-159): in each power state, every live net that reaches an input of a part whose own supply is off; a path the ACCEPTED table does not list fails (--seed puts U1's REF back on VBUS) | |
 | [tools/check_bom_cpl.py](tools/check_bom_cpl.py) | the BOM, CPL and PCB fields against design.py (VER-130): every part on the board with design.py's value, LCSC and footprint; the BOM and CPL fab.py writes, each JLC part once; the counts in design.py, fab.py and assembly.md agree; each passive's part number decoded against its value | |
 | [tools/check_land.py](tools/check_land.py) | footprints as placed against the makers' land patterns whose drawings are on disk (VER-125): pad count, pitch, exposed pad, pin 1, numbering direction, and a QFN's pad-to-exposed-pad gap; every other part is listed BLOCKED with the drawing it waits for | |
@@ -364,20 +364,15 @@ IEC 62133-2 and UN38.3 (the cell), USB 2.0 cl. 7.2 (power), IEC 61000-4-2 and EN
 ANSI/NCSL Z540.3 (test uncertainty ratio). Clause numbers quoted here are from memory: check
 them against the purchased standards.
 
-## Status on 2026-10-27
+## Status on 2026-10-28
 
-Seeded by Claude at 76955d2 on 2026-10-24, attacked by two models, re-seeded on 2026-10-25 for
-684a609 and attacked again (39 findings applied, HISTORY.md section l); both reviewers then
-declined sign-off with 18 objections. On 2026-10-26 the register was re-seeded for be437f8
-(the 3.5 in panel back, the new placement, the one-piece top), the board-level checks were
-re-run, the 18 objections answered (HISTORY.md section g) and the order gate trimmed to what
-the copper, the BOM and the fab files freeze. On 2026-10-27 it was re-seeded for 71737ae, the
-board being ordered (the board spin: the cell's hole rotated, U10, TH1 B4460, J4 a JST SH, the
-BOM values the register asked for), every scripted check re-run against it, and round 3's
-twelve sign-off objections answered (PLAN.md sections b, c and g). On 2026-10-26 a third
-round added 23 findings (O-R1 to O-R12, F-R1 to F-R11; HISTORY.md section n): the SPI numbers
-corrected, the charge window and the CV load computed from the datasheets on disk, the
-panel's mechanics read from its drawing, the phases re-cut by what the order freezes, and
-new gate rules (the frozen gate state G1, the hardware signing key K1, the case's positions in
-R8, the baseline against its own commit, JLC_FIXED only with committed evidence). Every
-requirement is PROPOSED and APPROVALS.md is empty; the order gate fails, as it should.
+Seeded by Claude at 76955d2 on 2026-10-24 and re-seeded four times for the RP2354B board (684a609,
+be437f8, 71737ae; HISTORY.md), whose register is tag `vv-rp2354b-final`. On 2026-10-28 Alex chose the
+ESP32-S3 board, and the register was re-seeded for it at 39cc07f: 14 checks, 15 DFMEA rows, 2
+requirements, 6 defects and G-ORD-23 RETIRED with that commit; new requirements for the module, its
+strapping, the antenna, the radio, the TLV75733P, the 8080 bus, the microSD slot, U11 and SW24;
+new checks VER-203 to VER-217; new rows DF-185 to DF-200; new defects DEF-80 to DEF-95. Every
+scripted check was re-run against 39cc07f, the 9 PASSes BLOCKED at fd1f6e8 among them (the
+datasheets are on disk now). VER-36 counts A-numbers from APPROVALS.md's table only. Every
+requirement is PROPOSED and APPROVALS.md is empty; the order gate fails, as it should (PLAN.md
+section i).

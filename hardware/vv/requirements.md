@@ -1340,7 +1340,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-RF-01: The antenna's keep-out on the board
 - Level: subsystem
 - Board: ref_design
-- Statement: The board shall keep a copper-free rule area on both layers under the flex antenna's plate (no track, via, pour or footprint), covering the plate's footprint on the board's plane.
+- Statement: The board shall keep a copper-free rule area on both layers under the flex antenna's plate (no track, via, pour or footprint): 0 copper items inside, and the area no more than 1.0 mm short of the plate's outline at any end on the board's plane.
 - Rationale: copper under an antenna detunes it (esp32-s3-hw-design-guidelines.txt:1290-1299); at 39cc07f the rule area is x board edge to 71.4, y 62.6-107.0, 0 copper inside, 0.5 and 0.9 mm short of the plate's ends (VER-205).
 - Source: esp32-s3-hw-design-guidelines.txt:1281-1301; placement.py ANTENNA_KEEPOUT; docs/esp32s3_build.md.
 - Method: A

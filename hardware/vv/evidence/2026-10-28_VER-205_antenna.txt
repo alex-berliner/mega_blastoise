@@ -1,0 +1,29 @@
+# VER-205 antenna
+DATE: 2026-10-28
+COMMIT: 82eddf5d29daf0134e2427cf04a991f7271724c1
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py antenna
+the flex antenna's plate (docs/esp32s3_build.md): x 64.5-71.0, y 62.1-107.9 (KiCad), on a 40 mm U.FL cable; it lies on the case's left wall, fitted by hand (JLC does not fit cables)
+  ok    a rule area 'antenna_keepout' on the board: 1
+  ok    the keep-out x 61.80-71.40, y 62.60-107.00 on both copper layers (True), forbidding tracks, vias, pours and footprints (True)
+  it covers the plate's x 64.5-71.0 out to +0.40 mm; along y it stops 0.50 mm short of the plate's top end and 0.90 mm short of its bottom (placement.py: none below, the module's top row keeps its lane)
+  ok    copper inside the keep-out: 0
+  the plate to metal near it, against 15 mm (esp32-s3-hw-design-guidelines.txt:1299, the module's PCB antenna's figure as a stand-in: the flex antenna's maker's keep-out is not on disk, Kinghelm C4943394, https://www.lcsc.com/product-detail/C4943394.html):
+    H2's M2 screw (its 5 mm boss): OVERLAPS the plate
+    U4: OVERLAPS the plate
+    the panel (its glass outline): 1.3 mm
+    the cell (its pocket, 0.9 mm inside the hole): 10.6 mm
+    J3: 15.5 mm
+    J8: 19.3 mm
+  FAIL  metal within 15 mm of the plate, the module's own shield aside (its U.FL feeds the cable): the cell (its pocket, 0.9 mm inside the hole), the panel (its glass outline), H2's M2 screw (its 5 mm boss)
+  the antenna's own datasheet (gain, keep-out, ground plane, cable loss) is not in hardware/ref_design/datasheets: the range test VER-207 on unit 1 decides; REQ-RF-04's grant names the antenna types the module may use
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL
