@@ -5,8 +5,8 @@ schematic, 2-layer board, JLCPCB fab and assembly files, a printable case, and
 the documents to build, bring up and review it.
 
 **The cell lies under the board** (on the tub's floor) since 2026-10-09; the layout with
-it on the board under the screen (13.9 mm thick, 7.9 at the ends) is on branch
-`ref-design-cell-on-board`. This board was first routed with `route.py 80`; 20 passes do as
+it on the board under the screen (13.9 mm thick, 7.9 at the ends) is on tag
+`archive/ref-design-cell-on-board`. This board was first routed with `route.py 80`; 20 passes do as
 well (2026-10-21: Freerouting leaves the same connections open after 15 as after 80).
 
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
