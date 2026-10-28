@@ -32,8 +32,6 @@ REGIONS = {   # name: (x0, y0, x1, y1) KiCad; a part's box must lie inside its r
     "any_low": (62.8, 108.0, 135.5, 175.0),
 }
 ORDER = [   # ref, region, preferred (x, y, rot) from placement.P unless given, turns
-    ("C11", "left_strip", (0, 90)), ("C12", "left_strip", (0, 90)), ("R23", "left_strip", (0, 90)),
-    ("C10", "above_module", (0, 90)),
     *[(f"R{70 + k}", "above_module", (90, 0)) for k in range(7)],
     ("R77", "channel", (0, 90)), ("R78", "channel", (0, 90)), ("R65", "channel", (0, 90)),
     ("R21", "fpc", (90, 0)), ("R22", "fpc", (90, 0)), ("C13", "fpc", (90, 0)), ("C14", "fpc", (90, 0)),

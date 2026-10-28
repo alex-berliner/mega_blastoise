@@ -101,6 +101,7 @@ CAP = {  # value: (lcsc, mpn, footprint)
     "4.7u 0402": ("C23733", "CL05A475MP5NRNC", C0402),
     "4.7u": ("C19666", "CL10A475KO8NNNC", C0603),
     "10u": ("C19702", "CL10A106KP8NNNC", C0603),
+    "22u 6V3": ("C59461", "CL10A226MQ8NRNC", C0603),     # 22 uF 6.3 V X5R 0603: the module's bulk cap in the strip beside its 3V3 pin (stock and Basic/Extended unverified)
     "10u 25V": ("C96446", "CL10A106MA8NRNC", C0603),
     "1u 50V": ("C15849", "CL10A105KB8NNNC", C0603),
     "22u 25V": ("C45783", "CL21A226MAQNNNE", C0805),
@@ -303,7 +304,7 @@ ESP32 = {
 }
 part("U4", S, "RF_Module:ESP32-S3-WROOM-1", "ESP32-S3-WROOM-1U-N16R8", "battler:ESP32-S3-WROOM-1U",
      {str(k): v for k, v in ESP32.items()}, "C3013946", "ESP32-S3-WROOM-1U-N16R8", "Espressif Systems")
-C("C10", S, "22u 25V", "+3V3")                   # the module's 3V3 pin: 22 uF (Espressif) with 100 nF
+C("C10", S, "22u 6V3", "+3V3")                   # the module's 3V3 pin: 22 uF (Espressif) with 100 nF; 0603 (CL10A226MQ8NRNC, C59461, 6.3 V X5R) so it fits the strip beside the pin: within 5 mm of it (V&V F1)
 C("C11", S, "100n", "+3V3")
 # EN: 10k to 3V3 and 1 uF to ground (power-up delay), J7's EN pad pulls it low. Never floating
 R("R23", S, "10k", "+3V3", "EN")

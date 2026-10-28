@@ -204,7 +204,7 @@ def planes(board):
 
 
 def pours(board):
-    outline = board_polygon(0.4)
+    outline = board_polygon(0.52)      # (the pours 0.52 from the edge: V&V F3)
     add_zone(board, "GND", pcbnew.F_Cu, outline, 0, "GND top")
     add_zone(board, "GND", pcbnew.B_Cu, outline, 0, "GND bottom")
 
@@ -982,7 +982,7 @@ def dsn_for_router(text, contacts, fences, circles=(), npth=()):
         xs, ys = v[0::2], v[1::2]
         cx, cy = (min(xs) + max(xs)) / 2, (min(ys) + max(ys)) / 2
         hx, hy = (max(xs) - min(xs)) / 2, (max(ys) - min(ys)) / 2
-        d = 220.0                                  # um, the DSN's unit (0.12 for the 0.2 rule; 0.22 since the 0.30 copper-to-edge rule, 2026-10-27)
+        d = 360.0                                  # um, the DSN's unit (0.12 for the 0.2 rule; 0.22 for the 0.30 copper-to-edge rule, 2026-10-27; 0.36 since 2026-10-28: tracks and vias 0.50 from the edge in the data, V&V F3, JLC's 0.2 outline tolerance)
         pts = [f"{cx + (x - cx) * (hx - d) / hx:.1f} {cy + (y - cy) * (hy - d) / hy:.1f}" for x, y in zip(xs, ys)]
         return m.group(1) + "  ".join(pts) + ")"
     text = re.sub(r"(\(boundary\s*\(path pcb 0\s+)([-0-9.\s]+)\)", shrink, text, count=1)
@@ -1014,7 +1014,7 @@ def dsn_for_router(text, contacts, fences, circles=(), npth=()):
     # the cutouts: the router's copy of the outline doesn't keep its tracks 0.3 mm off their edges and rounded corners, so each
     # gets a keep-out on both layers, 0.22 out (+ 0.155 clearance + half a track = 0.45 centre to edge; the rule needs 0.375)
     for sx0, sy0, sx1, sy1 in slot_boxes():
-        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.22, sy0 - 0.22, sx1 + 0.22, sy1 + 0.22))
+        pts = " ".join(f"{x * 1000:.0f} {-y * 1000:.0f}" for x, y in rect(sx0 - 0.36, sy0 - 0.36, sx1 + 0.36, sy1 + 0.36))
         for layer in ("F.Cu", "B.Cu"):
             extra += f'\n    (keepout "" (polygon {layer} 0 {pts}))'
     for kx0, ky0, kx1, ky1 in keepout_boxes():

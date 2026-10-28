@@ -155,10 +155,10 @@ put("U4", 73.9, 117.1, 90)
 # the antenna's copper-free zone (both layers, pours too): build_pcb.py's antenna_keepout (the flex antenna's footprint, a margin of 0.4
 # in x, and none below it so the module's top row of pads and their escapes keep their lane): not a Kinghelm number, see docs
 ANTENNA_KEEPOUT = (BOARD_X0 - 0.5, 62.6, 71.4, 107.0)   # (H2's boss, y 57.5 .. 62.5, already touches the mock's plate: 0.4 mm of its end)
-put("C11", 63.4, 125.6, 90)                  # 3V3 at the module's pin 2, in the strip beside it
-put("C12", 63.4, 124.1, 90)                  # EN's 1 uF
-put("R23", 63.4, 122.6, 90)                  # EN's 10k
-put("C10", 79.6, 104.9, 0)                   # the module's 22 uF, above its top row
+put("C11", 63.4, 125.9, 90)                  # 3V3 at the module's pin 2, in the strip beside it
+put("C12", 63.4, 119.4, 90)                  # EN's 1 uF
+put("R23", 63.4, 117.3, 90)                  # EN's 10k
+put("C10", 63.2, 122.7, 90)                  # the module's 22 uF (0603), in the strip 4 mm from its 3V3 pin 2 (V&V F1: within 5 mm)
 put("R22", 92.0, 129.0, 90)                  # USB 22 ohm: 10 mm from the module's D- / D+ pins, where the pair from J1 has room (80.8 / 82.0 under the pins left D- open in
 put("R21", 93.2, 129.0, 90)                  # every board but one: the pair's pre-route could not reach the pad)
 put("C13", 92.0, 131.0, 90)                  # DNP pads
