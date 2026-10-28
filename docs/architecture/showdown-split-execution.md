@@ -592,6 +592,21 @@ checklist) · depends: G1-9, Alex's device smoke battle
 - Accept: the seed passes both rule sets; a 20,000-battle sweep per gen and
   team mode is clean; check.sh green; the sweep's bucket for it closes.
 
+**G3-7d Disable names Hidden Power's type** · C2 · depends: G3-9
+- The continuous sweep (V-2) found a Gen 3 diff on the current tip: wide
+  seed 15883478. Disable on a Pokemon whose move is Hidden Power makes PS
+  write `|-start|p2a: Torchic|Disable|Hidden Power Ghost` (the type is part of
+  the move's name there) and later `|cant|...|Disable|Hidden Power`; `ps_sim`
+  writes `Hidden Power` in the `-start` line. Reproduce with
+  `node tools/ps-diff/diff.js --ps-cli <ps_sim_cli> --gen 3 --n 1 --seed 15883478 --teams wide`.
+- Deliverable: read PS's Disable (gen 3 mod) and `Pokemon` move-slot naming
+  and fix the cause, not the one line; look for the same slot-name path in
+  Encore, Mimic, Sketch, Imprison, Torment, Taunt and the `|cant|` and `|-fail|`
+  lines, and add a targeted battle to `crates/ps_harness/targeted/gen3.json`
+  for each variant that reaches it.
+- Accept: the seed passes; a 20,000-battle Gen 3 sweep per team mode is
+  clean; check.sh green; the sweep's bucket for it closes.
+
 ### Phase R: re-sync to current Showdown
 
 **R-1 Re-sync survey** · C2 (judging which upstream changes matter) ·
