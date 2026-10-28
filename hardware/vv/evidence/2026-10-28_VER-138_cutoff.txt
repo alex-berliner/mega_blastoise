@@ -1,0 +1,18 @@
+# VER-138 cutoff
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py cutoff
+U4 ESP32-S3-WROOM-1U-N16R8: VBAT_SENSE on ADC1 at 12 dB (ATTEN3, 0-2900 mV: VBAT/2 is 1.75 V at the cutoff); total error after Espressif's calibration +-50 mV at the pin (esp32-s3.txt:3804), measured at 25 C with Wi-Fi off (3780-3781); its own reference, not 3V3 (pinmap.md, Battery voltage)
+R17/R18 470k/470k: VBAT/2; calibration (pinmap.md): one gain point at charge-done, the cell taken as 4.20 V; the charger's CV is 4.20 V +-1%
+with Espressif's calibration only: +-100 mV of VBAT at 3.50 V against REQ-BAT-12's window (3.50 +0.05/-0.00, 50 mV wide): OVER: the window needs a calibration on the unit (REQ-TST-06)
+with the gain set at charge-done and no offset: the cutoff fires at a true 3.465-3.535 V from the CV's +-1% alone; esp32-s3.pdf splits its +-50 mV into no offset and gain, so no one-point calibration can be shown to bring it inside 50 mV: the per-unit 3.50 V point (VER-155) and the bench sweep (VER-139) must
+3V3 itself at the cutoff during a Wi-Fi burst is VER-204's (paper_checks.py module): the ADC's reference is its own, so the rail's sag does not move the reading
+U10 (MCP6001, MCP6001T-I/OT) buffers VBAT_DIV onto VBAT_SENSE: the pad's +-1 uA (stand-in, esp32-s3.txt:3748) through its output (100 ohm, pessimistic) moves VBAT's reading +-0.20 mV; its bias (1 nA, a stand-in 50 x the 19 pA typical at 85 C, mcp6001.txt:141) through 235 kohm +-0.47 mV; its drift (5 uV/C over 20 C) +-0.20 mV: +-0.87 mV in all that changes with temperature (was +-0.470 V unbuffered)
+  its 4.5 mV offset is constant: after the gain calibration at 4.20 V it leaves +1.5 mV at 3.50 V (inside the CV term above); offset +-4.5 mV maximum (mcp6001.txt:135), drift and bias typical only (136, 141): the stand-ins above stay
+  off: U10 unpowered, its input's protection diode holds VBAT_DIV near 0.5 V, so R17 draws 7.9 uA from a 4.2 V cell (was 4.5 uA) and 6.8 uA flows into the unpowered +3V3 rail (REQ-PWR-07, VER-65, VER-159)
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

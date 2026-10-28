@@ -1,0 +1,229 @@
+#!/usr/bin/env python3
+"""Run the quick scripted checks, save their evidence with a header, record the result.
+
+    python3 hardware/vv/tools/run_checks.py               # every quick check below
+    python3 hardware/vv/tools/run_checks.py VER-01 VER-04 # some of them
+    python3 hardware/vv/tools/run_checks.py --dry-run     # run and print; write nothing
+
+For each check it runs the command from the repository root, writes
+hardware/vv/evidence/<date>_<VER>_<name>.txt with the header check_trace.py demands
+(COMMIT, TOOLS, the command, its output, its exit code, RESULT), and writes PASS or FAIL,
+the evidence path, the commit and the date into verification.csv, then rewrites grid.md (tools/grid.py)
+so the coverage grid shows the new results. It refuses a check whose
+covered files have uncommitted changes: evidence describes a commit, so commit first.
+
+Only quick, read-only checks belong here. The long pipelines (route.py, check_buttons.py,
+board/sim/, the fit kit, case/export.py --stl) keep a hand-run evidence file with the same
+header. Add a check here once its script exists (check_fab_content, ...). A script that exits 2
+is BLOCKED (an input it needs is not on disk): nothing is written for it. A
+check that FAILs is recorded as FAIL with its evidence: a finding the order gate shows. A
+script that tests only part of its row's pass limit does not belong here: split the row first
+(VER-20 and VER-182, O-R21), so an exit 0 is a whole PASS. Since 2026-10-28 a DROPPED, RETIRED or CUT
+row is not run, and while README's '- Baseline board:' is a dropped board (the ESP32-S3 board's files
+are still on main) no check of the F1C200s board is run either: only the register's own checks (board
+'both') run until an F1C200s design is the baseline.
+
+Python 3 standard library only.
+"""
+import csv
+import datetime
+import io
+import os
+import platform
+import subprocess
+import sys
+import tempfile
+
+HERE = os.path.dirname(os.path.abspath(__file__))
+sys.path.insert(0, HERE)
+import check_trace as ct  # noqa: E402
+
+ROOT = ct.ROOT
+REG = os.path.join(ct.VV, "verification.csv")
+
+DN = "hardware/vv/tools/design_numbers.py"
+PC = "hardware/vv/tools/paper_checks.py"
+CC = "hardware/vv/tools/circuit_checks.py"
+CS = "hardware/vv/tools/case_checks.py"
+LC = "hardware/vv/tools/layout_checks.py"
+TH = "hardware/vv/tools/thermal.py"
+
+# VER id: (evidence name, command, uses kicad-cli)
+CHECKS = {
+    "VER-01": ("check_netlist", ["python3", "hardware/ref_design/board/tools/check_netlist.py"], True),
+    "VER-02": ("check_pins", ["python3", "hardware/ref_design/board/tools/check_pins.py"], False),
+    "VER-03": ("erc", ["kicad-cli", "sch", "erc", "--severity-all", "--exit-code-violations", "-o", "{tmp}/erc.rpt",
+                       "hardware/ref_design/board/battler.kicad_sch"], True),
+    "VER-04": ("drc", ["python3", "hardware/ref_design/board/tools/check_pcb.py"], True),
+    "VER-08": ("check_contact_fp", ["python3", "hardware/ref_design/board/membrane/tools/check_contact_fp.py",
+                                    "hardware/ref_design/board/lib/battler.pretty/DSL_button_4ring.kicad_mod"], False),
+    # the pre-order numbers (design_numbers.py); pcbnew ones record KiCad's version
+    "VER-182": ("swell", ["python3", DN, "swell"], False),
+    "VER-181": ("cellgap", ["python3", DN, "cellgap"], False),
+    "VER-99": ("inrush", ["python3", DN, "inrush"], False),
+    "VER-114": ("holes", ["python3", DN, "holes"], True),
+    "VER-131": ("drill", ["python3", DN, "drill"], True),
+    "VER-137": ("backlight", ["python3", DN, "backlight"], False),
+    "VER-32": ("tempwin", ["python3", DN, "tempwin"], False),
+    "VER-138": ("cutoff", ["python3", DN, "cutoff"], False),
+    "VER-142": ("mlcc", ["python3", DN, "mlcc"], True),
+    "VER-147": ("screws", ["python3", DN, "screws"], False),
+    "VER-164": ("th1", ["python3", DN, "th1"], True),
+    "VER-167": ("bom", ["python3", DN, "bom"], False),
+    "VER-176": ("cpl", ["python3", DN, "cpl"], True),
+    "VER-177": ("vbus", ["python3", DN, "vbus"], False),
+    "VER-18": ("edge", ["python3", DN, "edge"], True),
+    "VER-184": ("plugs", ["python3", DN, "plugs"], False),
+    "VER-202": ("spkplug", ["python3", DN, "spkplug"], True),
+    "VER-201": ("netclass", ["python3", DN, "netclass"], False),
+    "VER-188": ("stale_names", ["python3", "hardware/vv/tools/stale_names.py"], False),
+    # 2026-10-28: every repository path the register names is in HEAD's tree, or pinned where it was
+    "VER-220": ("repo_paths", ["python3", "hardware/vv/tools/repo_paths.py"], False),
+    # the paper checks of classes 4, 6, 9 and 11 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
+    "VER-33": ("latch", ["python3", PC, "latch"], False),
+    "VER-191": ("usb", ["python3", PC, "usb"], True),
+    "VER-100": ("audio", ["python3", PC, "audio"], False),
+    "VER-13": ("copper", ["python3", PC, "copper"], True),
+    "VER-103": ("shelf", ["python3", PC, "shelf"], False),
+    "VER-30": ("mlccbias", ["python3", PC, "mlccbias"], False),
+    "VER-204": ("module", ["python3", PC, "module"], True),        # 39cc07f: the module's supply (was VER-197, the core)
+    "VER-206": ("sdinsert", ["python3", PC, "sdinsert"], False),
+    "VER-12": ("hotplug", ["python3", PC, "hotplug"], False),
+    "VER-196": ("ampstate", ["python3", PC, "ampstate"], False),
+    "VER-140": ("mating", ["python3", PC, "mating"], False),
+    # 2026-10-28: the backlight on paper (was the ngspice run, DEF-45) and the cell's spec sheet against R5, TH1 and the case
+    "VER-05": ("backlight", ["python3", PC, "backlight"], False),
+    "VER-160": ("cellspec", ["python3", DN, "cellspec"], False),
+    "VER-159": ("check_backpower", ["python3", "hardware/vv/tools/check_backpower.py"], False),
+    "VER-162": ("check_placed_contacts", ["python3", "hardware/vv/tools/check_placed_contacts.py"], True),
+    # 2026-10-28: the dome footprint against the dome's drawing (VER-163, prod_board's contacts, left with it in 574c94c)
+    "VER-178": ("check_dome", ["python3", "hardware/vv/tools/check_dome.py"], True),
+    # 2026-10-28: the LCSC identity over Konnect's JLC snapshot on this machine (exit 2 if it is missing)
+    "VER-186": ("check_lcsc", ["python3", "hardware/vv/tools/check_lcsc.py"], True),
+    "VER-125": ("check_land", ["python3", "hardware/vv/tools/check_land.py"], True),
+    "VER-130": ("check_bom_cpl", ["python3", "hardware/vv/tools/check_bom_cpl.py"], True),
+    # the checks of classes 2, 3, 5, 7, 10 and 12-15 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
+    "VER-198": ("appcircuit", ["python3", CC, "appcircuit"], True),
+    "VER-190": ("arch", ["python3", CS, "arch"], False),
+    "VER-203": ("gpio", ["python3", CC, "gpio"], False),           # 39cc07f: the module's pins (was VER-15, the RP2350's)
+    "VER-36": ("pinreview", ["python3", CC, "pinreview"], False),
+    "VER-149": ("fwpins", ["python3", CC, "fwpins"], False),
+    "VER-31": ("ratings", ["python3", CC, "ratings"], False),
+    "VER-195": ("usbfault", ["python3", CC, "usbfault"], False),
+    "VER-148": ("bridges", ["python3", LC, "bridges"], True),
+    "VER-132": ("fab", ["python3", LC, "fab"], True),
+    "VER-17": ("jlc", ["python3", LC, "jlc"], True),
+    "VER-27": ("gerbers", ["python3", LC, "gerbers"], True),       # 2026-10-28: the gerbers read on their own (was gerbv)
+    "VER-21": ("ret", ["python3", LC, "ret"], True),
+    "VER-108": ("usbpair", ["python3", LC, "usbpair"], True),
+    "VER-205": ("antenna", ["python3", LC, "antenna"], True),
+    "VER-199": ("timing", ["python3", CC, "timing"], True),
+    # 2026-10-28: VER-34 scripted (was by hand) and the cell's architecture (class 2, cell)
+    "VER-34": ("appdiff", ["python3", CC, "appdiff"], False),
+    "VER-218": ("cellarch", ["python3", CC, "cellarch"], False),
+    "VER-06": ("check_fit", ["python3", CS, "fit"], True),
+    "VER-19": ("placement", ["python3", CS, "placement"], True),
+    "VER-20": ("stack", ["python3", CS, "stack"], True),
+    "VER-152": ("estimates", ["python3", CS, "estimates"], False),
+    "VER-165": ("mouths", ["python3", CS, "mouths"], True),
+    "VER-174": ("xy", ["python3", CS, "xy"], False),
+    "VER-112": ("heights", ["python3", CS, "heights"], True),      # 2026-10-28: part heights from the drawings on disk
+    "VER-219": ("fpc", ["python3", CS, "fpc"], False),             # 2026-10-28: the panel's tail against the FH12-50S
+    "VER-144": ("heat_modes", ["python3", TH, "modes"], False),
+    "VER-193": ("heat_board", ["python3", TH, "board"], False),
+    "VER-200": ("heat_amp", ["python3", TH, "amp"], False),
+    "VER-192": ("casemat", ["python3", TH, "casemat"], False),     # 2026-10-28: the case's material (class 5, case)
+    # last, and on its own after the others are written (seed_faults copies the working register)
+    "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
+}
+
+
+def tool_versions(kicad):
+    out = [f"python {platform.python_version()}"]
+    if kicad:
+        r = subprocess.run(["kicad-cli", "--version"], capture_output=True, text=True)
+        out.append(f"kicad-cli {r.stdout.strip() or 'unknown'}")
+    return "; ".join(out)
+
+
+def main():
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    dry = "--dry-run" in sys.argv
+    want = args or list(CHECKS)
+    rows = list(csv.reader(open(REG, newline="", encoding="utf-8")))
+    head = rows[0]
+    byid = {r[0]: r for r in rows[1:] if r}
+    dirty = ct.dirty_files()
+    commit = ct.HEAD
+    ct.BASELINE_BOARD = ct.parse_baseline_board()
+    today = datetime.date.today().isoformat()
+    bad = 0
+    for vid in want:
+        if vid not in CHECKS:
+            sys.exit(f"run_checks: {vid} is not a quick scripted check here")
+        name, cmd, kicad = CHECKS[vid]
+        row = dict(zip(head, byid[vid]))
+        # 2026-10-28: a check of a dropped board is not run; and while the design files at the baseline are a dropped
+        # board's (README '- Baseline board:'), a check of the live board is not run on them: its result would be
+        # the dropped board's, not the F1C200s board's (check_trace refuses such a PASS or FAIL). A check that reads
+        # none of those files (a dev-board test, a datasheet download) runs (ct.reads_board_files)
+        if row["last_result"] in ct.GONE + ("CUT",):
+            print(f"{vid} {name}: not run: {row['last_result']}")
+            continue
+        if row["board"] in ct.BOARDS and ct.BASELINE_BOARD in ct.DROPPED_BOARDS and ct.reads_board_files(row["covers"], row["procedure"]):
+            print(f"{vid} {name}: not run: the baseline's design files are the dropped {ct.BASELINE_BOARD} board's; "
+                  f"it runs once a {row['board']} design is the baseline")
+            continue
+        cov = ct.parse_covers(row["covers"])
+        hit = sorted({f for k, s, _ in cov if k == "glob" for f in dirty if s[0].match(f)}
+                     | ({ct.DESIGN_PY} & dirty if any(k == "part" for k, _, _ in cov) else set()))
+        if hit and not dry:
+            print(f"{vid}: refused: uncommitted changes under its covers: {' '.join(hit)}")
+            bad += 1
+            continue
+        with tempfile.TemporaryDirectory() as tmp:
+            argv = [a.replace("{tmp}", tmp) for a in cmd]
+            r = subprocess.run(argv, cwd=ROOT, capture_output=True, text=True)
+            report = ""
+            if vid == "VER-03" and os.path.exists(os.path.join(tmp, "erc.rpt")):
+                report = "--- report\n" + open(os.path.join(tmp, "erc.rpt"), encoding="utf-8").read()
+        if r.returncode == 2:
+            print(f"{vid} {name}: BLOCKED (exit 2): nothing recorded\n" + r.stdout[-600:])
+            continue
+        result = "PASS" if r.returncode == 0 else "FAIL"
+        shown = " ".join(a if "\n" not in a else "'<inline script below>'" for a in cmd)
+        body = io.StringIO()
+        body.write(f"# {vid} {name}\nDATE: {today}\nCOMMIT: {commit}\n")
+        body.write(f"TREE: {'clean under its covers' if not hit else 'DIRTY: ' + ' '.join(hit)}\n")
+        body.write(f"TOOLS: {tool_versions(kicad)}\n$ {shown}\n")
+        if any("\n" in a for a in cmd):
+            body.write("--- inline script\n" + next(a for a in cmd if "\n" in a).strip() + "\n--- output\n")
+        body.write(r.stdout + (("\n--- stderr\n" + r.stderr) if r.stderr.strip() else ""))
+        body.write(("\n" if not body.getvalue().endswith("\n") else "") + report)
+        body.write(f"\nexit {r.returncode}\nRESULT: {result}\n")
+        rel = f"hardware/vv/evidence/{today}_{vid}_{name}.txt"
+        print(f"{vid} {name}: {result}" + ("" if not dry else " (dry run)"))
+        if r.returncode != 0:
+            bad += 1
+        if dry:
+            print(body.getvalue()[-800:])
+            continue
+        open(os.path.join(ROOT, rel), "w", encoding="utf-8").write(body.getvalue())
+        rr = byid[vid]
+        rr[head.index("last_result")] = result
+        rr[head.index("evidence")] = rel
+        rr[head.index("commit")] = commit[:7]
+        rr[head.index("date")] = today
+    if not dry:
+        buf = io.StringIO()
+        csv.writer(buf, lineterminator="\n").writerows(rows)
+        open(REG, "w", encoding="utf-8").write(buf.getvalue())
+        # grid.md shows each cell's worst status: it is generated, so rewrite it with the new results
+        g = subprocess.run([sys.executable, os.path.join(HERE, "grid.py")], capture_output=True, text=True)
+        print(g.stdout.strip() or g.stderr.strip())
+    print(f"{len(want)} checks, {bad} not passing or refused")
+    return 1 if bad else 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

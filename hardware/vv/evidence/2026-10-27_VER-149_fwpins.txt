@@ -1,0 +1,13 @@
+# VER-149 fwpins
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py fwpins
+design.py's GPIO map: 24 nets on GPIO 2=P2_START, 3=PWR_BTN_N, 4=P2_SELECT, 19=SR_PL, 28=BL_PWM, 29=SR_CLK_MCU, 30=SR_DATA, 31=AUDIO_PWM, 32=LCD_TE, 33=LCD_CS, 34=AMP_EN, 35=P1_SELECT, 36=LCD_MISO, 37=LCD_DC, 38=LCD_SCK_MCU, 39=LCD_MOSI_MCU, 40=LCD_RST, 41=CHG_STAT_N, 42=CHG_PG_N, 43=CHG_OFF, 44=PWR_HOLD, 45=CC2_SENSE, 46=CC1_SENSE, 47=VBAT_SENSE
+  FAIL  crates/mega_blastoise_fw/src/board_ref_a.rs does not exist at HEAD: the firmware has no generated REF-A pin file (DEF-34; board/tools/pinmap.py does not write one yet)
+  ok    literal PIN_n in the board_ref code at HEAD: 0
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

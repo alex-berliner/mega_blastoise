@@ -1,0 +1,61 @@
+# VER-34 appdiff
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py appdiff
+U10 MCP6001T-I/OT, the VBAT buffer (mcp6001.pdf, DS20001733L), SOT-23-5:
+[mcp6001.pdf sha256 4f879ab31115ecfa149dfea62073c9efdbc4beccbdfc3a8d7e10281f3877f8fb; its pdftotext -layout text sha256 389d546fd726d011..., 2769 lines]
+  ok    [cell] VOUT 1 VBAT_SENSE, VSS 2 GND, VIN+ 3 VBAT_DIV, VIN- 4 VBAT_SENSE, VDD 5 +3V3: the SOT-23-5 column of Table 3-1 (mcp6001.txt:813-816, 823), a unity buffer (VOUT on VIN-)
+  ok    [cell] VIN+ at most 2.115 V (VBAT_REG's 4.23 V through R17/R18) inside VCMR VSS-0.3 to VDD+0.3 at 3V3's 3.0 V floor (mcp6001.txt:148)
+U6 MCP6002T-I/SN, the backlight's two sinks (mcp6001.pdf), SOIC-8:
+  ok    [display] VOUTA 1, VINA- 2, VINA+ 3, VSS 4, VINB+ 5, VINB- 6, VOUTB 7, VDD 8 (the SOIC column, mcp6001.txt:813-823): A drives sink 2, B sink 1, both from BL_REF
+U7 FM8002A, the amplifier (fm8002a.pdf, Version 1.0), SOP-8:
+[fm8002a.pdf sha256 9b87e3a7f10103c65bb378d1c9c8cf00c7086fd888a9678899fb16be8c7943a9; its pdftotext -layout text sha256 7ab05aebb0bc20b6..., 212 lines]
+  ok    [audio] SHUTDOWN 1, BYPASS 2 with +IN 3 (the single-ended input's reference), -IN 4 the input, VO1 5 and VO2 8 to the speaker, VDD 6, GND 7 (fm8002a.txt:27-41)
+  ok    [audio] SHUTDOWN high (the supply) is off (fm8002a.txt:75-76): pulled to AMP_VDD by R36, pulled low by Q3 when AMP_EN is high; AMP_EN held low by R37 while the module boots: off by default
+  ok    [audio] CBy 1 uF on BYPASS and Ci (C39) 0.22 uF: 'CBy=1uF, Ci=0.1uF-0.39uF' (fm8002a.txt:104)
+  ok    [audio] Rf R35 from VO1 (SPK_P) to -IN, Ri R34 from the input: gain 2 Rf/Ri = 2 (fm8002a.txt:55)
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  ok    [audio] VDD from VSYS through JP3, at most U2's 4.5 V OUT regulation (bq24074.txt:729), under 6 V (fm8002a.txt:109)
+Q1, Q3 2N7002 (2n7002_cj.pdf) and Q5, Q6 AO3400A (ao3400a.pdf), SOT-23:
+[2n7002_cj.pdf sha256 7941fb423af7c6c6c8979063a7e8819bb19217ece275efcce18948950a41d9f6; its pdftotext -layout text sha256 8f457be6865e4d72..., 356 lines]
+  ok    [buttons] Q1: gate 1 PWR_BTN_RAW, source 2 GND, drain 3 PWR_BTN_N (2n7002_cj.txt:13-16); its gate at most VSYS 4.5 V against VGS +-20 V (37)
+  ok    [audio] Q3: gate 1 AMP_EN, source 2 GND, drain 3 AMP_SHDN (2n7002_cj.txt:13-16); its gate at most VSYS 4.5 V against VGS +-20 V (37)
+[ao3400a.pdf sha256 9c60d0b6c1ddc7609a4b788a91181468d8ffe6c3e9ba425c3d8ffc5ba88c5033; its pdftotext -layout text sha256 39f205116896b7e2..., 392 lines]
+  ok    [display] Q5: gate 1 BL_G1, source 2 BL_S1 (the 2.2 ohm sense), drain 3 LED_K1; G, S, D as the SOT-23 drawing (ao3400a.pdf page 1, a figure without pin numbers in its text) and KiCad's AO3400A symbol; its gate at most 3V3 against VGS +-12 V (ao3400a.txt:37)
+  ok    [display] Q6: gate 1 BL_G2, source 2 BL_S2 (the 2.2 ohm sense), drain 3 LED_K2; G, S, D as the SOT-23 drawing (ao3400a.pdf page 1, a figure without pin numbers in its text) and KiCad's AO3400A symbol; its gate at most 3V3 against VGS +-12 V (ao3400a.txt:37)
+D2 BAT54C and D3 BAT54WS, the power-key OR (bat54c.pdf, bat54ws.pdf):
+[bat54c.pdf sha256 38d4cf5982dcaaa3dadba4eac506917de6798ef565062ef2abbecbb6023071ce; its pdftotext -layout text sha256 19006bad8f38df1c..., 500 lines]
+  ok    [buttons] D2: anodes 1 PWR_BTN_RAW and 2 PWR_HOLD, the common cathode 3 PWR_EN (bat54c.txt:38-42): the key or the module's hold lifts PWR_EN, and PWR_EN feeds neither back
+[bat54ws.pdf sha256 b6537f2d34165968affc9271aa97d87f20c963de43a900c7199fc7bf7791b284; its pdftotext -layout text sha256 ccc75a8f96553d2e..., 235 lines]
+  ok    [power] D3: pin 1 (KiCad's cathode, the band, bat54ws.txt:24) on PWR_EN, pin 2 the anode on VBUS_EN: VBUS through R14 lifts PWR_EN, never the reverse
+U1 SRV05-4, USB's ESD array (srv05-4.pdf), SOT-23-6:
+[srv05-4.pdf sha256 a164eb7954004c1b9d6c6fe5047dcca89db686b1270c8f534fc724e3e2764ec5; its pdftotext -layout text sha256 8fc17c36e618bcbf..., 616 lines]
+  ok    [usb_debug] I/O on 1 and 3 (USB_DP, USB_DM), 4 and 6 open, REF1 2 GND, REF2 5 +3V3 (srv05-4.txt:89, 252-253); REF2 on 3V3, not VBUS (DEF-01, VER-159)
+TH1 TCTR0805F10K0F4460T (tctr0805.pdf):
+[tctr0805.pdf sha256 59f3ac30436c02a272f168f424d9265d1903df22a5c684fda50d715a9bb8ae0c; its pdftotext -layout text sha256 58b95da5eb6e9266..., 549 lines]
+  ok    [cell] TCTR0805F10K0F4460T: R25 tolerance F and B tolerance F (F = +-1%, tctr0805.txt:260), B 4460 as design.py's value; design_numbers.py's TH1_TOL and TH1_B_TOL are 1%
+SW24 ROCPU TPS850 (rocpu_tps850.pdf):
+[rocpu_tps850.pdf sha256 085a2be0e64467bd9a929cc944267dfde6d1fb578840786e57bc438690048a18; its pdftotext -layout text sha256 5bd9d28cf3fb0dde..., 156 lines]
+  ok    [buttons] SW24 switches VSYS (4.5 V at most) onto PWR_BTN_RAW: 0.17 mA steady (R13 and, through D2, R15) against the drawing's 20 mA at 15 V and the table's 50 mA at 12 V (rocpu_tps850.txt:17-18, 136); C47's 1 uF charges through it once per press, a few uC
+J8 DM3AT-SF-PEJM5's pins and its detect switch (hirose_dm3_catalog_C114218.pdf, the DM3AT drawing):
+[hirose_dm3_catalog_C114218.pdf sha256 b74bee24f5e7f9bc68b403a21b2c5ff94ca4230072b10a41ca62664ea95a5951; its pdftotext -layout text sha256 d882e23d84a2594b..., 1047 lines]
+  ok    [storage] pads 1-8 DAT2, CD/DAT3, CMD, VDD, CLK, VSS, DAT0, DAT1 as the DM3AT drawing's #1-#8 (hirose_dm3_catalog_C114218.txt:145-150)
+  ok    [storage] the detect switch's two pads on SD_CD and GND: 'Normally Open' (hirose_dm3_catalog_C114218.txt:27), so either pad order works; which of switch A and B meets the shell is a drawing without text (DF-196 keeps it for VER-28's preview)
+the pin reviews of these parts (board/pin_review, the board session's files):
+  FAIL  [power] u3.json: describes RT9013-33GB against design.py's U3 TLV75733PDBVR (DEF-88)
+  ok    u10.json: describes MCP6001T-I/OT against design.py's U10 MCP6001T-I/OT
+  ok    u7.json: describes FM8002A against design.py's U7 FM8002A
+  ok    sw24.json: describes TPS850 J14K V SMTR LFS against design.py's SW24 TPS850 J14K V SMTR LFS
+  ok    j8.json: describes DM3AT-SF-PEJM5 against design.py's J8 DM3AT-SF-PEJM5
+  ok    th1.json: describes TCTR0805F10K0F4460T (Resistor.Today, C525375), 10k 1% B4460 1%, 0805 (2026-10-27, was SDNT1005X103F3950FTF B3950) against design.py's TH1 TCTR0805F10K0F4460T
+  ok    u1.json: describes SRV05-4.TCT against design.py's U1 SRV05-4.TCT
+  ok    u6.json: describes MCP6002T-I/SN against design.py's U6 MCP6002T-I/SN
+  0 constants left on an inherited quote whose datasheet is on disk
+the flex antenna (Kinghelm C4943394): its datasheet is not on disk, so its cable, connector and gain are not read here (VER-34's needs; VER-205 reads its keep-out)
+1 failing
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

@@ -1,0 +1,38 @@
+# VER-144 heat_modes
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/thermal.py modes
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+[tlv757p.pdf sha256 239d1f1e9bce270377e9af29bd06a5f99fe45f489878612d249d88cf9f2dd7a1; its pdftotext -layout text sha256 69647d726fec5e66..., 2436 lines]
+[esp32-s3-wroom-1.pdf sha256 27d71971da07c280c6068d08c74720d1a25b8f20cf8494dc1765bdd28d40d435; its pdftotext -layout text sha256 0b40dc77fe19addf..., 3771 lines]
+[fm8002a.pdf sha256 9b87e3a7f10103c65bb378d1c9c8cf00c7086fd888a9678899fb16be8c7943a9; its pdftotext -layout text sha256 7ab05aebb0bc20b6..., 212 lines]
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+the case 77.40 x 156.48 x 10.70 mm:292.3 cm2 outside; h_out 10 and h_in 10 W/m2K (stand-ins): 3.4 C/W skin to air, 3.4 C/W inside to skin
+3V3 load 361.9 mA (VER-31's average: Wi-Fi listening, the CPU busy, the SD card writing); the system while playing 630 mA (3V3, the backlight's 117.7 mA, the amplifier's mean 150 mA: a stand-in); ICHG at most 298 mA (KISET 975 / R5 -1%); VBAT 3.4 V in fast charge (bq24074.txt:2655)
+U2 by TI's equation (11) (bq24074.txt:2662): 0.803 W at the corner where IN carries its 500 mA, the system draws just the rest and the cell takes the whole ICHG; 0.475 W with this system's own load (0 mA left to charge)
+mode                        heat in   skin  inside  parts (W)
+off                           0.00W  40.0C   40.0C  
+cell play                     2.82W  49.7C   59.3C  U2 0.040, U3 0.337, Q5 0.092, Q6 0.092, R52 0.008, R53 0.008, cell 0.119
+USB play                      3.31W  51.3C   62.6C  U2 0.475, U3 0.434, Q5 0.092, Q6 0.092, R52 0.008, R53 0.008
+charging, off                 0.64W  42.2C   44.4C  U2 0.612, cell 0.027
+charging while playing        3.31W  51.3C   62.6C  U2 0.803, U3 0.434, Q5 0.092, Q6 0.092, R52 0.008, R53 0.008, cell 0.000
+each junction in its worst mode at 40 C outside, against its maximum less 20 C:
+  ok    U2: 0.803 W in charging while playing: 62.6 + 0.803 x 44.5 C/W (bq24074.txt:666) = 98.4 C against 125 - 20 = 105 C (bq24074.txt:641)
+  FAIL  U3: 0.434 W in USB play: 62.6 + 0.434 x 231.1 C/W (tlv757p.txt:232, DBV on JEDEC's board; 100.8 on TI's EVM, 229) = 163.0 C against 125 - 20 = 105 C (tlv757p.txt:213)
+  ok    Q5: 0.092 W in USB play: 62.6 + 0.092 x 125 C/W (RthJA 100-125 C/W steady (q5.json p1, not on disk)) = 74.2 C against 125 - 20 = 105 C (stand-in: the AO3400A's maximum is not in q5.json (VER-34))
+  ok    Q6: 0.092 W in USB play: 62.6 + 0.092 x 125 C/W (as Q5) = 74.2 C against 125 - 20 = 105 C (as Q5)
+  ok    R52: 0.008 W in USB play: 62.6 + 0.008 x 300 C/W (an 0603 resistor, stand-in) = 64.9 C against 155 - 20 = 135 C (the resistor's 155 C (JLC's description, passives.json))
+  ok    R53: 0.008 W in USB play: 62.6 + 0.008 x 300 C/W (an 0603 resistor, stand-in) = 64.9 C against 155 - 20 = 135 C (as R52)
+  ok    U2 in a 40 C case: 40 + 0.803 x 44.5 = 75.7 C, under its 125 C thermal regulation (bq24074.txt:831)
+sensitivity: U2 reaches its limit at 52.7 C/W against the datasheet's 44.5 (a JEDEC board with inner planes); a 2-layer board is worse, so VER-68 measures the case under U2 on unit 1, and U2's own regulation lowers ICHG first
+sensitivity: U3 on TI's EVM figure (100.8 C/W, tlv757p.txt:229) reaches 106.4 C; it meets 105 C below 98 C/W, between the EVM's and JEDEC's: the board's own figure decides (VER-68 reads the case over U3 on unit 1)
+the firmware heat rule (for pinmap.md before VER-86 runs, proposed): on USB with the backlight above 75%, cap the amplifier's volume (its share is the largest heat after U2) or pause charging with CHG_OFF while the case reads hot; VER-86 measures the skin
+U7, the amplifier, is VER-200's: fm8002a.pdf gives its 150 C junction maximum (fm8002a.txt:112) and no thermal resistance
+1 over
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

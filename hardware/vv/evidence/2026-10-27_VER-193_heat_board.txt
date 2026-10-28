@@ -1,0 +1,31 @@
+# VER-193 heat_board
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/thermal.py board
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+[rt9013.pdf sha256 b14a1c44445d69accbaabda7f3ce442964ca52f05d6664e3d49572ff20fb4b13; its pdftotext -layout text sha256 e05dbba88cba6df7..., 798 lines]
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+the hottest mode for the inside is charging while playing (2.16 W): inside 55.1 C at 40 C outside
+  J1: 0.5 A of a 3 A receptacle: +0.8 C (30 C at rated current, scaled by the current's square: stand-ins), 55.9 C against 85 - 20
+  ok    J1 at 55.9 C
+each part at 40 C outside in the hottest mode, against its maximum less 20 C:
+  ok    U4: 128.77 mW x 40.542 C/W = +5.2 C: 60.3 C against 105 (VREG_VIN and IOVDD at the 3V3 budget's RP2350 share (0.129 W, VER-31's 2.5 x hello_usb stand-in); RP2354B's own QFN-80 figure is TBD (rp2350.txt:100253), so the smaller QFN-60's 40.542 C/W (100196) bounds it; Tj 125 (101054))
+  ok    U8: 0.37 mW x 108 C/W = +0.0 C: 55.1 C against 105 (ICC and the scan's switching at 0.5 MHz; TSSOP 108 C/W (sn74hc165.txt:281); 125 C, the HC family's usual maximum (stand-in))
+  ok    U9: 0.37 mW x 108 C/W = +0.0 C: 55.1 C against 105 (as U8)
+  ok    U1: 0.02 mW x 400 C/W = +0.0 C: 55.1 C against 105 (leakage only, 5 uA at 5 V (u1.json p2, not on disk); any package's theta)
+  ok    U6: 2.29 mW x 400 C/W = +0.9 C: 56.0 C against 105 (quiescent and two gates' charge (stand-in); MCP6002 not on disk)
+  ok    U10: 0.49 mW x 400 C/W = +0.2 C: 55.3 C against 105 (quiescent (stand-in); MCP6001 not on disk (DEF-63))
+  ok    RN1-RN4: 0.93 mW x 400 C/W = +0.4 C: 55.4 C against 135 (four 47k elements an array, all pressed)
+  ok    L2: 1.92 mW x 400 C/W = +0.8 C: 55.8 C against 105 (the core current through its 140 mohm maximum DCR (l2.json))
+  ok    the cell charging while playing at 25 C outside: 2.16 W inside, the air round it 40.1 C, its own 8 mW (ESR 0.3 ohm, a stand-in until VER-37) over its 34 cm2 faces: 40.3 C against 45 C
+  (U2's 0.80 W sits on the same board; how much of it reaches the cell through the hole's edge is what VER-85 and VER-87 measure on unit 1; TH1 reads the cell's edge)
+the case's inner surface for VER-192: 55.1 C on average at 40 C outside; over U2 about 65.8 C (the inside plus 30% of U2's rise across the 2.4 mm gap: a stand-in until VER-86 measures)
+0 over
+RESULT: PASS
+
+exit 0
+RESULT: PASS

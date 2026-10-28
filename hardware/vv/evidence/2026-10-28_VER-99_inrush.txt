@@ -1,0 +1,14 @@
+# VER-99 inrush
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py inrush
+VBUS capacitance 10.0 uF (USB 2.0 cl. 7.2.4.1: 10 uF): 50 uC at 5.0 V, 52.5 uC at 5.25 V (nominal values; DC bias lowers them)
+parts joining VBUS to VSYS: U2 (want U2 alone: its input switch brings VSYS up inside the input limit, so the VSYS bulk is not seen at the plug)
+U2 is BQ24073RGTR
+worst-case charge at 5.25 V and +tolerance through the DC-bias curve: 47.3 uC against 50 uC (C1 CL10A106MA8NRNC +20%: 12.0 uF at 0 V, 47.3 uC charged to 5.25 V along samsung_cl10a106ma8nrnc_dcbias.csv)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

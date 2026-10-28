@@ -1,0 +1,60 @@
+# VER-31 ratings
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py ratings
+modes off, cell, usb, charging, plus hot plug (VBUS up to 5.50 V, paper_checks.py hotplug's worst corner) and unplug (U2's battery FET takes VSYS from OUT: no node rises above its steady value, bq24074.txt:530)
+VBUS 5.25 V, CC 2.18 V, D+/D- 3.6 V: USB figures from memory (README: clauses to check); +3V3 up to 3.366 V
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+[rt9013.pdf sha256 b14a1c44445d69accbaabda7f3ce442964ca52f05d6664e3d49572ff20fb4b13; its pdftotext -layout text sha256 e05dbba88cba6df7..., 798 lines]
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+ICs: steady at or under the recommended maximum (or 0.3 V under the absolute maximum where none is printed), the hot-plug transient 0.3 V under the absolute maximum:
+  ok    U2 VBUS: steady 5.250 V, transient 5.50 V against IN: 4.35-6.4 V recommended (bq24074.txt:634), 28 V absolute (595)
+  ok    U2 VBAT: steady 4.230 V, transient 4.23 V against BAT: 5 V absolute (bq24074.txt:596)
+  ok    U2 CHG_EN1,CHG_ILIM,CHG_ISET,CHG_OFF,CHG_PG_N,CHG_STAT_N,CHG_TE: steady 4.500 V, transient 4.50 V against OUT, EN1, EN2, CE, TS, ISET, PGOOD, CHG, ILIM, TD: 7 V absolute (bq24074.txt:598-600)
+  ok    U3 VSYS: steady 4.500 V, transient 4.50 V against VIN: 2.2-5.5 V recommended (rt9013.txt:148), 6 V absolute (128)
+  ok    U3 PWR_EN: steady 4.500 V, transient 4.50 V against EN: 6 V absolute (rt9013.txt:129)
+  ok    U4 +3V3: steady 3.366 V, transient 3.37 V against IOVDD and the 3.3 V supplies: 3.63 V (rp2350.txt:101378, 101026; VREG_AVDD 101390)
+  ok    U4 +1V1: steady 1.160 V, transient 1.16 V against DVDD: 1.05-1.16 V (rp2350.txt:101386)
+  ok    U4 AMP_EN,AUDIO_PWM,BL_PWM,CC1_SENSE,CC2_SENSE,CHG_OFF,CHG_PG_N: steady 3.366 V, transient 3.37 V against every signal pin: VPIN to IOVDD + 0.5 V (rp2350.txt:101043), steady at most IOVDD
+  ok    U8 +3V3: steady 3.366 V, transient 3.37 V against VCC: 2-6 V (sn74hc165.txt:255), 7 V absolute (233)
+  ok    U9 +3V3: steady 3.366 V, transient 3.37 V against VCC (sn74hc165.txt:255, 233)
+  ok    U6 +3V3: steady 3.366 V, transient 3.37 V against VDD 1.8-6.0 V, 7.0 V absolute (u6.json p3, not on disk)
+  ok    U7 AMP_VDD: steady 4.500 V, transient 4.50 V against VDD 1.6-6 V, 6 V absolute (u7.json, not on disk)
+  ok    U10 +3V3: steady 3.366 V, transient 3.37 V against supply 1.8-6 V (u10.json: the LCSC listing; datasheet not on disk, DEF-63)
+  ok    U1 +3V3,USB_DM,USB_DP: steady 3.600 V, transient 3.60 V against VRWM 5 V, VBR 6 V (u1.json p2, not on disk)
+  ok    J3 LCD_3V3: steady 3.366 V, transient 3.37 V against the panel's VCI and VDDI: 3.3 V recommended (er-tft035ips-6.txt:747-748), 4.6 V absolute (734) [REQ-PWR-14 exception (2): the panel at 3.366 V (DF-96, DEF-61, DEC-09)]
+  ok    U10 pin 3 VBAT_DIV 2.12 V while its supply is 0 V (off): REQ-PWR-14 exception (1) (DF-182, DEC-29); its input limit with VDD at 0 V waits for the MCP6001's datasheet (VER-34)
+FETs and diodes at 80% of their ratings (pin_review quotes, not on disk):
+  ok    Q1 2N7002: VDS 3.37 V of 60 (6%), VGS 4.50 V of 20 (22%), ID 0.1 mA of 115 (q1.json p1)
+  ok    Q3 2N7002: VDS 4.50 V of 60 (8%), VGS 3.37 V of 20 (17%), ID 0.1 mA of 115 (q1.json p1)
+  ok    Q5 AO3400A: VDS 4.50 V of 30 (15%), VGS 3.37 V of 12 (28%), ID 60.0 mA of 5700 (q5.json p1)
+  ok    Q6 AO3400A: VDS 4.50 V of 30 (15%), VGS 3.37 V of 12 (28%), ID 60.0 mA of 5700 (q5.json p1)
+  ok    Q7 2N7002: VDS 3.37 V of 60 (6%), VGS 4.50 V of 20 (22%), ID 0.1 mA of 115 (q1.json p1)
+  ok    D2 BAT54C,215: VR at most 4.50 V of 30 V (15%), IF well under 200 mA (d2.json, d3.json p1-p2)
+  ok    D3 BAT54WS: VR at most 5.25 V of 30 V (18%), IF well under 200 mA (d2.json, d3.json p1-p2)
+  ok    D8 BAT54WS: VR at most 4.50 V of 30 V (15%), IF well under 200 mA (d2.json, d3.json p1-p2)
+passives at 80% (MLCC voltage, resistor power) from JLC's part description, matched by LCSC number:
+  89 passives read; the five most stressed: C5 45%, C34 45%, C3 42%, C7 34%, C6 34%
+connectors at 80% of their current (catalogue figures: datasheets not on disk, stand-ins):
+  ok    J1: 0.50 A of 5 A (10%): VBUS at U2's USB500 limit (bq24074.txt:733)
+  ok    J2: 0.77 A of 1 A (77%): the cell's peak: 3V3 150 mA + backlight 117.7 mA + the amplifier's 0.5 A peak
+  ok    J4: 0.56 A of 1 A (56%): the speaker's peak, AMP_VDD across 8 ohm bridged
+  ok    J5: 0.01 A of 1 A (1%): SWD signals
+    U4 VREG_VIN                               36.75 mA  2.5 x hello_usb's 14.70 mA (rp2350.txt:101676), stand-in
+    U4 IOVDD, USB_OTP_VDD, ADC, QSPI           2.91 mA  twice hello_usb's (101676)
+    the panel's VCI and VDDI                  20.00 mA  stand-in: the panel prints none
+    U6, U10                                    0.45 mA  stand-in
+    U8, U9                                     0.16 mA  ICC 80 uA at 6 V, the SN74HC165's maximum (not quoted), each
+    pull-ups and the backlight divider driven   2.75 mA  R42 and R44 driven high, 16 x 47k, 4 x 100k, R60+R61
+    LCD_SCK switched at 20 MHz                 2.02 mA  C V f, stand-in 30 pF
+  ok    3V3 load 65.0 mA against REQ-PWR-15's 150 mA
+  ok    U3 dissipates 0.078 W at VSYS 4.5 V on USB (0.18 W at the full 150 mA) against 0.20 W
+0 failing
+RESULT: PASS
+
+exit 0
+RESULT: PASS

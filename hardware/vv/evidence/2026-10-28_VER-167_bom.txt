@@ -1,0 +1,14 @@
+# VER-167 bom
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py bom
+battler:DSL_button_4ring (SW1-SW16): bought
+battler:Dome_4mm_Round (SW20-SW23): missing from bom.md: 600-415S-260; Start/Select cap
+bom.md says the Start/Select strip isn't used, but SW20-SW23 sit under it
+U4 ESP32-S3-WROOM-1U-N16R8: an external antenna on a U.FL cable (esp32-s3-wroom-1.txt:100): bom.md buys no antenna and no U.FL cable: the module has no radio path
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

@@ -1,0 +1,47 @@
+# VER-190 arch
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/case_checks.py arch
+case-side requirements in requirements.md: REQ-ASM-01 REQ-ASM-01.R REQ-ASM-02 REQ-BAT-07 REQ-BAT-08 REQ-BTN-05 REQ-BTN-06 REQ-BTN-08 REQ-MEC-01 REQ-MEC-02 REQ-MEC-03 REQ-MEC-04 REQ-MEC-05 REQ-MEC-06 REQ-MEC-07 REQ-MEC-08 REQ-MEC-09 REQ-MEC-10 REQ-MEC-11 REQ-MEC-12 REQ-PRD-06
+requirement -> the case's feature -> its nominal number (the worst case is the named check's):
+  ok    REQ-PRD-06: outline2d (case_w, case_l), case_h, deck_face: 77.40 x 156.48 x 9.60 mm, ends 7.70 against 77.4 x 156.64 x 9.6, 7.7 [worst case: VER-20, VER-48]
+  ok    REQ-BAT-07: glass_gap over the board, cell_top (the worst cell's top over the board): 0.80 mm free above the cell under the panel against 0.4 [worst case: VER-182 (the slope's ceiling too), VER-20]
+  ok    REQ-BAT-08: cell_pocket_box in the tub's floor, cell_hole2d in the board: pocket 36.00 x 52.00 mm against a nominal cell 34 x 50 plus 0.4 (the fit clause, PROPOSED) [worst case: VER-181 at the worst-case cell (FAIL: DEF-62)]
+  ok    REQ-MEC-01: positions.json's height zones (glass_limit, bezel_limit, retainer_limit, deck_limit, back_limit): glass 2.2, bezel 3.5, retainer 0.5, decks 1.6, back 0.5 mm, every zone named and positive [worst case: VER-06 (check_fit), VER-112]
+  ok    REQ-MEC-02: the STACK echo line: floor, ribs, PCB, under the panel, panel, tape, top over the panel: 9.60 mm against case_h 9.60: closes at nominal ("STACK floor 1.5 + ribs 0.7 + PCB 1.6 + under the panel 2.4 ...) [worst case: VER-20 (tolerances)]
+  ok    REQ-MEC-03: caps in the ends' pockets over the silicone: cap_proud, dome_travel, dpad_gap: cap stands 1.41 mm proud, travels 1.00: 0.41 left pressed (case.scad wants 0.4); D-pad gap 0.60 in 0.3-1.0 [worst case: VER-07, VER-48]
+  ok    REQ-MEC-04: the board's USB-C tab into the tub's notch (usb_tab, usb_front at +x only); abxy_square on abxy_boss: tab 1.0 x 12.0 mm at x = +36.2 only; ABXY slot 5.15 over the cap's 4.90 boss [worst case: VER-48]
+  ok    REQ-MEC-05: six M2 screws (positions.json pins), the tongue (deck_tongue_h), keys, grip ribs: 6 screws; tongue 4.05 mm (case.scad wants 2.5) [worst case: VER-92 (DVT)]
+  ok    REQ-MEC-06: cell_pocket walls (cell_fit_side, cell_fit_lead); the panel frame (frame_wall); J3's latch: pocket 0.60 mm deep in the floor with walls 0.90/1.90 mm inside the hole; frame wall 1.10 mm round the panel [worst case: VER-93 (DVT)]
+  ok    REQ-MEC-07: the USB-C opening (usb_hole) and the receptacle's recess (usb_recess): opening 9.44 x 3.75 for a 8.94 x 3.25 receptacle; recess 0.15 mm against plug_len_min - mate - 0.1 = 0.25 [worst case: VER-80, VER-165]
+  ok    REQ-MEC-08: the listed openings: USB-C, two pinholes (pin_pos), the grille (grille_x, grille_slot), six screw counterbores: 2 pinholes, grille 28.6-34.0 mm, 6 screws, 1 USB-C opening [worst case: VER-113 (NOT_BUILT), VER-48]
+  FAIL  REQ-MEC-09: screw_l in the pilots above the board (z_top_cu, screw_cb, side_engage, deck_engage): M2 x 6: 3.20 mm above the board in every pilot against 4.0 at the sides and 3.0 at the ends [worst case: VER-147 (FAIL: DEF-31, DEC-18)]
+  ok    REQ-MEC-10: the panel's pocket (bay_w, bay_l, panel_fit) and its tape (tape_t): bay 56.06 x 86.08 for a 54.56 x 82.84 panel; tape 0.15 mm [worst case: VER-154 (EVT)]
+  ok    REQ-MEC-11: connector mouths: usb, j2_plug, j4_plug, fpc_conn, swd, pinholes against the bosses: J2's plug box [[27.95, 32.9], [35.4, 36.9]], J4's [[29.0, -14.8], [34.2, -10.9]], SWD at [67.9, 105], pinholes [[69, 130.2], [69, 133.85]] [worst case: VER-165]
+  ok    REQ-MEC-12: the tub's bosses (tub_boss_d): largest boss 6.0 mm: 4.0 mm keep-out, the statement's 4.0 [worst case: VER-142 (PASS)]
+  ok    REQ-BTN-05: the DS Lite silicone over the combs, held by the ends' ribs (sil_rib_gap) without crushing its web: rib gap 0.80 mm over a 0.65 mm web; the force is relative to a genuine DS Lite [worst case: VER-50]
+  ok    REQ-BTN-06: positions.json pieces (silicone centres) against the comb centres (buttons): pieces off their comb centroid by at most 0.00 mm (D-pads; the A/B/X/Y diamonds centre the same way) [worst case: VER-174]
+  ok    REQ-BTN-08: ss_metal_dome in ss_well; ss_plunger_gap and ss_lift over the dome: well 4.60 mm for a 4.0 mm dome (+0.3); plunger 0.36 mm over a 0.31 mm dome (+0.05) [worst case: VER-178, VER-180 (ss_lift is an estimate)]
+  ok    REQ-ASM-01: allocated to REQ-ASM-01.R: the holds below [worst case: VER-91]
+  ok    REQ-ASM-01.R: assembly.md's order: each part dropped straight down and held by a feature (the holds below): every part held [worst case: VER-91]
+  ok    REQ-ASM-02: J3's latch with fpc_slack in the FPC's fold: slack 1.0 mm in the fold [worst case: VER-106]
+what holds each part in the closed case (assembly.md section 5):
+  ok    the speaker: its pocket in the top's right bezel centres it; the board lies over it (spk_top_over)
+  ok    A/B/X/Y caps, D-pad, Start/Select: the ends' pockets and retainers (pocket_d, retainer_z)
+  ok    the silicone pads: the walls on the ends' underside (sil_rim) and the board over them
+  ok    the panel: the top's frame centres it (frame_wall, bay_w); the tape bonds it in Z (REQ-MEC-10 names the tape)
+  ok    the cell: the tub's pocket walls (cell_pocket_box, DEF-58's stop); the board's hole and the panel over it in Z; the double-sided tape only locates
+  ok    the FPC: J3's latch (fpc_conn), folded under the panel with fpc_slack
+  ok    the cell's plug: J2's PicoBlade latch, its box j2_plug clear beside the glass
+  ok    the speaker's plug: J4's SH friction lock, its box j4_plug clear of the speaker's hole
+  ok    the Start/Select domes: the strip's wells (ss_well) round each 4 mm dome
+  ok    the board: six M2 screws through it, clamped between the bosses (tub_boss_d); the crush ribs centre it
+  ok    the tub: its tongue in the top's skirt, keys, grip ribs (grip_reach), then the screws
+note: the tub's four keys are symmetric under a half turn: the USB-C tab alone keys the tub to the top
+1 not met
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

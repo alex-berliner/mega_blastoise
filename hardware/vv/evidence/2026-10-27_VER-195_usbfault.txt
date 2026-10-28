@@ -1,0 +1,22 @@
+# VER-195 usbfault
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py usbfault
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+VBUS up to 20 V (PD_MAX) on each of J1's CC and data pins; IOVDD 3.234 V (3V3 at -2%); GPIO45-47 are 'Digital IO / Analogue', not FT (rp2350.txt:100894-100900), so VPIN is IOVDD + 0.5 V (101043); a pad's diode modelled as 0.5 V at 20 uA (stand-in)
+  FAIL  CC1 (A5): R1 5.1k dissipates 78 mW at 20 V against its 62.5 mW (0402, JLC's description); it reaches 62.5 mW at 17.9 V
+  FAIL  CC1 (A5): GPIO46 CC1_SENSE behind R3 10k passes IOVDD + 0.5 V from about 3.9 V; at 20 V 1.63 mA flows into its clamp (rp2350.pdf gives no injection limit)
+  FAIL  CC2 (B5): R2 5.1k dissipates 78 mW at 20 V against its 62.5 mW (0402, JLC's description); it reaches 62.5 mW at 17.9 V
+  FAIL  CC2 (B5): GPIO45 CC2_SENSE behind R4 10k passes IOVDD + 0.5 V from about 3.9 V; at 20 V 1.63 mA flows into its clamp (rp2350.pdf gives no injection limit)
+  D+ (A6, B6): from about 4.0 V U1 steers the line into +3V3 (U1 VF 1.2 V max at 15 mA, u1.json p2); the RT9013 cannot sink, so once the fault pushes more than the rail's load (stand-in 10 mA) +3V3 rises; through R21 27 ohm the RP2350's USB pad (USB_DP_MCU) sits at the line's clamp
+  FAIL  D+ (A6, B6): the RP2350's USB pad and the whole +3V3 domain are over their absolute maximum (IOVDD 3.63 V, rp2350.txt:101026) from about 4.0 V; at 20 V U1's clamp holds +3V3 near 17.5 V at 5 A (u1.json, not on disk)
+  D- (A7, B7): from about 4.0 V U1 steers the line into +3V3 (U1 VF 1.2 V max at 15 mA, u1.json p2); the RT9013 cannot sink, so once the fault pushes more than the rail's load (stand-in 10 mA) +3V3 rises; through R22 27 ohm the RP2350's USB pad (USB_DM_MCU) sits at the line's clamp
+  FAIL  D- (A7, B7): the RP2350's USB pad and the whole +3V3 domain are over their absolute maximum (IOVDD 3.63 V, rp2350.txt:101026) from about 4.0 V; at 20 V U1's clamp holds +3V3 near 17.5 V at 5 A (u1.json, not on disk)
+for DEC-17: the CC paths are over from about 3.9 V (the pads, at a current R3 and R4 limit to under 2 mA) and 17.9 V (R1, R2); a data line shorted to VBUS above about 4 V destroys the 3V3 domain whatever the series parts
+6 over
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

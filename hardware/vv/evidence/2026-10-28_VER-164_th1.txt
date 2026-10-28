@@ -1,0 +1,19 @@
+# VER-164 th1
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py th1
+cell hole x 80.7-118.9, y 52.0-107.2 (its long side along y); worst-case cell 52 x 36; TH1 (10k B4460) at (119.95, 79.00) on the board, 1.05 mm right of the hole's right edge, 1.95 mm from the pocket's right wall (the nearest a cell's face can be)
+TH1 within the cell's span along the edge (y 56.3-106.3, 2 mm in from each end): True
+back-side footprints (10): J7 TP1 TP11 TP12 TP13 TP14 TP2 TP3 TP4 TP5; the nearest pad 3.50 mm from the hole (TP1)
+back-side pads within 1 mm of the hole: none
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

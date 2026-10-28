@@ -1,0 +1,27 @@
+# VER-27 gerbers
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py gerbers
+fab.py's own export into /tmp/vv_fab_1jbl75kd, read here by this script's RS-274X and Excellon readers (not pcbnew's)
+  ok    (a) 11 files: 9 layers and the plated and unplated drill files apart: present
+  FAIL  (b) every one of 476 F.Paste apertures inside an F.Cu pad of the gerber (+-0.02 mm): 4 not: (124.58, 85.60) 0.24 x 0.60 between U2 pad 15 and U2 pad 16; (124.58, 88.40) 0.24 x 0.60 between U2 pad 6 and U2 pad 5; (125.42, 85.60) 0.24 x 0.60 between U2 pad 14 and U2 pad 13; (125.42, 88.40) 0.24 x 0.60 between U2 pad 7 and U2 pad 8
+  ok    (b) B.Paste empty (0 flashes): nothing is placed on the back
+  FAIL  (c) U4 pad 41 (3.90 x 3.90 mm at 73.21, 118.60): 47.9% printed (7.29 mm2 of paste inside it) against 50%-80% (IPC-7525's usual range, from memory)
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  FAIL  (c) U2 pad 17 (1.68 x 1.68 mm at 125.00, 87.00): 0.0% printed (0.00 mm2 of paste inside it) against 75%-90% (the maker's own stencil example, 85% (bq24074.txt:3180))
+  the narrowest stencil webs between the other apertures (their boxes, corners squared): 0.150 mm at (93.45, 45.50), 0.150 mm at (93.45, 49.00), 0.150 mm at (93.95, 44.50), 0.150 mm at (93.95, 48.00); 0 under 0.1 mm
+  ok    (d) every one of 650 plated holes (PTH file, 2 tools) on copper of both layers' gerbers
+  ok    (d) none of 12 unplated holes (NPTH file) inside a copper pad
+  ok    (e) Edge.Cuts' extent 74.90 x 151.48 mm; every copper flash centre inside it
+3 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

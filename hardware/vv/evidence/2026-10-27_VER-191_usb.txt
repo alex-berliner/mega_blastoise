@@ -1,0 +1,21 @@
+# VER-191 usb
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/paper_checks.py usb
+R21 27 ohm 1%: 26.73-27.27 ohm against the 27 ohm rp2350.txt:1196 requires: meets it
+R22 27 ohm 1%: 26.73-27.27 ohm against the 27 ohm rp2350.txt:1196 requires: meets it
+ZDRV (USB 2.0's 28-44 ohm with the series resistor) also needs the PHY's own output impedance, which rp2350.pdf does not give: the 27 ohm is Raspberry Pi's figure for that sum (rp2350.txt:1196, 100753)
+D+: track 73.6 mm (7.4 pF at 0.1 pF/mm, stand-in), 2 vias (0.5 pF each), U1 5 pF max (u1.json p2, not on disk), the RP2350's pad 10 pF (stand-in): 23.4 pF against 100 pF; it passes unless U1 and the pad together exceed 92 pF
+D-: track 70.6 mm (7.1 pF at 0.1 pF/mm, stand-in), 0 vias (0.5 pF each), U1 5 pF max (u1.json p2, not on disk), the RP2350's pad 10 pF (stand-in): 22.1 pF against 100 pF; it passes unless U1 and the pad together exceed 93 pF
+D+/D- length mismatch 3.08 mm (VER-108 owns the limit)
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

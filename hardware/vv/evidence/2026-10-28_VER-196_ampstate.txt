@@ -1,0 +1,21 @@
+# VER-196 ampstate
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py ampstate
+Q3 2N7002 VGS(th) 1.0-2.5 V (2n7002_cj.txt:55); AMP_EN (GPIO45) held by R37 100k (+1%) against the pad's leakage (1 uA stand-in, 20 x IIH's 50 nA, esp32-s3.txt:3748): gate at most 0.101 V, 0.90 V under the minimum threshold (limit 0.4 V)
+  off, VSYS live: AMP_EN <= 0.101 V, Q3 off, U7 shut down: U4 unpowered, its pad passes no current; R37 holds the gate at 0 V
+  power-up before firmware: AMP_EN <= 0.101 V, Q3 off, U7 shut down: GPIO45 resets with its weak pull-down (WPD, IE: esp32-s3.txt:901) and has no power-up glitch (Table 2-2, 958-1006); it is the VDD_SPI strapping pin, so it must read 0 at reset anyway (VER-203)
+  EN low (reset): AMP_EN <= 0.101 V, Q3 off, U7 shut down: the chip is held in reset: its pads as at power-up
+  watchdog or panic reset: AMP_EN <= 0.101 V, Q3 off, U7 shut down: a system reset returns the pads to their reset state: input with GPIO45's pull-down
+  light or deep sleep: AMP_EN <= 0.101 V, Q3 off, U7 shut down: firmware rule: drive AMP_EN low before sleep (or hold it with the RTC's pad hold)
+  USB in, cell flat: AMP_EN <= 0.101 V, Q3 off, U7 shut down: VSYS is U2's OUT, 4.3-4.5 V (bq24074.txt:729); AMP_EN as above
+VSYS 3.0 V: AMP_SHDN at least 2.90 V (R36 100k with Q3's off leakage, stand-in 1 uA; 80 nA at 60 V, 2n7002_cj.txt:57): within 0.10 V of VDD, the 'supply voltage' the FM8002A names for shutdown (fm8002a.txt:75-76; it prints no VIH: limit 95% of VDD)
+VSYS 4.4 V: AMP_SHDN at least 4.30 V (R36 100k with Q3's off leakage, stand-in 1 uA; 80 nA at 60 V, 2n7002_cj.txt:57): within 0.10 V of VDD, the 'supply voltage' the FM8002A names for shutdown (fm8002a.txt:75-76; it prints no VIH: limit 95% of VDD)
+U7's shutdown 4.2 uA typical (fm8002a.txt:123, no maximum; 8.4 uA as a stand-in maximum) and R36's 1 uA (Q3's leakage): 9.4 uA of the off budget; the whole budget is 'shelf' (VER-103), against VER-65's 30 uA
+the whole off budget at 4.2 V, 25 C: 26.8 uA (limit 30 uA)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

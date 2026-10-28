@@ -1,0 +1,32 @@
+# VER-159 check_backpower
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/check_backpower.py
+5 power states: off on the cell, on the cell, no USB, plug-in, before 3V3, off, Debug Probe on J5, on, JP4 cut (panel unpowered); 20 back-power paths found, 9 table lines
+  listed   [off on the cell] U10 pin 3 (VBAT_DIV) into dead +3V3: about 6.8 uA at a 4.2 V cell: VBAT/2 behind R17 470k into U10's input diode (design_numbers.py cutoff), whenever 3V3 is off; the sense buffer's input; counted in the off budget (VER-103) and REQ-PWR-07; the MCP6001's input limits wait for its datasheet (DEF-63) (DF-182)
+  listed   [on the cell, no USB] U2 pin 4 (CHG_OFF) into dead VBUS: 0.7 mA at most while GPIO43 drives CHG_OFF high, most of it into R44 4.7k: CE is a 7 V rated logic input with a 285k pull-down (bq24074.txt:505, 598); firmware drives CHG_OFF high only to stop a charge (DF-98)
+  listed   [on the cell, no USB] U2 pin 7 (CHG_PG_N) into dead VBUS: 33 uA at most: R9 100k from 3V3 into PGOOD with VBUS at 0; PGOOD is open-drain and 7 V rated (bq24074.txt:535, 598); an open-drain status output to VSS; SLUS810N draws no path from it to IN (DF-98)
+  listed   [on the cell, no USB] U2 pin 9 (CHG_STAT_N) into dead VBUS: 33 uA at most: R10 100k from 3V3 into CHG, as pin 7 (bq24074.txt:507); as pin 7 (DF-98)
+  listed   [plug-in, before 3V3] U10 pin 3 (VBAT_DIV) into dead +3V3: about 6.8 uA at a 4.2 V cell: VBAT/2 behind R17 470k into U10's input diode (design_numbers.py cutoff), whenever 3V3 is off; the sense buffer's input; counted in the off budget (VER-103) and REQ-PWR-07; the MCP6001's input limits wait for its datasheet (DEF-63) (DF-182)
+  listed   [plug-in, before 3V3] U4 pin 56 (CC2_SENSE) into dead +3V3: CC2 through R4 10k into GPIO45: at most (2.0 V - 0.5 V) / 10k = 0.15 mA for the 1 ms before 3V3 rises; R4 limits it (design.py: 'keeps a CC short to VBUS off the pin') (DF-98)
+  listed   [plug-in, before 3V3] U4 pin 57 (CC1_SENSE) into dead +3V3: CC1 through R3 10k into GPIO46: as GPIO45; as GPIO45 (DF-98)
+  listed   [off, Debug Probe on J5] U10 pin 3 (VBAT_DIV) into dead +3V3: about 6.8 uA at a 4.2 V cell: VBAT/2 behind R17 470k into U10's input diode (design_numbers.py cutoff), whenever 3V3 is off; the sense buffer's input; counted in the off budget (VER-103) and REQ-PWR-07; the MCP6001's input limits wait for its datasheet (DEF-63) (DF-182)
+  listed   [off, Debug Probe on J5] U4 pin 33 (SWCLK) into dead +3V3: the probe's SWCLK into an unpowered pad: its driver's few mA, until the probe sees no target voltage; VER-127 measures 3V3 and the off current with the probe on; bringup.md says power the board first (DF-98)
+  listed   [off, Debug Probe on J5] U4 pin 34 (SWDIO) into dead +3V3: the probe's SWDIO, as SWCLK; as SWCLK (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 12 (LCD_TE) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 13 (LCD_CS) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 14 (LCD_DC) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 15 (LCD_SCK) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 17 (LCD_MOSI) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 18 (LCD_MISO) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] J3 pin 41 (LCD_RST) into dead LCD_3V3: an RP2350 output's few mA into each of the panel's inputs with LCD_3V3 off; JP4 is cut only at bring-up; design.py's JP4 note: firmware holds the SPI pins low while it is open (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] U2 pin 4 (CHG_OFF) into dead VBUS: 0.7 mA at most while GPIO43 drives CHG_OFF high, most of it into R44 4.7k: CE is a 7 V rated logic input with a 285k pull-down (bq24074.txt:505, 598); firmware drives CHG_OFF high only to stop a charge (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] U2 pin 7 (CHG_PG_N) into dead VBUS: 33 uA at most: R9 100k from 3V3 into PGOOD with VBUS at 0; PGOOD is open-drain and 7 V rated (bq24074.txt:535, 598); an open-drain status output to VSS; SLUS810N draws no path from it to IN (DF-98)
+  listed   [on, JP4 cut (panel unpowered)] U2 pin 9 (CHG_STAT_N) into dead VBUS: 33 uA at most: R10 100k from 3V3 into CHG, as pin 7 (bq24074.txt:507); as pin 7 (DF-98)
+not a path in any state: U1 (SRV05-4), whose REF is on 3V3: nothing drives D+ or D- while 3V3 is off, since USB in turns the board on through R14 and D3 (paper_checks.py latch)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

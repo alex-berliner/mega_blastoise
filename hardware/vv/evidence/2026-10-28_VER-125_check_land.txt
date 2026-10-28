@@ -1,0 +1,42 @@
+# VER-125 check_land
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/check_land.py
+compared with a drawing on disk:
+  ok    U2 VQFN-16-1EP_3x3mm_RGT0016C: EP 1.68 x 1.68 (1.68 x 1.68); 16 pads at 0.500 mm (0.5); pad 0.60 x 0.24 (0.60 x 0.24); span 2.80 (2.80); pad to EP 0.26 mm (the drawing's 0.26); pin 1 top-left, counter-clockwise  [SLUS810N RGT0016C example board layout, bq24074.txt:3061-3100 (16X (0.6) x (0.24), 12X (0.5), (2.8), EP (1.68))]
+  FAIL  U4 ESP32-S3-WROOM-1U: exposed pad 3.90 x 3.90 mm, the drawing 3.7 x 3.7; 40 pads at 1.270 mm (1.27); pad 1.50 x 0.90 (1.5 x 0.9); columns 17.50 apart (17.5)  [esp32-s3-wroom-1.pdf Figure 11-2, the WROOM-1U recommended land pattern (40 x1.5, 40 x0.9, 1.27, EP 3.7, 17.5; esp32-s3-wroom-1.txt:3422-3471)]
+  ok    U8 TSSOP-16_4.4x5mm_P0.65mm: 16 pads at 0.650 mm (0.65); pad 1.48 x 0.40 (1.50 x 0.45); span 5.72 (5.80); pin 1 top-left, counter-clockwise  [sn74hc165.pdf p.34, PW0016A example board layout (16X (1.5) x (0.45), 14X (0.65), (5.8))]
+  ok    U9 TSSOP-16_4.4x5mm_P0.65mm: 16 pads at 0.650 mm (0.65); pad 1.48 x 0.40 (1.50 x 0.45); span 5.72 (5.80); pin 1 top-left, counter-clockwise  [sn74hc165.pdf p.34, PW0016A example board layout (16X (1.5) x (0.45), 14X (0.65), (5.8))]
+  ok    U11 TSSOP-16_4.4x5mm_P0.65mm: 16 pads at 0.650 mm (0.65); pad 1.48 x 0.40 (1.50 x 0.45); span 5.72 (5.80); pin 1 top-left, counter-clockwise  [sn74hc165.pdf p.34, PW0016A example board layout (16X (1.5) x (0.45), 14X (0.65), (5.8))]
+  ok    U3 SOT-23-5: 5 pads at 0.950 mm (e 0.94-0.96); centres 2.27 apart, pads 1.32 long, outer extent 3.60 (TI's 3.70); 1-2-3 along one side, 4 opposite 3, 5 opposite 1  [tlv757p.pdf DBV0005A example board layout (5X (1.1) x 5X (0.6), 2X (0.95), (2.6); tlv757p.txt:2100-2122); pins 1-3 along one side, 4-5 along the other]
+not compared by this script, the drawing on disk (by hand, or a LAND row to add):
+  D2: bat54c.pdf
+  D3: bat54ws.pdf
+  J1: hro_type-c-31-m-12.pdf
+  J2: molex_53261.pdf
+  J3: hirose_fh12.pdf
+  J4: jst_sh.pdf
+  J8: hirose_dm3_catalog_C114218.pdf
+  Q1, Q3: 2n7002_cj.pdf
+  Q5, Q6: ao3400a.pdf
+  RN1, RN2, RN3, RN4: uniroyal_4d02.pdf
+  TH1: tctr0805.pdf
+  U1: srv05-4.pdf
+  U10: mcp6001.pdf
+  U6: mcp6001.pdf
+  U7: fm8002a.pdf
+BLOCKED, the maker's drawing not in hardware/ref_design/datasheets:
+  R1, R2, R3, R4, R41, C1, R38, R5, R64, R43, R44, R9 ...: chip passives (UNI-ROYAL, Samsung, FH), KiCad's IPC-7351 R/C footprints; the makers' land patterns
+the SOT pin numbering (D2, Q1, Q3, Q5, Q6, U1, U3, D3) is pin_review's per-pin table, which VER-02 (check_pins.py) reads; U3's is checked above
+drawings on disk but not compared by this script (by hand at VER-28's preview): J8 (hirose_dm3_catalog_C114218.pdf: its land and the two front shell tabs the build note calls unverified), SW24 (rocpu_tps850.pdf, 3.65 over all)
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

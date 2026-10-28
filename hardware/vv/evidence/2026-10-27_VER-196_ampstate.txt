@@ -1,0 +1,21 @@
+# VER-196 ampstate
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py ampstate
+Q3 2N7002 VGS(th) 1.0-2.5 V (q1.json p2, not on disk); AMP_EN held by R37 100k (+1%) against the pad's 1 uA leakage maximum (rp2350.txt:101100): gate at most 0.10 V, 0.90 V under the minimum threshold (limit 0.4 V)
+  off, VSYS live: AMP_EN <= 0.10 V, Q3 off, U7 shut down: U4 unpowered, its pad passes no current; R37 holds the gate at 0 V
+  power-up before firmware: AMP_EN <= 0.10 V, Q3 off, U7 shut down: pads reset with IE clear, pull-down on (PADS_BANK0 GPIO reset: IE 0, PDE 1, ISO 1, rp2350.txt:59412-59433); E9 does not act after a PoR or RUN reset (rp2350.txt:102952)
+  RESET (RUN): AMP_EN <= 0.10 V, Q3 off, U7 shut down: a RUN reset resets the pads as at power-up (rp2350.txt:102952)
+  watchdog reset: AMP_EN <= 0.10 V, Q3 off, U7 shut down: the pads reset only if the watchdog's PSM WDSEL includes RESETS (rp2350.txt:36739-36791, all 0 at reset): the SDK's watchdog_enable() sets it; firmware rule: keep that, or E9 (A2) can hold AMP_EN near 2.2 V behind 100k, over Q3's 1.0 V
+  sleep or dormant: AMP_EN <= 0.10 V, Q3 off, U7 shut down: outputs keep their level; firmware rule: drive AMP_EN low before sleep, never leave it an input (E9 on A2 needs 8.2 kohm or less, R37 is 100k)
+  USB in, cell flat: AMP_EN <= 0.10 V, Q3 off, U7 shut down: VSYS is U2's OUT, 4.3-4.5 V (bq24074.txt:729); AMP_EN as above
+VSYS 3.0 V: AMP_SHDN at least 2.90 V (R36 100k with Q3's off leakage, stand-in 1 uA): within 0.10 V of VDD, the 'supply voltage' the FM8002A names for shutdown (u7.json pin 1; it prints no VIH: limit 95% of VDD)
+VSYS 4.4 V: AMP_SHDN at least 4.30 V (R36 100k with Q3's off leakage, stand-in 1 uA): within 0.10 V of VDD, the 'supply voltage' the FM8002A names for shutdown (u7.json pin 1; it prints no VIH: limit 95% of VDD)
+U7's shutdown 4.2 uA typical (u7.json p3, not on disk; 8.4 uA as a stand-in maximum) and R36's 1 uA (Q3's leakage): 9.4 uA of the off budget; the whole budget is 'shelf' (VER-103), against VER-73's 30 uA
+the whole off budget at 4.2 V, 25 C: 27.3 uA (limit 30 uA)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

@@ -1,0 +1,40 @@
+# VER-197 core
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/paper_checks.py core
+the copied core against rp2350.pdf's own component rules (section 6.3.8.2, 6.1, 8.2.1.1):
+  ok    C24 VREG_VIN 4.7u: CIN at least 4.7 uF (rp2350.txt:33598, 32715)
+  ok    C25 VREG output 4.7u CL05A475MP5NRNC (+-20%): COUT 4.7 uF +-20% (rp2350.txt:33603); its DC-bias loss at 1.1 V is VER-30's
+  ok    L2 3.3uH: 3.3 uH +-20% (rp2350.txt:33608)
+  ok    L2 is AOTA-B201610S3R3-101-T, the part rp2350.txt:33612 recommends (its DCR and Isat then meet 33608)
+  ok    VREG_AVDD filter R19 33 ohm and C26 4.7u: 33 ohm and 4.7 uF as Figure 19 (rp2350.txt:33281-33290)
+  ok    X1 ABM8-272-T3: the recommended crystal (rp2350.txt:40927)
+  ok    X1's load: C27 15p and C28 15p in series 7.5 pF + 2-5 pF stray (stand-in) = 9.5-12.5 pF against CL 10 pF (rp2350.txt:40950), limit +-2.5 pF
+  ok    R21, R22 27 ohm on USB_DP, USB_DM (rp2350.txt:1196)
+  DVDD pins by distance from VREG_LX (pin 63): 51 (5.1 mm), 10 (9.2 mm), 32 (10.1 mm)
+  'close to the pin' (rp2350.txt:32665, 32686, 32705) is read here as a capacitor pad within 5.0 mm of the pin's pad, centre to centre; Raspberry Pi's own layout puts its 0402s 1-3 mm from the pins
+  FAIL  DVDD pin 51: rp2350.txt:32665-32675 asks 100 nF close to it; the nearest +1V1 capacitor is C25 4.7u at 7.2 mm, the nearest of 100 nF or more C25 at 7.2 mm
+  ok    DVDD pin 10: rp2350.txt:32665-32675 asks 100 nF close to it; the nearest +1V1 capacitor is C20 100n at 1.8 mm, the nearest of 100 nF or more C20 at 1.8 mm
+  FAIL  DVDD pin 32: rp2350.txt:32665-32675 asks 4.7 uF (the pin furthest from the regulator) close to it; the nearest +1V1 capacitor is C21 100n at 3.0 mm, the nearest of 4.7 uF or more C25 at 12.0 mm
+  ok    IOVDD pin 5: nearest +3V3 capacitor C14 100n at 1.7 mm
+  ok    IOVDD pin 15: nearest +3V3 capacitor C16 100n at 1.7 mm
+  ok    IOVDD pin 24: nearest +3V3 capacitor C12 100n at 3.2 mm
+  ok    IOVDD pin 29: nearest +3V3 capacitor C12 100n at 3.0 mm
+  FAIL  IOVDD pin 41: nearest +3V3 capacitor C12 100n at 7.4 mm
+  FAIL  IOVDD pin 50: nearest +3V3 capacitor C24 4.7u at 6.7 mm
+  ok    ADC_AVDD pin 59: nearest +3V3 capacitor C24 4.7u at 3.6 mm (100 nF close to the pin, rp2350.txt:32705)
+  ok    IOVDD pin 60: nearest +3V3 capacitor C24 4.7u at 3.3 mm
+  ok    USB_OTP_VDD pin 68: nearest +3V3 capacitor C24 4.7u at 1.9 mm (100 nF close to the pin, rp2350.txt:32686)
+  ok    QSPI_IOVDD pin 69: nearest +3V3 capacitor C24 4.7u at 2.2 mm
+  ok    IOVDD pin 76: nearest +3V3 capacitor C11 100n at 3.6 mm
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

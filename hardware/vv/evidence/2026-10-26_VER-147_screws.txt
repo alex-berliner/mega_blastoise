@@ -1,0 +1,12 @@
+# VER-147 screws
+DATE: 2026-10-26
+COMMIT: fec2fc42b96caf0404ec79af135f0a69b25b0649
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py screws
+side (H1-H4): M2 x 6 from a 1 mm counterbore, tip at z 7.00, board top at z 3.80: 3.20 mm of thread in a 5.00 mm pilot, tip 1.80 mm short of its end (want 4 mm and 0.5 mm): fails; lengths that meet it: M2 x 7
+end (H5, H6): M2 x 6 from a 1 mm counterbore, tip at z 7.00, board top at z 3.80: 3.20 mm of thread in a 3.30 mm pilot, tip 0.10 mm short of its end (want 3 mm and 0.1 mm): ok; lengths that meet it: M2 x 6
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

@@ -1,0 +1,35 @@
+# VER-18 edge
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py edge
+routed edges: 3 contours (outline, 11.0 x 16.0 mm hole, 37.8 x 54.8 mm hole); copper within about 1 mm of one: 52 features
+  0.308 mm (worst case 0.108)  GND pour on B.Cu at (133.35, 131.52), to the 11.0 x 16.0 mm hole
+  0.308 mm (worst case 0.108)  GND pour on F.Cu at (133.35, 131.52), to the 11.0 x 16.0 mm hole
+  0.308 mm (worst case 0.108)  GND pour on B.Cu at (118.52, 51.85), to the 37.8 x 54.8 mm hole
+  0.308 mm (worst case 0.108)  GND pour on F.Cu at (118.28, 51.74), to the 37.8 x 54.8 mm hole
+  0.318 mm (worst case 0.118)  pad Q7.1 at (80.78, 56.05), to the 37.8 x 54.8 mm hole
+  0.318 mm (worst case 0.118)  pad Q7.2 at (80.78, 54.15), to the 37.8 x 54.8 mm hole
+  0.350 mm (worst case 0.150)  pad TH1.1 at (119.25, 80.17), to the 37.8 x 54.8 mm hole
+  0.350 mm (worst case 0.150)  pad TH1.2 at (119.25, 78.35), to the 37.8 x 54.8 mm hole
+  0.399 mm (worst case 0.199)  GND pour on F.Cu at (65.69, 26.16), to the outline
+  0.399 mm (worst case 0.199)  GND pour on B.Cu at (65.69, 26.16), to the outline
+  0.400 mm (worst case 0.200)  track USB_DM at (82.15, 107.30), to the 37.8 x 54.8 mm hole
+  0.400 mm (worst case 0.200)  track USB_DP at (82.15, 107.30), to the 37.8 x 54.8 mm hole
+copper closer than 0.30 mm to a routed edge in the data (REQ-FAB-03): 0
+worst case, the data's distance less ROUTE_TOL 0.20 mm (printed, not failed: O-R2, DEF-56): 18 features under 0.30 mm, the closest 0.108 mm (GND pour on B.Cu, to the 11.0 x 16.0 mm hole)
+courtyards past the outline or into a hole (J1 by design excepted; printed, not failed): J2 0.08 mm past the outline
+pads or part bodies past the outline or into a hole (J1 by design excepted): none
+silkscreen texts not wholly on the board (off its edge or in a hole): none
+narrowest FR4 web: 1.00 mm (worst case 0.60, both edges off by ROUTE_TOL) between the 11.0 x 16.0 mm hole and the outline at (135.2, 127.0)
+narrowest FR4 web: 1.00 mm (worst case 0.60, both edges off by ROUTE_TOL) between the outline and the 11.0 x 16.0 mm hole at (136.2, 122.0)
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

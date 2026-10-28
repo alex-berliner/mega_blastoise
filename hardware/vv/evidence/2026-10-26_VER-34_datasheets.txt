@@ -1,0 +1,25 @@
+# the datasheet extracts this register quotes
+# directory: /home/alex/Code/mega_blastoise/hardware/ref_design/datasheets
+COMMIT: fec2fc42b96caf0404ec79af135f0a69b25b0649
+TOOLS: python 3.12.3
+
+file | sha256 | bytes | lines | in git | dates
+bq24074.txt | 63b3a751d8108320d6786640ef70251c3a8a865ba090fd527436f4332b685840 | 223212 | 3219 | untracked | none found
+bq24074.pdf | 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1 | 3739103 | 28604 | untracked | none found
+er-tft035ips-6.txt | f00a3f20e5e01c9e583885c89549f4a9468fe73a7d516aedbcaf34c1237e8583 | 105546 | 1384 | untracked | Dec-15-2022 (line 42); Feb-22-2022 (line 209); Dec-20-22 (line 329); Feb-22-2022 (line 338); Dec-20-22 (line 484); Feb-22-2022 (line 493); Dec-20-22 (line 633)
+er-tft035ips-6.pdf | f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371 | 1339985 | 15342 | untracked | none found
+ili9488.txt | 2100176f5cb6a458d78191c9d79a303898ae481f08751b8dbcf8c4c1c9590611 | 1082648 | 17155 | untracked | 24/18/16 (line 415); 24/18/16 (line 3223); Mark-1 (line 3669); Mark-1 (line 3696); Mark-1 (line 3766); Mark-1 (line 3798); Mark-1 (line 3817); Mark-1 (line 3847)
+ili9488.pdf | d9d7ecd61ed69c845bc34c4a8c4acb2bd75b099fb0ff49efdecfa827b4e33469 | 6784004 | 31461 | untracked | none found
+rp2350.txt | fa2cad472b01b5e7219415e0774bff3c234123bb067cfeccc6fa221a53bc6ee3 | 4916281 | 103568 | untracked | 2025-07-29 (line 20); 8/16/32 (line 26231); Separate 32 (line 73473)
+rp2350.pdf | 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8 | 7968417 | 37019 | untracked | none found
+RPI-RP2350B-MINIMAL_LICENSE.txt | b01f852b57e955edeb4001c02fb3a204bd7309a19d8185a6312598f977d656cc | 1776 | 13 | tracked | none found
+SOURCES.md | 263aa2620437cebd1bcaefa89056bf9bf391dca2662f80424f7e3bc272ef44a7 | 2210 | 24 | tracked | none found
+displaytech_dt035.txt | 25d2432e10d3366ca771c1fcfc47032976b4f79f12c354414c70a69d93ad2d31 | 34228 | 628 | untracked | none found
+fh35c.txt | 7b995c1ae1d0c6cf2313a6a609d8359100de144add036abc01e1e8cfb58fd573 | 7194 | 115 | untracked | none found
+max98357a.txt | 5cafe0d8000b19f8a671343105162cdcc1ec12260f13294f928297f5d7d0f7c8 | 207442 | 2421 | untracked | 16/24/32 (line 26); 16/24/32 (line 323); 16/24/32 (line 1332); 06/27/14 (line 2395)
+tps61160.txt | 5be4e6d3292b892fa3b0ae4f0801bcf270b30029ab75347d16c661ae0a1c366d | 147010 | 2210 | untracked | none found
+tps63001.txt | 9ed07b8a9f1b9dd5fd65aa01c7914be6385137b77b25cd0882dd973b7885bada | 104139 | 1511 | untracked | none found
+
+the extracts themselves are not committed; the numbers this register quotes from
+them are cited by file and line, and these hashes say which file that was
+RESULT: PASS

@@ -1,0 +1,63 @@
+# VER-186 check_lcsc
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/check_lcsc.py
+[/home/alex/.konnect/jlcpcb.db: 514904064 bytes, sha256 3016f37314b51e57a9f60250d47bd1f136ae7604de714050f59c2f0f2261c0fd; 616593 parts, snapshot 2026-07-13 19:07 UTC]
+  ok    C96446 C1 (1): CL10A106MA8NRNC, 0603, 2 joints, Basic, stock 3475471 at the snapshot; ratings 25V
+  ok    C59461 C10 (1): CL10A226MQ8NRNC, 0603, 2 joints, Basic, stock 19334991 at the snapshot; ratings 6.3V
+  ok    C19666 C2 (1): CL10A475KO8NNNC, 0603, 2 joints, Basic, stock 5643370 at the snapshot; ratings 16V
+  ok    C19702 C3,C5,C6,C7,C34,C60 (6): CL10A106KP8NNNC, 0603, 2 joints, Basic, stock 6062779 at the snapshot; ratings 10V
+  FAIL  C1538 C37,C38 (2): 0402B472K500NT, 0402, 2 joints, Basic, stock 1389574 at the snapshot; ratings 50V; maker Samsung != FH(Guangdong Fenghua Advanced Tech)
+  ok    C16772 C39 (1): CL05B224KO5NNNC, 0402, 2 joints, Basic, stock 4059470 at the snapshot; ratings 16V
+  ok    C52923 C12,C29,C40,C47,C50 (5): CL05A105KA5NQNC, 0402, 2 joints, Basic, stock 12549584 at the snapshot; ratings 25V
+  FAIL  C1523 C48,C49 (2): 0402B102K500NT, 0402, 2 joints, Basic, stock 5304934 at the snapshot; ratings 50V; maker Samsung != FH(Guangdong Fenghua Advanced Tech)
+  ok    C1525 C8,C11,C30,C35,C51,C52,C53,C54,C61,C62 (10): CL05B104KO5NNNC, 0402, 2 joints, Basic, stock 43509060 at the snapshot; ratings 16V
+  ok    C37704 D2 (1): BAT54C,215, SOT-23, 3 joints, Preferred, stock 98299 at the snapshot; ratings 25V 30V
+  ok    C7502694 D3 (1): BAT54WS, SOD-323, 2 joints, Preferred, stock 170161 at the snapshot; ratings -55℃~+125℃ 1V 30V
+  ok    C165948 J1 (1): TYPE-C-31-M-12, SMD, 16 joints, Extended, stock 135458 at the snapshot; ratings -30℃~+80℃ 20V; footprint USB_C_Receptacle_HRO_TYPE-C-31-M-12 against SMD (explained: JLC gives only 'SMD'; the land is HRO's drawing (VER-125, hro_type-c-31-m-12.pdf)); 20 numbered pads on the board != 16 solder joints (explained: the 4 shell tabs (SH) are on the board and not among JLC's 16 joints (the 16 A/B pins))
+  ok    C177225 J2 (1): 532610271, SMD,P=1.25mm,卧贴, 4 joints, Extended, stock 38543 at the snapshot; ratings -40℃~+105℃ 125V 94V
+  ok    C202116 J3 (1): FH12-50S-0.5SH(55), SMD,P=0.5mm,卧贴, 52 joints, Extended, stock 1730 at the snapshot; ratings -40℃~+85℃
+  ok    C160402 J4 (1): SM02B-SRSS-TB(LF)(SN), SMD,P=1mm,卧贴, 4 joints, Extended, stock 165946 at the snapshot; ratings -25℃~+85℃ 50V 94V
+  ok    C114218 J8 (1): DM3AT-SF-PEJM5, SMD, 14 joints, Extended, stock 9158 at the snapshot; ratings -25℃~+85℃; footprint microSD_HC_Hirose_DM3AT-SF-PEJM5 against SMD (explained: JLC gives only 'SMD'; the land is Hirose's DM3 drawing (VER-125, hirose_dm3_catalog_C114218.pdf))
+  ok    C8545 Q1,Q3 (2): 2N7002, SOT-23, 3 joints, Basic, stock 2716354 at the snapshot; ratings 2.5V 225mW 10V 60V
+  ok    C20917 Q5,Q6 (2): AO3400A, SOT-23, 3 joints, Basic, stock 1814497 at the snapshot; ratings -55℃~+150℃ 1.45V 1.4W 30V
+  ok    C25905 R1,R2 (2): 0402WGF5101TCE, 0402, 2 joints, Basic, stock 11061446 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25779 R13 (1): 0402WGF3302TCE, 0402, 2 joints, Basic, stock 860857 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25792 R14,R63,R86,R87,R88 (5): 0402WGF4702TCE, 0402, 2 joints, Basic, stock 5188148 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25790 R17,R18 (2): 0402WGF4703TCE, 0402, 2 joints, Preferred, stock 45182 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25092 R21,R22 (2): 0402WGF220JTCE, 0402, 2 joints, Basic, stock 3735780 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25744 R3,R4,R23,R38,R58,R59,R79,R80,R81,R82,R83,R84 (12): 0402WGF1002TCE, 0402, 2 joints, Basic, stock 4191623 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25867 R32,R33 (2): 0402WGF1501TCE, 0402, 2 joints, Basic, stock 1158542 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25765 R34,R35 (2): 0402WGF2002TCE, 0402, 2 joints, Basic, stock 3652653 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C22939 R41,R52,R53 (3): 0603WAF220KT5E, 0603, 2 joints, Basic, stock 161421 at the snapshot; ratings -55℃~+155℃ 100mW 75V
+  ok    C25767 R43 (1): 0402WGF2203TCE, 0402, 2 joints, Preferred, stock 487697 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25900 R42,R44 (2): 0402WGF4701TCE, 0402, 2 joints, Basic, stock 4461386 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25890 R5,R64 (2): 0402WGF3301TCE, 0402, 2 joints, Basic, stock 3366166 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25104 R54,R55 (2): 0402WGF3300TCE, 0402, 2 joints, Basic, stock 3952848 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C15172 R61 (1): 0402WGF3741TCE, 0402, 2 joints, Extended, stock 120764 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25105 R65,R70,R71,R72,R73,R74,R75,R76,R77,R78 (10): 0402WGF330JTCE, 0402, 2 joints, Basic, stock 3528819 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C25741 R9,R10,R15,R16,R36,R37,R56,R57,R60 (9): 0402WGF1003TCE, 0402, 2 joints, Basic, stock 5244197 at the snapshot; ratings -55℃~+155℃ 50V 62.5mW
+  ok    C2028 RN1,RN2,RN3,RN4 (4): 4D02WGJ0473TCE, 0402x4, 8 joints, Extended, stock 10603 at the snapshot; ratings 62.5mW; tolerance ±5% against 1% (design_numbers.R_TOL) (explained: RN1-RN4 are 47k pull-ups on the buttons' 74HC165 inputs: 5% moves no threshold (no design_numbers check reads them))
+  ok    C2759975 SW24 (1): TPS850 J14K V SMTR LFS, SMD,3x2.8mm, 6 joints, Extended, stock 2979 at the snapshot; ratings -40℃~+85℃ 12V; footprint Tact_ROCPU_TPS850 against SMD,3x2.8mm (explained: JLC's 3 x 2.8 mm is the body, 3.00 x 2.75 mm on ROCPU's drawing (rocpu_tps850.txt:91, 102)); 4 numbered pads on the board != 6 solder joints (explained: JLC counts 6 joints; this is the 'V no pegs' part (rocpu_tps850.txt:73), 4 J-leads on 4 pads (rocpu_tps850.txt:118, 127); JLC's preview (VER-28) shows which land it places on)
+  ok    C525375 TH1 (1): TCTR0805F10K0F4460T, 0805, 2 joints, Extended, stock 3962 at the snapshot; ratings -40℃~+150℃ 1.3mW 130mW
+  ok    C13612 U1 (1): SRV05-4.TCT, SOT-23-6L, 6 joints, Extended, stock 166040 at the snapshot; ratings -55℃~+125℃ 17.5V 300W 5V; package SOT-23-6 (footprint) != SOT-23-6L (explained: JLC names SOT-23-6 'SOT-23-6L'; the land is VER-125's (srv05-4.pdf))
+  ok    C116490 U10 (1): MCP6001T-I/OT, SOT-23-5, 5 joints, Extended, stock 36283 at the snapshot; ratings -40℃~+85℃ 1.8V~6V 600V 6V
+  ok    C15220 U2 (1): BQ24073RGTR, QFN-16-EP(3x3), 17 joints, Extended, stock 2558 at the snapshot; ratings -40℃~+125℃ 4.2V 4.35V~6.4V; package VQFN-16 (footprint) != QFN-16-EP(3x3) (explained: JLC's 'QFN-16-EP(3x3)' is TI's RGT0016C VQFN, 3 x 3 mm with an exposed pad (VER-125, DEF-84))
+  ok    C485517 U3 (1): TLV75733PDBVR, SOT-23-5, 5 joints, Extended, stock 30038 at the snapshot; ratings -40℃~+125℃@(Tj) 3.3V 5.5V
+  ok    C3013946 U4 (1): ESP32-S3-WROOM-1U-N16R8, SMD,19.2x18mm, 49 joints, Extended, stock 18078 at the snapshot; ratings -40℃~+65℃ 3V~3.6V; footprint ESP32-S3-WROOM-1U against SMD,19.2x18mm (explained: JLC's 'SMD,19.2x18mm' is the WROOM-1U's 19.2 x 18.0 mm outline (esp32-s3-wroom-1.txt:3264, 3449)); 41 numbered pads on the board != 49 solder joints (explained: the 40 castellations and the exposed pad 41, which the footprint pastes through 9 windows of 0.9 mm; JLC counts 40 + 9 = 49 joints (the pad's size is DEF-84's))
+  ok    C7377 U6 (1): MCP6002T-I/SN, SOIC-8, 8 joints, Preferred, stock 84425 at the snapshot; ratings -40℃~+125℃ 1.8V~6V 600V 7V
+  ok    C94625 U7 (1): FM8002A, SOP-8, 8 joints, Extended, stock 157199 at the snapshot; ratings -40℃~+85℃ 2.5V~5.5V 2W; package SOIC-8 (footprint) != SOP-8 (explained: the FM8002A's own datasheet names its package SOP-8 (fm8002a.txt:17), KiCad's SOIC-8 3.9 x 4.9 mm)
+  ok    C43420 U8,U9,U11 (3): SN74HC165PWR, TSSOP-16, 16 joints, Extended, stock 30421 at the snapshot; ratings -40℃~+125℃ 6V 2V~6V
+45 LCSC lines, 114 placements; 2 with an unexplained difference, 11 differences explained; 16 Extended lines (JLC's per-part fee): C165948 C177225 C202116 C160402 C114218 C15172 C2028 C2759975 C525375 C13612 C116490 C15220 C485517 C3013946 C94625 C43420
+stock at the snapshot (2026-07-13 19:07 UTC) under 30 boards x 1.1: none (stock is VER-41's, read on order day)
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

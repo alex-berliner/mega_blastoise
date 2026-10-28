@@ -1,0 +1,15 @@
+# VER-16 errata
+DATE: 2026-10-27
+COMMIT: 2ba2308049863c9087b9bbca74e7b5200dbbedfa
+WHO: Claude (class 6 build, 2026-10-27), read by hand from the datasheet's Appendix E
+ARTEFACT: hardware/ref_design/datasheets/rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext copy rp2350.txt sha256 fa2cad472b01b5e7219415e0774bff3c234123bb067cfeccc6fa221a53bc6ee3 (as evidence/2026-10-26_VER-34_datasheets.txt records), lines 102136-102272 (steppings) and 102278-103505 (errata); the table hardware/vv/analysis/errata_rp2350.md sha256 c433000faf8ea386a805844ac8ccb0201ee8788e15861df586f824c63ed83e6b
+
+28 errata read: E1-E28.
+Apply to this board or its firmware: E9 (A2 only), E16 (A2 only), E12 (every stepping).
+E9: fixed by R42 4.7k and R44 4.7k (at or under the 8.2 kohm of rp2350.txt:102915); AMP_EN's R37 100k is covered by two firmware rules (never left an input; the SDK's watchdog_enable() kept so a watchdog reset resets the pads); paper_checks.py latch (VER-33) and ampstate (VER-196) pass.
+E12: firmware rule, clk_sys at least 10% over clk_usb (150 MHz against 48 MHz).
+E16: no workaround exists; firmware rule, write no OTP and keep secure boot off.
+Every other erratum: does not apply (QFN-60 only, RISC-V only, secure boot or OTP features not used) or is software only with the SDK's own workaround.
+The stepping is not known until VER-109 reads the marking.
+
+RESULT: PASS

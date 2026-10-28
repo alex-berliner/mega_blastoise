@@ -1,0 +1,28 @@
+# VER-13 copper
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/paper_checks.py copper
+copper 35 um (1 oz, JLC's default; stand-in until the order options name it), rho 1.72e-05 ohm.mm, vias 18 um plating over 1.6 mm; IPC-2221's external chart for a 10 C rise (formula, from memory)
+VBUS to VSYS with 0.75 A in (the row's current):
+  J1 to U2 IN: VBUS 35.7 mV at 0.75 A (47.7 mohm); its most loaded track 0.30 mm carries 0.75 A, 75% of IPC-2221's 1.00 A for 10 C
+VBAT to VSYS with 0.75 A out of the cell:
+  J2 to JP5: CELL_P 13.8 mV at 0.75 A (18.3 mohm); its most loaded track 0.30 mm carries 0.75 A, 75% of IPC-2221's 1.00 A for 10 C
+  JP5 to U2 BAT: VBAT 37.2 mV at 0.75 A (49.5 mohm); its most loaded track 0.24 mm carries 0.75 A, 88% of IPC-2221's 0.85 A for 10 C
+VSYS from U2's OUT to each load at its own current:
+  U2 OUT to U3 pin 1: VSYS 136.6 mV at 0.62 A (220.3 mohm); its most loaded track 0.24 mm carries 0.62 A, 73% of IPC-2221's 0.85 A for 10 C
+  U2 OUT to JP2 (LED_A): VSYS 10.5 mV at 0.12 A (87.6 mohm); its most loaded track 0.24 mm carries 0.12 A, 14% of IPC-2221's 0.85 A for 10 C
+  JP2 to J3 (LED_A): LED_A 4.3 mV at 0.12 A (35.7 mohm); its most loaded track 0.30 mm carries 0.12 A, 12% of IPC-2221's 1.00 A for 10 C
+  U2 OUT to JP3 (AMP_VDD): VSYS 54.3 mV at 0.5 A (108.5 mohm); its most loaded track 0.24 mm carries 0.50 A, 59% of IPC-2221's 0.85 A for 10 C
+  JP3 to U7 VDD: AMP_VDD 13.0 mV at 0.5 A (26.0 mohm); its most loaded track 0.30 mm carries 0.50 A, 50% of IPC-2221's 1.00 A for 10 C
+VBUS to VSYS copper: 172.3 mV (limit 50); VBAT to VSYS copper: 187.5 mV (limit 30), each with the worst VSYS branch; U2's own switches are not copper and are not counted
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

@@ -1,0 +1,20 @@
+# VER-202 spkplug
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py spkplug
+bom.md's speaker row: leads 35.0 mm, sold with a 1.25 mm plug; to be refitted with a 1.0 mm SH plug, not yet ordered
+the speaker's plug at assembly: the plug it is sold with, 1.25 mm pitch; its header J4 is JST SH, 1.0 mm; the cell's J2 is PicoBlade, 1.25 mm
+the speaker's plug does NOT fit J4; it could enter J2
+the speaker's hole centre (129.70, 124.50): 16.4 mm to J4, 54.8 mm to J2, against 35.0 mm leads
+the leads reach J4; they cannot reach J2
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

@@ -1,0 +1,50 @@
+# VER-21 ret
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py ret
+GND fills: F.Cu 1 zone(s), B.Cu 1; each fast net's tracks sampled every 0.1 mm, a sample over no GND fill on the other layer is a gap; limit 2.0 mm in a run
+  FAIL  LCD_WR: longest run over no GND on the other layer 6.21 mm (a F.Cu track from (94.75, 116.76))
+  ok    LCD_WR_MCU: longest run over no GND on the other layer 0.98 mm (a F.Cu track from (83.25, 111.39))
+  FAIL  LCD_D0: longest run over no GND on the other layer 11.09 mm (a B.Cu track from (91.05, 108.91))
+  FAIL  LCD_D0_MCU: longest run over no GND on the other layer 2.32 mm (a F.Cu track from (76.92, 106.03))
+  FAIL  LCD_D1: longest run over no GND on the other layer 17.00 mm (a B.Cu track from (96.91, 108.43))
+  FAIL  LCD_D1_MCU: longest run over no GND on the other layer 2.29 mm (a F.Cu track from (75.65, 108.35))
+  FAIL  LCD_D2: longest run over no GND on the other layer 18.78 mm (a B.Cu track from (99.02, 107.81))
+  ok    LCD_D2_MCU: longest run over no GND on the other layer 1.09 mm (a F.Cu track from (74.47, 107.27))
+  FAIL  LCD_D3: longest run over no GND on the other layer 10.79 mm (a B.Cu track from (87.18, 110.01))
+  ok    LCD_D3_MCU: longest run over no GND on the other layer 1.35 mm (a F.Cu track from (73.1, 107.36))
+  FAIL  LCD_D4: longest run over no GND on the other layer 11.13 mm (a B.Cu track from (98.56, 109.39))
+  ok    LCD_D4_MCU: longest run over no GND on the other layer 1.07 mm (a F.Cu track from (71.84, 104.77))
+  FAIL  LCD_D5: longest run over no GND on the other layer 18.51 mm (a B.Cu track from (80.12, 108.12))
+  FAIL  LCD_D5_MCU: longest run over no GND on the other layer 5.59 mm (a B.Cu track from (74.99, 109.72))
+  FAIL  LCD_D6: longest run over no GND on the other layer 8.50 mm (a B.Cu track from (78.1, 112.96))
+  FAIL  LCD_D6_MCU: longest run over no GND on the other layer 5.16 mm (a B.Cu track from (75.83, 109.16))
+  ok    LCD_D7: longest run over no GND on the other layer 1.47 mm (a F.Cu track from (100.25, 116.76))
+  ok    LCD_D7_MCU: longest run over no GND on the other layer 0.98 mm (a F.Cu track from (83.25, 112.66))
+  FAIL  SD_CLK: longest run over no GND on the other layer 6.70 mm (a F.Cu track from (85.34, 129.74))
+  FAIL  SD_CMD: longest run over no GND on the other layer 7.52 mm (a F.Cu track from (84.73, 121.56))
+  FAIL  SD_D0: longest run over no GND on the other layer 7.25 mm (a F.Cu track from (85.64, 123.16))
+  FAIL  SD_D1: longest run over no GND on the other layer 7.85 mm (a F.Cu track from (87.6, 129.92))
+  FAIL  SD_D2: longest run over no GND on the other layer 7.23 mm (a B.Cu track from (91.45, 123.97))
+  FAIL  SD_D3: longest run over no GND on the other layer 2.21 mm (a B.Cu track from (75.65, 127.17))
+  FAIL  USB_DP: longest run over no GND on the other layer 4.09 mm (a F.Cu track from (95.27, 123.98))
+  FAIL  USB_DM: longest run over no GND on the other layer 5.02 mm (a F.Cu track from (123.94, 100.38))
+  FAIL  USB_DP_MCU: longest run over no GND on the other layer 3.95 mm (a B.Cu track from (87.57, 127.19))
+  FAIL  USB_DM_MCU: longest run over no GND on the other layer 4.05 mm (a B.Cu track from (87.53, 127.89))
+  FAIL  AUDIO_PWM: longest run over no GND on the other layer 3.32 mm (a F.Cu track from (79.46, 124.87))
+  FAIL  SR_CLK: longest run over no GND on the other layer 8.87 mm (a B.Cu track from (75.33, 111.36))
+  FAIL  SR_CLK_MCU: longest run over no GND on the other layer 4.92 mm (a F.Cu track from (78.89, 112.9))
+  FAIL  SR_PL: longest run over no GND on the other layer 14.12 mm (a B.Cu track from (90.91, 126.07))
+  FAIL  SR_DATA: longest run over no GND on the other layer 3.90 mm (a B.Cu track from (81.94, 128.32))
+27 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

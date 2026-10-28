@@ -1,0 +1,24 @@
+# VER-195 usbfault
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py usbfault
+[esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
+[srv05-4.pdf sha256 a164eb7954004c1b9d6c6fe5047dcca89db686b1270c8f534fc724e3e2764ec5; its pdftotext -layout text sha256 8fc17c36e618bcbf..., 616 lines]
+[esp32-s3-wroom-1.pdf sha256 27d71971da07c280c6068d08c74720d1a25b8f20cf8494dc1765bdd28d40d435; its pdftotext -layout text sha256 0b40dc77fe19addf..., 3771 lines]
+VBUS up to 20 V (PD_MAX) on each of J1's CC and data pins; VDD 3.250 V (3V3 at -1.5%); an ESP32-S3 pad's input is VDD + 0.3 V at most (esp32-s3.txt:3746: the chip's absolute table, 3674-3678, rates only its power pins); a pad's diode modelled as 0.5 V at 20 uA (stand-in)
+  FAIL  CC1 (A5): R1 5.1k dissipates 78 mW at 20 V against its 62.5 mW (0402, JLC's description); it reaches 62.5 mW at 17.9 V
+  FAIL  CC1 (A5): GPIO2 CC1_SENSE behind R3 10k passes VDD + 0.3 V from about 4.0 V; at 20 V 1.62 mA flows into its clamp (esp32-s3.pdf gives no injection limit)
+  FAIL  CC2 (B5): R2 5.1k dissipates 78 mW at 20 V against its 62.5 mW (0402, JLC's description); it reaches 62.5 mW at 17.9 V
+  FAIL  CC2 (B5): GPIO4 CC2_SENSE behind R4 10k passes VDD + 0.3 V from about 4.0 V; at 20 V 1.62 mA flows into its clamp (esp32-s3.pdf gives no injection limit)
+  D+ (A6, B6): from about 3.9 V U1 steers the line into +3V3 (U1 VF 1.2 V max at 15 mA, srv05-4.txt:97); the TLV75733P cannot sink, so once the fault pushes more than the rail's load (stand-in 10 mA) +3V3 rises; through R21 22 ohm the module's USB pad (GPIO20) sits at the line's clamp
+  FAIL  D+ (A6, B6): the module's USB pad and the whole +3V3 domain are over their absolute maximum (VDD33 3.6 V, esp32-s3-wroom-1.txt:1586) from about 3.9 V; at 20 V U1's clamp holds +3V3 near 17.5 V at 5 A (srv05-4.txt:102)
+  D- (A7, B7): from about 3.9 V U1 steers the line into +3V3 (U1 VF 1.2 V max at 15 mA, srv05-4.txt:97); the TLV75733P cannot sink, so once the fault pushes more than the rail's load (stand-in 10 mA) +3V3 rises; through R22 22 ohm the module's USB pad (GPIO19) sits at the line's clamp
+  FAIL  D- (A7, B7): the module's USB pad and the whole +3V3 domain are over their absolute maximum (VDD33 3.6 V, esp32-s3-wroom-1.txt:1586) from about 3.9 V; at 20 V U1's clamp holds +3V3 near 17.5 V at 5 A (srv05-4.txt:102)
+for DEC-17: the CC paths are over from about 3.8 V (the pads, at a current R3 and R4 limit to under 2 mA) and 17.9 V (R1, R2); a data line shorted to VBUS above about 4 V destroys the 3V3 domain whatever the series parts
+6 over
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

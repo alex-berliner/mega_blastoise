@@ -1,0 +1,43 @@
+# VER-39 doc_sweep
+DATE: 2026-10-26
+COMMIT: 807d0e0504f1ab6b13ec0a8a4f9363a321a1543d
+WHO: Claude (the re-seed session of 2026-10-26), by reading each file against design.py, placement.py and case.scad at be437f8
+ARTEFACT: the files below at this commit, with their git blob hashes:
+  hardware/ref_design/README.md 129f93a03b8ae054b2a8dace6bd1de1e0050028a
+  hardware/ref_design/PLAN.md f5233dec70523ab13f9e442284c395a34dd12331
+  hardware/ref_design/docs/bringup.md ec1c0b1eb1226c573dfd07dac944933233422781
+  hardware/ref_design/docs/assembly.md 2c68246383a86e3a0ba5390c519dd7eddc103a7a
+  hardware/ref_design/docs/bom.md 64afb7f4f00bb51ec6d20241dcbe7c59e7f9efa2
+  hardware/ref_design/docs/pinmap.md a3b70eca601786e8c28c2e18d9d461b6af1a7b0b
+  hardware/ref_design/docs/design_review.md 2fc246a365de1199cdea7f27cce776412ffb193d
+  hardware/ref_design/board/pin_review/u4.json 81bdd454e7a614acc0ef5db6c38921b4046609d0
+  hardware/ref_design/board/pin_review/u6.json b2996899603a548ddbd6df903b2d3489629e3ec0
+  hardware/ref_design/board/pin_review/panel.json a8ff385e3aee2b300c5cce4a6d8e449e2314a84a
+  hardware/ref_design/board/design.py 1b2ce08a3f966375a9babc9777abff73fc01f89e
+  hardware/ref_design/board/placement.py 65f219bc34795b8ec697a86203f5db8ff88dae12
+
+19 statements disagree with the design (DEF-21's letters in brackets):
+  bringup.md:12, :46: TP7 is called LS_GATE; it is CHG_TEMP, the BQ24073's TS node (a)
+  bringup.md step 0: expects one body-diode drop from Q2 and TP1 above about 1 kohm; Q2 is gone and R38 is 10k (VER-52, VER-53 hold the limits) (b)
+  bringup.md:75, :124, :126, :131, :144-145: the TP4056: CHG_DONE_N, its warmth, its TEMP pause at 46 C, VBUS under its 8 V (c)
+  bringup.md 6.2-6.3: seat 1's Y as the power button; both Starts are, since 2d1124d (d)
+  bringup.md:81-97 (display steps 1-5): the 2.4 in panel's ST7789V init, RDDID 0x85 0x85 0x52, IM3-0 = 1110, COLMOD 0x55, 154 kB frames, four LEDs at 70 mA (0.077 V) and a 29% duty; the ILI9488 needs ID4 0x94 0x88, IM2-0 high, COLMOD 0x66, 461 kB frames, six LEDs at 113 mA (0.124 V), 18% (n)
+  assembly.md:17, :55: the TP4056 among the polarised parts and the exposed pads; 'JP1 and JP2 come bridged' (five jumpers) (e)
+  assembly.md:67, :88: the speaker 'on its top' (sunk in a hole since 9cff0d3); J4's mouth 'towards the glass' (placement.py: towards the speaker) (o)
+  assembly.md step 10: the tub lifts off with the cell still plugged into J2 (DF-169) (j)
+  bom.md:33: the TP4056 at $0.17 (f)
+  bom.md:52: 'the Start/Select strip isn't used'; no domes or Start/Select caps (DEF-42) (f)
+  bom.md:55: an adhesive foam pad for the cell (l)
+  README.md:7: 'The cell lies under the board' (it sits in the board's hole since 2026-10-21) (g)
+  pin_review/panel.json:32, :659, :674, :689; u6.json:25: 3V3 from the ME6211 (the RT9013 since 1fd0956) (h)
+  pinmap.md:162: the VBAT gain calibrated when CHG_STAT_N goes high at the end of a charge (DEF-40, DF-117) (i)
+  pin_review/u4.json:17: PWR_HOLD on GPIO2, CHG_OFF GPIO19, AMP_EN GPIO11, BL_PWM GPIO44 (GPIO44, 43, 34, 28) (m)
+  placement.py:9-11, :45-51, :61-71: the speaker on the board's top; 'it and its amplifier went'; strips of 7.5 and 8.9 mm (9.2 each) (p)
+  design.py:152, :455: 'half-close Q2'; the speaker on the board's top (p)
+  ref_design/PLAN.md:23, :25, :32: the cell 'between seat 2's deck and J3's range'; the speaker on the board's top; the case 77.4 x 132.7 x 9.55 mm (q)
+  design_review.md:32-59, :81-97: the charger and power sections still describe the TP4056 and the ME6211 (r)
+
+Fixed since 2026-10-25: bom.md's board size (72.4 x 151.64 mm, its quote marked not re-quoted), part count (44)
+and placements (118), M2 x 6 screws, 'tub and top'.
+
+RESULT: FAIL

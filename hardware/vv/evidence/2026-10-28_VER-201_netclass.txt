@@ -1,0 +1,33 @@
+# VER-201 netclass
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py netclass
+build_pcb.py: 2 classes (PWR 0.3 mm, USB 0.2 mm); default 0.15 mm; the board has 138 nets
+  VBUS (VBUS): 0.75 A (VER-13: J1 to U2 IN at the charge current): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  CELL_P (/USB_Charger/CELL_P): 0.75 A (VER-13: J2 to JP5): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  VBAT (VBAT): 0.75 A (VER-13: JP5 to U2 BAT): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  VSYS (VSYS): 0.98 A (VER-31: U3 0.36 A with Wi-Fi on, LED_A 0.12 A and AMP_VDD 0.5 A held (39cc07f); 1.24 A in a TX burst): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  AMP_VDD (/Audio/AMP_VDD): 0.50 A (VER-13: the amplifier, a stand-in (fm8002a.pdf prints no supply current at full power)): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  SPK_P (/Audio/SPK_P): 0.35 A (0.5 W into 8 ohm, the peak): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  SPK_N (/Audio/SPK_N): 0.35 A (0.5 W into 8 ohm, the peak): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  +3V3 (+3V3): 0.62 A (VER-31: the 3V3 load in a Wi-Fi TX burst (39cc07f)): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  3V3_LDO (/Power/3V3_LDO): 0.62 A (as +3V3): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  LED_A (/Display/LED_A): 0.12 A (the panel's 117.7 mA worst case, VER-137): class PWR
+    class PWR 0.3 mm carries 1.00 A by IPC-2221 for 10 C (paper_checks.ipc2221_amps): enough
+  SD_VDD (/Storage/SD_VDD): 0.10 A (a microSD card writing (VER-31's stand-in)): no class, the default
+findings: 0
+RESULT: PASS
+
+exit 0
+RESULT: PASS

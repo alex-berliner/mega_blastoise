@@ -1,0 +1,26 @@
+# VER-218 cellarch
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py cellarch
+U2 BQ24073RGTR (bq24074.pdf, SLUS810N) against the cell's PROPOSED requirements (REQ-BAT-01, 02.R, 13, 16):
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  ok    [cell] charge voltage VBAT(REG) 4.16-4.23 V for the '73 (bq24074.txt:773-774) inside REQ-BAT-01's 4.158-4.242 V (PROPOSED)
+  ok    [cell] fast charge KISET / R5 = 239.1-298.4 mA (R5 3.3k 1%, KISET 797-975 A-ohm, bq24074.txt:785) against 0.5 C of REQ-BAT-16's 600 mAh lot floor, 300 mA (both PROPOSED; the cell's own standard charge current is VER-37's)
+  REQ-BAT-02.R states 242-295 mA, KISET's band at R5's nominal: with R5's 1% it is 239.1-298.4 mA (a wording for Alex to settle when he approves it; VER-66 measures a unit)
+  pre-charge KPRECHG / R5 = 21.0-32.4 mA below VLOWV 2.9-3.1 V (bq24074.txt:776, 787); termination at 9-11% of ICHG, 21.5-32.8 mA (789), TD at GND (VER-198)
+  ok    [cell] TMR open: fast-charge timer 14400-21600 s and pre-charge 1440-2160 s (bq24074.txt:817-818) inside REQ-BAT-13's 5 h +-20% (14400-21600 s) and 30 min read with the same 20% (PROPOSED)
+  charging while playing: the DPPM loop takes the charge current the system needs, and the timers slow in proportion (bq24074.txt:1850-1855), so a long charge under load does not end in a timer fault
+  the slowest unit's 239 mA brings bom.md's 'about 700 mAh' cell through its CC phase in at most 2.93 h of the timer's 4.00 h; the CV taper's share is not bounded by a datasheet (VER-66 times a full charge on unit 1)
+  ok    [cell] no USB, the system's peak 1238 mA (3V3 620 mA in a TX burst, the backlight's 117.7, the amplifier's 500) drops 124 mV across U2's battery FET (100 mV at 1 A, bq24074.txt:724), under VO(SC2)'s 200 mV minimum: U2's own short-circuit cut-off (bq24074.txt:753, 1608-1610) does not open OUT in a burst
+  ok    [cell] BAT discharge 1.24 A against 5 A continuous (bq24074.txt:604)
+[esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
+[mcp6001.pdf sha256 4f879ab31115ecfa149dfea62073c9efdbc4beccbdfc3a8d7e10281f3877f8fb; its pdftotext -layout text sha256 389d546fd726d011..., 2769 lines]
+  ok    [cell] VBAT_SENSE at charge-done 2.115 V (4.23 V through R17/R18) inside ATTEN3's 0-2900 mV (esp32-s3.txt:3804) and U10's swing to VDD - 25 mV at 3V3's 3.0 V floor (mcp6001.txt:154)
+  the cell's own protection (the PCM) is the only layer between a short on CELL_P or VBAT and the cell: its trip values are VER-37's and VER-88's; U2's cut-off covers VSYS and what hangs on it
+0 failing
+RESULT: PASS
+
+exit 0
+RESULT: PASS

@@ -1,0 +1,23 @@
+# VER-191 usb
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/paper_checks.py usb
+R21 22 ohm 1%: 21.78-22.22 ohm against Espressif's 'initial value can be 22/33' (esp32-s3-hw-design-guidelines.txt:874): inside
+R22 22 ohm 1%: 21.78-22.22 ohm against Espressif's 'initial value can be 22/33' (esp32-s3-hw-design-guidelines.txt:874): inside
+ZDRV (USB 2.0's 28-44 ohm with the series resistor) also needs the PHY's own output impedance, which esp32-s3.pdf does not give: 22/33 ohm is Espressif's starting value for that sum, to be tuned on the board (874)
+R21's pad on USB_DP_MCU is 11.5 mm from the module's pin 14 in a straight line, 19.5 mm of track: 'place them close to the chip' (esp32-s3-hw-design-guidelines.txt:875, 1307), read here as 5 mm: NOT close: the line between the pin and the resistor is unterminated (at full speed's 4-20 ns edges a 20 mm stub is 0.13 ns, so the cost is EMI and ringing, not timing)
+R22's pad on USB_DM_MCU is 11.6 mm from the module's pin 13 in a straight line, 23.0 mm of track: 'place them close to the chip' (esp32-s3-hw-design-guidelines.txt:875, 1307), read here as 5 mm: NOT close: the line between the pin and the resistor is unterminated (at full speed's 4-20 ns edges a 20 mm stub is 0.13 ns, so the cost is EMI and ringing, not timing)
+D+: track 87.2 mm (8.7 pF at 0.1 pF/mm, stand-in), 7 vias (0.5 pF each), U1 5 pF max (srv05-4.txt:105), the module's pad 10 pF (stand-in): 27.2 pF against 100 pF
+D-: track 92.2 mm (9.2 pF at 0.1 pF/mm, stand-in), 6 vias (0.5 pF each), U1 5 pF max (srv05-4.txt:105), the module's pad 10 pF (stand-in): 27.2 pF against 100 pF
+D+/D- length mismatch 4.99 mm (VER-108 owns the limit)
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

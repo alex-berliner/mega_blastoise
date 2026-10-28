@@ -1,0 +1,53 @@
+# VER-112 heights
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/case_checks.py heights
+check_fit's 124 parts: 8 from a courtyard, 1 from check_fit.BODY_LOCAL, 115 from its 3D model
+[hirose_fh12.pdf sha256 28aca07025cc3b602ab828d1ca972ca6b83c8bac53ead1807bf66cf0074b2a8a; its pdftotext -layout text sha256 e99ced47bb08fb0b..., 1398 lines]
+  ok    J3: check_fit uses 2.00 mm (its 3D model) against 2.00 mm, the FH12's standard type, 2 mm (hirose_fh12.txt:220)
+  ok    J3 at 2.00 mm through check_fit's own rule: clears the case
+[hirose_dm3_catalog_C114218.pdf sha256 b74bee24f5e7f9bc68b403a21b2c5ff94ca4230072b10a41ca62664ea95a5951; its pdftotext -layout text sha256 d882e23d84a2594b..., 1047 lines]
+  ok    J8: check_fit uses 1.67 mm (its 3D model) against 1.68 mm, the DM3AT drawing's 1.68 beside its card-detect view (hirose_dm3_catalog_C114218.txt:154)
+  ok    J8 at 1.68 mm through check_fit's own rule: clears the case
+[rocpu_tps850.pdf sha256 085a2be0e64467bd9a929cc944267dfde6d1fb578840786e57bc438690048a18; its pdftotext -layout text sha256 5bd9d28cf3fb0dde..., 156 lines]
+  ok    SW24: check_fit uses 1.50 mm (a courtyard at the 1.5 mm default) against 1.40 mm, TPS850 J14K, height 1.4 (rocpu_tps850.txt:33)
+  ok    SW24 at 1.40 mm through check_fit's own rule: clears the case
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+  FAIL  U11: check_fit uses 1.09 mm (its 3D model) against 1.20 mm, as U8 (sn74hc165.txt:1809): 0.11 mm understated
+  ok    U11 at 1.20 mm through check_fit's own rule: clears the case
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  ok    U2: check_fit uses 1.00 mm (a courtyard at PACKAGE_HEIGHT['QFN']) against 1.00 mm, RGT0016C, 1 mm max height (bq24074.txt:3062)
+  ok    U2 at 1.00 mm through check_fit's own rule: clears the case
+[esp32-s3-wroom-1.pdf sha256 27d71971da07c280c6068d08c74720d1a25b8f20cf8494dc1765bdd28d40d435; its pdftotext -layout text sha256 0b40dc77fe19addf..., 3771 lines]
+  FAIL  U4: check_fit uses 3.20 mm (check_fit.BODY_LOCAL) against 3.35 mm, the WROOM-1U's side view, 3.2 +-0.15 (Figure 10-2) (esp32-s3-wroom-1.txt:3130): 0.15 mm understated
+  FAIL  U4 at 3.35 mm through check_fit's own rule: U4 is 3.35 mm tall; the glass allows 3.30
+  FAIL  U8: check_fit uses 1.09 mm (its 3D model) against 1.20 mm, PW0016A, 1.2 MAX (sn74hc165.txt:1809): 0.11 mm understated
+  ok    U8 at 1.20 mm through check_fit's own rule: clears the case
+  FAIL  U9: check_fit uses 1.09 mm (its 3D model) against 1.20 mm, as U8 (sn74hc165.txt:1809): 0.11 mm understated
+  ok    U9 at 1.20 mm through check_fit's own rule: clears the case
+  ok    no part on a package guess without a drawing behind it (the solder jumpers JP1-JP6 are copper only)
+  110 parts stand on their KiCad 3D models: no drawing on disk prints their height in text (the SOT-23s, SOICs and passives' drawings are figures; J1's, J2's and J4's sheets have no text layer for it); VER-48 measures the printed case with the real parts
+5 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+15:33:08: Debug: Adding duplicate image handler for 'PNG file'
+15:33:08: Debug: Adding duplicate image handler for 'JPEG file'
+15:33:08: Debug: Adding duplicate image handler for 'TIFF file'
+15:33:08: Debug: Adding duplicate image handler for 'GIF file'
+15:33:08: Debug: Adding duplicate image handler for 'PNM file'
+15:33:08: Debug: Adding duplicate image handler for 'PCX file'
+15:33:08: Debug: Adding duplicate image handler for 'IFF file'
+15:33:08: Debug: Adding duplicate image handler for 'Windows icon file'
+15:33:08: Debug: Adding duplicate image handler for 'Windows cursor file'
+15:33:08: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+15:33:08: Debug: Adding duplicate image handler for 'TGA file'
+15:33:08: Debug: Adding duplicate image handler for 'XPM file'
+
+exit 1
+RESULT: FAIL

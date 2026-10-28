@@ -1,0 +1,74 @@
+# VER-203 gpio
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py gpio
+[esp32-s3-wroom-1.pdf sha256 27d71971da07c280c6068d08c74720d1a25b8f20cf8494dc1765bdd28d40d435; its pdftotext -layout text sha256 0b40dc77fe19addf..., 3771 lines]
+  ok    Table 3-1 read for pins 1-41 (esp32-s3-wroom-1.txt:629-688): 41 rows
+  each module pin, its GPIO and its net (design.py ESP32):
+    pin  1 GND   GPIO-   GND
+    pin  2 3V3   GPIO-   +3V3
+    pin  3 EN    GPIO-   EN
+    pin  4 IO4   GPIO4   CC2_SENSE
+    pin  5 IO5   GPIO5   SR_PL
+    pin  6 IO6   GPIO6   LCD_DC
+    pin  7 IO7   GPIO7   LCD_RST
+    pin  8 IO15  GPIO15  SD_D2
+    pin  9 IO16  GPIO16  SD_D3
+    pin 10 IO17  GPIO17  SD_CD
+    pin 11 IO18  GPIO18  SR_CLK_MCU
+    pin 12 IO8   GPIO8   AUDIO_PWM
+    pin 13 IO19  GPIO19  USB_DM_MCU
+    pin 14 IO20  GPIO20  USB_DP_MCU
+    pin 15 IO3   GPIO3   SR_DATA
+    pin 16 IO46  GPIO46  CHG_OFF
+    pin 17 IO9   GPIO9   BL_PWM
+    pin 18 IO10  GPIO10  LCD_TE
+    pin 19 IO11  GPIO11  SD_CMD
+    pin 20 IO12  GPIO12  SD_CLK
+    pin 21 IO13  GPIO13  SD_D0
+    pin 22 IO14  GPIO14  SD_D1
+    pin 23 IO21  GPIO21  PWR_HOLD
+    pin 24 IO47  GPIO47  LCD_D7_MCU
+    pin 25 IO48  GPIO48  LCD_WR_MCU
+    pin 26 IO45  GPIO45  AMP_EN
+    pin 27 IO0   GPIO0   BOOT
+    pin 28 IO35  GPIO35  (open)
+    pin 29 IO36  GPIO36  (open)
+    pin 30 IO37  GPIO37  (open)
+    pin 31 IO38  GPIO38  LCD_D0_MCU
+    pin 32 IO39  GPIO39  LCD_D1_MCU
+    pin 33 IO40  GPIO40  LCD_D2_MCU
+    pin 34 IO41  GPIO41  LCD_D3_MCU
+    pin 35 IO42  GPIO42  LCD_D4_MCU
+    pin 36 RXD0  GPIO44  LCD_D6_MCU
+    pin 37 TXD0  GPIO43  LCD_D5_MCU
+    pin 38 IO2   GPIO2   CC1_SENSE
+    pin 39 IO1   GPIO1   VBAT_SENSE
+    pin 40 GND   GPIO-   GND
+    pin 41 EPAD  GPIO-   GND
+  ok    CC1_SENSE on pin 38 (GPIO2): ADC1_CH1 (ADC2 cannot be used with Wi-Fi, esp32-s3.txt:3415)
+  ok    CC2_SENSE on pin 4 (GPIO4): ADC1_CH3 (ADC2 cannot be used with Wi-Fi, esp32-s3.txt:3415)
+  ok    VBAT_SENSE on pin 39 (GPIO1): ADC1_CH0 (ADC2 cannot be used with Wi-Fi, esp32-s3.txt:3415)
+[esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
+  ok    USB_DM_MCU on pin 13: USB_D- (Table 3-1)
+  ok    USB_DP_MCU on pin 14: USB_D+ (Table 3-1)
+  ok    IO35-IO37 (pins 28, 29, 30) unconnected: the R8's octal PSRAM (esp32-s3-wroom-1.txt:691-693)
+  ok    IO47 and IO48 run at 3.3 V: only the R16V's VDD_SPI is 1.8 V (esp32-s3-wroom-1.txt:694-696); U4 is ESP32-S3-WROOM-1U-N16R8 (LCD_D7, LCD_WR on them)
+  ok    GPIO0 (pin 27) at reset: BOOT: no resistor on the board (the pin's internal default holds it): 1 = SPI boot (esp32-s3-wroom-1.txt:751, 816); J7's BOOT pad pulls it low for the download mode
+  ok    GPIO45 (pin 26) at reset: AMP_EN: R37 100k to GND: 0 = VDD_SPI at 3.3 V for the N16R8's 3.3 V flash and PSRAM (esp32-s3-wroom-1.txt:849; only the N16R16VA is 1.8 V, 170)
+  ok    GPIO46 (pin 16) at reset: CHG_OFF: R44 4.7k to GND: 0, so GPIO0 low gives the joint download mode (esp32-s3-wroom-1.txt:817); with GPIO0 high any value boots from flash (816)
+  ok    GPIO3 (pin 15) at reset: SR_DATA: driven by U8's output: not high impedance (esp32-s3-wroom-1.txt:876); its level is ignored while the JTAG eFuses are unburnt (893): firmware must never burn EFUSE_STRAP_JTAG_SEL
+  ok    PWR_HOLD on GPIO21: power-up glitches none (esp32-s3.txt:958-1006): never driven high before firmware
+  ok    AMP_EN on GPIO45: power-up glitches none (esp32-s3.txt:958-1006): never driven high before firmware
+  ok    CHG_OFF on GPIO46: power-up glitches none (esp32-s3.txt:958-1006): never driven high before firmware
+  ok    BL_PWM on GPIO9: power-up glitches Low-level glitch (esp32-s3.txt:958-1006): never driven high before firmware
+  GPIO18 (SR_CLK_MCU) has a 60 us high-level glitch at power-up (esp32-s3.txt:990-1006): one stray clock edge before the first load: harmless (SR_PL loads first)
+  GPIO19 (USB_DM_MCU) has a 60 us high-level glitch at power-up (esp32-s3.txt:990-1006): USB, the ROM's own
+  GPIO20 (USB_DP_MCU) has a 60 us high-level glitch at power-up (esp32-s3.txt:990-1006): USB, the ROM's own
+0 failing
+RESULT: PASS
+
+exit 0
+RESULT: PASS

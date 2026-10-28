@@ -1,0 +1,25 @@
+# VER-201 netclass
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py netclass
+build_pcb.py: 2 classes (PWR 0.3 mm, USB 0.2 mm); default 0.15 mm; the board has 153 nets
+  VBUS (VBUS): 0.75 A (VER-13: J1 to U2 IN at the charge current): class PWR
+  CELL_P (/USB_Charger/CELL_P): 0.75 A (VER-13: J2 to JP5): no class, the default
+  VBAT (VBAT): 0.75 A (VER-13: JP5 to U2 BAT): class PWR
+  VSYS (VSYS): 0.77 A (VER-13: U3 0.15 A, LED_A 0.12 A and AMP_VDD 0.5 A): class PWR
+  AMP_VDD (/Audio/AMP_VDD): 0.50 A (VER-13: the amplifier, a stand-in until the FM8002A's datasheet): no class, the default
+  SPK_P (/Audio/SPK_P): 0.35 A (0.5 W into 8 ohm, the peak): class PWR
+  SPK_N (/Audio/SPK_N): 0.35 A (0.5 W into 8 ohm, the peak): class PWR
+  +3V3 (+3V3): 0.15 A (U3's load, VER-13): class PWR
+  3V3_LDO (/Power/3V3_LDO): 0.15 A (U3's load, VER-13): class PWR
+  LED_A (/Display/LED_A): 0.12 A (the panel's 117.7 mA worst case, VER-137): class PWR
+findings: 3
+  PWR names /USB_Charger/VBUS_D5, which is no net of the board
+  /USB_Charger/CELL_P carries 0.75 A in no class
+  /Audio/AMP_VDD carries 0.50 A in no class
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

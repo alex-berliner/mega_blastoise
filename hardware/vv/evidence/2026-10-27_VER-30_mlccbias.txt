@@ -1,0 +1,20 @@
+# VER-30 mlccbias
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py mlccbias
+  C1 (CL10A106MA8NRNC) at 5.25 V: 8.00 uF at its low tolerance; needs 1.00 uF (U2 IN 1-10 uF (bq24074.txt:520)): may lose up to 88% to DC bias
+  C2+C5+C34 (CL10A475KO8NNNC, CL10A106KP8NNNC, CL10A106KP8NNNC) at 4.50 V: 22.23 uF at its low tolerance; needs 4.70 uF (U2 OUT 4.7-47 uF (bq24074.txt:533), C34 through JP3): may lose up to 79% to DC bias
+  C3 (CL10A106KP8NNNC) at 4.20 V: 9.00 uF at its low tolerance; needs 4.70 uF (U2 BAT 4.7-47 uF (bq24074.txt:501)): may lose up to 48% to DC bias
+  C5 (CL10A106KP8NNNC) at 4.50 V: 9.00 uF at its low tolerance; needs 1.00 uF (U3 input 1 uF X7R or more (rt9013.pdf p8)): may lose up to 89% to DC bias
+  C6+C7 (CL10A106KP8NNNC, CL10A106KP8NNNC) at 3.37 V: 18.00 uF at its low tolerance; needs 1.00 uF (U3 output 1 uF or more (rt9013.pdf p8)): may lose up to 94% to DC bias
+  C24 (CL05A475MP5NRNC) at 3.37 V: 3.76 uF at its low tolerance; needs 4.70 uF (VREG CIN at least 4.7 uF (rp2350.txt:33598)): SHORT before any DC-bias loss (the curve can only lower it)
+  C25 (CL05A475MP5NRNC) at 1.16 V: 3.76 uF at its low tolerance; needs 3.76 uF (VREG COUT 4.7 uF -20% (rp2350.txt:33603)): may lose up to 0% to DC bias
+  C34 (CL10A106KP8NNNC) at 4.50 V: 9.00 uF at its low tolerance; needs 1.00 uF (FM8002A Cs 1 uF (u7.json p6, not on disk)): may lose up to 89% to DC bias
+Samsung's DC-bias curves for CL10A106KP8NNNC, CL10A106MA8NRNC, CL10A475KO8NNNC, CL05A475MP5NRNC (product.samsungsem.com, the MLCC pages) are not in hardware/ref_design/datasheets: each 'may lose' above waits for its curve (BLOCKED)
+short at the part's own tolerance, whatever the curve: C24
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

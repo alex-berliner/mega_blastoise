@@ -1,0 +1,17 @@
+# VER-138 cutoff
+DATE: 2026-10-26
+COMMIT: fec2fc42b96caf0404ec79af135f0a69b25b0649
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py cutoff
+U3 RT9013-33GB: dropout 250 mV typ, 400 mV max at 500 mA; at 150 mA about 75 mV typical, 120 mV maximum (scaled with the current)
+R17/R18 470k/470k: the ADC reads VBAT/2 against 3V3 itself
+calibration (pinmap.md): the gain is set at charge-done, taking the cell as 4.20 V; the charger's CV is 4.20 V +-1%
+3V3 in regulation: the cutoff fires at a true 3.465-3.535 V (REQ-BAT-12: 3.50 +0.05/-0.00)
+nominal: 3V3 3.300 V, dropout 75 mV, CV 4.200 V: lowest reading in dropout 3.375 V: fires
+worst: 3V3 3.366 V, dropout 120 mV, CV 4.158 V: lowest reading in dropout 3.521 V: never reaches 3.50: the cutoff never fires
+pad leakage: +-1 uA (the RP2350's IIN maximum, rp2350.txt:101199, quoted by VER-34) through 235 kohm moves VBAT's reading +-0.470 V; REQ-BAT-12's 50 mV window allows +-53 nA of leakage that changes with temperature, before any other error
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

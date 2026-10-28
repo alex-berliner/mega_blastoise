@@ -1,0 +1,97 @@
+# VER-198 appcircuit
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/circuit_checks.py appcircuit
+U2 BQ24073RGTR (bq24074.pdf, SLUS810N), Table 7-1 and section 8:
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  ok    [power] IN bypass 10.0 uF (C1 through R41) against '1 μF to 10 μF to VSS.' (bq24074.txt:520)
+  ok    [power] OUT bypass 14.7 uF (C2, C5) against '4.7-uF to 47-uF' (bq24074.txt:533)
+  ok    [power] BAT bypass 10.0 uF (C3) against 4.7-47 uF (bq24074.txt:501)
+  ok    [power] ISET (pin 16) to VSS through R5 3.3k: 590-8900 ohm (bq24074.txt:643); 'Charging is disabled if ISET is left unconnected' (522)
+  ok    [power] ILIM (pin 12) to VSS through R64: 1100-8000 ohm (bq24074.txt:642), never open (515)
+  ok    [power] pin 15 is TD on the '73 (bq24074.txt:558): at GND, termination enabled ('Connect TD to VSS to enable charger termination', 556)
+  ok    [power] TMR (pin 14) open: the default safety timers (bq24074.txt:568)
+  ok    [power] TS (pin 1) to a 10 kohm NTC (TH1 10k B4460): 'TS monitors a 10kOhm NTC thermistor' (bq24074.txt:570); its window is VER-32's
+  ok    [power] EN2 (pin 5) at GND, EN1 (pin 6) from VBUS through R43 220k: USB500, 'EN2 0, EN1 1: 500 mA' (bq24074.txt:578); EN1 at IN's 4.35 V minimum 2.44 V against VIH 1.4 V (848) with the ~285k pull-down (512)
+  ok    [power] CE (pin 4) on CHG_OFF from U4 with R44 4.7k to GND: never floating (bq24074.txt:505)
+  ok    [power] CHG (pin 9) open drain to +3V3 through R10 100k: 1k-100k (bq24074.txt:509)
+  ok    [power] PGOOD (pin 7) open drain to +3V3 through R9 100k: 1k-100k (bq24074.txt:536)
+  ok    [power] the thermal pad (17) and VSS (8) on GND (bq24074.txt:562, 572)
+U3 RT9013-33GB (rt9013.pdf, DS9013-10):
+[rt9013.pdf sha256 b14a1c44445d69accbaabda7f3ce442964ca52f05d6664e3d49572ff20fb4b13; its pdftotext -layout text sha256 e05dbba88cba6df7..., 798 lines]
+  ok    [power] CIN on VIN (VSYS): C2, C5 15 uF >= 1 uF X7R (rt9013.pdf p8, rt9013.txt:479); its distance is checked below on the routed board
+  ok    [power] COUT on VOUT (3V3_LDO): C6, C7 20 uF >= 1 uF ceramic (rt9013.txt:494)
+  ok    [power] EN (PWR_EN) held low by R15: 'cannot be left floating' (rt9013.txt:483)
+  ok    [power] pin 4 NC, as the SOT-23-5 pinout (pin_review/u3.json, p2)
+U8, U9 SN74HC165PWR (sn74hc165.pdf, SCLS116):
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+  ok    [buttons] U8 CLK INH (pin 15) at GND: low enables the clock (sn74hc165.txt:157, 198)
+  ok    [buttons] U8 VCC (16) on +3V3, inside 2-6 V (sn74hc165.txt:255)
+  ok    [buttons] U8 SER (pin 10) at SR_CHAIN: driven, not floating
+  ok    [buttons] U8 D0-D7 each pulled up by an RN array: no input floats with its contact open
+  ok    [buttons] U9 CLK INH (pin 15) at GND: low enables the clock (sn74hc165.txt:157, 198)
+  ok    [buttons] U9 VCC (16) on +3V3, inside 2-6 V (sn74hc165.txt:255)
+  ok    [buttons] U9 SER (pin 10) at +3V3: driven, not floating
+  ok    [buttons] U9 D0-D7 each pulled up by an RN array: no input floats with its contact open
+U4 RP2354B outside the core (the core's values are VER-197's):
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+  ok    [mcu] RUN has its own pull-up ('RUN 26 35 Digital In (FT) IOVDD Pull-Up Chip enable /', rp2350.txt:100938); SW19 pulls it low through R26 1k
+  ok    [usb_debug] USB_DP and USB_DM through 27 ohm each (rp2350.txt:1196)
+  ok    [usb_debug] SWCLK (pin 33) and SWDIO (34) reach J5 and J7 (rp2350.txt:1207)
+the panel ER-TFT035IPS-6 on J3 (er-tft035ips-6.pdf, its ILI9488):
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+  ok    [display] IM0-IM2 (pins 7-9) high: '1 1 1 4-wire 8-bit data Serial Interface I' (er-tft035ips-6.txt:722)
+  ok    [display] VSYNC, HSYNC, DOTCLK, DE and DB17-DB0 (11-32) at GND, as 'Fix to DGND level when not in use' (er-tft035ips-6.txt:659-667)
+  ok    [display] RD (35) at the logic supply (er-tft035ips-6.txt:675)
+  ok    [display] SDO (33) and TE (39) to U4's inputs, open-safe (669, 686)
+  FAIL  [display] VCI and VDDI (40-42) on LCD_3V3 = +3V3 through JP4: up to 3.366 V (RT9013 +-2%) against 'Power Supply Voltage VCI 2.5 2.8 3.3 V' (er-tft035ips-6.txt:747-748): the known DEF-61, DEC-09 proposes accepting it
+  ok    [power] the nearest CIN pad is 6.2 mm from U3's VIN, within 0.5 in (12.7 mm, rt9013.txt:481)
+constants the vv tools cite by line, against the extract's line:
+  FAIL  circuit_checks.py:483 STAND_RP_VIN = 0.03675 on rp2350.txt:101676: NOT on the cited line
+  ok    design_numbers.py:78 KPRECHG = 70 on bq24074.txt:787
+  ok    design_numbers.py:78 KPRECHG = 106 on bq24074.txt:787
+  ok    design_numbers.py:79 KISET = 797 on bq24074.txt:785
+  ok    design_numbers.py:79 KISET = 975 on bq24074.txt:785
+  ok    design_numbers.py:80 ITERM = 0.09 on bq24074.txt:789
+  ok    design_numbers.py:80 ITERM = 0.11 on bq24074.txt:789
+  ok    design_numbers.py:81 V_LOWV = 2.9 on bq24074.txt:776
+  ok    design_numbers.py:81 V_LOWV = 3.1 on bq24074.txt:776
+  ok    design_numbers.py:82 VBAT_REG = 4.16 on bq24074.txt:773
+  ok    design_numbers.py:82 VBAT_REG = 4.23 on bq24074.txt:773
+  ok    design_numbers.py:83 V_HOT = 0.27 on bq24074.txt:824
+  ok    design_numbers.py:83 V_HOT = 0.33 on bq24074.txt:824
+  ok    design_numbers.py:84 V_COLD = 2 on bq24074.txt:826
+  ok    design_numbers.py:84 V_COLD = 2.2 on bq24074.txt:826
+  ok    design_numbers.py:85 I_TS = 7.5e-05 on bq24074.txt:823
+  ok    paper_checks.py:47 U2_IBAT_PDWN = 6.5e-06 on bq24074.txt:714
+  ok    paper_checks.py:48 U2_OVP_MIN = 6.4 on bq24074.txt:699
+  ok    paper_checks.py:49 U2_EN_ABS = 7 on bq24074.txt:598,599
+  ok    paper_checks.py:50 U2_EN_PD = 285000 on bq24074.txt:512
+  ok    paper_checks.py:51 U2_VO_REG = 4.3 on bq24074.txt:729
+  ok    paper_checks.py:51 U2_VO_REG = 4.5 on bq24074.txt:729
+  ok    paper_checks.py:52 U2_BAT_OUT_R = 0.1 on bq24074.txt:724
+  ok    paper_checks.py:54 RP_IIN = 1e-06 on rp2350.txt:101100
+  ok    paper_checks.py:55 RP_VOH = 2.62 on rp2350.txt:101144
+  ok    paper_checks.py:56 RP_E9_PULL = 8200 on rp2350.txt:102915
+  ok    paper_checks.py:57 RP_E9_V = 2.2 on rp2350.txt:102909
+  ok    paper_checks.py:58 RP_USB_R = 27 on rp2350.txt:1196
+  ok    paper_checks.py:59 RP_XTAL_CL = 1e-11 on rp2350.txt:40927,40950
+  ok    paper_checks.py:60 RP_VREG_C = 4.7e-06 on rp2350.txt:33598,33603
+  ok    paper_checks.py:62 RP_AVDD_RC = 33 on rp2350.txt:33281,33282,33283,33284,33285,33286,33287,33288,33289,33290
+  ok    paper_checks.py:62 RP_AVDD_RC = 4.7e-06 on rp2350.txt:33281,33282,33283,33284,33285,33286,33287,33288,33289,33290
+  skipped I_TS_TOL: the tolerance (78 - 72) / 2 / 75 of the cited band, not a printed number
+  skipped RP_VREG_L: the line pair names the part; 3.3 uH is on 33608, checked there
+  skipped I_PATH: VER-13's own test current; the cite is for the 475 mA USB500 limit it sits above
+  32 cited numbers read
+2 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

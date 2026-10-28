@@ -1,0 +1,26 @@
+# VER-181 cellgap
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py cellgap
+board hole 55.2 x 38.2 mm (the cell's long side along y); the tub's pocket 52.40 x 36.40 mm, inside the hole by 0.90 at the left, 0.90 at the right, 0.90 at the seat-1 end, 1.90 at the seat-2 end (its leads leave the seat-2 end); tolerances: routing 0.2, print 0.1, the board's float on its screws 0.1 mm (0.40 mm in all)
+  worst-case cell 52 x 36, left: at least 0.90 mm nominal, 0.50 mm after tolerances (REQ-BAT-08: 0.5): ok
+  worst-case cell 52 x 36, right: at least 0.90 mm nominal, 0.50 mm after tolerances (REQ-BAT-08: 0.5): ok
+  worst-case cell 52 x 36, seat-1 end: at least 0.90 mm nominal, 0.50 mm after tolerances (REQ-BAT-08: 0.5): ok
+  worst-case cell 52 x 36, seat-2 end (its leads): at least 1.90 mm nominal, 1.50 mm after tolerances (REQ-BAT-08: 1.5): ok
+  worst-case cell 52 x 36 in the pocket's length: 0.40 mm spare against 0.40 (the print 0.1 and a 0.1 mm fit, each side): fits
+  worst-case cell 52 x 36 in the pocket's width: 0.40 mm spare against 0.40 (the print 0.1 and a 0.1 mm fit, each side): fits
+  nominal cell 50 x 34, left: at least 0.90 mm nominal, 0.50 mm after tolerances (REQ-BAT-08: 0.5): ok
+  nominal cell 50 x 34, right: at least 0.90 mm nominal, 0.50 mm after tolerances (REQ-BAT-08: 0.5): ok
+  nominal cell 50 x 34, seat-1 end: at least 0.90 mm nominal, 0.50 mm after tolerances (REQ-BAT-08: 0.5): ok
+  nominal cell 50 x 34, seat-2 end (its leads): at least 1.90 mm nominal, 1.50 mm after tolerances (REQ-BAT-08: 1.5): ok
+  nominal cell 50 x 34 in the pocket's length: 2.40 mm spare against 0.40 (the print 0.1 and a 0.1 mm fit, each side): fits
+  nominal cell 50 x 34 in the pocket's width: 2.40 mm spare against 0.40 (the print 0.1 and a 0.1 mm fit, each side): fits
+what passes: the pocket 0.90 mm inside the hole on every face but the lead end, 1.90 mm there (the walls are the stop), and 0.40 mm longer and wider than the cell; then
+  with this hole (55.2 x 38.2): a cell of at most 52.00 x 36.00 mm (its spec sheet, VER-37, and incoming inspection, VER-49)
+  with the worst-case 52 x 36 cell: a hole of at least 55.20 x 38.20 mm (+-0.00 along the cell, +-0.00 across it: copper)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

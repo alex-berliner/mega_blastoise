@@ -1,0 +1,36 @@
+# VER-152 estimates
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/case_checks.py estimates
+each ESTIMATE in case.scad, nudged by 10% through openscad -D, and the positions.json keys (the board's inputs) it moves:
+  fpc_neck = [3.6, 35.6, 4.47]: moves nothing the board reads
+  fpc_body = [2.5, 47.9, 14.41]: fpc_conn, fpc_zones, j3_zone
+  fpc_tail = [0, 25.5, 11.7]: fpc_conn, fpc_zones, j3_zone
+  tip_range = [24.91, 27.31]: fpc_conn, fpc_zones, j3_zone
+  fpc_low = 1.05: fpc_low
+  fpc_slack = 1.0: fpc_conn, j3_zone
+  ss_pitch = 7.5: rib_free, ss_buttons
+  ss_mem = [14, 6]: ss_pieces
+  ss_cap_d = 3.2: moves nothing the board reads
+  ss_flange_d = 5.0: moves nothing the board reads
+  ss_cap_h = 3.0: moves nothing the board reads
+  dpad_peg_d = 2.2: moves nothing the board reads
+  dpad_peg_gap = 0.2: moves nothing the board reads
+  dome_base_d = 6.0: moves nothing the board reads
+  ss_plunger_gap = 0.36: moves nothing the board reads
+  FAIL  fpc_body: moves fpc_conn, fpc_zones, j3_zone and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  fpc_tail: moves fpc_conn, fpc_zones, j3_zone and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  tip_range: moves fpc_conn, fpc_zones, j3_zone and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  fpc_low: moves fpc_low and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  fpc_slack: moves fpc_conn, j3_zone and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  ss_pitch: moves rib_free, ss_buttons and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  ss_mem: moves ss_pieces and has no measurement (evidence/<date>_VER-152_measured.txt)
+  FAIL  cell = [52, 36, 4.5]: sets the hole's size; from the cell's spec sheet (VER-37, BLOCKED), measured at EVT (VER-49)
+assembly.md's sizes: none; the cell's hole in placement.py 37.8 x 54.8 mm: assembly.md states no hole size, nothing to disagree
+8 not measured
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

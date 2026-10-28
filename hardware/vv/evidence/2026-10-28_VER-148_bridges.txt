@@ -1,0 +1,29 @@
+# VER-148 bridges
+DATE: 2026-10-28
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/layout_checks.py bridges
+149 pad pairs on 109 net pairs closer than 0.35 mm (pcbnew's own shapes, per copper layer)
+  ok    dangerous +3V3 - GND (U9.16-U9.15 0.250, U8.16-U8.15 0.250, U11.15-U11.16 0.250): DF-162: 3V3 shorted (a 74HC165's CLK INH to VCC, or the module's pins 1-2): U3 in current limit
+  ok    dangerous CC2 - VBUS (J1.A9-J1.B5 0.250, J1.B4-J1.B5 0.250): DF-51: VBUS on a CC pin: the module's IO2/IO4 over their limit through 10k (VER-195)
+  ok    dangerous CHG_ISET - GND (U2.16-U2.17 0.260, U2.16-U2.15 0.260): DF-06: RISET shorted: the charge current unset
+  ok    dangerous CHG_OFF - VBAT (U2.3-U2.4 0.260): DF-149: a U2 neighbour pair putting the cell or VSYS on a GPIO (over IOVDD + 0.5 V, and it back-powers 3V3 when off)
+  ok    dangerous CHG_STAT_N - VSYS (U2.9-U2.10 0.260): DF-149: a U2 neighbour pair putting the cell or VSYS on a GPIO (over IOVDD + 0.5 V, and it back-powers 3V3 when off)
+  ok    dangerous GND - LCD_3V3 (J3.8-J3.9 0.200, J3.16-J3.17 0.200, J3.42-J3.43 0.200): DF-59: the panel's supply shorted at J3: U3 in current limit through JP4
+  ok    dangerous GND - NC:U2.14 (U2.17-U2.14 0.260, U2.15-U2.14 0.260): DF-152: U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them
+  ok    dangerous GND - VBAT (U2.2-U2.17 0.260, U2.3-U2.17 0.260): DF-148: the cell shorted at U2 (BAT to the exposed pad)
+  ok    dangerous GND - VBUS (U2.17-U2.13 0.260, J1.A1-J1.A4 0.200, J1.A1-J1.B9 0.200, J1.A4-J1.B12 0.200, J1.A9-J1.A12 0.200, J1.A9-J1.B1 0.200, J1.A12-J1.B4 0.200, J1.B1-J1.B4 0.200, J1.B9-J1.B12 0.200): DF-51: VBUS shorted at J1's row (DF-51) or U2's IN to its pad (DF-149): the source's limit is the only stop
+  ok    dangerous GND - VSYS (U2.17-U2.10 0.260, U2.17-U2.11 0.260): DF-149: VSYS shorted to U2's pad: the cell through U2's battery FET, no fuse (DF-172)
+  ok    dangerous NC:U2.14 - VBUS (U2.14-U2.13 0.260): DF-152: U2's TMR: to VSS it disables every safety timer (bq24074.txt:566-567), to IN it upsets them
+net pairs by class: benign 22, dangerous 11, self-test 76
+0 failing
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

@@ -1,0 +1,23 @@
+# VER-181 cellgap
+DATE: 2026-10-26
+COMMIT: fec2fc42b96caf0404ec79af135f0a69b25b0649
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py cellgap
+board hole 54.0 x 37.0 mm; the tub's pocket 0.25 mm inside it each side (case.scad cell_pocket_fit); tolerances: routing 0.2, print 0.1, the board's float on its screws 0.1 mm (0.40 mm in all)
+  worst-case cell 52 x 36, right end (pushed, at TH1): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+  worst-case cell 52 x 36, left end (its leads, J2), the cell pushed right: 1.75 mm nominal, 1.35 mm after tolerances (REQ-BAT-08: 1.5): too close
+  worst-case cell 52 x 36, left end (its leads, J2), the cell NOT pushed (against the pocket's left wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 1.5): too close
+  worst-case cell 52 x 36, each long side (at worst against the pocket's wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+  nominal cell 50 x 34, right end (pushed, at TH1): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+  nominal cell 50 x 34, left end (its leads, J2), the cell pushed right: 3.75 mm nominal, 3.35 mm after tolerances (REQ-BAT-08: 1.5): ok
+  nominal cell 50 x 34, left end (its leads, J2), the cell NOT pushed (against the pocket's left wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 1.5): too close
+  nominal cell 50 x 34, each long side (at worst against the pocket's wall): 0.25 mm nominal, -0.15 mm after tolerances (REQ-BAT-08: 0.5): too close
+the pushed cell is held there by assembly.md step 5's tape; an unpushed cell rests against the pocket's left wall, so its lead end has only the pocket's fit (O-R8: a printed stop at the pocket's left end is the case-side option)
+what passes: the pocket 0.90 mm inside the hole at the right end and on both long sides, and 1.90 mm inside it at the lead end, so the pocket itself holds every cell off the lead end (that wall is the printed stop DEF-58 asks for, and no tape is needed); then
+  with this hole (54.0 x 37.0): a cell of at most 51.20 x 35.20 mm (its spec sheet, VER-37, and incoming inspection, VER-49)
+  with the worst-case 52 x 36 cell: a hole of at least 54.80 x 37.80 mm (+0.80 in x, +0.80 in y: copper)
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

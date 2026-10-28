@@ -1,0 +1,19 @@
+# VER-19 placement
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/case_checks.py placement
+  ok    158 parts placed by placement.py (from positions.json and its own rules) against the routed board: worst 0.0000 mm (); limits 0.05 mm and 0.1 deg
+  ok    30 parts the case positions (the 20 contacts, H1-H6, the pinholes' SW18 and SW19, J5, J3) at positions.json's spot within 0.05 mm
+  ok    J1 at y 98.500 against the USB slot's 98.5
+not placed by placement.py (the scripts route or pour them, or they are test pads): 15
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

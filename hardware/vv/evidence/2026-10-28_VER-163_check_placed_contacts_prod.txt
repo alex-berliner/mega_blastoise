@@ -1,0 +1,33 @@
+# VER-163 check_placed_contacts_prod
+DATE: 2026-10-28
+COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/check_placed_contacts.py --prod
+prod_board: hardware/prod_board/prod_board/prod_board.kicad_pcb and hardware/prod_board/prod_board/prod.pretty (read only)
+  ok    SW1 DSL_button_4ring at (81.75, 152.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW2 DSL_button_4ring at (81.75, 166.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW3 DSL_button_4ring at (74.75, 159.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW4 DSL_button_4ring at (88.75, 159.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW5 DSL_button_4ring at (125.75, 159.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW6 DSL_button_4ring at (118.25, 167.00) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW7 DSL_button_4ring at (118.25, 152.00) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW8 DSL_button_4ring at (110.75, 159.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW9 DSL_button_4ring at (118.25, 47.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW10 DSL_button_4ring at (118.25, 33.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW11 DSL_button_4ring at (125.25, 40.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW12 DSL_button_4ring at (111.25, 40.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW13 DSL_button_4ring at (74.25, 40.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW14 DSL_button_4ring at (81.75, 33.00) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW15 DSL_button_4ring at (81.75, 48.00) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+  ok    SW16 DSL_button_4ring at (89.25, 40.50) 0 deg, F: min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647) | mask opening r=2.400 vs outermost copper r=2.256: covers it | smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across; same pads as the library, no paste
+16 contacts, 0 failing; the dome footprint's rule against the dome's drawing is VER-178 (check_dome.py)
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

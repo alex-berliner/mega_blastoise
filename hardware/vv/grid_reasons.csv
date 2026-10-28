@@ -1,0 +1,10 @@
+class,subsystem,status,reason
+3,case,NOT_NEEDED,"The case has no electrical connection: nothing on it is wired. Its openings against the connectors are class 14 (VER-165) and its fit against the board is class 13."
+4,case,NOT_NEEDED,"The case holds no component value. Its dimensions at their tolerance corners are stack-ups, which are class 13 (VER-20, VER-174, VER-181)."
+6,case,NOT_NEEDED,"The case has no electrical state to sequence. The power slider's fit in it is classes 13 and 14 (VER-239), and what the slider does is the power subsystem's (VER-240)."
+8,case,NOT_NEEDED,"The case has no schematic and no copper. Where the board's parts sit against the case is class 13 (VER-19, VER-174)."
+9,case,NOT_NEEDED,"The case has no footprint or land pattern: it is printed, not assembled by JLC. Its openings against the parts are classes 13 and 14."
+10,case,NOT_NEEDED,"Class 10 is the PCB's fab rules at JLC (holes, plating, clearances, silk). The case is printed by Alex; whether a print makes the parts that fit is VER-48 (class 13)."
+11,case,NOT_NEEDED,"No case part is on JLC's BOM or CPL. The case is printed, and its hand parts are the BOM doc's: VER-167 checks the silicone, caps and domes, VER-147 the screw length against case.scad's, and VER-173 records the material and the panel tape."
+12,cell,NOT_NEEDED,"The cell's subsystem carries DC only: the cell's voltage into its sense divider and the thermistor's level. No clock or data passes through it; how the sense settles is read on unit 1 against a meter (VER-67). Was: the ESP32-S3 board's reason named its VBAT buffer; the 12 power reason left with that board's linear power path (the F1C200s board's rails may switch)."
+12,case,NOT_NEEDED,"The case carries no signal: nothing on it is wired, and since the F1C200s re-target the board has no radio whose antenna the case would hold (Was: the ESP32-S3 board's flex antenna on the left wall)."

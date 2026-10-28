@@ -1,0 +1,37 @@
+# VER-144 heat_modes
+DATE: 2026-10-27
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/thermal.py modes
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+[rt9013.pdf sha256 b14a1c44445d69accbaabda7f3ce442964ca52f05d6664e3d49572ff20fb4b13; its pdftotext -layout text sha256 e05dbba88cba6df7..., 798 lines]
+[rp2350.pdf sha256 2877d0f270fb6d6a57943bee58aaad536aa027bea1e5b1c4ce2541a3230d4be8; its pdftotext -layout text sha256 fa2cad472b01b5e7..., 103567 lines]
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+the case 77.40 x 156.48 x 9.60 mm:287.1 cm2 outside; h_out 10 and h_in 10 W/m2K (stand-ins): 3.5 C/W skin to air, 3.5 C/W inside to skin
+3V3 load 65.0 mA (VER-31's parts and stand-ins); the system while playing 333 mA (3V3, the backlight's 117.7 mA, the amplifier's mean 150 mA: a stand-in); ICHG at most 298 mA (KISET 975 / R5 -1%); VBAT 3.4 V in fast charge (bq24074.txt:2655)
+U2 by TI's equation (11) (bq24074.txt:2662): 0.803 W at the corner where IN carries its 500 mA, the system draws just the rest and the cell takes the whole ICHG; 0.659 W with this system's own load (167 mA left to charge)
+mode                        heat in   skin  inside  parts (W)
+off                           0.00W  40.0C   40.0C  
+cell play                     1.45W  45.1C   50.1C  U2 0.011, U3 0.060, Q5 0.092, Q6 0.092, R52 0.008, R53 0.008, cell 0.033
+USB play                      1.81W  46.3C   52.6C  U2 0.316, U3 0.078, Q5 0.092, Q6 0.092, R52 0.008, R53 0.008
+charging, off                 0.64W  42.2C   44.4C  U2 0.612, cell 0.027
+charging while playing        2.16W  47.5C   55.1C  U2 0.803, U3 0.078, Q5 0.092, Q6 0.092, R52 0.008, R53 0.008, cell 0.008
+each junction in its worst mode at 40 C outside, against its maximum less 20 C:
+  ok    U2: 0.803 W in charging while playing: 55.1 + 0.803 x 44.5 C/W (bq24074.txt:666) = 90.8 C against 125 - 20 = 105 C (bq24074.txt:641)
+  ok    U3: 0.078 W in charging while playing: 55.1 + 0.078 x 250 C/W (rt9013.txt:135, a single-layer JEDEC 51-3 board: pessimistic here) = 74.6 C against 125 - 20 = 105 C (rt9013.txt:149)
+  ok    Q5: 0.092 W in charging while playing: 55.1 + 0.092 x 125 C/W (RthJA 100-125 C/W steady (q5.json p1, not on disk)) = 66.6 C against 125 - 20 = 105 C (stand-in: the AO3400A's maximum is not in q5.json (VER-34))
+  ok    Q6: 0.092 W in charging while playing: 55.1 + 0.092 x 125 C/W (as Q5) = 66.6 C against 125 - 20 = 105 C (as Q5)
+  ok    R52: 0.008 W in charging while playing: 55.1 + 0.008 x 300 C/W (an 0603 resistor, stand-in) = 57.4 C against 155 - 20 = 135 C (the resistor's 155 C (JLC's description, passives.json))
+  ok    R53: 0.008 W in charging while playing: 55.1 + 0.008 x 300 C/W (an 0603 resistor, stand-in) = 57.4 C against 155 - 20 = 135 C (as R52)
+  ok    U2 in a 40 C case: 40 + 0.803 x 44.5 = 75.7 C, under its 125 C thermal regulation (bq24074.txt:831)
+sensitivity: U2 reaches its limit at 62.1 C/W against the datasheet's 44.5 (a JEDEC board with inner planes); a 2-layer board is worse, so VER-68 measures the case under U2 on unit 1, and U2's own regulation lowers ICHG first
+sensitivity: at REQ-PWR-15's full 150 mA budget U3 dissipates 0.18 W and reaches 100.1 C in the same mode at 40 C (limit 105): still 4.9 C under it
+the firmware heat rule (for pinmap.md before VER-86 runs, proposed): on USB with the backlight above 75%, cap the amplifier's volume (its share is the largest heat after U2) or pause charging with CHG_OFF while the case reads hot; VER-86 measures the skin
+U7, the amplifier, is VER-200's: fm8002a.pdf (its thermal resistance and junction maximum) is not on disk
+0 over
+RESULT: PASS
+
+exit 0
+RESULT: PASS

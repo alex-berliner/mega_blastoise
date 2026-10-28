@@ -1,0 +1,15 @@
+# VER-177 vbus
+DATE: 2026-10-26
+COMMIT: fec2fc42b96caf0404ec79af135f0a69b25b0649
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py vbus
+  U3 EN through R14/D3 (PWR_EN): over its rating above VBUS 6.9 V
+  U2 EN1 through R43: over its rating above VBUS 9.5 V
+  C1 (CL10A106MA8NRNC): over its rating above VBUS 25.0 V
+  U2 IN: over its rating above VBUS 28.0 V
+lowest VBUS that over-stresses a part: 6.9 V (U2's OVP at 6.6 V protects VSYS, not these); limit 20 V, a broken USB PD source
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL
