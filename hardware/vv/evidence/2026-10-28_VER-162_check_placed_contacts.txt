@@ -1,6 +1,6 @@
 # VER-162 check_placed_contacts
 DATE: 2026-10-28
-COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+COMMIT: 36ca0b5454a23101a0a76323ddf8bdfcdf144fbb
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/check_placed_contacts.py
@@ -24,7 +24,7 @@ $ python3 hardware/vv/tools/check_placed_contacts.py
   ok    SW21 Dome_4mm_Round at (103.75, 170.34) 0 deg, F: same pads as the library, no paste
   ok    SW22 Dome_4mm_Round at (103.75, 29.66) 0 deg, F: same pads as the library, no paste
   ok    SW23 Dome_4mm_Round at (96.25, 29.66) 0 deg, F: same pads as the library, no paste
-20 contacts, 0 failing; the dome footprint's rule against the dome's drawing is VER-178 (BLOCKED: the HYP 600-415S-260 drawing, LCSC C256258, is not on disk)
+20 contacts, 0 failing; the dome footprint's rule against the dome's drawing is VER-178 (check_dome.py)
 RESULT: PASS
 
 --- stderr

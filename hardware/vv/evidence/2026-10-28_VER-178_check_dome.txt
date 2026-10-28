@@ -1,0 +1,25 @@
+# VER-178 check_dome
+DATE: 2026-10-28
+COMMIT: 36ca0b5454a23101a0a76323ddf8bdfcdf144fbb
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/check_dome.py
+[dome_600-415s-260.pdf sha256 5e1a15513603fc00bccb7b114f57711e7df9f345cee92f9990ae9a8779934d73: a scanned drawing, no text layer; its numbers read by eye from page 1's part performance table, row '600-4***-***']
+the dome: D 3.95-4.0 mm, H 0.15-0.25 mm (drawing); the test actuator o2.0 (Fig. 1)
+Dome_4mm_Round (board/lib/battler.pretty): centre pad r 0.600, ring r 1.704 to 2.300, vent o0.50 at r 1.15, mask opening r 2.40 mm
+  FAIL  the rim (r 1.975-2.000) at 0.1 mm of placement error: 0.171 mm inside the ring's inner edge, 0.200 mm inside its outer edge (limit 0.2 each)
+  info  at the hand placement's 0.3 mm: the rim's near side -0.029 mm from the ring's inner edge (off the ring there; the far side stays on it), the far side +0.000 mm inside its outer edge
+  ok    the apex at 0.3 mm of hand-placement error keeps a 0.2 mm contact spot (stand-in) 0.100 mm inside the 1.2 mm centre pad
+  ok    copper gap centre pad to ring 1.104 mm (limit 0.2)
+  ok    the vent 0.300 mm from the nearer pad (limit 0.3, DEF-56)
+  ok    pad layers {'1': ['F.Cu', 'F.Mask'], '2': ['F.Cu', 'F.Mask']}: no paste, no silk
+  ok    the 6.0 mm Kapton dot (fp_dome.py) at 0.3 mm of error over a dome at 0.3 mm: covers it with 0.40 mm to spare, and lies 0.30 mm on solder mask beyond the o4.8 mm opening (limit 0.2)
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL
