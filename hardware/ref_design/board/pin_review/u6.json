@@ -12,7 +12,7 @@
   "url": "https://datasheet.lcsc.com/datasheet/pdf/e34ab395f01d53f1e893b6004de17b98.pdf?productCode=C7377",
   "jlc_db_url": "https://www.lcsc.com/datasheet/lcsc_datasheet_2304140030_Microchip-Tech-MCP6002T-I-SN_C7377.pdf",
   "revision_or_date": "DS20001733L (2002-2020)",
-  "local": "datasheets/mcp6002.pdf"
+  "local": "datasheets/mcp6001.pdf"
  },
  "notes": [
   "Replaced the AP3156 charge pump (C443652, out of stock at JLC and LCSC, 2026-10-07). The loop (U6 half, Q5/Q6, RG 330, RF 10k, CF 1n) was simulated with Microchip's macromodel before layout: sim/backlight.py, results in sim/backlight_results.txt (phase margin >= 72.5 deg at all 720 corners).",
