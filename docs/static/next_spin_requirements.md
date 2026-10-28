@@ -19,4 +19,17 @@ with each spin. Decided with Alex on 2026-10-28 (queue issues
 | Fast boot: Linux allowed if tuned, bare-metal Rust boot required | must-have, new | a Rust target and documented boot ROM and RAM init |
 | Pocketable: about today's size or smaller; a size-minimization pass every spin | must-have | small packages, no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen) |
 
+## Chosen (Alex, 2026-10-28)
+
+| Part | Choice | Price at 30 (LCSC/JLC, 2026-10-28) |
+|---|---|---|
+| Chip | Allwinner F1C200s, QFN-88, 64 MB DDR in the package (C2879851); fallback V3s (C2687449, $14.55) | $6.04 |
+| Storage | microSD only: Hirose DM3AT-SF-PEJM5 (C114218); the boot ROM tries SD first | $1.05 |
+| USB-C roles | FUSB303B role controller (C895444) driving the OTG ID pin | $0.38 |
+| Panel | today's ILI9488 on the 8-bit 8080 bus; own drivers (bare-metal and Linux) | |
+| Network | no Wi-Fi; phone tether or USB dongle under Linux | |
+| Software | bare-metal battler boots by default; a held button boots Linux (GBA via gpSP, online play, link play) | |
+
+Gate before the board design: a dev board test of gpSP FireRed fps, SD boot and boot time.
+
 Last updated: 2026-10-28

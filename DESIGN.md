@@ -74,6 +74,7 @@ What the physical device is.
 - The case is 3D printed and built from two parts: a tub and one flowing top piece. (2026-10-25)
 - The top piece is a full-width band at the screen, with the DS Lite slope at its two button ends only. (2026-10-26)
 - The current reference design uses the RP2354B (a Raspberry Pi microcontroller with its flash memory inside). (2026-10-28)
+- The next spin uses the Allwinner F1C200s chip (64 MB of memory inside it), with games and saves on a microSD card, one USB-C port that can act as either end of a cable, and no Wi-Fi. If a dev board can't run FireRed at full speed, the Allwinner V3s replaces it. (2026-10-28)
 
 ## 4. The software
 
@@ -87,10 +88,12 @@ How it behaves.
 - Our own games run as native programs, with no WebAssembly or script engine on the device. GBA games run in an emulator. (2026-10-27)
 - The network is Wi-Fi only if it is nearly free; otherwise a USB host port (the console acts as the computer end) lets a phone tether or a Wi-Fi dongle provide it. (2026-10-28)
 - The console boots fast. Linux (a full operating system) is allowed only if it boots fast, and a bare-metal Rust boot (our own program with no operating system under it) is required. (2026-10-28)
+- At power-on the Pokemon battler starts on its own, with no operating system, within about a second. Holding a button at power-on starts Linux instead, for GBA games, online play and link play. (2026-10-28)
+- GBA link play goes over the USB-C cable between two consoles, using the emulator's GBA Wireless Adapter support. (2026-10-28)
 - Games and saves load from a computer or an SD card. (2026-10-28)
 
 ## 5. Next spin
 
 The next hardware spin's requirements, and what each needs from its chip, are in [docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-28 14:10 EDT
+Last updated: 2026-10-28 14:50 EDT
