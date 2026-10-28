@@ -29,7 +29,7 @@
    6.68
   ],
   "top": [
-   2.65,
+   3.75,
    10.7
   ],
   "board": [
@@ -40,15 +40,15 @@
  "case_h": 10.7,
  "z_board": 2.2,
  "size": [
-  78.6,
+  77.1,
   155.8
  ],
  "rev": 2,
- "commit": "589c6b5",
- "dirty": true,
+ "commit": "790235b",
+ "dirty": false,
  "built": "2026-10-28",
  "inputs": {
-  "board/battler.kicad_pcb": "c208e07b478605b8848f9754478f20934f093c26",
+  "board/battler.kicad_pcb": "4eb88b707a6f942e4b33b96d9c95761af581066f",
   "case/case.scad": "dc3f064c55eecacb9336fbcedf725111e4381dbb",
   "viewer/pieces.scad": "cb3b97312271073b681af5097d6d36f638f0f773",
   "viewer/build.py": "6b587a93c10bf9a2ea1064f66c5a1fe9b0753a82"
