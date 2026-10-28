@@ -2,8 +2,8 @@
 
 Five gates. Each is a table of criteria; each criterion names the IDs that must be met and
 the board it applies to. `python3 hardware/vv/tools/check_trace.py --gate
-<order|case|evt|dvt|pvt> [--board ref_design|prod_board]` evaluates a gate and exits 1 unless
-every criterion that applies to the board is met. What "met" means for each need:
+<order|case|evt|dvt|pvt>` evaluates a gate for ref_design and exits 1 unless every criterion
+that applies to it is met. What "met" means for each need:
 
 - VER-nn: last_result PASS, on evidence that is fresh (see README) and committed, with no
   uncommitted change under what it covers. At DVT and PVT a check of phase EVT or later that is
@@ -33,13 +33,14 @@ every criterion that applies to the board is met. What "met" means for each need
   <commit>: why'. It keeps its ID, is printed and never counted.
 
 A criterion whose board column does not match the board is N/A. A criterion left with
-nothing that applies to the board fails, so prod_board needs its own checks.
+nothing that applies to the board fails. Since 574c94c deleted prod_board from the repository
+(Alex: not needed), ref_design is the one board; prod_board's criteria (G-ORD-25, G-EVT-15) are
+RETIRED and keep their board column.
 
 On top of its table every gate applies these rules (check_trace.py's docstring has them in
 full): R1 no requirement in scope PROPOSED, or DEFERRED past its scope; R2 every requirement
 in scope verified up to this phase; R3 every H-priority DFMEA row in scope ACCEPTED for this
-phase or DONE with all its 'detects' checks passing (prod_board's scope includes the 'both'
-rows); R4 no OPEN defect whose Gate is this phase or earlier (order, case, EVT), or every such
+phase or DONE with all its 'detects' checks passing; R4 no OPEN defect whose Gate is this phase or earlier (order, case, EVT), or every such
 defect CLOSED (DVT, PVT): a case defect does not hold the order back (O-R5); R5 nothing
 uncommitted under passed evidence or anywhere in hardware/vv, and every evidence file
 committed (O-R2); R6 every design commit since the newest release record named in a change
@@ -111,8 +112,8 @@ order; 14 onwards are this register's.
 | G-ORD-21 | order contents recorded: 5 assembled, 5 bare boards from the same order, rework spares, every order option (vp order size, #72, #189, #193) | VER-42 | ref_design |
 | G-ORD-22 | every ORDER-phase check of the board passes, fresh (O-1: nothing the order needs can hide behind a later gate; advisory-only checks excluded) | PHASE:ORDER | both |
 | G-ORD-23 | RETIRED in 39cc07f: the RP2354B's 2 MB left; the N16R8's 16 MB freezes no flash decision at the order, and its partition budget is G-EVT-08's (VER-216) | RETIRED | ref_design |
-| G-ORD-24 | the trace gate is shown to fail on seeded faults (the design checkers' seeded faults moved to G-DVT-05); no live row of requirements.md, dfmea.csv or verification.csv names a part, part number or net (bare or in KiCad's path form) the baseline's design.py lacks, or pairs a connector with another connector's family (2026-10-27, O-R8: VER-188 reads those three files only; defects.md, gates.md, PLAN.md and the design's docs are VER-39's and VER-161's, at G-CASE-06) | VER-129 VER-188 | ref_design |
-| G-ORD-25 | prod_board: its own round trip and contacts (as library footprints, as placed, where prod_case says) | VER-10 VER-163 VER-119 VER-120 VER-121 VER-122 | prod_board |
+| G-ORD-24 | the trace gate is shown to fail on seeded faults (the design checkers' seeded faults moved to G-DVT-05); no live row of requirements.md, dfmea.csv or verification.csv names a part, part number or net (bare or in KiCad's path form) the baseline's design.py lacks, or pairs a connector with another connector's family (2026-10-27, O-R8: VER-188 reads those three files only; defects.md, gates.md, PLAN.md and the design's docs are VER-39's and VER-161's, at G-CASE-06); every repository path the register names is in HEAD's tree or pinned where it was (VER-220, 2026-10-28) | VER-129 VER-188 VER-220 | ref_design |
+| G-ORD-25 | RETIRED in 574c94c: prod_board deleted from the repo, Alex: not needed. Was: prod_board's own round trip and contacts (as library footprints, as placed, where prod_case says) | RETIRED | prod_board |
 | G-ORD-26 | the claims script (moved to G-CASE-06 on 2026-10-26: it keeps the register's quoted values honest, it does not freeze copper; the re-seeds read every row against be437f8, 71737ae and then 39cc07f instead) | ADVISORY VER-161 | ref_design |
 | G-ORD-27 | the coverage grid's pre-order checks (2026-10-27, grid.md): each subsystem's requirements read against its functions, the case's architecture against its requirements, the USB data path's values and the series resistors' place, the USB connector's fault reach, the amplifier's states, the module's supply and reset (VER-204, since 39cc07f), and the paper heat estimate run to a number (the grid's audit); the clocked buses' timing on paper (VER-199). R9 holds every other cell of classes 1-15 that no built pre-order check clears | VER-189 VER-190 VER-191 VER-195 VER-196 VER-204 VER-144 VER-193 VER-199 VER-200 | ref_design |
 
@@ -166,7 +167,7 @@ sacrificial unit, so the DVT spin is made knowing them.
 | G-EVT-12 | vp 5 on a bare board from the order: pill resistance and comb leakage, day one, before any assembled unit is powered (F-49) | VER-45 VER-46 | ref_design |
 | G-EVT-13 | the DVT-deciding screens on unit 4: abuse with a reversed cell, ESD screen at the combs, near-field, drop, button life, fault injection (every credited detection trips) | VER-97 VER-95 VER-96 VER-93 VER-94 VER-168 | ref_design |
 | G-EVT-14 | unit records: serials, findings with disposition and re-test, golden readings, connector mating counts | VER-110 VER-171 VER-157 | ref_design |
-| G-EVT-15 | prod_board on its own bare boards: every contact reads a pill under 1 kohm and leaks over 100 Mohm | VER-183 | prod_board |
+| G-EVT-15 | RETIRED in 574c94c: prod_board deleted from the repo, Alex: not needed. Was: prod_board on its own bare boards, every contact reads a pill under 1 kohm and leaks over 100 Mohm | RETIRED | prod_board |
 | G-EVT-16 | bench readiness and the analyses that need no copper (moved from the order gate on 2026-10-26): gear on hand for every EVT check (`check_trace.py --shopping --gate evt`), the speaker's rating, the backlight and audio simulations, the hashed datasheet archive; the DFMEA review (VER-98) binds here (O-R9) | VER-116 VER-128 VER-05 VER-100 VER-35 VER-98 | ref_design |
 
 ## DVT exit: on the revised spin

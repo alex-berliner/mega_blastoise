@@ -70,7 +70,7 @@ The framework fixes after vv-rp2354b-final's sign-off add theirs (2026-10-28):
            DEF-37 accepted lets VER-164 through and leaves VER-181, which it does not name, FAIL.
   sources  a PASS whose 'sources' names a datasheet not on disk is BLOCKED at the order gate and in the
            default report; a source written as a path fails the default mode.
-  R8       a proposal doc (docs/*proposal*.md) changed on the order branch after the baseline: the default
+  R8       a proposal doc (docs/living/*proposal*.md) changed on the order branch after the baseline: the default
            mode warns and the order gate fails.
   grid     a GRID line signed with no ACCEPTED_GAP row leaves its cell a GAP, and R9 says why.
 
@@ -180,7 +180,7 @@ FAULTS = [
     ("evidence header names another commit", "structure", "has no 'COMMIT: 56933a5' line",
      lambda d: csv_edit(d, "verification.csv", "VER-01", last_result="PASS", commit="56933a5", date=TODAY,
                         evidence=lambda e: e if e.startswith("hardware/vv/evidence/") else
-                        "hardware/vv/evidence/2026-10-24_VER-01_check_netlist.txt")),
+                        "hardware/vv/evidence/2026-10-26_VER-01_check_netlist.txt")),
     ("a commit message as evidence", "structure", "a commit message is not evidence",
      lambda d: csv_edit(d, "verification.csv", "VER-01", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="git show 76955d2")),
@@ -199,8 +199,9 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-104", covers="hardware/ref_design/docs/pinmap.md::nosuchword")),
     ("covers part not in design.py", "structure", "R999 not in design.py",
      lambda d: csv_edit(d, "verification.csv", "VER-12", covers="part:R999")),
-    ("a 'both' check covering one board", "structure", "a 'both' check must cover each board",
-     lambda d: csv_edit(d, "verification.csv", "VER-01", board="both")),
+    ("a 'both' check covering neither the board nor the register", "structure", "a 'both' check must cover each board",
+     lambda d: csv_edit(d, "verification.csv", "VER-01", board="both",
+                        covers="crates/mega_blastoise_core/src/oled_ctl.rs")),
     ("CUT check with no reason", "structure", "CUT needs its reason",
      lambda d: csv_edit(d, "verification.csv", "VER-47", evidence="")),
     ("RETIRED check with no commit", "structure", "RETIRED needs 'RETIRED in <commit>",
@@ -287,6 +288,16 @@ FAULTS = [
     ("round 2 (F): detection rating 2 on a single 'detects' check", "structure",
      "DF-96: detection_rating 2 needs two or more independent 'detects' checks",
      lambda d: csv_edit(d, "dfmea.csv", "DF-96", detection_rating="2", action_priority="L")),
+    # 2026-10-28: a path main moved (hardware/membrane to hardware/ref_design/board/membrane in fd66be9), written
+    # back into a procedure, and a deleted board's file pinned at a commit that never had it (VER-220)
+    ("VER-220: a procedure names a path main moved (hardware/membrane)", "structure",
+     "hardware/membrane/tools/check_contact_fp.py is not in HEAD's tree: moved or deleted",
+     lambda d: csv_edit(d, "verification.csv", "VER-08", procedure=lambda x: x.replace(
+         "hardware/ref_design/board/membrane/tools/", "hardware/membrane/tools/"))),
+    ("VER-220: a deleted file pinned at a commit that does not have it", "structure",
+     "pinned at 574c94c, which does not have it",
+     lambda d: text_edit(d, "requirements.md", "hardware/prod_case/README.md@611ebe3",
+                         "hardware/prod_case/README.md@574c94c")),
     # the coverage grid and the stale-names scan (2026-10-27)
     ("VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')", "structure",
      f"DF-147: names what design.py at {BASE7} does not have: TP4056",
@@ -989,14 +1000,14 @@ def g_accept_outside(repo, base):
 
 
 def g_proposal_branch(repo, base):
-    """3. (2026-10-28): a commit on the order branch after the baseline that touches docs/*proposal*.md (dcb6a76
+    """3. (2026-10-28): a commit on the order branch after the baseline that touches docs/living/*proposal*.md (dcb6a76
     chose another MCU there): the default mode warns, the order gate fails R8."""
     b = re.search(r"^- Order branch: `[^`]+` from `([0-9a-f]+)`", open(os.path.join(repo, "hardware/vv/README.md")).read(),
                   re.M).group(1)
     wt = os.path.join(os.path.dirname(repo), "order_wt_proposal")
     if not os.path.isdir(wt):
         git(repo, "worktree", "add", "-q", "-b", "seeded-proposal", wt, b)
-        with open(os.path.join(wt, "hardware/ref_design/docs/next_revision_proposal.md"), "a") as f:
+        with open(os.path.join(wt, "docs/living/next_revision_proposal.md"), "a") as f:
             f.write("\nSeeded: the next board takes another MCU.\n")
         commit(wt, "a proposal doc changes the architecture on the order branch")
     name_order_branch(os.path.join(repo, "hardware/vv"), "seeded-proposal")

@@ -1,6 +1,6 @@
 # RP2350 errata against this design (VER-16)
 
-Source: hardware/ref_design/datasheets/rp2350.pdf, Appendix E (rp2350.txt:102278-103505, the
+Source: hardware/ref_design/datasheets/rp2350.pdf@611ebe3 (deleted in 574c94c with the RP2354B board), Appendix E (rp2350.txt:102278-103505, the
 `pdftotext -layout` copy; its sha256 is in the VER-16 evidence). Design: hardware/ref_design at
 71737ae (U4 is an RP2354B, QFN-80; design.py:332). Every erratum in the appendix is listed, 28 in all.
 

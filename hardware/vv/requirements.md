@@ -7,7 +7,7 @@ proven (T test, A analysis, I inspection, D demonstration), the checks in
 first, and a status.
 
 **Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 from
-`hardware/ref_design/docs/validation_plan.md` (archived), the datasheet reviews in
+`docs/living/validation_plan.md` (archived), the datasheet reviews in
 `hardware/ref_design/board/pin_review/`, `docs/design_review.md` and IEC 62368-1, revised
 them the same day from the two-model review, re-seeded them on 2026-10-25 for 684a609, and
 re-seeded them on 2026-10-26 for be437f8, on 2026-10-27 for the RP2354B board (71737ae), and on
@@ -28,14 +28,13 @@ How to read a block:
 
 - Level: product (what a player or Alex sees), subsystem (a block of the design), or
   board (one board's make and test).
-- Board: both, ref_design (`hardware/ref_design`, REF-A) or prod_board (Alex's
-  `hardware/prod_board` and `hardware/prod_case`).
-  A product requirement that names one board's parts or numbers is split: the parent
-  (Board: both) states the product need without them, and each board gets its own
-  allocation, `REQ-X.R` for ref_design and `REQ-X.P` for prod_board. Claude writes the .R
-  ones. Alex writes, or opts into, the .P ones for his board. Until he does,
-  `--gate --board prod_board` evaluates only the requirements marked prod_board
-  (REQ-PBD-* and any .P), and the ref_design gate evaluates ref_design and both.
+- Board: both or ref_design (`hardware/ref_design`, REF-A). 'both' is the product level: the
+  need stated without one board's parts or numbers. A product requirement that names the
+  board's parts or numbers is split: the parent (Board: both) states the need, and its
+  allocation `REQ-X.R` (Board: ref_design) holds the board's numbers. The gate evaluates
+  ref_design and both. A second board, prod_board (Alex's `hardware/prod_board@611ebe3` and
+  `hardware/prod_case@611ebe3`), had its own .P allocations and REQ-PBD-* until
+  574c94c deleted it from the repository (Alex: not needed): REQ-PBD-* are RETIRED.
 - Source: a datasheet page (the review file that quotes it is named), a standard clause, a
   validation_plan method (#n), or Alex's use. "Claude's estimate" means nobody has set the
   number yet: Alex should.
@@ -45,8 +44,6 @@ How to read a block:
 - Status: PROPOSED until Alex decides; DEFERRED holds only up to the phase his line in
   APPROVALS.md names, then the requirement is PROPOSED again; RETIRED (with a 'Retired:' line
   naming the commit) when its subject left the design.
-- Applies when (optional, for a .P allocation): the condition on prod_board's design under
-  which it applies, for example "its schematic holds a charger".
 
 The standards' clause numbers below are from memory of IEC 62368-1:2018, IEC 62133-2:2017,
 USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text before relying on it.
@@ -63,7 +60,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: allocated: REQ-PRD-01.R
 - Phase: EVT
 - Status: PROPOSED
-- Notes: prod_board has 16 contacts and no Start or Select at 76955d2; its .P allocation is Alex's.
+- Notes: Was: prod_board had 16 contacts and no Start or Select at 76955d2, and its own allocation was Alex's; 574c94c deleted prod_board from the repository (Alex: not needed).
 
 ### REQ-PRD-01.R: Twenty independent inputs (ref_design)
 - Level: product
@@ -195,8 +192,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: ref_design
 - Statement: A unit with blank, corrupt or hung firmware shall take a new image over USB-C (the ESP32-S3's USB Serial/JTAG) with the case closed, and with the case open shall enter the ROM's download mode through J7's BOOT and EN pads, 3 out of 3 tries.
-- Rationale: the BOOT and RESET buttons and their pinholes left at 39cc07f (the microSD slot took the left bezel; docs/esp32s3_build.md); J7 keeps 3V3, EN, BOOT and GND on pogo pads on the back. An image that turns USB off can only be recovered with the case open (DEC-41).
-- Source: docs/esp32s3_build.md; esp32-s3-wroom-1.txt:810-817 (boot mode); design.py J7.
+- Rationale: the BOOT and RESET buttons and their pinholes left at 39cc07f (the microSD slot took the left bezel; docs/living/esp32s3_build.md); J7 keeps 3V3, EN, BOOT and GND on pogo pads on the back. An image that turns USB off can only be recovered with the case open (DEC-41).
+- Source: docs/living/esp32s3_build.md; esp32-s3-wroom-1.txt:810-817 (boot mode); design.py J7.
 - Method: D, T
 - Verified by: VER-212
 - Phase: EVT
@@ -701,8 +698,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: Firmware shall flash and log over USB-C through the ESP32-S3's USB Serial/JTAG at 1 line or more a second, and J7's pads (3V3, EN, BOOT, GND) shall reset the module and enter its download mode from a pogo jig.
-- Rationale: bring-up and recovery (Was: SWD on J5 and J7, the UART header); the module's USB Serial/JTAG carries both the flash and the log (docs/esp32s3_board_proposal.md item 7).
-- Source: docs/esp32s3_board_proposal.md; design.py J7; esp32-s3-wroom-1.txt:860-871.
+- Rationale: bring-up and recovery (Was: SWD on J5 and J7, the UART header); the module's USB Serial/JTAG carries both the flash and the log (docs/living/esp32s3_board_proposal.md item 7).
+- Source: docs/living/esp32s3_board_proposal.md; design.py J7; esp32-s3-wroom-1.txt:860-871.
 - Method: T
 - Verified by: VER-212, VER-02
 - Phase: EVT
@@ -730,7 +727,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-203
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: the module pin, GPIO and net table is VER-203's evidence; the GPIO matrix routes the panel, the SD bus and the LEDC to any pin, so only ADC1 and USB are fixed (docs/esp32s3_board_proposal.md 'Pin map').
+- Notes: the module pin, GPIO and net table is VER-203's evidence; the GPIO matrix routes the panel, the SD bus and the LEDC to any pin, so only ADC1 and USB are fixed (docs/living/esp32s3_board_proposal.md 'Pin map').
 
 ### REQ-MCU-07: Pull-downs for E9
 - Level: subsystem
@@ -771,8 +768,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The firmware image shall fit its app partition in the module's 16 MB flash at 80% or less, with a written partition table (bootloader, app, settings, battle log, game data), checked in scripts/check.sh on every change.
-- Rationale: the 2 MB of the MCU before it was the reason for the change (docs/esp32s3_board_proposal.md); the partition table is what can still run out.
-- Source: docs/esp32s3_board_proposal.md; esp32-s3-wroom-1.txt:130-150.
+- Rationale: the 2 MB of the MCU before it was the reason for the change (docs/living/esp32s3_board_proposal.md); the partition table is what can still run out.
+- Source: docs/living/esp32s3_board_proposal.md; esp32-s3-wroom-1.txt:130-150.
 - Method: A
 - Verified by: VER-216, VER-185
 - Phase: EVT
@@ -784,7 +781,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: ref_design
 - Statement: Before the boards arrive, a self-test image shall build for the ESP32-S3 (esp-hal) from pin definitions generated from design.py, with 0 hand-typed GPIO numbers.
 - Rationale: the image is needed the day the boards arrive (round 2's proportionality objection); the GPIO choices that copper freezes are VER-203's.
-- Source: docs/esp32s3_board_proposal.md 'Firmware with Wi-Fi'; Claude's review (F-44, O-37, O-56).
+- Source: docs/living/esp32s3_board_proposal.md 'Firmware with Wi-Fi'; Claude's review (F-44, O-37, O-56).
 - Method: A
 - Verified by: VER-149, VER-215
 - Phase: EVT
@@ -829,7 +826,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The panel shall run the 8080 8-bit bus (IM2-0 = 011, as design.py straps them, CSX tied low, RDX high) and return 0x94 0x88 for ID4 (0xD3).
-- Rationale: proves the interface straps and the bus; since 39cc07f the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/display_parallel_proposal.md). Was: 4-wire SPI.
+- Rationale: proves the interface straps and the bus; since 39cc07f the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/living/display_parallel_proposal.md). Was: 4-wire SPI.
 - Source: er-tft035ips-6.txt:709-722; design.py PANEL.
 - Method: T
 - Verified by: VER-43, VER-60
@@ -940,13 +937,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: A full-screen 320 x 480 redraw shall complete in 20 ms or less (60 fps with a frame in the PSRAM), and a battle-text update in 5 ms or less.
-- Rationale: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the PSRAM holds the 307,200 B frame (docs/esp32s3_board_proposal.md). Was: 220 ms over SPI.
-- Source: ili9488.txt:16159; docs/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
+- Rationale: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the PSRAM holds the 307,200 B frame (docs/living/esp32s3_board_proposal.md). Was: 220 ms over SPI.
+- Source: ili9488.txt:16159; docs/living/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
 - Method: A, T
 - Verified by: VER-43, VER-61
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: PLAN.md decision DEC-13 was taken in the design: the 8080 8-bit bus (docs/display_parallel_proposal.md, 39cc07f); Alex sets the two numbers.
+- Notes: PLAN.md decision DEC-13 was taken in the design: the 8080 8-bit bus (docs/living/display_parallel_proposal.md, 39cc07f); Alex sets the two numbers.
 
 ### REQ-DSP-12: Backlight halves match at low duty
 - Level: subsystem
@@ -1057,9 +1054,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Statement: The combs shall keep a copper gap of 0.20 mm or more; the worst bridging spot shall be 1.60 mm or less for the 4-ring under the 3.5 mm D-pad and A/B/X/Y pill; one 4.8 mm mask opening shall uncover all comb copper with no paste or silk.
 - Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing. Start and Select are metal domes since 2d1124d (REQ-BTN-08).
-- Source: hardware/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
+- Source: hardware/ref_design/board/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
 - Method: A
-- Verified by: VER-08, VER-10, VER-132, VER-162
+- Verified by: VER-08, VER-132, VER-162
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1328,7 +1325,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Statement: Before any sale, the device shall carry the module's FCC ID with an antenna the grant lists, and the rest of it shall pass FCC Part 15 Class B / CISPR 32 Class B emissions with 3 dB of margin; in DVT a near-field pre-scan shall name the 5 largest peaks and their sources.
-- Rationale: since 39cc07f the device transmits (Wi-Fi): it relies on the WROOM-1U's modular grant, kept only with an antenna type the grant lists (docs/esp32s3_board_proposal.md 'Open checks' 5).
+- Rationale: since 39cc07f the device transmits (Wi-Fi): it relies on the WROOM-1U's modular grant, kept only with an antenna type the grant lists (docs/living/esp32s3_board_proposal.md 'Open checks' 5).
 - Source: FCC 47 CFR Part 15 Subpart B; CISPR 32; validation_plan #67, #162.
 - Method: T
 - Verified by: VER-96, VER-118, VER-217
@@ -1342,7 +1339,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: ref_design
 - Statement: The board shall keep a copper-free rule area on both layers under the flex antenna's plate (no track, via, pour or footprint): 0 copper items inside, and the area no more than 1.0 mm short of the plate's outline at any end on the board's plane.
 - Rationale: copper under an antenna detunes it (esp32-s3-hw-design-guidelines.txt:1290-1299); at 39cc07f the rule area is x board edge to 71.4, y 62.6-107.0, 0 copper inside, 0.5 and 0.9 mm short of the plate's ends (VER-205).
-- Source: esp32-s3-hw-design-guidelines.txt:1281-1301; placement.py ANTENNA_KEEPOUT; docs/esp32s3_build.md.
+- Source: esp32-s3-hw-design-guidelines.txt:1281-1301; placement.py ANTENNA_KEEPOUT; docs/living/esp32s3_build.md.
 - Method: A
 - Verified by: VER-205
 - Phase: ORDER
@@ -1363,8 +1360,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: In its closed case with a cell, held or face up, the device shall keep an RSSI of -70 dBm or better from an access point 10 m away line of sight, within 10 dB of the same antenna in free air, and hold a Showdown battle for 30 min with no dropped connection.
-- Rationale: Wi-Fi is the reason for the module (docs/esp32s3_board_proposal.md 'Radio'); the numbers are Claude's proposal for Alex to set.
-- Source: Claude's estimate; docs/esp32s3_board_proposal.md.
+- Rationale: Wi-Fi is the reason for the module (docs/living/esp32s3_board_proposal.md 'Radio'); the numbers are Claude's proposal for Alex to set.
+- Source: Claude's estimate; docs/living/esp32s3_board_proposal.md.
 - Method: T
 - Verified by: VER-207
 - Phase: EVT
@@ -1374,8 +1371,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: Before any unit is sold or given away, the antenna fitted shall be of a type and gain the WROOM-1U's FCC grant lists, and the label shall carry the module's FCC ID.
-- Rationale: an intentional radiator relies on the module's modular grant only with a listed antenna (docs/esp32s3_board_proposal.md 'Open checks' 5).
-- Source: docs/esp32s3_board_proposal.md; the module's FCC grant (not on disk).
+- Rationale: an intentional radiator relies on the module's modular grant only with a listed antenna (docs/living/esp32s3_board_proposal.md 'Open checks' 5).
+- Source: docs/living/esp32s3_board_proposal.md; the module's FCC grant (not on disk).
 - Method: I
 - Verified by: VER-217
 - Phase: SALE
@@ -1387,7 +1384,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: ref_design
 - Statement: The microSD slot J8 shall read and write a card at 4 bits with 10k pull-ups on SD_CMD and SD_D0 to SD_D3, card detect low with a card in, at 20 MHz and 40 MHz with 0 errors over 4 MB.
-- Rationale: the slot is new at 39cc07f (docs/esp32s3_board_proposal.md item 5); Espressif asks pull-ups on the SDIO lines (esp32-s3-hw-design-guidelines.txt:864-865); the DM3AT's detect switch is normally open (hirose_dm3_catalog_C114218.txt:27).
+- Rationale: the slot is new at 39cc07f (docs/living/esp32s3_board_proposal.md item 5); Espressif asks pull-ups on the SDIO lines (esp32-s3-hw-design-guidelines.txt:864-865); the DM3AT's detect switch is normally open (hirose_dm3_catalog_C114218.txt:27).
 - Source: design.py J8, R79-R84; esp32-s3-hw-design-guidelines.txt:861-865; hirose_dm3_catalog_C114218.txt:26-27.
 - Method: A, T
 - Verified by: VER-198, VER-209
@@ -1537,7 +1534,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: both
 - Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the module (C3013946), the TLV75733P, the DM3AT and the TPS850 shall never be substituted.
-- Rationale: the new parts' JLC class and stock were not checked by the board session (docs/esp32s3_build.md, 'Not verified'); a substituted module can carry 1.8 V PSRAM (DF-69, DF-70). Was: the RP2354B and L2.
+- Rationale: the new parts' JLC class and stock were not checked by the board session (docs/living/esp32s3_build.md, 'Not verified'); a substituted module can carry 1.8 V PSRAM (DF-69, DF-70). Was: the RP2354B and L2.
 - Source: DEF-12, DEF-13, DEF-29.
 - Method: I
 - Verified by: VER-41
@@ -1692,36 +1689,36 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 
-## Board: prod_board (PBD)
+## Board: prod_board (PBD), RETIRED
 
-Alex's board supplies its own evidence. These cover what it has today (16 contacts placed
-from prod_case, an empty schematic). The product requirements above (Board: both) reach
-prod_board only through the `.P` allocations Alex writes or opts into; until then
-`--gate --board prod_board` evaluates these PBD requirements alone. prod_case uses a 10 mm
-103450 cell (about 2000 mAh, a 19.1 mm case) and 16 contacts with no Start or Select, so
-ref_design's numbers are not his.
+Alex's board, its case and their checks: all RETIRED in 574c94c, which deleted
+hardware/prod_board@611ebe3 and hardware/prod_case@611ebe3 from the repository (Alex: not needed;
+611ebe3 is the last commit with them). The IDs stay. They covered 16 contacts placed from prod_case and an empty
+schematic; prod_case used a 10 mm 103450 cell (about 2000 mAh, a 19.1 mm case).
 
 ### REQ-PBD-01: Contacts where the case says
 - Level: board
 - Board: prod_board
-- Statement: Each of the 16 contact footprints shall sit within 0.05 mm of its position in prod_case/layout.scad.
+- Statement: Each of the 16 contact footprints shall sit within 0.05 mm of its position in hardware/prod_case/layout.scad@611ebe3.
 - Rationale: the case is the source of truth for prod_board.
-- Source: hardware/prod_case/README.md; prod_board/tools/place_buttons.py.
+- Source: hardware/prod_case/README.md@611ebe3; hardware/prod_board/tools/place_buttons.py@611ebe3.
 - Method: A
 - Verified by: VER-119
 - Phase: ORDER
-- Status: PROPOSED
+- Status: RETIRED
+- Retired: RETIRED in 574c94c: prod_board deleted from the repo, Alex: not needed
 
 ### REQ-PBD-02: Contact footprint
 - Level: board
 - Board: prod_board
 - Statement: The DSL_button_4ring footprint in prod.pretty shall keep a 0.20 mm or larger copper gap and a 1.60 mm or smaller bridging spot.
 - Rationale: the same comb as ref_design.
-- Source: hardware/membrane/README.md.
+- Source: hardware/ref_design/board/membrane/README.md.
 - Method: A
 - Verified by: VER-10
 - Phase: ORDER
-- Status: PROPOSED
+- Status: RETIRED
+- Retired: RETIRED in 574c94c: prod_board deleted from the repo, Alex: not needed
 
 ### REQ-PBD-03: Design checks
 - Level: board
@@ -1732,4 +1729,5 @@ ref_design's numbers are not his.
 - Method: A
 - Verified by: VER-120, VER-121, VER-122
 - Phase: ORDER
-- Status: PROPOSED
+- Status: RETIRED
+- Retired: RETIRED in 574c94c: prod_board deleted from the repo, Alex: not needed

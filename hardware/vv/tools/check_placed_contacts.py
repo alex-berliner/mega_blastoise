@@ -3,7 +3,6 @@
 
     python3 hardware/vv/tools/check_placed_contacts.py          # exit 1 on any failure
     python3 hardware/vv/tools/check_placed_contacts.py --seed   # moves SW7's pad 2 by 0.1 mm in memory: must exit 1
-    python3 hardware/vv/tools/check_placed_contacts.py --prod   # the same over prod_board.kicad_pcb (VER-163), read only
 
 For every membrane contact on the board (SW1-SW16, DSL_button_4ring) and every dome contact (SW20-SW23,
 Dome_4mm_Round) it takes the footprint as the board holds it, turns it back to 0 degrees at the origin,
@@ -11,20 +10,18 @@ and:
   1. compares every pad (number, shape, size, position, angle, layers, and each custom pad's primitives)
      with the library footprint in board/lib/battler.pretty, within 1 um: the board carries the library's
      copper, not an older copy;
-  2. saves it to a scratch .kicad_mod and runs hardware/membrane/tools/check_contact_fp.py on it for the
+  2. saves it to a scratch .kicad_mod and runs hardware/ref_design/board/membrane/tools/check_contact_fp.py on it for the
      4-ring contacts (copper gap >= 0.20 mm, bridging spot <= 1.60 mm, mask covers the comb, each pad one piece);
   3. checks that no contact pad has paste and that no silk crosses a contact's mask opening.
 The dome's own rule (the dome's rim and dimple against the pads) is VER-178's (check_dome.py).
 
---prod (VER-163, 2026-10-28) reads Alex's hardware/prod_board/prod_board/prod_board.kicad_pcb and its prod.pretty
-library instead, and never writes either: prod_board has no design.py, so its contacts are the footprints whose
-library name is DSL_button_4ring or Dome_4mm_Round, and the scratch copies go to a temp dir as above.
+--prod (VER-163) read Alex's prod_board the same way; it left on 2026-10-28 with prod_board, which 574c94c
+deleted from the repository (Alex: not needed). VER-163 is RETIRED with it.
 
 Python 3 standard library and pcbnew.
 """
 import math
 import os
-import re
 import subprocess
 import sys
 import tempfile
@@ -33,11 +30,7 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import design_numbers as dn  # noqa: E402
 
 LIB = os.path.join(dn.BOARD, "lib", "battler.pretty")
-PROD = os.path.join(dn.ROOT, "hardware", "prod_board", "prod_board")
-PROD_PCB = os.path.join(PROD, "prod_board.kicad_pcb")
-PROD_LIB = os.path.join(PROD, "prod.pretty")
-CONTACTS = ("DSL_button_4ring", "Dome_4mm_Round")
-CHECK_FP = os.path.join(dn.ROOT, "hardware", "membrane", "tools", "check_contact_fp.py")
+CHECK_FP = os.path.join(dn.BOARD, "membrane", "tools", "check_contact_fp.py")
 TOL = 0.001                      # mm
 
 
@@ -81,28 +74,18 @@ def diff(a, b):
 
 
 def main():
-    prod = "--prod" in sys.argv
-    if prod:
-        import pcbnew as pcb
-        b = pcb.LoadBoard(PROD_PCB)               # read only: nothing below saves the board
-        lib = PROD_LIB
-        names = {f.GetReference(): f.GetFPID().GetLibItemName().wx_str() for f in b.GetFootprints()}
-        refs = sorted((r for r, n in names.items() if n in CONTACTS), key=lambda r: (re.sub(r"\d", "", r), int(re.sub(r"\D", "", r) or 0)))
-        print(f"prod_board: {os.path.relpath(PROD_PCB, dn.ROOT)} and {os.path.relpath(PROD_LIB, dn.ROOT)} (read only)")
-    else:
-        pcb, b = dn.board()
-        parts, _ = dn.design()
-        lib = LIB
-        names = {r: p["fp"].split(":")[1] for r, p in parts.items() if p["fp"]}
+    pcb, b = dn.board()
+    parts, _ = dn.design()
+    lib = LIB
+    names = {r: p["fp"].split(":")[1] for r, p in parts.items() if p["fp"]}
     seed = "--seed" in sys.argv
     bad = 0
     tmp = tempfile.mkdtemp(prefix="vv_contacts_") + "/placed.pretty"
     io = pcb.PCB_IO_KICAD_SEXPR()
     io.CreateLibrary(tmp)
     fps = {f.GetReference(): f for f in b.GetFootprints()}
-    if not prod:
-        refs = sorted((r for r, p in parts.items() if p["fp"] in ("battler:DSL_button_4ring", "battler:Dome_4mm_Round")),
-                      key=lambda r: int(r[2:]))
+    refs = sorted((r for r, p in parts.items() if p["fp"] in ("battler:DSL_button_4ring", "battler:Dome_4mm_Round")),
+                  key=lambda r: int(r[2:]))
     lib_fp = {}
     for ref in refs:
         name = names[ref]

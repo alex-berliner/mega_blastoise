@@ -1,6 +1,13 @@
 # Verification and validation
 
-**The order candidate is the ESP32-S3 board at 39cc07f** (branch `ref-design-esp32s3`, 2026-10-28):
+**2026-10-28, later: the ESP32-S3 board and the RP2354B board are both dropped.** The next spin is
+the Allwinner F1C200s board (docs/static/next_spin_requirements.md); it has no schematic or layout
+yet, and this register is being re-targeted to it. Until then the design baseline names the files on
+main at fd66be9: the ESP32-S3 board's last copper (c8d5744) and case (e872140) with main's comment
+and path edits. The ESP32-S3 register is frozen at tag `vv-esp32s3-final` (c556556). The text below
+describes the ESP32-S3 board as it stood.
+
+**The order candidate was the ESP32-S3 board at 39cc07f** (branch `ref-design-esp32s3`, 2026-10-28):
 an ESP32-S3-WROOM-1U-N16R8 module (U.FL, an external flex antenna, Wi-Fi on), the TLV75733P for 3V3,
 the panel on its 8-bit 8080 bus, a microSD slot, a third 74HC165, a dedicated power button SW24, the
 cell in a 38.2 x 55.2 mm hole and a case 1.5 mm wider on the left. Alex chose it on 2026-10-28 over the
@@ -8,14 +15,15 @@ RP2354B board (71737ae), whose register is frozen at tag `vv-rp2354b-final` (c8a
 this register was re-seeded for 39cc07f: the baseline below is that commit, the rows for parts and nets
 that left are RETIRED with it, the new parts have their requirements, DFMEA rows and checks, every
 row of [carryover.md](carryover.md) has its verdict at 39cc07f, and every scripted check was re-run
-(PLAN.md sections b, c and i). The baseline implements docs/esp32s3_board_proposal.md, so R8's
+(PLAN.md sections b, c and i). The baseline implements docs/living/esp32s3_board_proposal.md, so R8's
 warning on its proposal commits (dcb6a76, e79f251) is gone: they are ancestors of the baseline.
 
 How we know a board works before and after we order it. [PLAN.md](PLAN.md) is the single
 plan: what must be true before the order, then EVT, DVT and PVT. This page is the system.
-It covers both boards: `hardware/ref_design` (REF-A, Claude's) and `hardware/prod_board` with
-`hardware/prod_case` (Alex's). Each board supplies its own evidence. Nothing here edits either
-board.
+It covers `hardware/ref_design` (REF-A, Claude's). Alex's board and case
+(`hardware/prod_board@611ebe3`, `hardware/prod_case@611ebe3`) were deleted from the repository in
+574c94c (Alex: not needed): their requirements, DFMEA rows, checks and gate criteria are RETIRED
+with that commit and keep their IDs. Nothing here edits the board.
 
 "Works" means all of: built as designed (verified), the right design for the numbers
 (validated), safe (the Li-ion cell, touch temperature), made by JLC without surprises, fits
@@ -50,6 +58,7 @@ the case, survives use.
 | [tools/case_checks.py](tools/case_checks.py) | classes 2, 13 and 14 from case.scad's echo, in a temp copy of hardware/ref_design where positions.json is needed: arch VER-190, fit VER-06 (check_fit), placement VER-19, stack VER-20, estimates VER-152, mouths VER-165, xy VER-174, heights VER-112 (check_fit's heights against the drawings on disk), fpc VER-219 (the panel's tail against the FH12-50S) | |
 | [tools/thermal.py](tools/thermal.py) | class 15 on paper: modes VER-144, board VER-193, amp VER-200 (fm8002a.pdf on disk; its package theta a stand-in); class 5: casemat VER-192 (the case's material against its inner surface) | |
 | [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188), and a live row pairing a connector with another connector's family (VER-188's connector-family rule); check_trace's default mode runs it | |
+| [tools/repo_paths.py](tools/repo_paths.py) | fails on a repository path a file under hardware/vv names (the saved outputs aside) that is not in HEAD's tree: moved or deleted on main, with the commit that removed it; a path written `path@<commit>` is history and must be in that commit (VER-220, 2026-10-28); check_trace's default mode runs it | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
 | [tools/paper_checks.py](tools/paper_checks.py) | paper checks of classes 4 and 6 from design.py (and the routed board for usb, core and copper), each with a --seed that must fail: latch VER-33, usb VER-191, audio VER-100, module VER-204 (the module's 3V3, C10's distance, EN), sdinsert VER-206 (a card plugged in while running), shelf VER-103, ampstate VER-196, hotplug VER-12, copper VER-13, mating VER-140 (no seed), mlccbias VER-30 (no seed) | |
 | [tools/check_backpower.py](tools/check_backpower.py) | the back-power path table (VER-159): in each power state, every live net that reaches an input of a part whose own supply is off; a path the ACCEPTED table does not list fails (--seed puts U1's REF back on VBUS) | |
@@ -78,12 +87,13 @@ python3 hardware/vv/tools/check_trace.py                  # structure (exit 1 on
 python3 hardware/vv/tools/check_trace.py --gate order     # exit 1 unless the order gate is met
 python3 hardware/vv/tools/check_trace.py --gate order --accept-software-key   # only if Alex pinned a software key; the gate says so
 python3 hardware/vv/tools/check_trace.py --gate case      # the printed-case gate
-python3 hardware/vv/tools/check_trace.py --gate evt --board prod_board
+python3 hardware/vv/tools/check_trace.py --gate evt
 python3 hardware/vv/tools/check_trace.py --shopping --gate evt   # what is still to buy, longest lead first
 python3 hardware/vv/tools/run_checks.py                   # re-run the quick scripted checks, save evidence
 python3 hardware/vv/tools/seed_faults.py                  # prove the trace gate fails on seeded faults
 python3 hardware/vv/tools/grid.py                         # rewrite grid.md from the register (--check: is it current?)
 python3 hardware/vv/tools/stale_names.py                  # live rows naming a part or net design.py lost
+python3 hardware/vv/tools/repo_paths.py                   # repository paths the register names that moved or left
 python3 hardware/vv/tools/design_numbers.py --list        # the scripted pre-order numbers
 ```
 
@@ -184,7 +194,7 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   there is BLOCKED: no gate counts it, it clears no grid cell, and the report lists it with the
   missing files. Name a datasheet in 'sources' even before it is downloaded.
 - **An architecture proposal holds the order** (2026-10-28). A commit on the order branch after
-  the baseline commit that touches hardware/ref_design/docs/*proposal*.md warns in the default
+  the baseline commit that touches docs/living/*proposal*.md warns in the default
   mode and fails R8 at the order gate: dcb6a76 chose another MCU in a proposal doc, and R8, which
   read only design paths, did not see it.
 - **Advisory checks stay advisory.** A check that only ADVISORY criteria name is printed but
@@ -207,7 +217,8 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   release record, and they must match.
 - **The baseline is checked against the baseline commit too.** The default mode fails when a
   design path's hash in README differs from HEAD's blob for that path, or from the blob at the
-  baseline commit (`39cc07f`), so a baseline rewritten from HEAD cannot hide a design edit.
+  baseline commit (`fd66be9` since 2026-10-28; `39cc07f` before), so a baseline rewritten from
+  HEAD cannot hide a design edit.
 - **Detection is only what can see the failure.** A DFMEA row's 'detects' lists the checks
   that must all pass before it is DONE. Its detection rating is 10 with none, and 8 or more
   while every one is NOT_BUILT. An occurrence of 3 needs `Similar: <the board and part>` in its
@@ -234,14 +245,16 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   board/tools tree, case.scad and case/export.py: the copper, its rules and the scripts that
   make the fab files, not only the data. A BOM-only change bumps BOARD_REV (on the silkscreen).
   A change to the design files also updates the design baseline below.
-- **Each board supplies its own evidence.** A check row holds one result, so a test of
-  built hardware belongs to one board. Mark a check `both` only when one result serves both
-  boards and it covers each board's files (or a shared file under hardware/vv or
-  hardware/membrane). A product requirement that names one board's parts is split into
-  .R and .P allocations; prod_board's gate reads only its own (REQ-PBD-* and the .P ones
-  Alex writes).
-- prod_board and prod_case are Alex's: read them, never write them. KiCad files are never
-  written by hand; ref_design's are generated from design.py.
+- **One board since 574c94c.** prod_board and prod_case left the repository (Alex: not needed);
+  their rows are RETIRED and keep `prod_board` in their board column. `both` now means the
+  product level: a requirement stated without the board's parts (its `.R` allocation holds
+  the board's numbers), or a check of the register itself, which covers a file under
+  hardware/ref_design or hardware/vv. KiCad files are never written by hand; ref_design's are
+  generated from design.py.
+- **A path the register names exists** (2026-10-28, VER-220). Every repository path in a file
+  under hardware/vv, the saved outputs aside, is in HEAD's tree, or is written
+  `path@<commit>` as history and is in that commit. A move or a delete on main fails the
+  default mode at once, naming the commit that removed the path.
 
 ## Approvals: signing with Alex's key
 
@@ -277,7 +290,13 @@ The design files this register describes, as git object hashes (`git rev-parse
 HEAD:<path>`; board/lib and board/tools are trees). The default mode fails when any differs
 from HEAD, and every ref_design gate fails with "gate evaluated against a design it does not
 describe" (the order gate reads the board's files, the case gate case.scad and export.py,
-later gates all). Re-seeded on 2026-10-28 at 39cc07f (branch ref-design-esp32s3), the ESP32-S3
+later gates all). Moved on 2026-10-28 to fd66be9 on main, when vv-plan merged main (b764965): the
+board session's three commits after 39cc07f (e872140 the case, 589c6b5 and c8d5744 C10 beside the
+module's pin and the re-route) and main's comment and path edits in 012254b, 574c94c, a62aac0 and
+fd66be9 (design.py, placement.py, case.scad and board/tools name the moved docs). The scripted
+checks were re-run against these files the same day (run_checks.py); a hand check that covers them
+is stale until it is re-run. The ESP32-S3 board is dropped, so this baseline only lets the register
+see when an F1C200s design replaces these files. Before that, re-seeded on 2026-10-28 at 39cc07f (branch ref-design-esp32s3), the ESP32-S3
 board Alex is ordering: the routed board (seed 144 of batch 7) and its fab outputs. The RP2354B
 board's register (71737ae) is tag `vv-rp2354b-final`; the earlier seeds are kept on branches
 vv-plan-36403e3 (this branch before the rebase onto 39cc07f), vv-plan-f0ab637, vv-plan-684a609 and
@@ -292,37 +311,38 @@ storage.kicad_sch (the microSD sheet); mcu_power.kicad_sch left with the RP2354B
 pin_review/*.json change is not a design path: it stales VER-02 and VER-36, which cover it.
 
 The order branch below is read by check_trace (O-R13): a commit on it after the baseline commit
-that touches any of these paths makes the default mode warn and the order gate fail (R8). The board
-is not merged: the order branch is ref-design-esp32s3, where the board session still commits
-renders, kits and docs; a design commit there after 39cc07f is what R8 shows. Every hash below
-equals the same path at 39cc07f. The gate-moves line names the register state before this re-seed
+that touches any of these paths makes the default mode warn and the order gate fail (R8). Since
+2026-10-28 it is main: ref-design-esp32s3 is merged and its board dropped, and the next design lands
+on main. Until then it was ref-design-esp32s3 from 39cc07f, where the board session committed
+renders, kits and docs after the baseline. Every hash below
+equals the same path at fd66be9. The gate-moves line names the register state before this re-seed
 (fd1f6e8, vv-rp2354b-final's successor): until Alex signs a `GATE@` line, the order gate prints
 every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before he signs.
 
-- Order branch: `ref-design-esp32s3` from `39cc07f`
+- Order branch: `main` from `fd66be9`
 - Gate moves listed since: `fd1f6e8`
-- `hardware/ref_design/board/design.py` 88a602bcc85cae2e58a602de2036c32f4b2ec033
-- `hardware/ref_design/board/placement.py` 5d55805545f6b17ab007aa0188917c19b6ab1d1e
+- `hardware/ref_design/board/design.py` e4cc953e06891cc000ee5dc951765aceacb5ba25
+- `hardware/ref_design/board/placement.py` 4093b078390aa77a2b944ec6469ad5d6fe9c8fcb
 - `hardware/ref_design/board/placement_zones.py` a1594329d1f088749a82e1aa1f165a24542843ad
-- `hardware/ref_design/board/placement_new.json` 726e40c4b8dea568e7f25b51420302c8855e811f
+- `hardware/ref_design/board/placement_new.json` 29c989eaabe7cb008b54c173059a7a7255648c6a
 - `hardware/ref_design/board/lib` 4ff8867570c82373aa7b597a9c0326cd44d321ee
-- `hardware/ref_design/board/battler.kicad_pcb` 6b13d96ed254f1aece6c47a785e6d31ad2fb7ca4
+- `hardware/ref_design/board/battler.kicad_pcb` 4eb88b707a6f942e4b33b96d9c95761af581066f
 - `hardware/ref_design/board/battler.kicad_pro` b69f8a936c40329f05277314dec0abef5461c04d
 - `hardware/ref_design/board/battler.kicad_dru` a70cf22f24b815cb27e8f6808c297eafcc3e3706
 - `hardware/ref_design/board/fp-lib-table` 869deca7bc078b6e52f2016868bfb4b0cffe28ad
 - `hardware/ref_design/board/sym-lib-table` bad6b19dda9197494092e27b4854bcbf59f9d307
-- `hardware/ref_design/board/tools` fa25ff936f1a587a3ea9caeb51d33f884f617aa7
+- `hardware/ref_design/board/tools` 1bb1f0ce2b0a3f963e606003a496876e45398dae
 - `hardware/ref_design/tools/build.py` 93bcb52fa546055454242aa2bf1e65581bb27a84
 - `hardware/ref_design/board/audio.kicad_sch` 3c0ed35df2964d167b3d5319c27db1cf2ba1e400
 - `hardware/ref_design/board/battler.kicad_sch` 2eab07857a053c85bc282795adb4638d1451aa2c
 - `hardware/ref_design/board/buttons.kicad_sch` 5a0b62ab4b4ce54b3f571906b362634bd581a446
 - `hardware/ref_design/board/debug.kicad_sch` e22afa205e64d6a1f21e8681737819edffd62e85
 - `hardware/ref_design/board/display.kicad_sch` af2cdc75cfa8c60a3f121fb59c847b30606d3ff7
-- `hardware/ref_design/board/mcu.kicad_sch` 81aa12b5cf8b0d4b96bd1614bb96b8210fef93f2
+- `hardware/ref_design/board/mcu.kicad_sch` 7cab9cd8b412a42d7850b646248ec269a2755189
 - `hardware/ref_design/board/power.kicad_sch` 1537bba1316d9d6725176c44c2c8ced554add60e
 - `hardware/ref_design/board/storage.kicad_sch` be626b579f2e1691027bdd77ad458662ec9fe1d4
 - `hardware/ref_design/board/usb_charger.kicad_sch` 9782654c75f29fbf0ea6000d53a99db9ee1ea33a
-- `hardware/ref_design/case/case.scad` 96522730a23d7810bc76e5ac3a397afd3807cf41
+- `hardware/ref_design/case/case.scad` 20ff57f1822494f41455946024ef5ab0c7d1e64c
 - `hardware/ref_design/case/export.py` 2b14fd99117a4885a2bbd79550ea369431f9f219
 
 ## Ratings (DFMEA)

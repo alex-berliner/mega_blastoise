@@ -28,8 +28,8 @@ today; (j) past bugs and what catches them; (k) the coverage grid. The RP2354B b
 **What it proves.** Each board works when it is built as designed (verified), the design
 is the right one for the numbers (validated), it is safe (the Li-ion cell, touch
 temperature), JLC can make it, it fits the case, and it survives use. It covers
-`hardware/ref_design` and Alex's `hardware/prod_board` with `hardware/prod_case`, each with
-its own evidence.
+`hardware/ref_design`. Alex's `hardware/prod_board@611ebe3` and `hardware/prod_case@611ebe3` were
+deleted from the repository in 574c94c (Alex: not needed); their rows are RETIRED with it.
 
 **The chain.** Requirements (requirements.md) -> DFMEA rows (dfmea.csv) -> checks
 (verification.csv) -> gates (gates.md: ORDER, CASE, EVT, DVT, PVT) -> release and change
@@ -81,7 +81,7 @@ pins. The counts are in section (i).
   ACCEPTED (not PASS) there and in grid.md. An unsigned ACCEPTED fails the default mode.
 - A check's 'sources' names the datasheet files it relies on; a PASS whose sources are not in
   hardware/ref_design/datasheets is BLOCKED at every gate and in the grid (2026-10-28).
-- A commit on the order branch after the baseline that touches docs/*proposal*.md warns in the
+- A commit on the order branch after the baseline that touches docs/living/*proposal*.md warns in the
   default mode and fails R8 at the order gate (2026-10-28).
 - The design baseline in README.md names every design path and must equal HEAD and the
   baseline commit's own blobs, or the default mode fails (DEF-47: on 2026-10-26 the rebase onto
@@ -200,7 +200,7 @@ they must be made, those that can move copper first.
 | 0.2 | **Order everything with a lead time** (`--shopping --gate evt`): cells from a seller with a spec sheet that gives the size with the PCM and names the plug (VER-37, VER-184); the ER-TFT035IPS-6, an FH12 breakout and an ESP32-S3 dev board (VER-43, VER-136, VER-44); the flex antenna and its U.FL cable (DEF-85); two GSPK151035PN and SH leads (DEF-64); domes and Start/Select strips; three microSD cards (VER-209); a 4-pin pogo jig (VER-212). **Download** into hardware/ref_design/datasheets: the antenna's datasheet (VER-205, VER-34), Samsung's CL21A226MAQNNNE DC-bias curve (VER-30), Espressif's ESP32-S3 errata (VER-214), JLC's dated capabilities page as jlc_capabilities.md (VER-17). JLC's parts database on order day for the four new parts (VER-41, DEF-81). The ESTIMATE ledger's measurements need calipers (VER-152). | VER-41, VER-37, VER-184, VER-43, VER-34, VER-152, VER-178 | Alex: 1 h, about $150-200 |
 | 0.3 | **Run the register on every commit**: one line in scripts/check.sh, `python3 hardware/vv/tools/check_trace.py` (outside hardware/vv, so it waits for Alex's OK). | DEF-47 | 15 min |
 | 0.4 | **Alex pins a signing key** (README, 'Approvals'). Until then no APPROVALS.md line counts (DEC-30). | | Alex: 15 min |
-| 0.5 | **prod_board's own order list** (`--gate order --board prod_board`, Alex's board, evaluated apart). | VER-10, VER-119, VER-120, VER-121, VER-122, VER-163 | Alex: 1 h |
+| 0.5 | **prod_board's own order list: RETIRED in 574c94c**, prod_board deleted from the repo (Alex: not needed). Was: VER-10, VER-119 to VER-122 and VER-163, evaluated apart with `--board prod_board`. | | |
 | 1.1 | **DEC-43, 3V3 in a Wi-Fi burst** (can move copper): C10 within 5 mm of the module's pin 2 and VSYS to U3 at 0.5 mm, or a firmware rule (TX power capped near the cutoff, or the cutoff at 3.6 V) accepted for EVT with VER-208. Proposed: the copper, if any other step-1 item re-routes; else the firmware rule. | VER-204, DEF-82, DEF-86 | Alex: 10 min; the copper a half-day pass |
 | 1.2 | **DEC-40, the antenna's place** (can move copper and the case): accept the left wall for EVT with VER-207's range test, or move the module and its antenna. Proposed: accept for EVT, read the antenna's datasheet first. | VER-205, DEF-80 | Alex: 10 min |
 | 1.3 | **DEC-47, U4's thermal pad**: read Figure 11-2 by eye; 3.7 mm in fp_esp32.py, or the paste windowed. | VER-125, DEF-84 | the design pass, 30 min |
@@ -219,7 +219,7 @@ they must be made, those that can move copper first.
 | 1.17 | **DEF-100, U2's exposed-pad paste** (copper and paste, must fix): fp_u2.py skips KiCad's unnumbered paste pads, or replaces them with TI's single 1.55 mm window (85%); the library footprint and the board regenerated; then VER-27, VER-125, VER-04, VER-132. | VER-27, DEF-100 | the design pass, 30 min |
 | 1.18 | **DEC-49, the panel's tail width** (25.5 +-0.15 against the FH12's +-0.07): proposed accept for EVT, VER-44 measures each bought tail and VER-136 seats one. | VER-219, DEF-102 | Alex: 5 min |
 | 1.16 | **DEC-35, the order candidate**: the commit after any step-1 pass; route.py --reuse for a rebuild that moves no copper. | DEF-30 | Alex: 5 min |
-| 2 | **Re-run the scripted checks** after any step-1 pass (`run_checks.py`, about 15 min, then VER-129 on its own): netlist, pin gate, ERC, DRC, contact footprints, inrush, holes, MLCC, TH1, CPL, drill, backlight, cell gap, edges, net classes, the stale-names scan, the latch, the module's pins and supply, the antenna. | VER-01, VER-02, VER-03, VER-04, VER-08, VER-99, VER-114, VER-142, VER-164, VER-176, VER-131, VER-137, VER-181, VER-18, VER-201, VER-129, VER-188, VER-33, VER-203, VER-204, VER-205 | 30 min |
+| 2 | **Re-run the scripted checks** after any step-1 pass (`run_checks.py`, about 15 min, then VER-129 on its own): netlist, pin gate, ERC, DRC, contact footprints, inrush, holes, MLCC, TH1, CPL, drill, backlight, cell gap, edges, net classes, the stale-names scan, the latch, the module's pins and supply, the antenna. | VER-01, VER-02, VER-03, VER-04, VER-08, VER-99, VER-114, VER-142, VER-164, VER-176, VER-131, VER-137, VER-181, VER-18, VER-201, VER-129, VER-188, VER-220, VER-33, VER-203, VER-204, VER-205 | 30 min |
 | 3 | **Fab outputs**: the gerbers read on their own (VER-27: FAIL, DEF-100: step 1.17); drill files and CPL (pass); no CPL row moves before the placement preview (J1-J4, J8, U4, SW24); the fab content check; JLC's dated limits, which also decide DEF-56; land patterns (U4's thermal pad: step 1.3; J8's and SW24's by hand); contacts as placed; the dome against its drawing (not built; the drawing is on disk); the release run (VER-143). The order sends no netlist; VER-26 and VER-29 bind at G-DVT-01. | VER-131, VER-176, VER-132, VER-17, VER-27, VER-125, VER-162, VER-178, VER-143 | 1.5 days |
 | 4 | **Layout reviews**: the USB pair's stubs and length (FAIL: 3.60 mm); the return paths (advisory: SD_D3 14.22 mm); the antenna's keep-out (step 2); the gerber read moved to step 3 (binding). | VER-108, VER-21 | half a day |
 | 5 | **Power-path analyses that can move copper or the BOM**: the latch table through SW24 (passes); the backlight (passes); inrush (passes). Alex reads by hand the nine back-power lines VER-159 lists (EVT), the jig on J7's 3V3 first. | VER-33, VER-137, VER-99 | 2 hours |
@@ -279,7 +279,7 @@ a load (VER-145, 6.5 h: the timer is 4-6 h) and SR_CLK (VER-179, now over U8, U9
 bring-up, soak and thermal; unit 4 abuse, ESD screen, near-field, drop, button life and fault
 injection (it never ships); unit 5 spare.
 
-Exit: `--gate evt` exits 0 (G-EVT-01 to G-EVT-16; G-EVT-15 is prod_board's).
+Exit: `--gate evt` exits 0 (G-EVT-01 to G-EVT-16; G-EVT-15 was prod_board's, RETIRED in 574c94c).
 
 ### DVT: the revised spin
 

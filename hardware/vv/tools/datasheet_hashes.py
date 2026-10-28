@@ -32,10 +32,11 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 VV = os.path.dirname(HERE)
 ROOT = os.path.dirname(os.path.dirname(VV))
 
-# the extracts the register quotes: the panel's mechanics, the ILI9488's interface, the
-# charger's limits and the RP2350's leakage. The .txt is what the line numbers cite; the .pdf
-# is what it was extracted from (the panel's outline drawing is a picture in it).
-REQUIRED = [f"{n}.{ext}" for n in ("bq24074", "er-tft035ips-6", "ili9488", "rp2350") for ext in ("txt", "pdf")]
+# the extracts the register quotes: the panel's mechanics, the ILI9488's interface and the
+# charger's limits. The .txt is what the line numbers cite; the .pdf is what it was extracted
+# from (the panel's outline drawing is a picture in it). rp2350 (its leakage) left the list on
+# 2026-10-28: 574c94c deleted rp2350.pdf with the RP2354B board (last at 611ebe3).
+REQUIRED = [f"{n}.{ext}" for n in ("bq24074", "er-tft035ips-6", "ili9488") for ext in ("txt", "pdf")]
 
 DATE_PAT = re.compile(
     r"\b(?:Jan|Feb|Mar|Apr|May|Jun|Jul|Aug|Sep|Oct|Nov|Dec)[a-z]*[ \-]\d{1,2}(?:[ \-]\d{2,4})?\b"

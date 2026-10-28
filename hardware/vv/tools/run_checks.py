@@ -52,10 +52,8 @@ CHECKS = {
     "VER-03": ("erc", ["kicad-cli", "sch", "erc", "--severity-all", "--exit-code-violations", "-o", "{tmp}/erc.rpt",
                        "hardware/ref_design/board/battler.kicad_sch"], True),
     "VER-04": ("drc", ["python3", "hardware/ref_design/board/tools/check_pcb.py"], True),
-    "VER-08": ("check_contact_fp", ["python3", "hardware/membrane/tools/check_contact_fp.py",
+    "VER-08": ("check_contact_fp", ["python3", "hardware/ref_design/board/membrane/tools/check_contact_fp.py",
                                     "hardware/ref_design/board/lib/battler.pretty/DSL_button_4ring.kicad_mod"], False),
-    "VER-10": ("check_contact_fp", ["python3", "hardware/membrane/tools/check_contact_fp.py",
-                                    "hardware/prod_board/prod_board/prod.pretty/DSL_button_4ring.kicad_mod"], False),
     # the pre-order numbers (design_numbers.py); pcbnew ones record KiCad's version
     "VER-182": ("swell", ["python3", DN, "swell"], False),
     "VER-181": ("cellgap", ["python3", DN, "cellgap"], False),
@@ -76,6 +74,8 @@ CHECKS = {
     "VER-202": ("spkplug", ["python3", DN, "spkplug"], True),
     "VER-201": ("netclass", ["python3", DN, "netclass"], False),
     "VER-188": ("stale_names", ["python3", "hardware/vv/tools/stale_names.py"], False),
+    # 2026-10-28: every repository path the register names is in HEAD's tree, or pinned where it was
+    "VER-220": ("repo_paths", ["python3", "hardware/vv/tools/repo_paths.py"], False),
     # the paper checks of classes 4, 6, 9 and 11 (2026-10-27); exit 2 is BLOCKED: nothing is recorded
     "VER-33": ("latch", ["python3", PC, "latch"], False),
     "VER-191": ("usb", ["python3", PC, "usb"], True),
@@ -93,8 +93,7 @@ CHECKS = {
     "VER-160": ("cellspec", ["python3", DN, "cellspec"], False),
     "VER-159": ("check_backpower", ["python3", "hardware/vv/tools/check_backpower.py"], False),
     "VER-162": ("check_placed_contacts", ["python3", "hardware/vv/tools/check_placed_contacts.py"], True),
-    # 2026-10-28: prod_board's placed contacts (read only) and the dome footprint against the dome's drawing
-    "VER-163": ("check_placed_contacts_prod", ["python3", "hardware/vv/tools/check_placed_contacts.py", "--prod"], True),
+    # 2026-10-28: the dome footprint against the dome's drawing (VER-163, prod_board's contacts, left with it in 574c94c)
     "VER-178": ("check_dome", ["python3", "hardware/vv/tools/check_dome.py"], True),
     # 2026-10-28: the LCSC identity over Konnect's JLC snapshot on this machine (exit 2 if it is missing)
     "VER-186": ("check_lcsc", ["python3", "hardware/vv/tools/check_lcsc.py"], True),

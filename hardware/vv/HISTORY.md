@@ -449,7 +449,7 @@ for the RP2354B board at 71737ae. Their headings are one level down here.
 ### The header at fd1f6e8
 
 **Decision (Alex, 2026-10-28): the 5-board JLC order is the ESP32-S3-WROOM-1-N16R8 board** in
-`hardware/ref_design/docs/esp32s3_board_proposal.md` on main (dcb6a76, e79f251), not the RP2354B
+`docs/living/esp32s3_board_proposal.md` on main (dcb6a76, e79f251), not the RP2354B
 board below. It is not designed yet: no design.py exists for it. This register will be re-seeded
 for it once its design exists. The RP2354B content (sections b to l) is frozen at tag
 `vv-rp2354b-final` (c8ac9dd) and stays as history; nothing in it is the plan for the next order.

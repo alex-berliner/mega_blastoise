@@ -698,7 +698,7 @@ def usbpair(seed=None):
 # ---- VER-205 (39cc07f): the flex antenna's keep-out on the board and its clearance to metal ---------------------------
 ANT_CLEAR = 15.0             # mm: 'A clearance of at least 15 mm is recommended in all directions' (esp32-s3-hw-design-guidelines.txt:1299),
                              # written for the module's own PCB antenna: a stand-in until the flex antenna's maker's figure is on disk
-ANT_DOC = os.path.join(dn.REF, "docs", "esp32s3_build.md")
+ANT_DOC = os.path.join(dn.ROOT, "docs", "living", "esp32s3_build.md")   # moved from hardware/ref_design/docs in 012254b
 SEED_ANT = "pour"            # a GND pour sample put inside the keep-out in memory: the copper count must fail
 
 
@@ -709,10 +709,10 @@ def antenna(seed=None):
     doc = open(ANT_DOC, encoding="utf-8").read()
     m = re.search(r"x ([\d.]+) \.\. ([\d.]+),\s*y ([\d.]+) \.\. ([\d.]+), on a (\d+) mm U\.FL cable", doc)
     if not m:
-        print("docs/esp32s3_build.md names no antenna plate 'x .. , y .. , on a .. mm U.FL cable'\nRESULT: FAIL")
+        print("docs/living/esp32s3_build.md names no antenna plate 'x .. , y .. , on a .. mm U.FL cable'\nRESULT: FAIL")
         return 1
     ax0, ax1, ay0, ay1 = (float(m.group(i)) for i in range(1, 5))
-    print(f"the flex antenna's plate (docs/esp32s3_build.md): x {ax0}-{ax1}, y {ay0}-{ay1} (KiCad), on a {m.group(5)} mm U.FL cable; "
+    print(f"the flex antenna's plate (docs/living/esp32s3_build.md): x {ax0}-{ax1}, y {ay0}-{ay1} (KiCad), on a {m.group(5)} mm U.FL cable; "
           "it lies on the case's left wall, fitted by hand (JLC does not fit cables)")
     zones = [z for z in b.Zones() if z.GetIsRuleArea() and z.GetZoneName() == "antenna_keepout"]
     row(bool(zones), f"a rule area 'antenna_keepout' on the board: {len(zones)}")

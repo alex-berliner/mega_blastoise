@@ -4,7 +4,7 @@
     python3 hardware/vv/tools/check_trace.py                     # structure + report
     python3 hardware/vv/tools/check_trace.py --gate order        # exit 1 unless the order gate is met
     python3 hardware/vv/tools/check_trace.py --gate case         # the printed-case gate
-    python3 hardware/vv/tools/check_trace.py --gate evt --board prod_board
+    python3 hardware/vv/tools/check_trace.py --gate evt
     python3 hardware/vv/tools/check_trace.py --shopping [--gate evt]   # what to buy, longest lead first
     python3 hardware/vv/tools/check_trace.py --verbose           # every ID in every list
 
@@ -15,7 +15,7 @@ allow; an occurrence of 2 or less is backed by built hardware (or, at 1, by a st
 physical exclusion); a PASS or FAIL carries a commit, a date and an evidence file whose
 header matches it (every analysis and every test: COMMIT, TOOLS, RESULT); a 'covers'
 pattern matches a file committed to git and, with a regex, a line in it; a check marked
-'both' covers both boards; every check is reached by some gate, requirement or
+'both' covers a board file or a register file; every check is reached by some gate, requirement or
 high-priority risk no later than its own phase; every ORDER check is named by a numbered
 step row of PLAN.md section (d) (the 'what moved where' table is not a step), so the
 checklist and the gate cannot drift apart (round 2's objection, O-R11);
@@ -42,13 +42,15 @@ only at a gate; F-R3: a baseline rewritten from HEAD after a design edit fails h
 a JLC_FIXED entry in design_numbers.py counts only when its evidence file is committed and
 names the designator (F-R4); no live row of requirements.md, dfmea.csv or verification.csv
 names a part, part number or net that design.py at the baseline commit no longer has, outside
-'Was: ...' (tools/stale_names.py, VER-188); every live check names the classes and subsystems
+'Was: ...' (tools/stale_names.py, VER-188); every repository path a file under hardware/vv names
+is in HEAD's tree, or pinned 'path@<commit>' at a commit that has it (tools/repo_paths.py, VER-220,
+2026-10-28: main moved or deleted about 180 of them unseen); every live check names the classes and subsystems
 it targets, grid_reasons.csv is well formed and no NOT_NEEDED cell has a check (tools/grid.py);
 a defect whose Status is ACCEPTED has Alex's signed 'DF-ACCEPT:DEF-nn' line in APPROVALS.md, whose scope
 (the gate it moves to) is later than its Gate (2026-10-28: an unsigned ACCEPTED fails); a check's
 'sources' are file names in hardware/ref_design/datasheets.
 Everything else is a report, with warnings for evidence not committed, for design commits on
-the order branch after the baseline, for architecture proposal commits on it (docs/*proposal*.md,
+the order branch after the baseline, for architecture proposal commits on it (docs/living/*proposal*.md,
 2026-10-28), for a GRID line signed with no ACCEPTED_GAP row and for a grid.md that is not what
 the register gives. The report lists every PASS whose 'sources' name a datasheet that is not in
 hardware/ref_design/datasheets as BLOCKED: no gate counts it (2026-10-28, a PASS on a stand-in).
@@ -84,7 +86,7 @@ can clear them (planned ones count as GAP; tools/grid.py says which checks can c
       regenerated at the baseline commit must hash the same (O-R4; both sha256s are printed
       and go into the release record);
       at the order gate a commit on the order branch after the baseline commit that touches
-      hardware/ref_design/docs/*proposal*.md fails too: an architecture decision lands in a
+      docs/living/*proposal*.md fails too: an architecture decision lands in a
       proposal before any design path moves (2026-10-28: dcb6a76 chose another MCU unseen).
   R9  (order gate, 2026-10-27) the coverage grid (grid.md, tools/grid.py) has no GAP in classes
       1-15: each subsystem has, for each class, a built check that runs before the boards exist
@@ -111,11 +113,12 @@ At DVT and PVT a check of phase EVT or later that is a test (method T) or covers
 whatever its method, passes only on a result that covers a release record of that phase
 (REL-...-DVT, REL-...-PVT): an EVT unit's result does not speak for the revised spin (O-R11).
 
-Scope: for ref_design, requirements and DFMEA rows marked ref_design or both; for
-prod_board, requirements marked prod_board (REQ-PBD-* and the .P allocations Alex writes)
-and DFMEA rows marked prod_board or both (O-R12).
-A product requirement split per board (REQ-X and REQ-X.R / REQ-X.P) is verified through
-the child for the board.
+Scope: requirements and DFMEA rows marked ref_design or both. 'both' is the product level: a
+requirement stated without one board's parts, a check of the register itself. A product
+requirement split for the board (REQ-X and REQ-X.R) is verified through the .R child. Since
+2026-10-28 ref_design is the only board: prod_board and prod_case were deleted from the repository
+in 574c94c (Alex: not needed), so --board, the .P allocations and REQ-PBD-* are gone (their rows
+are RETIRED with that commit).
 
 At every gate a check passes only on a PASS whose 'sources' are all in hardware/ref_design/datasheets
 (else it is BLOCKED), and a gate criterion (G-ORD-22's PHASE:ORDER among them) lets through, as
@@ -158,16 +161,19 @@ VV = os.path.dirname(HERE)              # replaced by --vv (tools/seed_faults.py
 sys.path.insert(0, HERE)
 import grid as cgrid                    # noqa: E402  the coverage grid (classes by subsystems)
 import stale_names                      # noqa: E402  live rows naming what design.py no longer has (VER-188)
+import repo_paths                       # noqa: E402  repository paths the register names that moved or left (VER-220)
 
 PHASES = ["ORDER", "CASE", "EVT", "DVT", "PVT", "SALE"]
 GATE_ARG = {"order": "ORDER", "case": "CASE", "evt": "EVT", "dvt": "DVT", "pvt": "PVT"}
 GATE_PREFIX = {"ORDER": "G-ORD", "CASE": "G-CASE", "EVT": "G-EVT", "DVT": "G-DVT", "PVT": "G-PVT"}
 PREFIX_PHASE = {v: k for k, v in GATE_PREFIX.items()}
-BOARDS = ("ref_design", "prod_board")
-BOARD_VALUES = ("ref_design", "prod_board", "both")
-BOARD_ROOTS = {"ref_design": ("hardware/ref_design/",),
-               "prod_board": ("hardware/prod_board/", "hardware/prod_case/")}
-SHARED_ROOTS = ("hardware/vv/", "hardware/membrane/")
+# 2026-10-28: prod_board and prod_case left the repository in 574c94c (Alex: not needed); ref_design is the one board
+BOARDS = ("ref_design",)
+BOARD_VALUES = ("ref_design", "both")
+# a RETIRED row keeps the board it was written for, so its history reads as it was (574c94c: prod_board's rows)
+RETIRED_BOARDS = ("prod_board",)
+BOARD_ROOTS = {"ref_design": ("hardware/ref_design/",)}
+SHARED_ROOTS = ("hardware/vv/",)
 METHODS = set("TAID")
 LEVELS = ("product", "subsystem", "board")
 REQ_STATUS = ("PROPOSED", "APPROVED", "REJECTED", "DEFERRED", "RETIRED")
@@ -203,7 +209,7 @@ CLAUDE_TRAILER = re.compile(r"^(Co-Authored-By: Claude|Claude-Session:)", re.M |
 HARD_KEY_TYPES = ("sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com")
 
 RE = {
-    "REQ": r"REQ-[A-Z]{2,4}-\d{2}(?:\.[RP])?",
+    "REQ": r"REQ-[A-Z]{2,4}-\d{2}(?:\.R)?",            # .P (prod_board's allocation) left with it, 574c94c
     "DF": r"DF-\d{2,3}",
     "VER": r"VER-\d{2,3}",
     "DEF": r"DEF-\d{2,3}",
@@ -582,7 +588,7 @@ def parse_gates():
             if cells[0] in crit:
                 err(f"gates.md:{n}", f"duplicate ID {cells[0]}")
                 continue
-            if cells[3] not in BOARD_VALUES:
+            if cells[3] not in BOARD_VALUES and not (cells[2].split() == ["RETIRED"] and cells[3] in RETIRED_BOARDS):
                 err(f"gates.md:{n}", f"{cells[0]}: board {cells[3]!r} not in {BOARD_VALUES}")
             phase = PREFIX_PHASE[cells[0].rsplit("-", 1)[0]]
             crit[cells[0]] = {"id": cells[0], "text": cells[1], "needs": cells[2].split(), "board": cells[3],
@@ -872,12 +878,12 @@ def branch_drift(db, paths=None):
 
 
 # 2026-10-28: an architecture change is decided in a proposal doc before any design path moves.  dcb6a76 chose
-# another MCU in docs/esp32s3_board_proposal.md and R8, which reads only the design paths, did not see it.
-PROPOSALS = ":(glob)hardware/ref_design/docs/*proposal*.md"
+# another MCU in docs/living/esp32s3_board_proposal.md and R8, which reads only the design paths, did not see it.
+PROPOSALS = ":(glob)docs/living/*proposal*.md"
 
 
 def proposal_drift(db):
-    """Commits on the order branch after the baseline commit that touch hardware/ref_design/docs/*proposal*.md:
+    """Commits on the order branch after the baseline commit that touch docs/living/*proposal*.md:
     a warning in the default mode, a failure of R8 at the order gate."""
     if not db["order_branch"]:
         return []
@@ -886,7 +892,7 @@ def proposal_drift(db):
     if not ref or not resolve(base):
         return []
     shas = git("log", "--format=%h %s", f"{resolve(base)}..{ref}", "--", PROPOSALS)[1].splitlines()
-    return [f"{name} has architecture proposal commits after {base} (docs/*proposal*.md): "
+    return [f"{name} has architecture proposal commits after {base} (docs/living/*proposal*.md): "
             + "; ".join(s[:60] for s in shas[:4]) + (f" (+{len(shas) - 4})" if len(shas) > 4 else "")
             + ": the board being ordered may no longer be the one Alex wants"] if shas else []
 
@@ -1129,7 +1135,8 @@ def load():
         f, w = r["f"], r["_where"]
         if f.get("Level") and f["Level"] not in LEVELS:
             err(w, f"{r['id']}: Level {f['Level']!r} not in {LEVELS}")
-        if f.get("Board") and f["Board"] not in BOARD_VALUES:
+        if f.get("Board") and f["Board"] not in BOARD_VALUES and not (f.get("Status") == "RETIRED"
+                                                                    and f["Board"] in RETIRED_BOARDS):
             err(w, f"{r['id']}: Board {f['Board']!r} not in {BOARD_VALUES}")
         meth = set(re.split(r"[,\s/]+", f.get("Method", ""))) - {""}
         if not meth or not meth <= METHODS:
@@ -1149,9 +1156,8 @@ def load():
             parent, suffix = r["id"].rsplit(".", 1)
             if parent not in reqs:
                 err(w, f"{r['id']}: allocation of {parent}, which does not exist")
-            want = {"R": "ref_design", "P": "prod_board"}[suffix]
-            if f.get("Board") != want:
-                err(w, f"{r['id']}: a .{suffix} allocation is Board: {want}")
+            if f.get("Board") != "ref_design":
+                err(w, f"{r['id']}: a .{suffix} allocation is Board: ref_design")
     for r in reqs.values():
         r["alloc"] = {reqs[c]["f"].get("Board"): c for c in reqs if c.startswith(r["id"] + ".")}
         for c in r["children"]:
@@ -1170,7 +1176,7 @@ def load():
         meth = set(v["method"].split("/")) - {""}
         if not meth or not meth <= METHODS:
             err(w, f"{v['id']}: method {v['method']!r}: use T, A, I, D or e.g. I/D")
-        if v["board"] not in BOARD_VALUES:
+        if v["board"] not in BOARD_VALUES and not (v["last_result"] == "RETIRED" and v["board"] in RETIRED_BOARDS):
             err(w, f"{v['id']}: board {v['board']!r}")
         if v["phase"] not in PHASES:
             err(w, f"{v['id']}: phase {v['phase']!r}")
@@ -1264,7 +1270,7 @@ def load():
         if d["id"] in dfs:
             err(w, f"duplicate ID {d['id']}")
             continue
-        if d["board"] not in BOARD_VALUES:
+        if d["board"] not in BOARD_VALUES and not (d["status"] == "RETIRED" and d["board"] in RETIRED_BOARDS):
             err(w, f"{d['id']}: board {d['board']!r}")
         try:
             s, o, dt = int(d["severity"]), int(d["occurrence"]), int(d["detection_rating"])
@@ -1421,6 +1427,7 @@ def load():
                               "until committed (O-R2)")
     check_retired_citations(db)
     check_stale_names()
+    check_repo_paths()
     check_grid(db)
     check_jlc_fixed()
     for d in defs.values():
@@ -1717,7 +1724,7 @@ def check_req_phase(db):
 def check_plan_steps(db):
     """Round 2's objection: every ORDER check (advisory-only, CUT and RETIRED ones aside) is named by a step of
     PLAN.md section (d), so the order checklist cannot drift from the gate again.  O-R11: only the numbered
-    step rows count: the 'what moved where' table is history, and prod_board's list has a row of its own."""
+    step rows count: the 'what moved where' table is history."""
     path = os.path.join(VV, "PLAN.md")
     if not os.path.exists(path):
         err("PLAN.md", "missing")
@@ -1785,6 +1792,15 @@ def check_retired_citations(db):
 
 BOARD_DOC = re.compile(r"(?<!for )(?<!into )\b(assembly|bom|bringup|pinmap)\.md\b")
 HOLDS_GATE = re.compile(r"stays OPEN|the \w+ gate fails on it|holds the \w+ gate|holds Gate \w+", re.I)
+
+
+def check_repo_paths():
+    """2026-10-28 (VER-220): main moved or deleted about 180 of the paths this register named and no rule saw it.
+    Every repository path a file under hardware/vv names (the saved outputs aside) is in HEAD's tree, ignored by
+    git (a generated output), or pinned 'path@<commit>' at a commit that has it. tools/repo_paths.py holds the scan."""
+    bad, _ = repo_paths.findings(VV)
+    for where, tok, msg in bad:
+        err(where, msg)
 
 
 def check_stale_names():
@@ -1935,14 +1951,10 @@ def req_scope(db, board):
     """Requirements a board's gate evaluates (O-7)."""
     reqs = db["reqs"]
     live = {k: r for k, r in reqs.items() if r["f"].get("Status") != "RETIRED"}
-    if board == "prod_board":
-        return {k: r for k, r in live.items() if r["f"].get("Board") == "prod_board"}
-    return {k: r for k, r in live.items() if r["f"].get("Board") in ("ref_design", "both")}
+    return {k: r for k, r in live.items() if r["f"].get("Board") in (board, "both")}
 
 
 def df_scope(db, board):
-    if board == "prod_board":
-        return [d for d in db["dfs"].values() if d["board"] in ("prod_board", "both") and d["live"]]
     return [d for d in db["dfs"].values() if d["board"] in ("ref_design", "both") and d["live"]]
 
 
@@ -2053,8 +2065,6 @@ def report(db, verbose):
              [r for r, q in scope.items() if not q["alloc"].get(b) and not any(
                  for_board(vers[v]["board"], b) for v in q["vers"] if v in vers)], verbose)
     live = {k: q for k, q in reqs.items() if q["f"].get("Status") != "RETIRED"}
-    show("product requirements not yet allocated to prod_board (Alex writes the .P ones)",
-         [r for r, q in live.items() if q["f"].get("Board") == "both" and "." not in r], verbose, limit=12)
     show("no listed check has passed", [r for r in live if live[r]["vers"] and not any(
         vers.get(v, {}).get("last_result") == "PASS" for v in live[r]["vers"])], verbose)
     show("statement has no number (INCOSE: state a value and tolerance)",
@@ -2431,7 +2441,6 @@ def main():
     global VV
     ap = argparse.ArgumentParser(description=__doc__.split("\n")[0])
     ap.add_argument("--gate", choices=sorted(GATE_ARG), help="evaluate a phase gate (exit 1 unless met)")
-    ap.add_argument("--board", choices=BOARDS, default="ref_design")
     ap.add_argument("--shopping", action="store_true", help="list what unrun checks still need, by lead time")
     ap.add_argument("--accept-software-key", action="store_true",
                     help="let the order gate pass with a software signing key (O-R12): the choice is printed and "
@@ -2439,6 +2448,7 @@ def main():
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--vv", help=argparse.SUPPRESS)        # another copy of hardware/vv (seed_faults.py)
     a = ap.parse_args()
+    a.board = "ref_design"                                 # the one board since 574c94c deleted prod_board
     if a.vv:
         VV = os.path.abspath(a.vv)
     db = load()
