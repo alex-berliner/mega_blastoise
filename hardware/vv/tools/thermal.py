@@ -4,6 +4,7 @@
     python3 hardware/vv/tools/thermal.py modes       # VER-144: U2, U3, Q5, Q6 per mode; the firmware heat rule
     python3 hardware/vv/tools/thermal.py board       # VER-193: every other part, the cell's own heat, the case's inside
     python3 hardware/vv/tools/thermal.py amp         # VER-200: the amplifier (U7), on a stand-in theta (fm8002a.pdf prints none)
+    python3 hardware/vv/tools/thermal.py casemat     # VER-192: the case's material against its hottest inner surface (class 5)
     python3 hardware/vv/tools/thermal.py <check> --seed    # a seeded fault (a hotter part): must exit 1
 
 The model, stated once: the heat inside the case leaves through its outside, area A from case.scad (case_w, case_l,
@@ -249,9 +250,55 @@ def board(seed=None):
     print(f"  (U2's {pp_c['U2']:.2f} W sits on the same board; how much of it reaches the cell through the hole's edge is what "
           "VER-85 and VER-87 measure on unit 1; TH1 reads the cell's edge)")
     # the case's inside, for VER-192
-    hot = air40 + 0.3 * (tab["charging while playing"][0]["U2"] * Q["u2_theta"][0])
+    _, hot = inner_surface(Q, tab, T_AMB)
     print(f"the case's inner surface for VER-192: {air40:.1f} C on average at {T_AMB:g} C outside; over U2 about {hot:.1f} C "
-          "(the inside plus 30% of U2's rise across the 2.4 mm gap: a stand-in until VER-86 measures)")
+          f"(the inside plus {U2_TO_LID:.0%} of U2's rise across the 2.4 mm gap: a stand-in until VER-86 measures)")
+    print(f"{len(row.bad)} over")
+    return dn.result(not row.bad)
+
+
+U2_TO_LID = 0.3                 # share of U2's junction rise that reaches the lid over it across the 2.4 mm air gap (stand-in)
+
+
+def inner_surface(Q, tab, t_amb):
+    """(average, over U2): the case's inner surface in the hottest mode at t_amb outside, and over U2 charging while
+    playing (VER-193 prints them, VER-192 holds the material to them)."""
+    _, air = inside(max(h for _, h in tab.values()), t_amb)
+    return air, air + U2_TO_LID * (tab["charging while playing"][0]["U2"] * Q["u2_theta"][0])
+
+
+# ---- VER-192 ------------------------------------------------------------------------------------------------------------
+PRINT_README = os.path.join(dn.REF, "case", "print_package_README.md")
+STAND_HDT = 57.0                # C: PLA's heat deflection at 0.45 MPa, the usual 55-60 C (from memory: the maker's sheet is
+                                # not on disk; VER-192's needs names it)
+HDT_MARGIN = 15.0               # C: VER-192's pass limit, the heat deflection over the hottest inner surface
+
+
+def casemat(seed=None):
+    import re
+    Q = quotes()
+    row = Rows()
+    tab, _ = modes_table(Q)
+    text = open(PRINT_README, encoding="utf-8").read().split("\n")
+    line = next((k for k, t in enumerate(text, 1) if t.startswith("| **PLA** (every part)")), None)
+    brand = re.search(r"AMS slot 1\*\*: ([^|]+)", text[line - 1]).group(1).strip() if line else "unknown"
+    print(f"the case's material: {brand} for every printed part (print_package_README.md:{line}); the support filament "
+          "touches only the top's overhangs and is removed")
+    hdt = STAND_HDT - (30.0 if seed else 0.0)
+    print(f"its heat deflection temperature at 0.45 MPa: {hdt:g} C, a stand-in (PLA's usual 55-60 C, from memory): Bambu "
+          "Lab's technical data sheet for it is not on disk")
+    for t_amb in (T_AMB, T_AMB_CELL):
+        avg, hot = inner_surface(Q, tab, t_amb)
+        need = hot + HDT_MARGIN
+        line_ = (f"at {t_amb:g} C outside, the hottest mode: the inner surface {avg:.1f} C on average and {hot:.1f} C over U2 "
+                 f"(VER-193's model; {U2_TO_LID:.0%} of U2's rise reaches the lid, a stand-in): the material needs "
+                 f"{need:.1f} C or more, it has {hdt:g} C")
+        if t_amb == T_AMB:
+            row(hdt >= need, line_ + " (VER-192's case: 40 C, charging while playing, backlight full)")
+            print(f"  this fails for any heat deflection under {need:.1f} C, whatever the sheet says for PLA; "
+                  f"{hot - hdt:+.1f} C over U2 and {avg - hdt:+.1f} C on average against the stand-in itself")
+        else:
+            print("  " + line_ + " (room temperature, for the decision)")
     print(f"{len(row.bad)} over")
     return dn.result(not row.bad)
 
@@ -279,7 +326,7 @@ def amp(seed=None):
 
 
 STAND_SOIC8_THETA = 160.0       # C/W: a JEDEC SOIC-8 on a low-k board, pessimistic (fm8002a.pdf prints no theta)
-CHECKS = {"modes": (modes, True), "board": (board, True), "amp": (amp, True)}
+CHECKS = {"modes": (modes, True), "board": (board, True), "amp": (amp, True), "casemat": (casemat, True)}
 
 
 def main():

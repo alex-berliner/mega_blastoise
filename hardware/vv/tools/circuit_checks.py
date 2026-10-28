@@ -274,7 +274,9 @@ DERIVED = {"I_TS_TOL": "the tolerance (78 - 72) / 2 / 75 of the cited band, not 
            "STAND_ESP_USB_C": "a stand-in; the cited line gives a GPIO's 2 pF",
            "CV_TOL": "a +-1% bound on the cited 4.16-4.23 V, not a printed number",
            "LED_MAX_MA": "120 mA over six chips, a quotient of the cited line",
-           "TH1_TOL": "the part number's F (+-1%) as a fraction", "TH1_B_TOL": "the part number's F (+-1%) as a fraction"}
+           "TH1_TOL": "the part number's F (+-1%) as a fraction", "TH1_B_TOL": "the part number's F (+-1%) as a fraction",
+           "U6_AOL": "10^(88/20): the cited 88 dB minimum as a ratio", "U6_CIN": "6 + 3 pF: the two cited lines' typical "
+           "input capacitances summed"}
 
 
 def numbers_near(name, lines):

@@ -1013,3 +1013,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: none
 - Gate: EVT
 - Status: OPEN (fix: C() names 'FH' for every MPN starting '0402', or CAP carries the maker per line; a field change, no copper)
+
+### DEF-99: The PLA case over U2 runs past PLA's heat deflection when charging while playing
+- Found: VER-192 (thermal.py casemat) at 39cc07f, 2026-10-28, its first run
+- Symptom: every printed part is Bambu PLA Basic (print_package_README.md:18). VER-193's model puts the case's inner surface at 62.6 C on average and 73.4 C over U2 at 40 C outside in the hottest mode (charging while playing, the backlight full, Wi-Fi on), and 47.6 C and 58.4 C at 25 C outside. PLA's heat deflection at 0.45 MPa is about 55-60 C (a stand-in: the maker's sheet is not on disk). VER-192's limit wants 88.4 C at 40 C; even the room-temperature spot over U2 (58.4 C) is above the stand-in's 57 C, so the lid can creep over U2 and the panel.
+- Root cause: the case's material was chosen for printing (supports, the one-piece top); the Wi-Fi board's heat (3.31 W inside, DEF-87) was never set against it.
+- Why missed: VER-192 was NOT_BUILT; VER-193 printed the inner surface without a limit.
+- Check added or changed: VER-192 (built: thermal.py casemat)
+- Updated: DF-202
+- Gate: CASE
+- Status: OPEN (options: PETG or ASA for the top over U2 (a heat deflection near 70 C and 95 C, from memory: the sheet decides), or the firmware heat rule of DEF-87 (CHG_OFF while hot, a lower charge current with the game running), or both; VER-86 measures the skin on unit 1)

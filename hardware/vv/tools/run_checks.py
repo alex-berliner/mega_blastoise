@@ -127,6 +127,7 @@ CHECKS = {
     "VER-144": ("heat_modes", ["python3", TH, "modes"], False),
     "VER-193": ("heat_board", ["python3", TH, "board"], False),
     "VER-200": ("heat_amp", ["python3", TH, "amp"], False),
+    "VER-192": ("casemat", ["python3", TH, "casemat"], False),     # 2026-10-28: the case's material (class 5, case)
     # last, and on its own after the others are written (seed_faults copies the working register)
     "VER-129": ("seed_faults", ["python3", "hardware/vv/tools/seed_faults.py"], False),
 }
