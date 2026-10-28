@@ -32,19 +32,26 @@ releases/APPROVALS.md, which only he writes lines in, in commits signed with the
 
 | What | Register effect |
 |---|---|
-| The ESP32-S3 board dropped (its files still on main) | 85 defects, 120 DFMEA rows, 25 checks, 18 requirements and every REQ-MCU and REQ-RF row DROPPED with esp32s3; the live checks of its design files reset to NOT_RUN (the tool exists) or NOT_BUILT (it reads that board's circuit, or its bench step is in that board's bring-up doc), their last results at 30131db |
+| The ESP32-S3 board dropped (its files still on main) | 85 defects (each naming the F1C200s board's DF row its lesson carries to, or, for DEF-80's antenna keep-out, why none does), 149 DFMEA rows, 25 checks, 18 requirements and every REQ-MCU and REQ-RF row DROPPED with esp32s3; the live checks of its design files reset to NOT_RUN (the tool exists) or NOT_BUILT (it reads that board's circuit, or its bench step is in that board's bring-up doc), their last results at 30131db |
 | The F1C200s board, the next spin | board `f1c200s`; subsystems power, cell, soc, storage, usbc, display, audio, buttons, case (grid.md); every live requirement names its subsystems; `.F` allocations (the `.R` ones were the ESP32-S3 board's) |
 | DESIGN.md's goals for the spin | REQ-PRD-12 to -17 (GBA at full speed, link play over USB-C, Showdown as a guest, a match within seconds, games and saves over USB or SD, today's size or smaller), each quoting its DESIGN.md line; REQ-SOC-01 to -08, REQ-USB-01, -02, REQ-PWR-20 to -22, REQ-BTN-10 |
-| The carryover lessons (carryover.md) | DF-213 to DF-247 on the F1C200s board, with the checks that carry them; the new chip's risks DF-203 to DF-212 |
-| The new-MCU path | gates.md NM-01 to NM-10; VER-221 to VER-225 the chip gate on a dev board (queue issue #11); check_trace prints the stage |
+| The carryover lessons (carryover.md) | DF-213 to DF-247 on the F1C200s board, with the checks that carry them; DF-248 to DF-251 for the dropped defects' lessons no row carried (F's audit); the new chip's risks DF-203 to DF-212 |
+| The new-MCU path | gates.md NM-01 to NM-11; VER-221 to VER-225 the chip gate on a dev board (queue issue #11), which may PASS before the F1C200s design exists (their covers name only docs/static); check_trace prints the stage |
 
 ## (c) Where the register is on the new-MCU path
 
 `python3 hardware/vv/tools/check_trace.py` prints it. Today: **NM-01, Requirements** (Alex has not
 approved REQ-PRD), with NM-02, Chip selection, met out of order (queue issue #4, the 'Chosen' table
-of next_spin_requirements.md). NM-03, the chip gate, waits on Alex's dev board order (issue #11). A
-FAIL there sends the project to the V3s: the board becomes `v3s` and the chip's requirements and
-checks are re-written for it before NM-04.
+of next_spin_requirements.md). NM-03, the chip gate, waits on Alex's dev board order (issue #11) and
+on the datasheets on disk (VER-233, its entry need). Its checks cover only next_spin_requirements.md,
+so they can PASS while the baseline is still the ESP32-S3 board's files. A FAIL there sends the
+project to the V3s: the board becomes `v3s` and the chip's requirements and checks are re-written for
+it before NM-04.
+
+F's audit of steps 1 and 2 (2026-10-28): all eight findings checked against the repository and
+applied; none rejected. One differs from F's wording: a dropped defect may say 'carries to no DF
+row: <why>' instead of naming a DF row, used once, for DEF-80 (the antenna's keep-out: the F1C200s
+board has no radio, and naming an unrelated row would fake a carry).
 
 ## (d) Before the 5-board order
 
@@ -61,14 +68,14 @@ fails it once that design.py lands without them).
 
 | # | Step | IDs | Effort |
 |---|---|---|---|
-| 0.1 | **Alex approves the requirements (NM-01)**: REQ-PRD-12 to -17 and their proposed numbers (59.7 fps, 30 min linked, 5 of 5 battles, 1.0 s and 10 s, 60 s a 16 MB copy, 78.9 x 156.48 x 9.6 mm); Claude reviews each subsystem's requirements against its functions first. | VER-189 | Claude: half a day; Alex: 1 h |
+| 0.1 | **Alex approves the requirements (NM-01)**: REQ-PRD-12 to -17 and their proposed numbers (59.7 fps, 30 min linked, 5 of 5 battles, 1.0 s and 10 s, 60 s a 16 MB copy, 78.9 x 156.48 x 9.6 mm each +0.3 mm); Claude reviews each subsystem's requirements against its functions first. | VER-189 | Claude: half a day; Alex: 1 h |
 | 0.2 | **Alex pins a signing key** (README, 'Approvals'). Until then no APPROVALS.md line counts. | | Alex: 15 min |
 | 0.3 | **Download** the F1C200s datasheet and user manual and the FUSB303B datasheet into hardware/ref_design/datasheets, with their hashes. | VER-233 | 30 min |
 | 1 | **The chip gate (NM-03), queue issue #11**: Alex orders two F1C200s dev boards and two FUSB303B breakouts; then FireRed under gpSP, boot from the card with the image's own DRAM init, boot time, the panel on the 8080 bus, the USB-C roles (and a gpSP link over USB between the two boards, DF-243). A FAIL: the V3s. | VER-221, VER-222, VER-223, VER-224, VER-225 | Alex: the order, 14 days' lead; then 3-5 days on the bench |
 | 2 | **Architecture and pin plan (NM-04)**: the pin plan, the power budget, the rails and their order, the FUSB303B and the VBUS switch, the chip's heat; the backlight driver, the cell sense and the USB ESD array chosen; the power slider measured against a board switch. | VER-232, VER-231, VER-235, VER-234, VER-238, VER-137, VER-144, VER-193, VER-239 | 2-3 days |
 | 3 | **Schematic (NM-05)**: the F1C200s design.py replaces the ESP32-S3 board's on main; the netlist, ERC, the pin gate, the application circuits, the datasheet audit, the parts' identity, the watchdog rule; then README's baseline moves to that commit and its baseline board to `f1c200s`. | VER-01, VER-03, VER-02, VER-34, VER-198, VER-14, VER-104 | the board session; Claude: 1 day of checks |
 | 4 | **The power path and the buses on paper**: inrush, the USB-C fault reach, the amplifier's states and heat, the clocked buses, the cell's chain, the thermistor's place, the contacts' pull-ups against the pill. | VER-99, VER-195, VER-196, VER-200, VER-199, VER-218, VER-164, VER-248 | 1 day |
-| 5 | **Layout and the board against the case (NM-06)**: DRC, check_fit, placement drift, the XY chain, the MLCC keep-out, the ESTIMATE ledger, the cell's gap, the USB pair (high speed on two layers), return paths, net classes, the contacts and the dome as placed, the panel's tail, the case's architecture, the regulators' switching loops. | VER-04, VER-06, VER-19, VER-174, VER-142, VER-152, VER-181, VER-236, VER-108, VER-21, VER-201, VER-08, VER-162, VER-178, VER-219, VER-190, VER-249 | 2 days |
+| 5 | **Layout and the board against the case (NM-06; the case gate itself is NM-09, after the order)**: DRC, check_fit, placement drift, the XY chain, the MLCC keep-out, the ESTIMATE ledger, the cell's gap, the USB pair (high speed on two layers), return paths, net classes, the contacts and the dome as placed, the panel's tail, the case's architecture, the regulators' switching loops. | VER-04, VER-06, VER-19, VER-174, VER-142, VER-152, VER-181, VER-236, VER-108, VER-21, VER-201, VER-08, VER-162, VER-178, VER-219, VER-190, VER-249 | 2 days |
 | 6 | **Fab outputs**: edges, holes, the drill files, the CPL, the fab content, the gerbers read on their own (each exposed pad's paste: DF-219), JLC's dated limits, land patterns (rows for the F1C200s and the FUSB303B), the release run. | VER-18, VER-114, VER-131, VER-176, VER-132, VER-27, VER-17, VER-125, VER-143 | 1.5 days |
 | 7 | **Parts in hand**: the cell's spec sheet and its plug against the cell's and the speaker's headers; the panel's tail and its map on the fit-kit board. | VER-37, VER-184, VER-44, VER-136 | an evening each once parts arrive |
 | 8 | **Docs and test access (NM-07)**: bring-up, assembly and the BOM re-written for the F1C200s board; every probe point has copper. | VER-158 | 2 hours, after the docs |
@@ -90,7 +97,7 @@ design, 4-5 hours of Alex's, and the parts' lead times in parallel.
 
 ## (e) The case gate, EVT, DVT and PVT
 
-The gates are gates.md's, unchanged in shape: the case gate (G-CASE: the stack, the shell, the
+The gates are gates.md's, unchanged in shape: the case gate (NM-09, after the order gate; G-CASE: the stack, the shell, the
 screws, the print, the size against today's with the spin's size pass, VER-230), EVT on the 5 boards
 (bring-up from a bring-up doc written for the F1C200s board, the cell's safety screens first, then
 the new functions: FireRed on unit 1 (VER-247), link play (VER-226), Showdown (VER-227), boot time

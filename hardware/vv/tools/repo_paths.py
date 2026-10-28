@@ -23,14 +23,21 @@ under hardware/, hardware/ref_design/, hardware/ref_design/board/ and hardware/v
   MOVED or  it is not in HEAD's tree but HEAD's history had it: the error names the commit that
   DELETED   removed it and the last commit that had it, so the fix is to point at the new path or
             to pin the old one;
-  planned   no commit on HEAD's history ever had it (a file a check will write: evidence/FAI_...,
-            analysis/cell.json): not an error, listed with --verbose.
+  planned   no commit on HEAD's history ever had it, and something says it will exist: it is named
+            on a verification.csv row that is NOT_BUILT (the tool or file that row will build) or
+            gone (RETIRED, DROPPED or CUT: history), on a HISTORY.md line, or it matches PLANNED
+            below (a file a check or a release will write: analysis/cell.json, evidence/...);
+            listed with --verbose;
+  UNKNOWN   never committed and nothing says it will be: a misspelt path, or a planned file to add
+            to PLANNED with what writes it (F's audit, 2026-10-28: a typo in a live path passed as
+            planned).
 
 A pinned path whose commit lacks it is an error too. tools/seed_faults.py is not read: the moved
 and wrongly pinned paths in it are the faults it seeds (VER-129 runs them). Template names ('{today}', '<date>') are not
 read. This is VER-220; check_trace.py's default mode runs it, so a move on main fails the register's
 structure at once. Python 3 standard library and git.
 """
+import csv
 import fnmatch
 import os
 import re
@@ -43,6 +50,18 @@ SUB = (r"board|case|lib|datasheets|evidence|releases|analysis|viewer|membrane|pi
        r"archive|architecture|ds_lite|prod_board|prod_case|stripboard_v2|ref_design|vv")
 TOKEN = re.compile(r"(?<![\w./@-])((?:\.\./)*(?:" + TOP + "|" + SUB + r")/[\w./*-]*[\w*])(@[0-9a-f]{7,40})?")
 UNDER = ("", "hardware/", "hardware/ref_design/", "hardware/ref_design/board/", "hardware/vv/")
+# Files never committed that the register names on purpose, each with what will write it (globs allowed). A path
+# that is none of these, and is named on no NOT_BUILT or gone row of verification.csv, is UNKNOWN: an error.
+PLANNED = {
+    "hardware/vv/evidence/*": "a saved output a check will write (check_trace checks every PASS's evidence file)",
+    "hardware/vv/releases/REL*": "a release record, from releases/TEMPLATE.md",
+    "hardware/vv/releases/CHG*": "a change record, from releases/CHANGE_TEMPLATE.md",
+    "hardware/vv/analysis/cell.json": "the cell's spec-sheet numbers, written when the spec sheet arrives (VER-37)",
+    "hardware/ref_design/board/cell.json": "the same numbers beside design.py, for VER-160's assert (VER-37)",
+    "hardware/vv/analysis/jlc_capabilities.md": "JLC's dated capability page, saved by VER-17",
+    "hardware/vv/tools/release.py": "the release run VER-143 builds (VER-42 reads its output)",
+    "hardware/ref_design/board/pin_review/ds": "DEF-21's finding: the folder the pin review cited, which never existed",
+}
 
 
 def _root(start):
@@ -128,8 +147,19 @@ def scan_files(vv):
             yield rel
 
 
+def planned_ok(rel, line, cands):
+    """Is a never-committed path one the register means to exist? (see the docstring: planned or UNKNOWN)"""
+    if rel == "HISTORY.md":
+        return True
+    if rel == "verification.csv":
+        row = next(csv.reader([line]), [])
+        if len(row) > 7 and row[7] in ("NOT_BUILT", "RETIRED", "DROPPED", "CUT"):
+            return True
+    return any(fnmatch.fnmatch(c, p) or c == p for c in cands for p in PLANNED)
+
+
 def findings(vv):
-    """(where, path, message) for every moved, deleted or wrongly pinned path; and the planned names."""
+    """(where, path, message) for every moved, deleted, wrongly pinned or unknown path; and the planned names."""
     head, head_dirs, hist, hist_dirs = _trees()
     bad, planned, seen = [], [], {}
     raw = []
@@ -138,12 +168,12 @@ def findings(vv):
         for n, line in enumerate(open(os.path.join(vv, rel), encoding="utf-8", errors="replace"), 1):
             for m in TOKEN.finditer(line):
                 tok, pin = m.group(1).rstrip("."), m.group(2)
-                if "{" in line[m.start():m.end() + 1] or tok.endswith("/"):
-                    continue
-                raw.append((f"{rel}:{n}", tok, pin[1:] if pin else None, base))
-    ign = ignored(sorted({c for _, tok, pin, base in raw if not pin for c in candidates(tok, base)
+                if "{" in line[m.start():m.end() + 1] or line[m.end():m.end() + 1] == "<" or tok.endswith("/"):
+                    continue                # a template name: '{today}', 'samsung_<mpn>'
+                raw.append((f"{rel}:{n}", tok, pin[1:] if pin else None, base, rel, line))
+    ign = ignored(sorted({c for _, tok, pin, base, _, _ in raw if not pin for c in candidates(tok, base)
                           if "*" not in c}))
-    for where, tok, pin, base in raw:
+    for where, tok, pin, base, rel, line in raw:
         cands = candidates(tok, base)
         if pin:
             if not any(git("cat-file", "-e", f"{pin}:{c}")[0] == 0 or git("ls-tree", "-d", pin, c)[1].strip()
@@ -164,7 +194,11 @@ def findings(vv):
                 else:
                     seen[key] = "planned"
         if seen[key] == "planned":
-            planned.append((where, tok))
+            if planned_ok(rel, line, cands):
+                planned.append((where, tok))
+            else:
+                bad.append((where, tok, f"{tok} was never committed, and no NOT_BUILT check and no entry of "
+                                        "repo_paths.PLANNED says it will be: a misspelt path, or a planned file to list"))
         elif seen[key]:
             bad.append((where, tok, seen[key]))
     return bad, planned

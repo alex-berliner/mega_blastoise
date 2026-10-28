@@ -96,8 +96,12 @@ fresh; REQ: APPROVED by Alex; DEF: CLOSED; DF: DONE), a stage (NM-nn: its exit m
 `APPROVED:REQ-<AREA>` (every live requirement of that area APPROVED in a line Alex signed),
 `DOC:<path>::<regex>` (a committed file has a matching line) or `GATE:<phase>` (that gate met; a
 gate need is not evaluated while an earlier stage is open). A stage's entry names the stage before
-it; a check a stage names is live. A NOT_BUILT check here is a work item: it has no script or
-procedure for this chip yet.
+it; a check a stage names is live. A stage is met when its exit needs and its other entry needs are
+met (NM-03 needs VER-233 too); the stage its entry names is order only, so a stage met before the one
+before it is printed as met out of order. A NOT_BUILT check here is a work item: it has no script or
+procedure for this chip yet. A check whose covers name only docs/static, the datasheets or
+hardware/vv (the chip gate's dev-board tests, the datasheet download) may PASS before the F1C200s
+design is the baseline; every other F1C200s check waits for it (README, Rules).
 
 | ID | Stage | Entry | Exit | Board |
 |---|---|---|---|---|
@@ -106,11 +110,12 @@ procedure for this chip yet.
 | NM-03 | Chip gate: on a dev board, the requirements that would kill the chip: FireRed at full speed, boot from the card, boot time, the panel on the 8080 bus, the USB-C roles; queue issue #11's results are the evidence; a fail sends the project to the V3s (DESIGN.md:77) | NM-02 VER-233 | VER-221 VER-222 VER-223 VER-224 VER-225 | f1c200s |
 | NM-04 | Architecture and pin plan: the pin review, the power budget, the rails and their order, the FUSB303B's roles on paper, the chip's heat | NM-03 | VER-232 VER-231 VER-235 VER-234 VER-238 | f1c200s |
 | NM-05 | Schematic: ERC, the netlist against design.py, the pin reviews, the application circuits and the datasheet checks | NM-04 | VER-01 VER-03 VER-02 VER-36 VER-34 VER-198 VER-233 | f1c200s |
-| NM-06 | Layout and case: DRC, check_fit, the USB pair, the land patterns, the gerbers, and the case gate (its checks and prints) | NM-05 | VER-04 VER-06 VER-236 VER-125 VER-27 GATE:case | f1c200s |
+| NM-06 | Layout and case: DRC, check_fit, the USB pair, the land patterns, the gerbers, the stack, the case's architecture and the spin's size; the checks that need no order (the case gate itself is NM-09: its PHASE:CASE counts every ORDER check) | NM-05 | VER-04 VER-06 VER-236 VER-125 VER-27 VER-20 VER-190 VER-230 | f1c200s |
 | NM-07 | Docs: bring-up, assembly and the BOM describe the F1C200s board; every bring-up measurement has a probe point | NM-06 | VER-39 VER-161 VER-158 | f1c200s |
 | NM-08 | Order gate | NM-07 | GATE:order | f1c200s |
-| NM-09 | EVT | NM-08 | GATE:evt | f1c200s |
-| NM-10 | DVT and PVT | NM-09 | GATE:dvt GATE:pvt | f1c200s |
+| NM-09 | Case gate: the printed case released before the EVT units are assembled | NM-08 | GATE:case | f1c200s |
+| NM-10 | EVT | NM-09 | GATE:evt | f1c200s |
+| NM-11 | DVT and PVT | NM-10 | GATE:dvt GATE:pvt | f1c200s |
 
 ## Order gate: before the 5-board EVT order
 
@@ -238,6 +243,6 @@ merge.
 
 | ID | Criterion | Proposed reason |
 |---|---|---|
-| W-01 | G-ORD-06 | not needed since 2026-10-26: G-ORD-06 names VER-33, the check that replaced the latch replica (round 2's objection); kept for its ID |
+| W-01 | G-ORD-06 | not needed since 2026-10-26: G-ORD-06 names a check (VER-239 on the F1C200s board, the power key's states on paper), not a replica; kept for its ID. Was: VER-33, the ESP32-S3 board's latch table, which replaced the latch replica (round 2's objection) |
 | W-02 | G-ORD-13 | not needed since 2026-10-26: G-ORD-13 is RETIRED with the TP4056 power path (2d1124d); kept for its ID |
 | W-03 | G-PVT-06 | applies only if a unit leaves Alex's hands |

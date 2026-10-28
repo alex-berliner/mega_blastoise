@@ -55,7 +55,8 @@ gate criterion of a dropped board) names that board in its board column and says
 live row names a live board (f1c200s or both), never a dropped one; no live row leans on a DROPPED row
 (verified by, detects, needs, an allocation) or cites one outside 'Was: ...'; every live requirement
 names its subsystems ('- Subsystem:', grid.py's SUBSYSTEMS or 'all'); while README's '- Baseline board:'
-is a dropped board, no check of the live board is PASS or FAIL (its design files are another board's);
+is a dropped board, no check of the live board is PASS or FAIL (its design files are another board's) unless its
+covers name only docs/static, the datasheets or hardware/vv (a dev-board test, a datasheet download: F's audit);
 gates.md's new-MCU stages NM-01.. are numbered in order, each entry names the stage before it, each
 names an exit, and every token is an ID, DOC:<path>::<regex>, APPROVED:REQ-<AREA> or GATE:<phase> with
 no gone check among them. The report prints the stage the register is at: the first stage whose exit
@@ -270,6 +271,24 @@ def dropped_ok(where, rid, board, text):
                    "holds its register)")
     elif not resolve(f"{tag}^{{commit}}"):
         err(where, f"{rid}: DROPPED names tag {tag}, which is not in this repository")
+
+
+DROPPED_WAS = re.compile(r"\bit was (?:OPEN|FIXED|CLOSED) there\b")
+DF_ID = re.compile(r"(?<![\w-])" + RE["DF"] + r"(?![\w-])")
+NO_LESSON = "carries to no DF row: "
+
+
+def dropped_lesson_ok(d, dfs):
+    """A DROPPED defect (README, Rules; F's audit, 2026-10-28) says what it was on its board ('it was OPEN|FIXED|CLOSED
+    there') and names a live DF row its lesson carries to, or says 'carries to no DF row: <why>' (a lesson only that
+    board's part had, such as its radio's keep-out)."""
+    s = d["f"].get("Status", "")
+    if not DROPPED_WAS.search(s):
+        err(d["_where"], f"{d['id']}: DROPPED needs what it was there ('it was OPEN', 'FIXED' or 'CLOSED there')")
+    live = [x for x in DF_ID.findall(WAS.sub("", s)) if x in dfs and dfs[x]["live"]]
+    why = s.split(NO_LESSON, 1)[1].strip() if NO_LESSON in s else ""
+    if not live and len(why) < 10:
+        err(d["_where"], f"{d['id']}: DROPPED needs the live DF row its lesson carries to (or '{NO_LESSON}<why>')")
 
 
 def board_ok(where, rid, board, status):
@@ -735,18 +754,22 @@ def stage_need(db, tok, gates_cache):
 
 
 def stage_report(db):
-    """Which new-MCU stage the register is at: the first stage whose exit is not met. A later stage's exit met out of
-    order is listed; the gate tokens of stages after the first open one are not evaluated."""
+    """Which new-MCU stage the register is at: the first stage whose entry and exit needs are not all met. The stage
+    an entry names is order, not a need here, so a later stage met out of order is listed as such; every other entry
+    need (VER-233 for the chip gate, F's audit) counts as the exit does. The gate tokens of stages after the first
+    open one are not evaluated."""
     db["stages_met"], cache, lines, at = set(), {}, [], None
     for sid in sorted(STAGES):
         s = STAGES[sid]
-        if at and any(t.startswith("GATE:") for t in s["exit"]):
+        entry = [t for t in s["entry"] if t not in STAGES]
+        if at and any(t.startswith("GATE:") for t in entry + s["exit"]):
             lines.append(f"    {sid} {s['name']}: not evaluated (an earlier stage is open)")
             continue
-        miss = [why for t in s["exit"] for ok, why in [stage_need(db, t, cache)] if not ok]
+        miss = ([f"entry: {why}" for t in entry for ok, why in [stage_need(db, t, cache)] if not ok]
+                + [why for t in s["exit"] for ok, why in [stage_need(db, t, cache)] if not ok])
         if miss:
             at = at or sid
-            lines.append(f"    {sid} {s['name']}: exit not met: " + "; ".join(miss[:4]) + (" ..." if len(miss) > 4 else ""))
+            lines.append(f"    {sid} {s['name']}: not met: " + "; ".join(miss[:4]) + (" ..." if len(miss) > 4 else ""))
         else:
             db["stages_met"].add(sid)
             lines.append(f"    {sid} {s['name']}: exit met" + (" (out of order: an earlier stage is open)" if at else ""))
@@ -1010,6 +1033,19 @@ def parse_baseline():
 
 
 BASELINE_BOARD = None                    # README's '- Baseline board: `<board>`', read by load() (2026-10-28)
+
+
+# What a check of the live board may cover and still run while the baseline is a dropped board's files (F's audit,
+# 2026-10-28): Alex's spec, the datasheets and the register. Anything else (a part, a release, any other path under
+# hardware/ref_design or elsewhere) is taken to read the dropped board's files.
+OFF_BOARD_ROOTS = ("docs/static/", "hardware/ref_design/datasheets/", "hardware/vv/")
+
+
+def reads_board_files(covers):
+    """Does a check's result rest on the design files at the baseline? Yes unless every 'covers' token is a path
+    under OFF_BOARD_ROOTS (a dev-board test covers next_spin_requirements.md; a datasheet download SOURCES.md)."""
+    toks = covers.split()
+    return not toks or not all(t.split("::", 1)[0].startswith(OFF_BOARD_ROOTS) for t in toks)
 
 
 def parse_baseline_board():
@@ -1358,9 +1394,12 @@ def load():
         board_ok(w, v["id"], v["board"], v["last_result"])
         if v["last_result"] == "DROPPED":
             dropped_ok(w, v["id"], v["board"], v["evidence"])
-        elif v["last_result"] in ("PASS", "FAIL") and v["board"] in BOARDS and BASELINE_BOARD in DROPPED_BOARDS:
+        elif (v["last_result"] in ("PASS", "FAIL") and v["board"] in BOARDS and BASELINE_BOARD in DROPPED_BOARDS
+              and reads_board_files(v["covers"])):
             # 2026-10-28: the design files at the baseline are a dropped board's, so no result on them speaks for
-            # the next spin's board: its checks wait, NOT_RUN or NOT_BUILT, until its own design is the baseline
+            # the next spin's board: its checks wait, NOT_RUN or NOT_BUILT, until its own design is the baseline.
+            # A check that reads none of them (a dev-board test, a datasheet download) may run (F's audit: the chip
+            # gate NM-03 could not exit before the F1C200s design.py, which lands at NM-05)
             err(w, f"{v['id']}: {v['last_result']} for {v['board']}, but the design baseline is the dropped "
                    f"{BASELINE_BOARD} board's files (README '- Baseline board:'): no {v['board']} design exists to "
                    "check yet")
@@ -1577,6 +1616,7 @@ def load():
             retired_ok(d["_where"], d["id"], d["f"].get("Status", ""))
         elif st == "DROPPED":
             dropped_ok(d["_where"], d["id"], d["board"], d["f"].get("Status", ""))
+            dropped_lesson_ok(d, dfs)
         if st == "CLOSED" and not d["vers"]:
             err(d["_where"], f"{d['id']}: CLOSED with no VER in 'Check added or changed' (no defect closes without a check)")
 

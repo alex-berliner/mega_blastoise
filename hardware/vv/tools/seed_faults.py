@@ -85,6 +85,16 @@ The F1C200s re-target adds theirs (2026-10-28):
   new-MCU  a stage naming a DROPPED check, an entry that skips the stage before, a token that is no need, stages
            out of order (structure); the chip selection's evidence gone, and the stage the register is at moving
            to NM-03 when NM-01's exit is met (report).
+F's audit of the re-target adds theirs (2026-10-28):
+
+  chip gate  a dev-board check's PASS whose covers name a doc under hardware/ref_design, and one that names a part,
+             while the baseline is the dropped board's: the default mode fails (only a check that reads Alex's spec,
+             the datasheets or the register may run before the F1C200s design is the baseline).
+  entry      a stage's entry need that is not met keeps the stage open (report).
+  lessons    a dropped defect that names no live DF row its lesson carries to, one whose row is itself DROPPED, and one
+             that does not say what it was there: the default mode fails.
+  paths      a misspelt path on a live check (never committed, named by no NOT_BUILT row and not in
+             repo_paths.PLANNED): the default mode fails.
 The seeds that leaned on the ESP32-S3 board's rows (DF-35, DF-87, DEF-62, DEF-84, VER-99's PASS and the like) moved
 to the F1C200s board's; where a seed needs an F1C200s PASS it takes the baseline as the live board's in its copy
 (live_baseline), and where it needs a live defect it adds one (add_defect).
@@ -434,14 +444,45 @@ FAULTS = [
      lambda d: text_edit(d, "gates.md", "| NM-04 | VER-01 VER-03", "| NM-03 | VER-01 VER-03")),
     ("new-MCU path: a stage token that is no need", "structure", "NM-03: token 'ISSUE#11' is not an ID",
      lambda d: text_edit(d, "gates.md", "| NM-02 VER-233 |", "| NM-02 VER-233 ISSUE#11 |")),
-    ("new-MCU path: the stages out of order", "structure", "number them NM-01 to NM-10 in order",
-     lambda d: text_edit(d, "gates.md", "| NM-10 | DVT and PVT", "| NM-11 | DVT and PVT")),
+    ("new-MCU path: the stages out of order", "structure", "number them NM-01 to NM-11 in order",
+     lambda d: text_edit(d, "gates.md", "| NM-11 | DVT and PVT", "| NM-12 | DVT and PVT")),
     ("new-MCU path: the chip selection's evidence gone from next_spin_requirements.md", "report",
-     "exit not met: docs/static/next_spin_requirements.md has no line matching",
+     "not met: docs/static/next_spin_requirements.md has no line matching",
      lambda d: text_edit(d, "gates.md", "claude-queue/issues/4 |", "claude-queue/issues/999 |")),
     ("new-MCU path: the stage the register is at moves when a stage's exit is met", "report",
      "new-MCU path (gates.md): at stage NM-03",
      lambda d: text_edit(d, "gates.md", "| APPROVED:REQ-PRD VER-189 |", "| DOC:docs/static/DESIGN.md::Mega.Blastoise |")),
+    # F's audit of the re-target (2026-10-28): the chip gate's exemption, the stages' entry needs, the dropped
+    # defects' lessons, the planned paths
+    ("baseline board: a PASS that reads a doc under hardware/ref_design is no dev-board check", "structure",
+     "VER-221: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     lambda d: csv_edit(d, "verification.csv", "VER-221", last_result="PASS", commit=HEAD7, date=TODAY,
+                        evidence="hardware/vv/evidence/2026-10-28_VER-221_chip_gate.txt",
+                        covers="docs/static/next_spin_requirements.md hardware/ref_design/docs/bringup.md")),
+    ("baseline board: a PASS that names a part is no dev-board check", "structure",
+     "VER-233: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     lambda d: csv_edit(d, "verification.csv", "VER-233", last_result="PASS", commit=HEAD7, date=TODAY,
+                        evidence="hardware/vv/evidence/2026-10-28_VER-233_datasheets.txt",
+                        covers="hardware/ref_design/datasheets/SOURCES.md part:U1")),
+    ("new-MCU path: a stage's entry need not met keeps it open", "report",
+     "NM-02 Chip selection: done, queue issue #4 (Alex, 2026-10-28: the F1C200s, the V3s as fallback): not met: entry:",
+     lambda d: text_edit(d, "gates.md", "| NM-01 | DOC:docs/static/next_spin_requirements.md::^##.Chosen",
+                         "| NM-01 DOC:docs/static/DESIGN.md::NO_SUCH_LINE | DOC:docs/static/next_spin_requirements.md::^##.Chosen")),
+    ("DROPPED: a dropped defect that names no live DF row its lesson carries to", "structure",
+     "DEF-07: DROPPED needs the live DF row its lesson carries to",
+     lambda d: text_edit(d, "defects.md", " Its lesson carries as DF-251 (the debug UART's direction in the pin plan) on "
+                         "the F1C200s board.", "")),
+    ("DROPPED: a dropped defect whose lesson row is itself DROPPED", "structure",
+     "DEF-07: DROPPED needs the live DF row its lesson carries to",
+     lambda d: text_edit(d, "defects.md", "carries as DF-251 (the debug UART's", "carries as DF-04 (the debug UART's")),
+    ("DROPPED: a dropped defect that does not say what it was there", "structure",
+     "DEF-07: DROPPED needs what it was there",
+     lambda d: text_edit(d, "defects.md", "dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. "
+                         "Its lesson carries as DF-251", "dropped. Its lesson carries as DF-251")),
+    ("repo paths: a misspelt path on a live check passes as planned no more", "structure",
+     "hardware/ref_design/board/tools/check_netlst.py was never committed",
+     lambda d: csv_edit(d, "verification.csv", "VER-01",
+                        procedure=lambda x: x + "; then hardware/ref_design/board/tools/check_netlst.py")),
 ]
 
 

@@ -8,7 +8,10 @@ Each group now carries as the F1C200s board's DFMEA rows (dfmea.csv) and the che
 NOT_RUN or NOT_BUILT until an F1C200s design exists: the cell and its pocket (C rows) as DF-214, DF-215,
 DF-216 and DF-231; the charger and the power path (P rows) as DF-217 to DF-226 and DF-213 (heat); the
 panel (D rows) as DF-227 to DF-229; the buttons (B rows) as DF-230; the case (K rows) as DF-232 to
-DF-234; the fab outputs (F rows) as DF-235 to DF-239; ESD as DF-240. The verdicts in the tables below
+DF-234; the fab outputs (F rows) as DF-235 to DF-239; ESD as DF-240. The dropped defects whose lessons
+no row carried (F's audit, 2026-10-28) carry as DF-248 (the audio chain), DF-249 (the printed case's
+features), DF-250 (the fab files and DRC) and DF-251 (the firmware's pin file); each dropped defect in
+defects.md names its row. The verdicts in the tables below
 are the ESP32-S3 board's at 39cc07f, history now; check_trace does not read this file.
 
 Each row: the finding, its number on the RP2354B board (71737ae), the check that found it, and

@@ -34,7 +34,7 @@ the case, survives use.
 |---|---|---|
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
 | [HISTORY.md](HISTORY.md) | the earlier rounds' ledgers and findings, moved out of PLAN.md (O-S9); check_trace does not read it | |
-| [carryover.md](carryover.md) | what the RP2354B rounds found that the ESP32-S3 board must also satisfy: one row a finding, its number, the check that found it and the rule; its first table gives each row's requirement, check and verdict at 39cc07f with the number; check_trace does not read it | |
+| [carryover.md](carryover.md) | what the RP2354B and ESP32-S3 rounds found that the F1C200s board must also satisfy: one row a finding, its number, the check that found it and the rule, and the F1C200s board's DFMEA rows that carry each group; its first table gives each row's requirement, check and verdict at 39cc07f (the ESP32-S3 board's, history now); check_trace does not read it | |
 | [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source, the subsystems it is allocated to and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.F (.R was the ESP32-S3 board's) |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
 | [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, the check classes and subsystems it targets, and the datasheet files it relies on ('sources') | VER-NN |
@@ -57,7 +57,7 @@ the case, survives use.
 | [tools/case_checks.py](tools/case_checks.py) | classes 2, 13 and 14 from case.scad's echo, in a temp copy of hardware/ref_design where positions.json is needed: arch VER-190, fit VER-06 (check_fit), placement VER-19, stack VER-20, estimates VER-152, mouths VER-165, xy VER-174, heights VER-112 (check_fit's heights against the drawings on disk), fpc VER-219 (the panel's tail against the FH12-50S) | |
 | [tools/thermal.py](tools/thermal.py) | class 15 on paper: modes VER-144, board VER-193, amp VER-200 (fm8002a.pdf on disk; its package theta a stand-in); class 5: casemat VER-192 (the case's material against its inner surface) | |
 | [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188), and a live row pairing a connector with another connector's family (VER-188's connector-family rule); check_trace's default mode runs it | |
-| [tools/repo_paths.py](tools/repo_paths.py) | fails on a repository path a file under hardware/vv names (the saved outputs aside) that is not in HEAD's tree: moved or deleted on main, with the commit that removed it; a path written `path@<commit>` is history and must be in that commit (VER-220, 2026-10-28); check_trace's default mode runs it | |
+| [tools/repo_paths.py](tools/repo_paths.py) | fails on a repository path a file under hardware/vv names (the saved outputs aside) that is not in HEAD's tree: moved or deleted on main, with the commit that removed it; a path written `path@<commit>` is history and must be in that commit (VER-220, 2026-10-28); a path never committed that no NOT_BUILT check and no PLANNED entry accounts for (a misspelt path); check_trace's default mode runs it | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
 | [tools/paper_checks.py](tools/paper_checks.py) | paper checks of classes 4 and 6 from design.py (and the routed board for usb, core and copper), each with a --seed that must fail: latch VER-33, usb VER-191, audio VER-100, module VER-204 (the module's 3V3, C10's distance, EN), sdinsert VER-206 (a card plugged in while running), shelf VER-103, ampstate VER-196, hotplug VER-12, copper VER-13, mating VER-140 (no seed), mlccbias VER-30 (no seed) | |
 | [tools/check_backpower.py](tools/check_backpower.py) | the back-power path table (VER-159): in each power state, every live net that reaches an input of a part whose own supply is off; a path the ACCEPTED table does not list fails (--seed puts U1's REF back on VBUS) | |
@@ -255,24 +255,33 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   row, check, defect or gate criterion that belonged to the ESP32-S3 board or the RP2354B board
   names that board (`esp32s3`, `rp2354b`) in its board column and says `DROPPED with <board> (tag
   <tag>): <why>`, the tag holding that board's register (`vv-esp32s3-final`, `vv-rp2354b-final`);
-  a dropped defect says what it was there (OPEN, FIXED, CLOSED) and the DF row its lesson carries
-  to. No gate counts a DROPPED row, no live row may lean on one, and a live row cites one only
+  a dropped defect says what it was there ('it was OPEN', 'FIXED' or 'CLOSED there') and names the
+  live DF row its lesson carries to, or says 'carries to no DF row: <why>' (DEF-80's antenna
+  keep-out: the F1C200s board has no radio); check_trace fails a dropped defect that does neither
+  (F's audit, 2026-10-28). No gate counts a DROPPED row, no live row may lean on one, and a live row cites one only
   inside 'Was: ...'. A live row may not name a dropped board.
 - **The baseline names its board** (2026-10-28). README's `- Baseline board:` says whose design
   files the baseline is. While it is a dropped board, no check of the live board may PASS or FAIL
   (the default mode fails), run_checks.py does not run them, R7 fails at every gate and
-  DFMEA:COVERAGE fails: the register describes no F1C200s design yet.
+  DFMEA:COVERAGE fails: the register describes no F1C200s design yet. The exception is a check
+  whose covers name only docs/static, hardware/ref_design/datasheets or hardware/vv: it reads none
+  of the dropped board's files, so the chip gate's dev-board tests (VER-221 to VER-225), the
+  datasheet download (VER-233) and the requirements review (VER-189) can run before the F1C200s
+  design.py exists (F's audit: NM-03 could not exit before NM-05 otherwise).
 - **Every live requirement is allocated to subsystems** (2026-10-28): a `- Subsystem:` line names
   grid.md's subsystems (power, cell, soc, storage, usbc, display, audio, buttons, case) or `all`;
   grid.md lists the requirements per subsystem.
-- **The new-MCU path** (gates.md, 2026-10-28): stages NM-01 to NM-10 from the requirements to
+- **The new-MCU path** (gates.md, 2026-10-28): stages NM-01 to NM-11 from the requirements to
   DVT and PVT, each with entry and exit needs; the default mode prints the stage the register is
-  at (the first whose exit is not met). Stage 3 is the chip gate on a dev board; a fail there
+  at (the first whose entry or exit needs are not met; the stage an entry names is order only).
+  The case gate is NM-09, after the order gate: its PHASE:CASE counts every ORDER check. Stage 3 is the chip gate on a dev board; a fail there
   sends the project to the fallback chip before any copper.
 - **A path the register names exists** (2026-10-28, VER-220). Every repository path in a file
   under hardware/vv, the saved outputs aside, is in HEAD's tree, or is written
   `path@<commit>` as history and is in that commit. A move or a delete on main fails the
-  default mode at once, naming the commit that removed the path.
+  default mode at once, naming the commit that removed the path. A path never committed passes
+  only when a NOT_BUILT (or gone) check names it, HISTORY.md does, or repo_paths.py's PLANNED
+  list gives what will write it; any other is a misspelt path and fails (F's audit).
 
 ## Approvals: signing with Alex's key
 
@@ -411,6 +420,9 @@ tag `vv-rp2354b-final`) and for the ESP32-S3 board (39cc07f; tag `vv-esp32s3-fin
 day both were dropped, re-seeded for the F1C200s board (step 2 of the re-target): REQ-PRD-12 to -17
 from DESIGN.md and the chip's, the USB-C roles' and the rails' requirements; DF-203 to DF-247; checks
 VER-221 to VER-250, the chip gate's on a dev board among them; the ESP32-S3 board's rows DROPPED.
+F (Fable 5.1) audited the re-target the same day; its findings added DF-248 to DF-251 (the dropped
+defects' lessons no row carried), let the chip gate's checks run before the F1C200s design exists,
+moved the case gate to its own stage after the order (NM-09) and made a misspelt path fail.
 Every requirement is PROPOSED and APPROVALS.md is empty. No F1C200s check has run: there is no
 F1C200s design. The register is at stage NM-01 of the new-MCU path; the order gate fails, as it
 should (PLAN.md section i).

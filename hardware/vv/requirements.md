@@ -354,7 +354,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: soc storage
 - Statement: From the power slider to the battler's lobby on screen shall take 1.0 s or less with no operating system, 10 of 10 power-ons; with the Linux button held at power-on, the GBA menu shall show within 10 s.
-- Rationale: goal 1: a match within seconds. DESIGN.md:91 gives 'within about a second' for the battler; the 10 s for Linux is Claude's proposal (DESIGN.md:90: Linux 'only if it boots fast').
+- Rationale: goal 1: a match within seconds. DESIGN.md:91 gives 'within about a second' for the battler; the 1.0 s limit and the 10 of 10 power-ons are Claude's proposal for it, and the 10 s for Linux is Claude's proposal too (DESIGN.md:90: Linux 'only if it boots fast'); Alex sets them. The 1.0 s is VER-223's pass limit at the chip gate.
 - Source: DESIGN.md:54 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:91 ('At power-on the Pokemon battler starts on its own, with no operating system, within about a second.'); next_spin_requirements.md:19.
 - Method: T
 - Verified by: VER-223, VER-228
@@ -378,7 +378,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: case
 - Statement: The closed case shall measure at most 78.9 x 156.48 mm in plan and 9.6 mm thick at the screen, each +0.3 mm for print tolerance, and each spin shall record a size-minimization pass.
-- Rationale: goal 5: it fits in a pocket and every spin is as small as it can be. The numbers are today's case as next_spin_requirements.md gives it.
+- Rationale: goal 5: it fits in a pocket and every spin is as small as it can be. The numbers are today's case as next_spin_requirements.md gives it; the +0.3 mm for print tolerance is Claude's proposal (next_spin_requirements.md:20 says 'no growth'); Alex sets it.
 - Source: DESIGN.md:65 ('It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)'); next_spin_requirements.md:20 ('no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen)').
 - Method: I, A
 - Verified by: VER-230, VER-48, VER-20
@@ -1191,7 +1191,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: usbc
 - Statement: The USB-C port shall attach as a device to a computer or a charger, as a host to a phone, a dongle or an OTG adapter, and on a USB-C to USB-C cable between two consoles exactly one shall be host, 20 of 20 plug-ins each way, the FUSB303B's result reaching the F1C200s's OTG ID.
 - Rationale: one port that can be either end of a cable.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: next_spin_requirements.md:28 ('FUSB303B role controller (C895444) driving the OTG ID pin'); DESIGN.md:77 ('one USB-C port that can act as either end of a cable').
+- Source: next_spin_requirements.md:28 ('FUSB303B role controller (C895444) driving the OTG ID pin'); DESIGN.md:77 ('one USB-C port that can act as either end of a cable').
 - Method: T, A
 - Verified by: VER-225, VER-234, VER-80
 - Phase: ORDER
