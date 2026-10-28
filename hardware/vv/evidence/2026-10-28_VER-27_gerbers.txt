@@ -1,10 +1,10 @@
 # VER-27 gerbers
 DATE: 2026-10-28
-COMMIT: 2e30533dfe932b8c93249f104a5c2dffdf6951f8
+COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/layout_checks.py gerbers
-fab.py's own export into /tmp/vv_fab_ezjhp_hd, read here by this script's RS-274X and Excellon readers (not pcbnew's)
+fab.py's own export into /tmp/vv_fab_ygu6vqu7, read here by this script's RS-274X and Excellon readers (not pcbnew's)
   ok    (a) 11 files: 9 layers and the plated and unplated drill files apart: present
   FAIL  (b) every one of 476 F.Paste apertures inside an F.Cu pad of the gerber (+-0.02 mm): 4 not: (124.58, 85.60) 0.24 x 0.60 between U2 pad 15 and U2 pad 16; (124.58, 88.40) 0.24 x 0.60 between U2 pad 6 and U2 pad 5; (125.42, 85.60) 0.24 x 0.60 between U2 pad 14 and U2 pad 13; (125.42, 88.40) 0.24 x 0.60 between U2 pad 7 and U2 pad 8
   ok    (b) B.Paste empty (0 flashes): nothing is placed on the back

@@ -1,6 +1,6 @@
 # VER-198 appcircuit
 DATE: 2026-10-28
-COMMIT: 4dcfb53a1f061fafbd1aed76b59c7aceab3e4a04
+COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/circuit_checks.py appcircuit
@@ -99,7 +99,7 @@ constants the vv tools cite by line, against the extract's line:
   ok    design_numbers.py:91 I_TS = 7.5e-05 on bq24074.txt:823
   ok    design_numbers.py:102 OPAMP_VOS_BUF = 0.0045 on mcp6001.txt:135
   ok    design_numbers.py:131 EN1_INTERNAL = 285000 on bq24074.txt:512
-  ok    layout_checks.py:696 ANT_CLEAR = 15 on esp32-s3-hw-design-guidelines.txt:1299
+  ok    layout_checks.py:699 ANT_CLEAR = 15 on esp32-s3-hw-design-guidelines.txt:1299
   ok    paper_checks.py:44 U3_VIH = 1 on tlv757p.txt:328
   ok    paper_checks.py:45 U3_VIL = 0.3 on tlv757p.txt:331
   ok    paper_checks.py:47 U3_ISHDN = 1e-06 on tlv757p.txt:265

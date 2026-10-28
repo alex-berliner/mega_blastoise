@@ -1,6 +1,6 @@
 # VER-138 cutoff
 DATE: 2026-10-28
-COMMIT: 664f3b51cab86e8ffe029ca7e688a51532fb857b
+COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/design_numbers.py cutoff

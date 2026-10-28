@@ -237,7 +237,7 @@ FAULTS = [
     # every ORDER check is now also named by a criterion or a requirement (2026-10-26), so dropping PHASE:ORDER
     # alone no longer strands one: with it, an advisory check taken out of its advisory criterion is reached by nothing
     ("an ORDER check no gate reaches", "structure", "VER-21: phase ORDER, but no gate criterion",
-     lambda d: (text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| ADVISORY VER-40 VER-27 |"),
+     lambda d: (text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 |", "| ADVISORY VER-40 |"),
                 text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| VER-01 | both |"))),
     ("criterion with a bad board", "structure", "board 'nowhere' not in",
      lambda d: text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| PHASE:ORDER | nowhere |")),
@@ -253,7 +253,7 @@ FAULTS = [
      "the design baseline does not name hardware/ref_design/tools/build.py",
      lambda d: drop_line(d, "README.md", "- `hardware/ref_design/tools/build.py`")),
     ("an advisory-only check made binding", "gate", "VER-40 NOT_RUN",
-     lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 VER-27 |", "| VER-40 VER-21 VER-27 |")),
+     lambda d: text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 |", "| VER-40 VER-21 |")),
     # the second review (2026-10-25)
     ("O-R3: an inspection PASS on a design file it does not cover", "structure", "VER-28: needs its saved output under",
      lambda d: csv_edit(d, "verification.csv", "VER-28", last_result="PASS", commit=HEAD7, date=TODAY,

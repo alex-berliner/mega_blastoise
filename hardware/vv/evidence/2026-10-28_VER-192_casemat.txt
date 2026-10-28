@@ -1,6 +1,6 @@
 # VER-192 casemat
 DATE: 2026-10-28
-COMMIT: 4dcfb53a1f061fafbd1aed76b59c7aceab3e4a04
+COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/thermal.py casemat
