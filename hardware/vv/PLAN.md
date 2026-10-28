@@ -473,6 +473,18 @@ the row says why not.
 
 ## (i) The gate today
 
+**Re-run at 2b3bfc3 (2026-10-28)**, after the framework fixes (top of this page). Default mode:
+STRUCTURE OK, exit 0, 7 warnings (the proposal commits among them). Seeded faults: 117 of 117
+caught (VER-129 at 086da04). `--gate order`: FAIL, 24 of 29 not met (21 before). Three more fail:
+G-ORD-06 and G-ORD-18, because VER-33 and VER-137 are now BLOCKED (their PASS rests on
+2n7002_cj.pdf, bat54c.pdf, bat54ws.pdf and mcp6001.pdf, not on disk here), and R8, on dcb6a76 and
+e79f251. G-ORD-24 passes again. 9 PASSes are BLOCKED (VER-31, 33, 100, 124, 137, 144, 191, 193,
+196); G-ORD-22 counts 37 ORDER checks not passing; R9 holds 22 cells (12 before: the BLOCKED
+PASSes no longer clear 4/buttons, 4/display, 4/usb_debug, 6/audio, 6/buttons and 15 for buttons,
+case, display, mcu and usb_debug). No defect is
+ACCEPTED: no key is pinned, so no DF-ACCEPT line can count yet. The RP2354B snapshot below stays as
+it was.
+
 **Run at 95a9d26 (2026-10-27)**, after the review's 16 findings (section l). The scripted checks'
 evidence was made at 5bedcef, VER-129's at 69e9c0c. Requirements 133 (130 PROPOSED, 3 RETIRED);
 DFMEA rows 184 (63 H, 86 M, 35 L); checks 201 (35 PASS, 27 FAIL, 54 NOT_RUN, 77 NOT_BUILT, 5 CUT,
