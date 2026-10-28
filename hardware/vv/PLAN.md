@@ -162,6 +162,10 @@ report', still fail.
 | **BL_PWM low leaves the backlight glowing** | U6's +4.5 mV offset holds 2.07 mA a sink, 4.13 mA in all (0.69 mA an LED) with BL_REF at 0 V; under VER-05's 5 mA, against pinmap.md's 'low = off' | DEF-96, VER-05 |
 | **The smallest dome's rim near the ring's inner edge** | D 4.0 +0/-0.05 mm (the drawing): the rim 0.171 mm inside the ring at 0.1 mm of placement error against 0.2 | DEF-97, VER-178 |
 | **design.py's maker for four capacitors** | C37, C38, C48, C49 (Fenghua 0402B...) named Samsung; JLC's BOM has no maker column, so the order is right | DEF-98, VER-186 |
+| **U2's exposed pad gets no paste; its paste windows sit between its pins** | 0% of the 1.68 mm pad printed against TI's 85% (bq24074.txt:3180); four 0.24 x 0.60 mm windows on the pin rows between pins 15-16 (TD, ISET), 13-14 (IN, TMR), 5-6 (EN2, EN1) and 7-8 (PGOOD, VSS), each 0.09 mm of stencil from one neighbour's window and over the other's: fp_u2.py moved KiCad's exposed-pad paste with the pins | DEF-100, VER-27 |
+| **The module at its drawing's maximum under the glass** | 3.2 +-0.15 mm (esp32-s3-wroom-1.txt:3130): at 3.35 mm, 0.15 mm to the panel's back against REQ-MEC-01's 0.2; check_fit checks 3.2 (and the 74HC165s at 1.09 against 1.2 MAX, which clear) | DEF-101, VER-112 |
+| **The panel's tail is looser than the FH12's FPC** | 25.5 +-0.15 mm wide (er-tft035ips-6.txt:285) against Hirose's 25.5 +-0.07 (hirose_fh12.txt:744, 705): 0.08 mm over at the worst tail; thickness, contacts and span inside | DEF-102, VER-219 |
+| **The PLA case over U2** | the inner surface 73.4 C over U2 (62.6 C on average) at 40 C charging while playing, 58.4 C at 25 C, against PLA's heat deflection of about 57 C (a stand-in: the sheet is not on disk); VER-192 wants 88.4 C | DEF-99, VER-192 |
 | **The case grew** | 78.9 x 156.48 x 10.70 mm against REQ-PRD-06's 77.4 x 156.64 x 9.6 before: Alex's two decisions; the requirement restated | VER-190 |
 
 Unchanged and still failing: the charge window 48.2 C (DEF-48), TH1's distance (DEF-37), the VBUS
@@ -212,10 +216,12 @@ they must be made, those that can move copper first.
 | 1.13 | **DEC-25, TH1's coupling** (1.95 mm from the cell): a 0.5 mm silicone pad (case side). | VER-164 | Alex: 5 min |
 | 1.14 | **DEC-24, the pill margin with 47k pull-ups**: about 17.8 kohm on paper against 15; VER-45 on a bare board. Proposed: accept DF-164 for EVT. | DEF-49 | Alex: 5 min |
 | 1.15 | **DEC-41, recovery with no BOOT or RESET button**: USB-C with the case closed, J7's pogo pads with it open (VER-212). Proposed: accept. | DEF-92 | Alex: 5 min |
+| 1.17 | **DEF-100, U2's exposed-pad paste** (copper and paste, must fix): fp_u2.py skips KiCad's unnumbered paste pads, or replaces them with TI's single 1.55 mm window (85%); the library footprint and the board regenerated; then VER-27, VER-125, VER-04, VER-132. | VER-27, DEF-100 | the design pass, 30 min |
+| 1.18 | **DEC-49, the panel's tail width** (25.5 +-0.15 against the FH12's +-0.07): proposed accept for EVT, VER-44 measures each bought tail and VER-136 seats one. | VER-219, DEF-102 | Alex: 5 min |
 | 1.16 | **DEC-35, the order candidate**: the commit after any step-1 pass; route.py --reuse for a rebuild that moves no copper. | DEF-30 | Alex: 5 min |
 | 2 | **Re-run the scripted checks** after any step-1 pass (`run_checks.py`, about 15 min, then VER-129 on its own): netlist, pin gate, ERC, DRC, contact footprints, inrush, holes, MLCC, TH1, CPL, drill, backlight, cell gap, edges, net classes, the stale-names scan, the latch, the module's pins and supply, the antenna. | VER-01, VER-02, VER-03, VER-04, VER-08, VER-99, VER-114, VER-142, VER-164, VER-176, VER-131, VER-137, VER-181, VER-18, VER-201, VER-129, VER-188, VER-33, VER-203, VER-204, VER-205 | 30 min |
-| 3 | **Fab outputs**: drill files and CPL (pass); no CPL row moves before the placement preview (J1-J4, J8, U4, SW24); the fab content check; JLC's dated limits, which also decide DEF-56; land patterns (U4's thermal pad: step 1.3; J8's and SW24's by hand); contacts as placed; the dome against its drawing (not built; the drawing is on disk); the release run (VER-143). The order sends no netlist; VER-26 and VER-29 bind at G-DVT-01. | VER-131, VER-176, VER-132, VER-17, VER-125, VER-162, VER-178, VER-143 | 1.5 days |
-| 4 | **Layout reviews**: the USB pair's stubs and length (FAIL: 3.60 mm); the return paths (advisory: SD_D3 14.22 mm); the independent gerber view (advisory); the antenna's keep-out (step 2). | VER-108, VER-21, VER-27 | half a day |
+| 3 | **Fab outputs**: the gerbers read on their own (VER-27: FAIL, DEF-100: step 1.17); drill files and CPL (pass); no CPL row moves before the placement preview (J1-J4, J8, U4, SW24); the fab content check; JLC's dated limits, which also decide DEF-56; land patterns (U4's thermal pad: step 1.3; J8's and SW24's by hand); contacts as placed; the dome against its drawing (not built; the drawing is on disk); the release run (VER-143). The order sends no netlist; VER-26 and VER-29 bind at G-DVT-01. | VER-131, VER-176, VER-132, VER-17, VER-27, VER-125, VER-162, VER-178, VER-143 | 1.5 days |
+| 4 | **Layout reviews**: the USB pair's stubs and length (FAIL: 3.60 mm); the return paths (advisory: SD_D3 14.22 mm); the antenna's keep-out (step 2); the gerber read moved to step 3 (binding). | VER-108, VER-21 | half a day |
 | 5 | **Power-path analyses that can move copper or the BOM**: the latch table through SW24 (passes); the backlight (passes); inrush (passes). Alex reads by hand the nine back-power lines VER-159 lists (EVT), the jig on J7's 3V3 first. | VER-33, VER-137, VER-99 | 2 hours |
 | 6 | **Datasheets and part identity**: the application circuits and every cited constant from the datasheets on disk (VER-198: FAIL only on the panel's VCI, step 1.11); the module's pins and strapping (VER-203: PASS); the parts the other scripts do not read, scripted since 2026-10-28 (VER-34: FAIL only on u3.json, which the board session rewrites, DEF-88); every line of JLC's matched-parts page by hand; the watchdog rule and the FM8002A's polarity (fm8002a.txt:75-76). | VER-34, VER-198, VER-203, VER-14, VER-104, VER-124 | 1 day |
 | 7 | **The board against the case**: the XY chain; placement drift (with placement_new.json); check_fit; the MLCC keep-out; TH1; the ESTIMATE ledger (J8 under the FPC: step 1.4); the cell's gap (passes). | VER-174, VER-06, VER-19, VER-142, VER-164, VER-152, VER-181 | half a day plus calipers |
@@ -320,6 +326,9 @@ HISTORY.md section (o); the IDs it shares with this board keep their numbers.
 - **DEC-46. USB's series resistors' place** (DEF-94). Proposed: accept for EVT.
 - **DEC-47. U4's thermal pad** (DEF-84): 3.9 against 3.7 mm. Proposed: 3.7 mm in fp_esp32.py if the drawing says so.
 - **DEC-48. J8 and the FPC, J8 and the SD opening** (DEF-90, DEF-89). Proposed: sd_y 0.4 mm wider now (case); J8 0.2 mm left only if VER-136 shows the fold reaches it.
+- **DEC-49. The panel's tail width** (DEF-102): 25.5 +-0.15 mm against the FH12's 25.5 +-0.07. Proposed: accept for EVT; VER-44 measures the bought tails, a tail over 25.57 mm is trimmed along its edge.
+- **DEC-50. The case's material** (DEF-99): PLA's heat deflection (about 57 C) under the lid's 73.4 C over U2 at 40 C. Proposed: the top in PETG or ASA once its sheet is on disk, with DEF-87's heat rule; PLA for the fit prints.
+- **DEC-51. The glass's height over the module** (DEF-101): 0.15 mm over a 3.35 mm module against 0.2. Proposed: glass_gap 3.55 mm (case only) with check_fit's module at 3.35.
 
 **Carried from the RP2354B board, restated at 39cc07f**
 
@@ -383,6 +392,27 @@ HISTORY.md section (o); the IDs it shares with this board keep their numbers.
   still drift from design.py unseen (DEF-54).
 
 ## (i) The gate today
+
+**Run at 6119960 (2026-10-28)**, after the class 2, 5, 10, 13 and 14 round: the NOT_BUILT and planned
+checks of classes 2, 3, 5, 7, 8, 10, 12, 13, 14 and 15 that can run before the boards exist were built
+and run against 39cc07f. VER-34 is a script now (circuit_checks.py appdiff): FAIL only on u3.json,
+still the RT9013's review (DEF-88); seven vv constants moved from pin_review quotes to their datasheet
+lines. VER-218 (cellarch, new) PASS on the PROPOSED numbers: VBAT(REG) 4.16-4.23 V, ICHG 239.1-298.4 mA
+against 300 mA, the timers inside REQ-BAT-13, 124 mV across U2's battery FET against VO(SC2)'s 200 mV.
+VER-192 (thermal.py casemat) FAIL: PLA under the 88.4 C the lid over U2 needs (DEF-99). VER-27
+(layout_checks.py gerbers, binding at G-ORD-09 since this round) FAIL: U2's exposed pad prints 0% and
+its four paste windows sit between pins 15-16, 13-14, 5-6 and 7-8 (DEF-100, fp_u2.py), and U4's pad
+47.9% (DEF-84). VER-112 (case_checks.py heights) FAIL: the module at its drawing's 3.35 mm breaks the
+glass's 3.30 mm limit (DEF-101). VER-219 (case_checks.py fpc, new) FAIL: the panel's tail 25.5 +-0.15 mm
+against the FH12's 25.5 +-0.07 (DEF-102). Still waiting: VER-17 (JLC's dated page), VER-28 (Alex's
+upload), VER-37, VER-140, VER-160 and VER-184 (the cell's spec sheet), VER-40 (a human reviewer), VER-43,
+VER-44 and VER-136 (the panel), VER-113 (the printed parts' meshes), VER-143 (route.py --reuse), VER-180
+(calipers and the strips), VER-214 (the errata); the bench checks stay at EVT. Every quick check was
+re-run; VER-129 117 of 117 at 8d5e456. Default mode: STRUCTURE OK, 5 warnings. Order gate: 21 of 28 not
+met; R4 27 OPEN defects (DEF-100 and DEF-102 added), G-ORD-22 31 ORDER checks, R9 9 cells (class 1
+only). Checks 218 (34 PASS, 40 FAIL, 49 NOT_RUN, 73 NOT_BUILT, 5 CUT, 17 RETIRED); defects 102 (49 OPEN,
+23 FIXED, 17 CLOSED, 13 RETIRED). The grid, classes 1-15: PASS 12, FAIL 105, planned 9, not needed 9;
+every cell of classes 2-15 is PASS or FAIL.
 
 **Run at 44451c0 (2026-10-28)**, after the class 4, 6, 9 and 11 round: the NOT_BUILT and planned
 checks of those classes were built and run against 39cc07f. VER-05 runs on paper (paper_checks.py
@@ -472,6 +502,7 @@ The RP2354B board's gate history (fd1f6e8 and before) is in HISTORY.md section (
 | DEF-43, 51 | inrush; swelling room | VER-99, VER-182 (both CLOSED) | every change |
 | DEF-45 | the backlight sim does not read design.py | VER-05 (paper_checks.py backlight since 2026-10-28: reads design.py; PASS; CLOSED) | every change |
 | DEF-96-98 | the backlight's glow at BL_PWM low; the dome's rim margin; four capacitors' maker field | VER-05, VER-178 (FAIL), VER-186 (FAIL) | before the order (DEF-97), EVT |
+| DEF-99-102 | the PLA case over U2; U2's exposed-pad paste moved onto its pins by fp_u2.py; the module at its 3.35 mm maximum under the glass; the panel's tail width | VER-192, VER-27, VER-112, VER-219 (all FAIL) | before the order (DEF-100, DEF-102), the case gate (DEF-99, DEF-101) |
 | DEF-46 | bench cell emulation | VER-70, VER-67 | EVT |
 | DEF-49, 50 | the pill margin; the VBUS fault reach | VER-45, VER-177 (FAIL at 9.1 V; both OPEN: the BOM half in, the decisions Alex's) | before the order |
 | DEF-53, 62 | a worst-case cell 0.25 mm from the FR4 edge; then a pocket with no fit | VER-181 (PASS at 39cc07f; both CLOSED) | before the order |
