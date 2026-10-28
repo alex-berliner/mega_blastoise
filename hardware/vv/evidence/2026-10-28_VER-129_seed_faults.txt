@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-28
-COMMIT: 086da04caa6e8c2672ca5bc863b2adc759404da2
+COMMIT: 0eabbd48e29a6dacc3e904e918c90788c0d93672
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -55,7 +55,7 @@ ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
 ok  structure round 2 (F): detection rating 2 on a single 'detects' check
 ok  structure VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')
 ok  structure VER-188: a live check names a net that left design.py (LS_GATE)
-ok  structure VER-188: a live requirement names a part that left design.py (J6 outside 'Was:')
+ok  structure VER-188: a live requirement names a part that left design.py (D5 outside 'Was:')
 ok  structure grid: a live check that names no classes
 ok  structure grid: a NOT_NEEDED cell that a check targets
 ok  gate      grid R9: a NOT_NEEDED reason dropped leaves a GAP the order gate holds
@@ -99,7 +99,7 @@ ok  dn        O-R1: a comment in fab.py does not pass the CPL or drill check (gi
 ok  dn        O-R14: a back-side test point next to the cell's hole fails th1 (git)
 ok  structure round 2 (O): an approval signed by another key in the allowed-signers file (git)
 ok  structure round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it (git)
-ok  dn        round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing (git)
+ok  dn        round 2 (O, F): the cell hole's left side back at 71737ae's fails VER-181 on the fit (git)
 ok  gate      R8: a case.scad commit on the order branch holds the case gate (git)
 ok  structure F-R3: README's baseline hash rewritten from HEAD after a design.py edit (git)
 ok  structure F-R4: a JLC_FIXED entry whose evidence file is not committed does not count (git)
@@ -118,8 +118,8 @@ ok  dn        VER-18: a connector's pad past the board's outline fails edge (a c
 ok  gate_line O-R1: a defect taken from OPEN to FIXED with no GATE@ line is listed by the order gate (G0) (git)
 ok  gate      O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1) (git)
 ok  structure accept: a defect ACCEPTED on an unsigned DF-ACCEPT line (git)
-ok  gate_no   accept (control): a signed DF-ACCEPT line moves DEF-62 past the order gate and lets VER-181 through (git)
-ok  gate_no   accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-181) (git)
+ok  gate_no   accept (control): a signed DF-ACCEPT line moves DEF-84 past the order gate and lets VER-125 through (git)
+ok  gate_no   accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-125) (git)
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)

@@ -133,4 +133,4 @@ The order gate holds 12 cells of classes 1-15 (0 GAP, 12 planned); classes 16-18
 - 12 Signals and timing / power: Power is a linear charger (BQ24073) and an LDO (the TLV75733P since 39cc07f): no switching node, no clock and no data line. Its changing signals are the 2 Hz status pins and the power key's 1 s hold, which are class 6, and the Wi-Fi bursts' load steps on 3V3, which are classes 4 and 6 (VER-204, VER-208).
 - 12 Signals and timing / cell: The cell's subsystem carries DC only: VBAT_DIV is filtered by C8 (100 nF) and copied to VBAT_SENSE by U10, a unity buffer, at DC, and TH1's TS node is a DC level. No clock or data passes through it; how U10 settles the ADC's sample charge is read on unit 1 by VER-67 (the ADC against a meter).
 
-Last updated: 2026-10-28 09:01 EDT (generated)
+Last updated: 2026-10-28 09:33 EDT (generated)
