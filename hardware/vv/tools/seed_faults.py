@@ -790,13 +790,14 @@ def g_cellgap_right_end(repo, base):
 
 def g_cell_fit(repo, base):
     """Round 3's sign-off (O-S1): a cell 0.1 mm too long for its pocket's fit fails VER-181, though every gap to the
-    FR4 passes: the pocket printed 0.1 mm small must still take it with 0.1 mm a side."""
+    FR4 passes: the pocket printed 0.1 mm small must still take it with 0.1 mm a side (since 39cc07f the
+    pocket is 52.4 x 36.4, so a 52.1 x 36.1 cell)."""
     p = os.path.join(repo, "hardware/ref_design/case/case.scad")
     s = open(p).read()
     old = "cell = [52, 36, 4.5];"
     if old not in s:
         raise SystemExit("seed_faults: case.scad's cell line moved")
-    open(p, "w").write(s.replace(old, "cell = [51.7, 35.6, 4.5];", 1))
+    open(p, "w").write(s.replace(old, "cell = [52.1, 36.1, 4.5];", 1))
     return ("dn", [["cellgap"]])
 
 
@@ -964,19 +965,19 @@ def g_accept_unsigned(repo, base):
 
 
 def g_accept_signed(repo, base):
-    """1. (control): Alex's signed DF-ACCEPT line moves DEF-62 (Gate ORDER) to EVT: R4 lists it beside its result,
-    not in the OPEN list, G-ORD-07 lets VER-181 (a check DEF-62 names) through as ACCEPTED, and G0 does not list
-    the move (it is his own signed one)."""
+    """1. (control): Alex's signed DF-ACCEPT line moves DEF-84 (Gate ORDER) to EVT: R4 lists it beside its result,
+    not in the OPEN list, G-ORD-02 lets VER-125 (a check DEF-84 names) through as ACCEPTED, and G0 does not list
+    the move (it is his own signed one). Since 39cc07f DEF-62's VER-181 passes, so DEF-84 (VER-125 FAIL) stands in."""
     vv = os.path.join(repo, "hardware/vv")
-    approve(vv, f"| A-001 | DF-ACCEPT:DEF-62 | ACCEPTED | EVT | DEC-27 decided at EVT | Alex | {TODAY} |")
-    block_field(vv, "defects.md", "DEF-62", "Status", "ACCEPTED (to EVT, A-001)")
-    commit(repo, "DEF-62 accepted to EVT")
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-84 | ACCEPTED | EVT | DEC-47 decided at EVT | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-84", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-84 accepted to EVT")
     return "order"
 
 
 def g_accept_outside(repo, base):
     """1.: a signed acceptance lets through only the checks its defect names.  DEF-37 (VER-164, VER-87) accepted to
-    EVT: G-ORD-07 shows VER-164 ACCEPTED, and VER-181, which DEF-37 does not name, still FAIL."""
+    EVT: G-ORD-07 shows VER-164 ACCEPTED, and VER-125, which DEF-37 does not name, still FAIL."""
     vv = os.path.join(repo, "hardware/vv")
     approve(vv, f"| A-001 | DF-ACCEPT:DEF-37 | ACCEPTED | EVT | DEC-25's pad is a case part | Alex | {TODAY} |")
     block_field(vv, "defects.md", "DEF-37", "Status", "ACCEPTED (to EVT, A-001)")
@@ -1095,10 +1096,10 @@ GIT_FAULTS = [
     ("accept: a defect ACCEPTED on an unsigned DF-ACCEPT line", "structure",
      "DEF-62: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-62' line naming the gate it moves to "
      "and why (A-001 pending: not signed with Alex's key)", g_accept_unsigned),
-    ("accept (control): a signed DF-ACCEPT line moves DEF-62 past the order gate and lets VER-181 through", "gate_no",
-     "VER-181 ACCEPTED (DEF-62 to EVT, A-001", g_accept_signed, "DEF-62 went from OPEN"),
-    ("accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-181)", "gate_no",
-     "VER-164 ACCEPTED (DEF-37 to EVT, A-001", g_accept_outside, "VER-181 ACCEPTED"),
+    ("accept (control): a signed DF-ACCEPT line moves DEF-84 past the order gate and lets VER-125 through", "gate_no",
+     "VER-125 ACCEPTED (DEF-84 to EVT, A-001", g_accept_signed, "DEF-84 went from OPEN"),
+    ("accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-125)", "gate_no",
+     "VER-164 ACCEPTED (DEF-37 to EVT, A-001", g_accept_outside, "VER-125 ACCEPTED"),
     ("R8: a proposal doc changed on the order branch after the baseline fails the order gate", "gate",
      "seeded-proposal has architecture proposal commits after", g_proposal_branch),
     ("R8: a proposal doc changed on the order branch after the baseline warns in the default mode", "report",
