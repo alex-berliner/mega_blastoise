@@ -1,0 +1,130 @@
+# VER-129 seed_faults
+DATE: 2026-10-28
+COMMIT: 086da04caa6e8c2672ca5bc863b2adc759404da2
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/seed_faults.py
+ok      clean copy exits 0
+ok  structure duplicate VER id
+ok  structure dangling DF id in a gate
+ok  structure action priority off the AIAG-VDA table
+ok  structure PASS without a commit
+ok  structure evidence header names another commit
+ok  structure a commit message as evidence
+ok  structure an analysis PASS with no saved output
+ok  structure a test (T) PASS with no saved output
+ok  structure CLOSED defect with no check
+ok  structure covers glob matching nothing
+ok  structure covers regex matching no line
+ok  structure covers part not in design.py
+ok  structure a 'both' check covering one board
+ok  structure CUT check with no reason
+ok  structure RETIRED check with no commit
+ok  structure a live requirement verified by a retired check
+ok  structure a live risk detected by a retired check
+ok  structure a gate criterion naming a retired check
+ok  structure vp_map status changed with no evidence
+ok  structure requirement with no Verified by
+ok  structure requirement APPROVED with no APPROVALS line
+ok  structure allocation on the wrong board
+ok  structure risk ACCEPTED with no APPROVALS line
+ok  structure approval line signed by Claude
+ok  structure a deferral with no scope phase
+ok  structure detects names a check the text does not
+ok  structure detection rating better than its checks
+ok  structure occurrence 2 with no built hardware
+ok  structure DONE with no detects
+ok  structure an ORDER check no gate reaches
+ok  structure criterion with a bad board
+ok  structure new BOM under an old BOARD_REV
+ok  structure design baseline differs from HEAD
+ok  structure design baseline leaves out the routed board
+ok  structure O-S4: the design baseline leaves out tools/build.py (it runs the build, route, silk and fab stages)
+ok  gate      an advisory-only check made binding
+ok  structure O-R3: an inspection PASS on a design file it does not cover
+ok  structure O-R3: an inspection's evidence with no WHO or ARTEFACT
+ok  structure O-R5: a defect with no Gate
+ok  gate      O-R5: a CASE defect moved to the order gate blocks it
+ok  structure O-R8: occurrence 3 with no 'Similar:'
+ok  structure F-R14: a live check cites a RETIRED row
+ok  structure round 2 (O): an ORDER check that no step of PLAN.md section (d) names
+ok  structure O-R11: an ORDER check named only in the plan's 'what moved where' table is not a step
+ok  structure F-R4: a JLC_FIXED entry with no evidence file does not count
+ok  structure round 2 (F): a requirement whose only check moved to a later phase
+ok  gate      round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE
+ok  structure round 2 (F): detection rating 2 on a single 'detects' check
+ok  structure VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')
+ok  structure VER-188: a live check names a net that left design.py (LS_GATE)
+ok  structure VER-188: a live requirement names a part that left design.py (J6 outside 'Was:')
+ok  structure grid: a live check that names no classes
+ok  structure grid: a NOT_NEEDED cell that a check targets
+ok  gate      grid R9: a NOT_NEEDED reason dropped leaves a GAP the order gate holds
+ok  gate      grid R9: an ACCEPTED_GAP Alex has not signed is still a GAP
+ok  gate      grid R9: a grid.md edited by hand fails the order gate
+ok  report    grid: the default mode reports the GAP count
+ok  gate      grid R9: a NOT_RUN bench test of phase EVT re-tagged into an empty cell does not clear it
+ok  report    grid: a class 15 analysis that has not run is no paper estimate
+ok  structure VER-188: a live check names a ref no design.py ever had (R666, a typo)
+ok  structure F-R1: a defect marked FIXED while its own Status text says it stays OPEN
+ok  structure F-R3: an analysis that reads pinmap.md without naming it in covers
+ok  structure F-R5: a live row pairs J4 with the PicoBlade family (DF-48 before its rewrite)
+ok  structure O-R8: a live check names a gone net in KiCad's path form (/USB_Charger/VBUS_D5)
+ok  gate      O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)
+ok  structure accept: a defect ACCEPTED with no DF-ACCEPT line at all
+ok  gate      sources: a PASS whose datasheet is not on disk is BLOCKED at the order gate
+ok  report    sources: the default mode reports a PASS on a datasheet not on disk as BLOCKED
+ok  structure sources: a source that is a path, not a file in the datasheets directory
+ok      clean clone exits 0
+ok  structure row result disagrees with its evidence (git)
+ok  report    evidence past its valid_days (git)
+ok  gate      R6: a routed-board script changed after a release with no change record (git)
+ok  gate      an acceptance used past its scope (git)
+ok  gate      a waiver Alex signed meets its criterion (git)
+ok  structure a waiver signed in a commit with a Claude trailer (git)
+ok  report    staleness through a part: cover (git)
+ok  gate      R5: an uncommitted change under passed evidence (git)
+ok  gate      a deferral used past its scope (git)
+ok  gate      an EVT unit's result at the DVT gate (git)
+ok  structure a covers glob met only by an untracked file (git)
+ok  structure a statement edited after its approval (git)
+ok  structure O-R4: an approval line in an unsigned plain commit (git)
+ok  structure O-R4: an approval line written in a merge commit (git)
+ok  gate      O-R2: uncommitted register and evidence edits (VER-138 FAIL to PASS) (git)
+ok  gate      O-R2: a PASS whose evidence was never committed (git)
+ok  gate      O-R2: a PASS whose evidence was edited after its commit (git)
+ok  gate      O-R11: an EVT first article at the PVT gate (git)
+ok  gate      O-R13: a design commit on the order branch after the baseline (git)
+ok  structure O-R21: a change record that omits a bench test of the changed part (git)
+ok  dn        O-R1: a comment in fab.py does not pass the CPL or drill check (git)
+ok  dn        O-R14: a back-side test point next to the cell's hole fails th1 (git)
+ok  structure round 2 (O): an approval signed by another key in the allowed-signers file (git)
+ok  structure round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it (git)
+ok  dn        round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing (git)
+ok  gate      R8: a case.scad commit on the order branch holds the case gate (git)
+ok  structure F-R3: README's baseline hash rewritten from HEAD after a design.py edit (git)
+ok  structure F-R4: a JLC_FIXED entry whose evidence file is not committed does not count (git)
+ok  gate      O-R4: a case.scad commit that moves a button position fails the order gate (git)
+ok  gate_no   O-R4: a case-only commit that moves no position passes that part of R8 (git)
+ok  gate      O-R5: a check moved after Alex's signed GATE@ line fails the order gate (git)
+ok  gate      O-R5: a check made advisory after Alex's signed GATE@ line fails the order gate (git)
+ok  gate      O-R12: a software signing key fails the order gate (git)
+ok  gate_line O-R12: --accept-software-key passes K1 and prints the choice (git)
+ok  gate      O-R12: a line in APPROVALS.md that grants the exception does not count (git)
+ok  gate_no   grid R9: a gap Alex accepts in a signed GRID line leaves R9 (git)
+ok  dn        O-S1: a cell 0.1 mm too big for its pocket's fit fails VER-181 though every FR4 gap passes (git)
+ok  dn_pass   O-S1 (control): the largest cell cellgap says this hole takes passes VER-181 (git)
+ok  gate_line O-S5: a check moved later with no GATE@ line is listed by the order gate (G0) (git)
+ok  dn        VER-18: a connector's pad past the board's outline fails edge (a courtyard alone does not) (git)
+ok  gate_line O-R1: a defect taken from OPEN to FIXED with no GATE@ line is listed by the order gate (G0) (git)
+ok  gate      O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1) (git)
+ok  structure accept: a defect ACCEPTED on an unsigned DF-ACCEPT line (git)
+ok  gate_no   accept (control): a signed DF-ACCEPT line moves DEF-62 past the order gate and lets VER-181 through (git)
+ok  gate_no   accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-181) (git)
+ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
+ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
+ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
+117 seeded faults, 117 caught
+RESULT: PASS
+
+exit 0
+RESULT: PASS

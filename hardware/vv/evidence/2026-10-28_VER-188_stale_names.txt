@@ -1,0 +1,13 @@
+# VER-188 stale_names
+DATE: 2026-10-28
+COMMIT: 2c8b96c7b07bb855c05e6e12cd9b8cd87ee73dca
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/stale_names.py
+baseline 71737ae: 38 refs, 44 nets and 18 part-number stems left design.py on its history
+connector families at the baseline: J2 PicoBlade, J4 JST SH, J5 JST SH; the cell's header PicoBlade, the speaker's JST SH
+0 live rows name a part, part number or net the baseline does not have, or pair a connector with another's family
+RESULT: PASS
+
+exit 0
+RESULT: PASS

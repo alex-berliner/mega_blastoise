@@ -1,0 +1,49 @@
+# VER-36 pinreview
+DATE: 2026-10-28
+COMMIT: 086da04caa6e8c2672ca5bc863b2adc759404da2
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py pinreview
+  FAIL  [orphan] d3.json: D6 is not in design.py
+  FAIL  [orphan] d5.json: D5 is not in design.py
+  FAIL  [orphan] d5.json: D7 is not in design.py
+  FAIL  [pin] j1.json pin (D+/D- stubs): ok null: Schematic correct (A6+B6 on USB_DP, A7+B7 on USB_DM). The 3.5 mm stub limit is a layout pr
+  FAIL  [orphan] j6.json: J6 is not in design.py
+  FAIL  [rating] panel.json 'VCI': ok False
+  FAIL  [rating] panel.json 'VDDI': ok False
+  FAIL  [basis] passives.json C1: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 6.7 V
+  FAIL  [orphan] passives.json R39: not in design.py
+  FAIL  [orphan] passives.json R40: not in design.py
+  FAIL  [basis] passives.json C3: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 4.2 V
+  FAIL  [orphan] passives.json R47: not in design.py
+  FAIL  [orphan] passives.json R6: not in design.py
+  FAIL  [orphan] passives.json C9: not in design.py
+  FAIL  [basis] passives.json R13: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 5.7 V
+  FAIL  [basis] passives.json R15: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 6.7 V
+  FAIL  [basis] passives.json R17: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 4.2 V
+  FAIL  [basis] passives.json R18: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 2.1 V
+  FAIL  [basis] passives.json C8: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 2.1 V
+  FAIL  [orphan] passives.json C41: not in design.py
+  FAIL  [basis] passives.json C20: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 1.1 V
+  FAIL  [basis] passives.json C21: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 1.1 V
+  FAIL  [basis] passives.json C22: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 1.1 V
+  FAIL  [basis] passives.json C25: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 1.1 V
+  FAIL  [orphan] passives.json R48: not in design.py
+  FAIL  [orphan] passives.json R49: not in design.py
+  FAIL  [orphan] passives.json R50: not in design.py
+  FAIL  [orphan] passives.json R51: not in design.py
+  FAIL  [basis] passives.json R62: net_max_basis 'logic/3V3 domain or lower (3.3)' states 3.3 V, net_max_v is 4.4 V
+  FAIL  [orphan] q1.json: Q4 is not in design.py
+  FAIL  [orphan] q2.json: Q2 is not in design.py
+  FAIL  [orphan] r47.json: R47 is not in design.py
+  FAIL  [source] u10.json: its datasheet entry says UNVERIFIED
+  FAIL  [text] u4.json pin 10: ok but says OPEN QUESTION: OPEN QUESTION (decoupling, not the net): +1V1 in design.py has C20-C22 3x100n plus one 4.7
+  FAIL  [pin] u4.json pin 58: ok false; waiver 'accepted: U10 (MCP6001, V&V DEC-07) isolates the pad from the divider; off, the '... cites no signed A-line
+  FAIL  [text] u4.json pin 61: ok but says OPEN QUESTION: NOTE: R19 33 ohm from +3V3 and C26 4.7u to GND: matches Figure 22. OPEN QUESTION: design.p
+  FAIL  [text] u4.json pin 68: ok but says OPEN QUESTION: OPEN QUESTION: minimum is 3.135 V. design.py's D7 note sizes the unplug dip against 2.97 V
+failures by kind: basis 12, orphan 17, pin 2, rating 2, source 1, text 3
+signed A-lines in releases/APPROVALS.md: 4 (a waiver counts only when it cites one)
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL
