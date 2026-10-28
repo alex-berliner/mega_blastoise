@@ -12,16 +12,15 @@ use crate::cursor_nav::Dir;
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 pub enum Gen {
     One,
-    /// Selectable, but routes to Gen 1 combat until the engine lands — the UI
-    /// must label it a preview and must not advertise Gen 3-only fields.
-    ThreePreview,
+    /// Gen 3 singles on the Showdown engine.
+    Three,
 }
 
 impl Gen {
     pub fn as_str(self) -> &'static str {
         match self {
             Gen::One => "Gen 1",
-            Gen::ThreePreview => "Gen 3 (preview)",
+            Gen::Three => "Gen 3",
         }
     }
 }
@@ -215,7 +214,7 @@ impl Menu {
     pub fn confirm(&mut self, opts: &mut GameOptions) -> MenuOut {
         match self.screen {
             MenuScreen::GenPicker => {
-                opts.gen = if self.cursor == 0 { Gen::One } else { Gen::ThreePreview };
+                opts.gen = if self.cursor == 0 { Gen::One } else { Gen::Three };
                 self.screen = MenuScreen::Lobby;
                 self.cursor = 0;
                 MenuOut::EnterLobby
@@ -277,12 +276,12 @@ mod tests {
     }
 
     #[test]
-    fn picking_gen_three_records_the_preview_choice() {
+    fn picking_gen_three_records_the_choice() {
         let mut m = Menu::new();
         let mut o = GameOptions::default();
         m.dpad(Dir::Down, &mut o);
         m.confirm(&mut o);
-        assert_eq!(o.gen, Gen::ThreePreview);
+        assert_eq!(o.gen, Gen::Three);
     }
 
     /// Two seats each have their own cursor, and neither is dragged into the
