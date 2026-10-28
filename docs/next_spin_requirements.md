@@ -24,7 +24,6 @@ with each spin. Decided with Alex on 2026-10-28 (queue issues
 - **How Pokemon and GBA share the chip** (decided with the chip in #4):
   - a boot select, with the bare-metal battler by default and Linux with the emulator selectable, or
   - everything on Linux.
-  - It replaces the 2026-10-27 plan of a launcher of RP2350 binaries.
 - **One USB-C port, four jobs:** charging, the PC link (loading games), the phone tether or dongle, and console-to-console link play. It needs role switching.
 
 Last updated: 2026-10-28

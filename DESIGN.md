@@ -85,9 +85,6 @@ and Select side by side between the clusters.
 | Y (MENU) | Currently behaves as B on both [platforms](#g-platform); a real menu action is still to come |
 | Start, Select | Present on the hardware and the web page, with no game meaning in [core](#g-core) yet. On the reference design, seat 1's Start is also the power button |
 
-The cursor model replaced the first device's scheme, where a physical corner button meant the move
-drawn at that corner and a stray tap committed a choice with no way back.
-
 ### A session
 
 1. **Gen picker and options.** [Gen 1](#g-gen) or Gen 3 (the Gen 3 entry is labelled "preview"), drawn into
@@ -108,9 +105,7 @@ drawn at that corner and a stray tap committed a choice with no way back.
 ### Open information
 
 Information is open: each player can see the rival's active mon, its HP and status. Only the move
-a player has locked in stays hidden until playback. The [v1](#g-v1) device had a "concealed" mode with
-per-player screens; it was deleted in the single-screen redesign (2026-08-06), whose one screen
-sits in view of both players.
+a player has locked in stays hidden until playback. The one screen sits in view of both players.
 
 ## 3. History and generations
 
