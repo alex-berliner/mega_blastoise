@@ -1,0 +1,53 @@
+# VER-05 backlight
+DATE: 2026-10-28
+COMMIT: cf6927a69af26001ed5511b5997d225ed897027e
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py backlight
+datasheet lines:
+[mcp6001.pdf sha256 4f879ab31115ecfa149dfea62073c9efdbc4beccbdfc3a8d7e10281f3877f8fb; its pdftotext -layout text sha256 389d546fd726d011..., 2769 lines]
+[ao3400a.pdf sha256 9c60d0b6c1ddc7609a4b788a91181468d8ffe6c3e9ba425c3d8ffc5ba88c5033; its pdftotext -layout text sha256 39f205116896b7e2..., 392 lines]
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+[hirose_fh12.pdf sha256 28aca07025cc3b602ab828d1ca972ca6b83c8bac53ead1807bf66cf0074b2a8a; its pdftotext -layout text sha256 e99ced47bb08fb0b..., 1398 lines]
+[esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  Gain Bandwidth Product GBWP — 1.0 — MHz
+  Phase Margin PM — 90 — ° G = +1 V/V
+  DC Open-Loop Gain (Large Signal) AOL 88 112 — dB VOUT = 0.3V to VDD – 0.3V,
+  Input Offset Voltage VOS -4.5 — +4.5 mV VCM = VSS (Note 1)
+  Maximum Output Voltage Swing VOL, VOH VSS + 25 — VDD – 25 mV VDD = 5.5V,
+  Common-Mode Input Impedance ZCM — 10 ||6 — ||pF
+  Differential Input Impedance ZDIFF — 1013||3 — ||pF
+  Supply Voltage VDD 1.8 — 6.0 V Note 2
+  Ciss Input Capacitance 630 pF
+  Coss Output Capacitance VGS=0V, VDS=15V, f=1MHz 75 pF
+  Crss Reverse Transfer Capacitance 50 pF
+  Rg Gate resistance VGS=0V, VDS=0V, f=1MHz 1.5 3 4.5 W
+  VGS(th) Gate Threshold Voltage VDS=VGS ID=250mA 0.65 1.05 1.45 V
+  VGS=2.5V, ID=3A 24 48 mW
+  VDS=30V, VGS=0V 1
+  Supply Voltage Vf I f=120mA - 3.0 3.2 V
+  3. Contact resistance 50m ohms maximum 1mA
+  14 GPIO9 IO VDD3P3_RTC IE IO MUX RTC IO MUX Analog
+  GPIO9 Low-level glitch 60
+  IIH High-level input current — — 50 nA
+  OUT pin voltage regulation (BQ24073, BQ24074) VIN > VOUT + VDO(IN-OUT) 4.3 4.4 4.5
+(a) loop gain broken at U6's - input; R58/R59 10k, C48/C49 1n, R54/R55 330, R56/R57 100k, R52/R53 2.2
+  U6's unpublished second pole and output resistance: 11 of 18 (GBW, p2, ro) corners give 70 deg or more as a follower into 60 pF and 10 kohm (the datasheet's 90 deg typical less 20); the rest are dropped: 0.5x/3.0x/300 ohm 70 deg, 0.5x/3.0x/1000 ohm 66 deg, 1.5x/3.0x/100 ohm 70 deg, 1.5x/3.0x/300 ohm 64 deg, 1.5x/3.0x/1000 ohm 52 deg, 1.5x/10.0x/1000 ohm 62 deg, 1.5x/30.0x/1000 ohm 65 deg
+  704 corners (duty, U6's GBW, second pole and output resistance, the FET's capacitances and gm, the LEDs' resistance, C48's tolerance); stand-ins: GBW x (0.5, 1.5), p2 x GBW (3.0, 10.0, 30.0), ro ohm (100.0, 300.0, 1000.0), Cgs/Crss x ((1.0, 1.0), (2.0, 3.0)), rled ohm (2.0, 50.0)
+  ok    worst phase margin 51.9 deg at {'duty': 1.0, 'gbw_MHz': 0.5, 'p2_x': 10.0, 'ro': 1000.0, 'cgs_x': 1.0, 'crss_x': 1.0, 'rled': 50.0, 'gm': 1.6092, 'cf_nF': 1.1, 'fc_kHz': 232.7} (limit 45 deg)
+  ok    (b) DC at 100% duty (pinmap.md names no lower maximum), 3V3 +1.5%, R61 +1%, R60 -1%, U6 +4.5 mV, sense -1%: 58.6 mA a sink, 117.2 mA in all (limit 120 mA, er-tft035ips-6.txt:760)
+  ok    (c) VSYS 3.5 V, Vf 3.2 V: +143 mV to spare after the sense (128 mV), the FET at 48 mOhm, FH12 50 mOhm a contact and 0.1 ohm of path (stand-in); the gate needs 1.65 V of U6's 3.23 V; current drop 0.0% (limit 5%)
+  info  (c) VSYS 3.5 V, Vf 3.4 V (REQ-DSP-07: the newer datasheet; the one on disk says 3.2): -57 mV to spare after the sense (128 mV), the FET at 48 mOhm, FH12 50 mOhm a contact and 0.1 ohm of path (stand-in); the gate needs 1.65 V of U6's 3.23 V; current drop 22.9% (limit 10%); not VER-05's limit, printed for REQ-DSP-07
+  ok    (d) BL_PWM low, 3V3 on: BL_REF 0 V, U6's offset up to 4.5 mV at VCM = VSS holds 2.07 mA a sink, 4.13 mA in all (limit 5 mA); 0.69 mA an LED is a visible glow: 'BL_PWM low = off' (pinmap.md) holds only for a unit whose offset is negative
+  ok    (d) IO9 at reset (input, no pull: esp32-s3.txt:852): BL_REF = 50 nA x R61 = 0.19 mV; 4.30 mA in all with the offset; its 60 us low glitch at power-up (esp32-s3.txt:969) only pulls BL_REF lower
+  info  (d) 3V3 off, a fast VSYS edge to 4.4 V (a cell mating), the drain taken to move the whole step: the gate kicked to 0.66 V (Crss/Ciss 0.15, stand-in) against VGS(th) 0.65 V minimum: about 0.65 mA in all at 90 mV a decade (stand-in), decaying through R56/R57 with tau 63 us; REQ-DSP-09's 5 mA is VER-62's to measure (cell and USB plugged with 3V3 off, JP2's current on the scope)
+  info  (d) 3V3 off, a fast VSYS edge to 4.4 V (a cell mating), the drain held about 2.5 V under VSYS by the unlit LEDs' knee (stand-in): the gate kicked to 0.29 V (Crss/Ciss 0.15, stand-in) against VGS(th) 0.65 V minimum: about 4.4e-05 mA in all at 90 mV a decade (stand-in), decaying through R56/R57 with tau 63 us; REQ-DSP-09's 5 mA is VER-62's to measure (cell and USB plugged with 3V3 off, JP2's current on the scope)
+  info  3V3 rising: U6 is unspecified under its 1.8 V minimum supply (mcp6001.txt:159), so the ramp itself is not on paper: VER-62 watches JP2's current on the scope at power-on with BL_PWM low
+  (e) VSYS's capacitance at 4.4 V: 5.3 uF at least; at U2's 1.5 A highest input limit (bq24074.txt:738) a 1.0 V rise takes 3.6 us or more
+  ok    (e) USB plugged in while lit: VSYS +1.0 V (3.5 V to U2's 4.5 V, bq24074.txt:729) at U6's slowest corners: both sinks +7.52 mA at the peak (124.7 mA in all on the worst-case DC of 117.2), +2.40 mA 5 us after the ramp's start; over 120 mA for 4.27 us in all (limit 5 us, REQ-DSP-06) at {'edge_us': 3.56, 'cgs_x': 2.0, 'crss_x': 3.0, 'rled': 50.0, 'ro': 100.0, 'gm': 0.4023}; the deviation is C48's current through R58 while U6's output ramps to undo the FET's gds, and Crss's kick into the gate on a fast ramp
+  the ngspice run (board/sim/backlight.py, about 40 min, vendor models) is not this check's evidence: it still hard-codes R61 3.9k (DEF-45); its last run gave 72.5 deg over 720 corners
+RESULT: PASS
+
+exit 0
+RESULT: PASS
