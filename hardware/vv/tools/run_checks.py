@@ -126,6 +126,7 @@ CHECKS = {
     "VER-165": ("mouths", ["python3", CS, "mouths"], True),
     "VER-174": ("xy", ["python3", CS, "xy"], False),
     "VER-112": ("heights", ["python3", CS, "heights"], True),      # 2026-10-28: part heights from the drawings on disk
+    "VER-219": ("fpc", ["python3", CS, "fpc"], False),             # 2026-10-28: the panel's tail against the FH12-50S
     "VER-144": ("heat_modes", ["python3", TH, "modes"], False),
     "VER-193": ("heat_board", ["python3", TH, "board"], False),
     "VER-200": ("heat_amp", ["python3", TH, "amp"], False),

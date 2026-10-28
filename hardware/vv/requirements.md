@@ -866,7 +866,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the FH12-50S's FPC specification; too short cannot mate, too long bows under the panel.
 - Source: Hirose FH12 catalog p.2, p.11 (pin_review/j3.json); validation_plan #215, #160.
 - Method: I
-- Verified by: VER-44, VER-106
+- Verified by: VER-44, VER-106, VER-219
 - Phase: ORDER
 - Status: PROPOSED
 

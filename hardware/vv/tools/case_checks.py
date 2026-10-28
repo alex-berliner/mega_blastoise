@@ -663,7 +663,48 @@ def heights(seed=None):
     return dn.result(not row.bad)
 
 
+# ---- VER-219: the panel's FPC tail against J3's FH12-50S, on paper (VER-44 measures a tail with calipers) ----------------
+# (what, the panel's nominal and tolerance with its line, the FH12's recommended nominal and tolerance with its line)
+FPC_PAIRS = [
+    ("tail thickness, the FPC with its PI stiffener", (0.30, 0.03, 278, "FPC+PI补强=0.3±0.03MM"),
+     (0.30, 0.05, 51, "t=0.3±0.05")),
+    ("contact width", (0.35, 0.03, 277, "W0.35±0.03"), (0.35, 0.03, 697, "0.35±0.03(FPC)")),
+    ("contact span A (first to last contact centre)", (24.5, 0.03, 279, "24.5±0.03"), (24.5, 0.05, 744, "50 24.5 25.5")),
+    ("tail width B", (25.5, 0.15, 285, "25.5±0.15"), (25.5, 0.07, 744, "50 24.5 25.5")),
+]
+FPC_TOL_LINES = {"A": (699, "A±0.05"), "B": (705, "B±0.07")}
+SEED_FPC = 0.10                  # mm added in memory to the panel's tail thickness: must fail
+
+
+def fpc(seed=None):
+    import ds
+    row = Rows()
+    parts, _ = dn.design()
+    ds.quote("hirose_fh12", 675, "Recommended FPC/FFC dimensions")
+    for k, (line, tok) in FPC_TOL_LINES.items():
+        ds.quote("hirose_fh12", line, tok)
+    j3 = parts["J3"]["mpn"]
+    row(j3.startswith("FH12-50S-0.5SH"), f"J3 is {j3}: the 50-contact, 0.5 mm FH12 the panel's drawing asks for (a bottom-contact "
+        "ZIF, er-tft035ips-6.txt:165)")
+    ds.quote("er-tft035ips-6", 165, "FPC Connector 50 Pin 0.5mm Pitch Bottom Contact ZIF")
+    for what, (pn, pt, pl, ptok), (hn, ht, hl, htok) in FPC_PAIRS:
+        ds.quote("er-tft035ips-6", pl, ptok)
+        ds.quote("hirose_fh12", hl, htok)
+        if seed and what.startswith("tail thickness"):
+            pn += seed
+        lo, hi = pn - pt, pn + pt
+        ok = hn - ht - 1e-9 <= lo and hi <= hn + ht + 1e-9
+        row(ok, f"{what}: the panel's {pn:g} +-{pt:g} mm ({lo:.2f}-{hi:.2f}, er-tft035ips-6.txt:{pl}) inside the FH12's "
+            f"recommended {hn:g} +-{ht:g} ({hn - ht:.2f}-{hn + ht:.2f}, hirose_fh12.txt:{hl})"
+            + ("" if ok else f": {max(hn - ht - lo, hi - hn - ht):.2f} mm outside at the worst tail"))
+    print("  the FH12-50S's own D column is 25.57 mm (hirose_fh12.txt:250), read as its FPC opening (a figure dimension: "
+          "not compared); VER-44 measures the bought tails with calipers and VER-136 seats one in a breakout")
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
 CHECKS = {"arch": (arch, SEED_ARCH), "fit": (fit, True), "placement": (placement, True), "stack": (stack, True),
+          "fpc": (fpc, SEED_FPC),
           "xy": (xy, True), "estimates": (estimates, True), "mouths": (mouths, True), "heights": (heights, SEED_HEIGHTS)}
 
 

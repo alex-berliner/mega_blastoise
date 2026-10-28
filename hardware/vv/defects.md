@@ -1043,3 +1043,13 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-91, REQ-MEC-01
 - Gate: CASE
 - Status: OPEN (case only: glass_gap 3.55 mm or more, with check_fit's BODY_LOCAL height at 3.35 and KNOWN_HEIGHT entries for U8, U9 and U11 at 1.2; VER-20's stack re-run after it)
+
+### DEF-102: The panel's FPC tail is 25.5 +-0.15 mm wide against the FH12-50S's recommended 25.5 +-0.07
+- Found: VER-219 (case_checks.py fpc) at 39cc07f, 2026-10-28, its first run
+- Symptom: the ER-TFT035IPS-6 drawing gives its tail 25.5 +-0.15 mm wide (er-tft035ips-6.txt:285); Hirose recommends B = 25.5 +-0.07 mm for a 50-contact FPC (hirose_fh12.txt:744, 705). A tail at the panel's upper limit (25.65 mm) is 0.08 mm wider than the FH12's recommended maximum, and over the connector's 25.57 mm D column (hirose_fh12.txt:250, read as its FPC opening). The thickness (0.3 +-0.03 against 0.3 +-0.05), contact width and contact span sit inside Hirose's bands.
+- Root cause: the panel's maker holds its tail's outline looser than Hirose's recommendation; nothing compared the two drawings.
+- Why missed: VER-44 (calipers on a real tail) needs the panel in hand; no paper check read both drawings.
+- Check added or changed: VER-219 (built: case_checks.py fpc)
+- Updated: REQ-DSP-04
+- Gate: ORDER
+- Status: OPEN (proposed: accept for EVT; VER-44 measures each bought tail (a tail over 25.57 mm is trimmed along its edge, outside the contacts) and VER-136 seats one in a breakout before the order; a connector change would move copper)
