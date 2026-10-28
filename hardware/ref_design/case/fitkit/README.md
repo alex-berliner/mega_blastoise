@@ -9,8 +9,6 @@ any case or board change) with:
 
 ![the shell, exploded in its assembly order (face down)](kit_assembly.png)
 
-Until the board is re-placed for the 133 mm case (the case sets the board now: `../BOARD_OUTLINE.md`),
-the board mock has the new outline and holes but today's part envelopes, cut to the outline.
 
 ## The parts
 

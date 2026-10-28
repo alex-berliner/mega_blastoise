@@ -135,7 +135,7 @@ impl DeviceSession {
     pub fn ruleset(&self) -> Ruleset {
         match self.opts.gen {
             Gen::One => Ruleset::Gen1,
-            Gen::ThreePreview => Ruleset::Gen3,
+            Gen::Three => Ruleset::Gen3,
         }
     }
 

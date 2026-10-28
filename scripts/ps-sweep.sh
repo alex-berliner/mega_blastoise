@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# The continuous parity sweep (V-2, docs/architecture/showdown-split-execution.md).
+# The continuous parity sweep (V-2, docs/living/showdown-split-execution.md).
 #
 # A loop for tmux on the worker machine. It builds a private copy of
 # `ps_sim_cli` from the tip of the integration worktree (rebuilding when

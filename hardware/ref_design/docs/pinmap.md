@@ -55,7 +55,7 @@ reset forces the download mode; J7's pads (3V3, EN, IO0, GND) are for a pogo jig
 ## Display (8-bit 8080 bus)
 
 The ER-TFT035IPS-6 (ILI9488) is strapped IM2-0 = 011 (8080, 8-bit): DB0-DB7 on LCD_D0-D7, WRX, D/CX, RST and TE, CSX tied
-low, RDX high. The minimum parallel write cycle is 40 ns (ILI9488 timing table, docs/display_parallel_proposal.md): LCD_CAM at 25 MHz
+low, RDX high. The minimum parallel write cycle is 40 ns (ILI9488 timing table, docs/living/display_parallel_proposal.md): LCD_CAM at 25 MHz
 or less. Pixels are RGB565 sent as two bytes (the panel's 16-bit-in-8 interface) or
 RGB666 as three. Probe pads: TP11 LCD_WR, TP12 LCD_DC, TP13 LCD_D0, TP14 LCD_TE.
 
@@ -95,7 +95,7 @@ button, a top-actuated switch in seat 1's deck, powers the device on; the firmwa
   unless USB is connected.
 - Enable the watchdog before any blocking init: a hang with PWR_HOLD high otherwise keeps the
   device on with no way to turn it off but unplugging the cell.
-- Wi-Fi transmit peaks draw 355 mA (module datasheet, via docs/esp32s3_board_proposal.md) from 3V3 (TLV75733P: 1 A): the 22 uF at the module pin carries the
+- Wi-Fi transmit peaks draw 355 mA (module datasheet, via docs/living/esp32s3_board_proposal.md) from 3V3 (TLV75733P: 1 A): the 22 uF at the module pin carries the
   burst; with the cell under 3.5 V the reading and Wi-Fi are both near the dropout, so shut down at 3.50 V.
 
 ## Pins at reset

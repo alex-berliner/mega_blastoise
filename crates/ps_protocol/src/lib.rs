@@ -1,7 +1,7 @@
 //! Pokemon Showdown sim protocol types.
 //!
 //! The typed form of the subset of the PS sim protocol named in
-//! `docs/architecture/showdown-split-plan.md` section 3: what the server emits
+//! `docs/living/showdown-split-plan.md` section 3: what the server emits
 //! ([`Msg`], [`Request`]) and what it takes ([`Command`]), plus the identifiers
 //! they are built from ([`PokemonIdent`], [`Details`], [`Health`]) and teams
 //! ([`PackedSet`] as PS packs it, [`PokemonSet`] as the sim reads it).

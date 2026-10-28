@@ -10,7 +10,7 @@ members = [
     "crates/ps_protocol",
     "crates/ps_sim",
 ]
-exclude = ["crates/mega_blastoise_web", "firmware/bringup/esp32_reset", "firmware/bringup/rp2350_blink"]
+exclude = ["crates/mega_blastoise_web"]
 default-members = [
     "crates/mega_blastoise_core",
     "crates/mega_blastoise_test",

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # The battle server's memory and speed budget (task P2-4; design section 6;
-# docs/architecture/showdown-split-budget.md). Prints one table.
+# docs/living/showdown-split-budget.md). Prints one table.
 #
 # (1) Host: `cargo test --release -p ps_sim --test budget` (struct sizes
 #     against their ceilings, zero allocations inside a turn over 500

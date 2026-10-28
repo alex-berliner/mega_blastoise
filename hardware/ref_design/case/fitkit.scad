@@ -78,13 +78,13 @@ module kit_speaker() difference() {               // GSPK151035PN: 10 x 15 x 3.5
 
 // ---------------- coupons: slices of the real case geometry, quick to print ----------------
 // the seam: the left wall round a crush rib and a key, the tub's tongue and the top's skirt over it
-module seam_box() translate([-case_w / 2 - 1, crush[2][1] - 12, -1]) cube([12, 24, case_h + 2]);
+module seam_box() translate([-case_w / 2 - grow_l - 1, crush[2][1] - 12, -1]) cube([12 + grow_l, 24, case_h + 2]);
 module flip() translate([0, 0, case_h]) rotate([180, 0, 0]) children();               // the top prints face down
 // the tub as it prints, floor down (it has no feet since 2026-10-20, so that's the tub itself)
 module tub_flat() tub();
 
 band_y1 = -(bay_l / 2) + 2;                          // seat 1's end band: from the case end into the glass by 2 mm
-module band_box() translate([-case_w / 2 - 1, -case_l / 2 - 1, -1]) cube([case_w + 2, band_y1 + case_l / 2 + 1, case_h + 2]);
+module band_box() translate([-case_w / 2 - grow_l - 1, -case_l / 2 - 1, -1]) cube([case_w + grow_l + 2, band_y1 + case_l / 2 + 1, case_h + 2]);   // (the left wall is grow_l further out)
 // the wall over J1: the USB-C opening (its lower half in the tub's tab, its upper half in the top's wall)
 module usb_box() translate([case_w / 2 - 12, usb_y - 16, -1]) cube([13, 32, case_h + 2]);
 // (its ends stop at the slope's top edge, uni_edge less 0.1, so it needs no support: the frame's end walls are cut there)

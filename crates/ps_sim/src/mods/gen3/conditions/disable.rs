@@ -44,7 +44,8 @@ fn on_start(b: &mut Battle, a: &EventArgs) -> Option<Relay> {
                 return Some(Relay::FAIL);
             }
             let mon = b.ident(pokemon);
-            let mv = Arg::new(ArgValue::Move(MoveNum(slot.id.0)));
+            // `moveSlot.move`, not the last move's name.
+            let mv = Arg::new(ArgValue::Move(MoveNum(b.slot_effect_move(pokemon, slot).0)));
             b.add(Msg::StartEffect { mon, effect: disable_arg(), a: Some(mv), b: None, kw: Kw::NONE });
             b.effect_state().move_ = last;
             return None;

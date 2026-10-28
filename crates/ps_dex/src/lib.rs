@@ -5,7 +5,7 @@
 //! of the PS pinned in `tools/ps-diff` (`meta.json` records `psVersion` and
 //! `psCommit`), the mod chain already resolved) and emits `&'static`
 //! tables: [`GEN1`] and [`GEN3`], with `u16` ids in PS's iteration order
-//! (design section 4 of `docs/architecture/showdown-split-plan.md`). The
+//! (design section 4 of `docs/living/showdown-split-plan.md`). The
 //! [`Type`] enum that used to live in `crates/battle_types` lives here;
 //! the shim crate went with the last of its users (the legacy Gen 3 engine)
 //! in G3-9.

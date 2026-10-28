@@ -1,5 +1,5 @@
 //! The seeded random battles of the budget measurement (task P2-4,
-//! `docs/architecture/showdown-split-budget.md`), shared by the host probe
+//! `docs/living/showdown-split-budget.md`), shared by the host probe
 //! (`crates/ps_sim/tests/budget.rs`) and the board bench
 //! (`crates/mega_blastoise_fw/src/bin/sim_bench.rs`, which `#[path]`-includes
 //! this file), so both measure the same battles.

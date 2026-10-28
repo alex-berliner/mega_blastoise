@@ -4,7 +4,7 @@
 //! The fixture is committed under `tests/fixtures/prng.json` and
 //! regenerated there before re-pinning; the script itself must reproduce
 //! the JSON byte-for-byte on every run. See the brief in
-//! `docs/architecture/showdown-split-execution.md` P1-2 for the contract.
+//! `docs/living/showdown-split-execution.md` P1-2 for the contract.
 
 use ps_sim::prng::{Gen5Rng, Prng, Seed};
 

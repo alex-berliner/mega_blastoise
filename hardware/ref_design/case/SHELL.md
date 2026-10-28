@@ -1,12 +1,11 @@
 # The shell: a tub and one top (2026-10-25)
 
 The case is two printed parts: the **tub** (the back) and the **top** (the whole face and both sides, one piece), held by
-six M2 screws. Everything is in `case.scad`; this file says why. The board's side of it is in `CELLCUT_FOR_CASE.md` (final)
-and `BOARD_OUTLINE.md`; the DS Lite measurements the buttons follow are in `DSLITE.md`.
+six M2 screws. Everything is in `case.scad`; this file says why. The board's positions come from `case.scad` through `positions.json` (`case/export.py`); the DS Lite measurements the buttons follow are in `DSLITE.md`.
 
 The top replaced the island and the two decks of 2026-10-23 on 2026-10-25 (Alex: "make unibody main"; earlier: "we're gonna
 go uni body for the top and print with pla support material"). Those, and everything built round them, are under
-"Rejected" below and in full in [SHELL_ISLAND.md](SHELL_ISLAND.md) (this file as it stood the day before).
+"Rejected" below.
 
 ## 2026-10-27: the ESP32-S3 board (the glass 1.1 mm higher; this section wins over the numbers below)
 The WROOM-1U (18 x 19.2 x 3.2) lies on the board's top at x 64.8 to 84.0, y 108.5 to 126.5 (KiCad), partly under the glass, so the
@@ -253,8 +252,7 @@ block (he, on the blend: "it needs to look like one piece one flow, not two"), t
 board's tall parts could lie under its inside, every joint was a clearance and a tolerance chain on three parts, and the build
 needed two bars and a fixed order. The one-piece top has no joints of its own: it replaces four kinds of joint (the wedge and lips, the laps, the hooks, the
 posts), three printed parts and the bars with a second filament, a prime tower and a finish on the support interface. Its first edge was an S (r 3.0 convex, r 1.5 concave), then
-the DS Lite's frame; the island's full notes, measurements and images are in [SHELL_ISLAND.md](SHELL_ISLAND.md) (the tag
-`ref-design-island-archive` has its parts).
+the DS Lite's frame.
 
 **A one-piece top printed without supports** was rejected earlier (face down, the ends print 1.85 mm above the bed and the bezels'
 undersides become big ceilings). It is reversed: the supports and their interface are the second filament now.
@@ -263,11 +261,8 @@ undersides become big ceilings). It is reversed: the supports and their interfac
 this design; neither zip is in this branch's kits. What the printers can do at 60 degrees only matters for the tub's back round
 and the skirts now (`overhang`).
 
-The other alternatives of the island's time (a bumper round the thumbs, a tooth joint and others) are in `SHELL_ISLAND.md`,
-"Alternatives considered".
-
 ## Images
 
 Rendered by `python3 case/render_images.py` from the parts of this commit (`case/images/`): the outside views with OpenSCAD from the
 assembled STLs, the sections with matplotlib from `trimesh` cuts of the same parts (the cell nominal, the speaker 3.5 tall, the board
-as its parts' envelopes). The island's images are in `images/island/`.
+as its parts' envelopes).

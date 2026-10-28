@@ -4,16 +4,12 @@ A complete, orderable design for the production version of the handheld:
 schematic, 2-layer board, JLCPCB fab and assembly files, a printable case, and
 the documents to build, bring up and review it.
 
-**The cell lies under the board** (on the tub's floor) since 2026-10-09; the layout with
-it on the board under the screen (13.9 mm thick, 7.9 at the ends) is on branch
-`ref-design-cell-on-board`. This board was first routed with `route.py 80`; 20 passes do as
+This board was first routed with `route.py 80`; 20 passes do as
 well (2026-10-21: Freerouting leaves the same connections open after 15 as after 80).
 
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
 design (kept at tag `archive/ref-design-4layer`) with every cost change Alex approved
-that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude in parallel with
-Alex's own hand-made board (`hardware/prod_board/`, `hardware/prod_case/`),
-which this folder never touches.
+that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude.
 
 ![board](board/fab/battler_iso.png)
 
@@ -33,7 +29,7 @@ which this folder never touches.
   band runs from wall to wall and ends in the DS Lite's own slope; the top curves over the sides to one seam and is built upside down, printed
   face down on Bambu Support For PLA (a second filament) as its supports' interface, the tub without supports, held by six M2
   screws as a DS Lite ([case/SHELL.md](case/SHELL.md)); the board, 72.4 x 151.64 mm, is placed to
-  its constraints ([case/CELLCUT_FOR_CASE.md](case/CELLCUT_FOR_CASE.md)); the speaker lies sunk in a hole in the board like the cell
+  the case's positions (`case/positions.json`); the speaker lies sunk in a hole in the board like the cell
 
 ## Folder
 
@@ -48,9 +44,9 @@ which this folder never touches.
 | `board/sim/` | ngspice simulation of the backlight current sinks (loop stability, accuracy, transients); `backlight_results.txt` is the last run |
 | `case/case.scad` | the case, and the source of every mechanical position |
 | `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts (tub, top), board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
-| `case/SHELL.md`, `case/BOARD_OUTLINE.md` | the shell's design (the one-piece top, 2026-10-25; [the island's and decks' notes](case/SHELL_ISLAND.md) are the rejected design's) and what it asks of the board |
+| `case/SHELL.md` | the shell's design (the one-piece top, 2026-10-25) and why |
 | `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
-| `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
+| `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md) |
 | `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |
 | `datasheets/SOURCES.md` | where each datasheet comes from |
 
@@ -188,3 +184,32 @@ design) and `tools/sym_lib.py` (symbols KiCad lacks) rebuild it.
 
 Designed and checked, not yet built. What was checked, what wasn't, and what
 must be measured before ordering: [docs/design_review.md](docs/design_review.md).
+
+## IP and regulatory stance
+
+Decided so far (2026-09-17, [10-production-board.md](../../docs/living/10-production-board.md)
+section 6):
+
+- **Rename before selling.** "Mega Blastoise" is a Pokemon name; that includes the USB
+  manufacturer string the firmware reports.
+- **No Pokemon markings on the device.**
+- **No preloaded firmware.** Units ship blank and the owner downloads the game, which keeps
+  species names, sprites and move text off the product. Today's builds fetch those assets at
+  compile time (docs/reference/architecture/01-system-overview.md) and the web build publishes them; how a buyer would get them is open.
+- **Real USB IDs.** The firmware uses a placeholder VID:PID; Raspberry Pi allocates product IDs
+  under its vendor ID for products on its silicon.
+- **Engines.** `gen1_battle` and `gen3_battle` are written in-house from the published mechanics
+  and Showdown's behaviour; `gen3_battle` takes no code from `battler`.
+- **Hardware sources.** The RP2350B core copy is MIT-licensed (its licence is in
+  `hardware/ref_design/datasheets/`). The vendored membrane footprints are public domain. DS Lite
+  cap numbers come from open models, with no geometry copied. Licence traps (share-alike and
+  non-commercial footprints and models) are listed in the membrane README and the DS Lite dossier.
+- **DS Lite look.** The US design patent (D554,194) expired in 2021; an EU registered design, if
+  one was filed and renewed, could last until 2031, so an EUIPO search is due before selling
+  anything that looks like a DS Lite.
+- **Certification.** FCC Part 15B and CE as an unintentional radiator (no radio keeps it there),
+  UN38.3 test documents from the cell supplier, and marketing to adults (a children's product
+  triggers CPSIA testing in the US).
+
+The validation plan defers a full IP audit, regulatory marks and EMC testing until a sale is in
+view. The repository itself has no top-level licence file.

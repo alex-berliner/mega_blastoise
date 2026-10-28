@@ -25,9 +25,6 @@ mega-blastoise-core = { path = "../mega_blastoise_core" }
 # std critical-section impl satisfies the link.
 critical-section = { version = "1", features = ["std"] }
 
-[patch.crates-io]
-once_cell = { path = "../../patches/once_cell" }
-
 [profile.release]
 opt-level = "s"
 lto = true

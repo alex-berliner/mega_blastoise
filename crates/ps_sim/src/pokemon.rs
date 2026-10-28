@@ -165,6 +165,28 @@ impl Battle {
         self.mon(m).move_slots.iter().any(|s| !s.id.is_none() && base(s.id) == want)
     }
 
+    /// The move an effect names when it prints `moveSlot.move`: the slot's
+    /// own move, or `Hidden Power TYPE` (the `hiddenpowerTYPE` placeholder
+    /// entry, whose name that is) for a slot `transformInto` copied.
+    // PS: sim/pokemon.ts transformInto (moveName)
+    pub fn slot_effect_move(&self, m: MonRef, slot: &crate::state::MoveSlot) -> MoveId {
+        // Only `transformInto` renames a slot (`moveName = 'Hidden Power ' +
+        // this.hpType`); Mimic and Sketch refuse a transformed user, so every
+        // slot of a transformed Pokemon is one of its copies.
+        if !self.mon(m).transformed || self.dex.move_def(slot.id).name.as_str() != "Hidden Power" {
+            return slot.id;
+        }
+        const IDS: [&str; 17] = [
+            "hiddenpowernormal", "hiddenpowerfire", "hiddenpowerwater", "hiddenpowerelectric", "hiddenpowergrass",
+            "hiddenpowerice", "hiddenpowerfighting", "hiddenpowerpoison", "hiddenpowerground", "hiddenpowerflying",
+            "hiddenpowerpsychic", "hiddenpowerbug", "hiddenpowerrock", "hiddenpowerghost", "hiddenpowerdragon",
+            "hiddenpowerdark", "hiddenpowersteel",
+        ];
+        let ty = self.mon(m).hp_type.index() as usize;
+        // Normal has no placeholder entry: `Hidden Power Normal` is not a name.
+        IDS.get(ty).and_then(|id| self.dex.move_id(id)).unwrap_or(slot.id)
+    }
+
     /// PS `pokemon.disableMove(moveid, isHidden, sourceEffect)`.
     /// `disabledSource` is not kept: only the request's error text reads
     /// it, and the request here says `disabled` alone.

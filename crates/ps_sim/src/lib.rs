@@ -1,6 +1,6 @@
 //! Pokemon Showdown-compatible battle server.
 //!
-//! Per `docs/architecture/showdown-split-plan.md` section 5: this crate owns
+//! Per `docs/living/showdown-split-plan.md` section 5: this crate owns
 //! the battle state, the action queue (`BattleQueue` with PS's `orders`
 //! table, priority, speed, subOrder, `speedSort` tie-shuffle), the event
 //! pipeline (`runEvent`, `singleEvent`, `eachEvent`, `fieldEvent`,

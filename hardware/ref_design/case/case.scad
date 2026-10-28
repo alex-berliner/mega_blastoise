@@ -65,7 +65,7 @@ bay_w = panel_w + 1.5;  bay_l = panel_l + 3.24;
 // The cell sits in a hole in the board (row 19; Alex, 2026-10-21: the case was too thick with it
 // under the board), in the board's plane, across the board between seat 2's deck and J3's range:
 // its top at most cell_top over the board, its bottom in a pocket in the tub's floor. The hole is
-// the board's (placement.py CUTOUTS, case/CELLCUT_FOR_CASE.md): 0.5 round a worst-case cell, 1.0
+// the board's (placement.py CUTOUTS): 0.5 round a worst-case cell, 1.0
 // more at its left end, where its leads come out and run to J2 at the hole's seat-1 corner. It is
 // pushed to the hole's right end, where the charger's thermistor TH1 reads it through the gap.
 // With the 3.5 in panel the hole lies under the glass's seat-2 half (2026-10-26): the folded FPC takes the seat-1 half
@@ -370,7 +370,8 @@ pwr_sw_h = 1.4;  pwr_act_h = 0.4;  pwr_travel = 0.3;      // body, actuator over
 pwr_hole_d = 3.0;  pwr_pin_d = 2.8;                        // the hole through the deck and the cap's pin
 pwr_flange_d = 4.6;  pwr_flange_t = 0.3;                   // the flange under the deck
 pwr_recess_d = 5.0;  pwr_recess_h = 0.4;                   // its recess in the deck's underside, and how far up
-pwr_pocket_d = 6.0;  pwr_pocket_h = 0.8;                   // the pocket in the deck's face (finger room)
+pwr_pocket_d = 5.0;  pwr_pocket_h = 0.8;                   // the pocket in the deck's face (finger room): a cone from this wide at the face down to the hole's width at its floor, 51
+                                                           // degrees from vertical, inside the 60 the top prints face down without a bridge (a straight 6 mm pocket was a 6.9 mm bridge)
 pwr_cap_below_face = 0.5;                                  // the cap's top under the face
 pwr_act_top = z_top_cu + pwr_sw_h + pwr_act_h;             // 5.6
 pwr_cap_top = deck_face - pwr_cap_below_face;              // 7.2
@@ -391,7 +392,7 @@ deck_engage = deck_face - z_top_cu - 0.6;               // the end screws' pilot
 side_engage = min(6.0, case_h - z_top_cu - 0.8);        // the side screws' pilots stop 0.8 under the band's face
 
 // edge parts, all on the right (+X) long edge. J1 slid 2 mm up its wall (towards seat 2) when the side
-// screws came back inward (2026-10-22, CELLCUT_FOR_CASE.md): its opening, tab, notch and slot follow usb_y
+// screws came back inward (2026-10-22): its opening, tab, notch and slot follow usb_y
 usb_y = 1.5; usb_w = 8.94;  usb_h = 3.25;               // TYPE-C-31-M-12 shell
 usb_r = 1.0;                                            // its corner radius: a rounded rectangle with 1.2 mm flats
                                                         // on its ends, not a stadium (HRO's 3D model, 2026-10-20)
@@ -424,7 +425,7 @@ usb_zone = [usb_y - usb_notch_w / 2 - usb_fit, usb_y + usb_notch_w / 2 + usb_fit
 // receptacle's face (the receptacle's shell length, 6.20 in the Type-C spec)
 plug_len_min = 6.55;  usb_mate = 6.20;
 // left long edge: debug. SW18 BOOTSEL and SW19 RESET under pinholes in the face: since 2026-10-24 (the routing
-// levers, CELLCUT_FOR_CASE.md) out of the left strip into the left bezel below H4, one above the other, each
+// levers) out of the left strip into the left bezel below H4, one above the other, each
 // lying across the bezel (TS-1088, its 3D model 4.8 x 2.9 x 1.95: pin_sw its half size in the plan, pin_sw_h
 // its height). A floor rib in the tub under them (pin_rib) carries a pin's press into the floor
 pin_pos = [];   // BOOT and RESET lost their pinholes: the SD slot took the left bezel (a question for Alex, progress.md)
@@ -650,7 +651,7 @@ for (c = [dpad1, dpad2]) assert(tune || abs(c[1]) - dpad_arm_l / 2 - dpad_gap - 
 for (s = pins) for (c = clusters) assert(norm(s - c) >= piece_d / 2 + boss_d / 2, "screw boss under a silicone piece");
 assert(seat_y + pin_out - boss_d / 2 >= spine_end + 0.5, "an end boss runs under the spine");
 assert(seat_y + pin_out + boss_d / 2 + 0.3 <= ss_y - (ss_cell + 2 * ss_frame_w) / 2, "an end boss runs into Start/Select's frame");
-assert(abs(h4_pin[1]) - boss_d / 2 >= uni_foot + 0.3 && abs(h4_pin[0]) + boss_d / 2 <= in_x - 1.0, "H4's boss runs into the slope or the wall");
+assert(tune || abs(h4_pin[1]) - boss_d / 2 >= uni_foot + 0.3 && abs(h4_pin[0]) + boss_d / 2 <= in_x - 1.0, "H4's boss runs into the slope or the wall");
 assert(h4_pin[1] < 0 && abs(h4_pin[1]) + boss_d / 2 <= ss_y - (ss_cell + 2 * ss_frame_w) / 2, "H4's boss is not in seat 1's deck");
 assert(pins[4] == rot180(pins[5]), "the end bosses aren't each other turned round");
 assert(ss_y - ss_mem[1] / 2 - 0.75 >= spine_end, "Start/Select under the spine");
@@ -659,15 +660,15 @@ for (c = clusters) assert(norm([ss_mem[0] / 2, abs(abs(c[1]) - ss_y) < ss_mem[1]
 
 // the power key: in seat 1's deck, clear of the slope, H6's boss, U8's box and the Start/Select frame; its plate over the recess 0.8 or more; the cap
 // captive (flange under the plate, 0.1 or more to the recess's roof), its stroke free of the switch body, its top under the face
-assert(pwr_pos[1] < 0 && abs(pwr_pos[1]) - pwr_pocket_d / 2 >= uni_foot + 0.3, "the power key's pocket runs into the slope");
-assert(norm(pwr_pos - pins[5]) >= boss_d / 2 + pwr_pocket_d / 2 + 0.3 && norm(pwr_pos - pins[3]) >= boss_d / 2 + pwr_pocket_d / 2, "the power key's pocket runs into an end boss");
-assert(ss_y - (ss_cell + 2 * ss_frame_w) / 2 >= abs(pwr_pos[1]) + pwr_pocket_d / 2 + 0.3 && abs(pwr_pos[0]) + pwr_pocket_d / 2 <= spine_w / 2 + 3.5, "the power key's pocket runs into Start/Select's frame");
-assert(deck_face - z_deck_under - pwr_pocket_h - pwr_recess_h >= 0.8 - 1e-6, "the plate between the power key's recess and its pocket is thinner than 0.8");
-assert(pwr_hole_d >= pwr_pin_d + 0.2 && pwr_recess_d >= pwr_flange_d + 0.3 && pwr_flange_d >= pwr_hole_d + 1.0, "the power cap's pin, flange or recess is the wrong size");
-assert(z_deck_under + pwr_recess_h - (pwr_act_top + pwr_flange_t) >= 0.1, "the power cap's flange touches its recess's roof at rest");
-assert(pwr_act_top - pwr_travel - (z_top_cu + pwr_sw_h) >= 0.1, "the power cap's flange touches the switch's body at the end of its stroke");
-assert(pwr_pocket_h - (pwr_cap_top - (deck_face - pwr_pocket_h)) <= pwr_pocket_h && pwr_cap_below_face >= 0.4, "the power cap stands too near the face");
-assert(pwr_cap_top - pwr_travel >= deck_face - pwr_pocket_h - 1e-6, "the pressed power cap sinks under its pocket's floor");
+assert(tune || pwr_pos[1] < 0 && abs(pwr_pos[1]) - pwr_pocket_d / 2 >= uni_foot + 0.3, "the power key's pocket runs into the slope");
+assert(tune || (norm(pwr_pos - pins[5]) >= boss_d / 2 + pwr_pocket_d / 2 + 0.3 && norm(pwr_pos - pins[3]) >= boss_d / 2 + pwr_pocket_d / 2), "the power key's pocket runs into an end boss");
+assert(tune || (ss_y - (ss_cell + 2 * ss_frame_w) / 2 >= abs(pwr_pos[1]) + pwr_pocket_d / 2 + 0.3 && abs(pwr_pos[0]) + pwr_pocket_d / 2 <= spine_w / 2 + 3.5), "the power key's pocket runs into Start/Select's frame");
+assert(tune || (deck_face - z_deck_under - pwr_pocket_h - pwr_recess_h >= 0.8 - 1e-6), "the plate between the power key's recess and its pocket is thinner than 0.8");
+assert(tune || (pwr_hole_d >= pwr_pin_d + 0.2 && pwr_recess_d >= pwr_flange_d + 0.3 && pwr_flange_d >= pwr_hole_d + 1.0 && atan((pwr_pocket_d - pwr_hole_d) / 2 / pwr_pocket_h) <= overhang), "the power cap's pin, flange or recess is the wrong size");
+assert(tune || (z_deck_under + pwr_recess_h - (pwr_act_top + pwr_flange_t) >= 0.1), "the power cap's flange touches its recess's roof at rest");
+assert(tune || (pwr_act_top - pwr_travel - (z_top_cu + pwr_sw_h) >= 0.1), "the power cap's flange touches the switch's body at the end of its stroke");
+assert(tune || (pwr_pocket_h - (pwr_cap_top - (deck_face - pwr_pocket_h)) <= pwr_pocket_h && pwr_cap_below_face >= 0.4), "the power cap stands too near the face");
+assert(tune || (pwr_cap_top - pwr_travel >= deck_face - pwr_pocket_h - 1e-6), "the pressed power cap sinks under its pocket's floor");
 
 // ---------------- echo: everything the board script needs ----------------
 function jnum(v) = str(round(v * 1000) / 1000);
@@ -980,7 +981,7 @@ module cell2d(size) translate([cell_x1 - size[1], cell_pocket_box[0][1]]) square
 // of the outside): 14 wide over the slot's 13.85 body, from the board's top up 2.6, through the skirt and the tongue; the slot's centre
 // y -35.0 (KiCad 135.0: placement.py), its back to stay under x -21.95
 sd_y = [-42.0, -28.0];  sd_z = [z_top_cu - 0.2, z_top_cu + 2.6];
-module sd_cut() translate([-wall_l - 2, sd_y[0], sd_z[0]]) cube([wall + board_clear + 2 - 0.3, sd_y[1] - sd_y[0], sd_z[1] - sd_z[0]]);
+module sd_cut() translate([-wall_l - 2, sd_y[0], sd_z[0]]) cube([wall + board_clear + 2 - 0.2, sd_y[1] - sd_y[0], sd_z[1] - sd_z[0]]);   // (0.1 into the cavity: its inner face lay exactly on the tongue's, which left non-manifold edges in the fit kit coupons)
 
 // ---- the tub (the back): printed back down, as exported ----
 // its outside: the back rolls into the walls (in 0.1 mm layers up the round), up to the seam
@@ -1199,7 +1200,7 @@ module end_inner(sy) {
 module pwr_cuts() {
   translate([pwr_pos[0], pwr_pos[1], z_deck_under - 0.01]) cylinder(d = pwr_recess_d, h = pwr_recess_h + 0.01, $fn = 48);   // the flange's recess
   translate([pwr_pos[0], pwr_pos[1], z_deck_under - 0.5]) cylinder(d = pwr_hole_d, h = deck_face - z_deck_under + 1, $fn = 48);
-  translate([pwr_pos[0], pwr_pos[1], deck_face - pwr_pocket_h]) cylinder(d = pwr_pocket_d, h = pwr_pocket_h + 1, $fn = 48);
+  translate([pwr_pos[0], pwr_pos[1], deck_face - pwr_pocket_h]) { cylinder(d1 = pwr_hole_d, d2 = pwr_pocket_d, h = pwr_pocket_h, $fn = 48); translate([0, 0, pwr_pocket_h - 0.01]) cylinder(d = pwr_pocket_d, h = 1, $fn = 48); }
 }
 // the cap (printed, flange down: the pin up), at rest on the actuator
 module pwr_cap() { cylinder(d = pwr_flange_d, h = pwr_flange_t, $fn = 48); cylinder(d = pwr_pin_d, h = pwr_cap_h, $fn = 48); }

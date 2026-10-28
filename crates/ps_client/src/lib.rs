@@ -1,6 +1,6 @@
 //! Pokemon Showdown protocol client.
 //!
-//! Per `docs/architecture/showdown-split-plan.md` section 7: [`BattleView`]
+//! Per `docs/living/showdown-split-plan.md` section 7: [`BattleView`]
 //! holds what a PS client knows (per-side active mon details + HP, status,
 //! boosts, visible volatiles, known moves + PP, field and side conditions,
 //! turn), [`BattleView::apply`] updates it from one `Msg` and yields zero or

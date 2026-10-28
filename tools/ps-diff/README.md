@@ -2,7 +2,7 @@
 
 A driver that replays the same Pokemon Showdown BattleStream command
 sequence on two implementations, compares every line and request, and
-reports the first divergence. P1-7 (`docs/architecture/showdown-split-execution.md`
+reports the first divergence. P1-7 (`docs/living/showdown-split-execution.md`
 section P1-7) builds this; the rest of the ps_sim port uses it as the
 parity fixture at every change.
 
