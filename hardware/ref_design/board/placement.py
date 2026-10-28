@@ -55,7 +55,7 @@ BOARD_X0, BOARD_X1 = 100 - BOARD_W / 2 - GROW_L, 100 + BOARD_W / 2
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(80.9, 52.0, 119.1, 107.2), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -6.8 .. 48 since the placement search of 2026-10-27, 1 mm towards seat 2 to widen the gap to J3 (case.scad cell_dy), was -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
+    dict(name="cell", box=(80.7, 52.0, 118.9, 107.2), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -6.8 .. 48 since the placement search of 2026-10-27, 1 mm towards seat 2 to widen the gap to J3 (case.scad cell_dy), was -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
@@ -287,7 +287,7 @@ at("R42", 34.2, 44.0, 90)
 # landed on, put where the search found room (the zones in placement_zones.py; check_fit passes). KiCad frame: x, y, rot, side.
 ADOPTED = {
     "J2": (131.55, 69.7, 180, "F"),
-    "TH1": (120.2, 79.0, 90, "F"),
+    "TH1": (119.95, 79.0, 90, "F"),
     "JP5": (124.0, 70.0, 0, "F"),
     "TP3": (126.0, 74.0, 0, "B"),
     "Q1": (69.6, 144.0, 0, "F"),

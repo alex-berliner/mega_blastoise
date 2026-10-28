@@ -73,7 +73,7 @@ cell = [52, 36, 4.5];                                   // 403450, worst case: 5
 cell_nom = [50, 34, 4.0];                               // and nominal (the dummies and pictures)
 cell_dy = 1;                                            // the hole's shift towards seat 2 (+y; the placement search's "hole"); 0 as built: 1 passes every assert here and gave one clean board (2026-10-27) that failed check_fit on 6 moved parts, 2 mm and more put the cell's top into the ends' ceiling
 j2_dy = 0.3;                                            // J2, its plug and its frame notch follow the hole this far: +1 puts J2's plug 2.4 from H1's boss (3.1 needed), more than 0.3 puts J2 over 22 from the hole's corner
-cell_hole = [[-19.1, -8.2 + cell_dy], [19.1, 47.0 + cell_dy]];  cell_hole_r = 1.0;   // 38.2 x 55.2: the pocket 52.4 x 36.4, 0.4 over the worst-case cell (V&V carry-over C1: it was 52.0 x 36.0, no spare)   // the board's hole: corners, corner radius
+cell_hole = [[-19.3, -8.2 + cell_dy], [18.9, 47.0 + cell_dy]];  cell_hole_r = 1.0;   // 38.2 x 55.2 (the 0.4 all on the left side, the cell lies against the right wall): the pocket 52.4 x 36.4, 0.4 over the worst-case cell (V&V carry-over C1: it was 52.0 x 36.0, no spare)   // the board's hole: corners, corner radius
 cell_top = 1.6;                                         // its top over the top copper, worst case: the decks'
                                                         // band (deck_limit) allows 1.6 where its seat-2 edge reaches
 cell_pocket = 0.6;                                      // the tub's floor pocketed under it: the case 0.6 thinner
