@@ -159,10 +159,10 @@ put("C11", 63.4, 125.6, 90)                  # 3V3 at the module's pin 2, in the
 put("C12", 63.4, 124.1, 90)                  # EN's 1 uF
 put("R23", 63.4, 122.6, 90)                  # EN's 10k
 put("C10", 79.6, 104.9, 0)                   # the module's 22 uF, above its top row
-put("R22", 80.8, 128.6, 90)                  # USB 22 ohm, by the module's D- / D+ pins
-put("R21", 82.0, 128.6, 90)
-put("C13", 80.8, 130.4, 90)                  # DNP pads
-put("C14", 82.0, 130.4, 90)
+put("R22", 92.0, 129.0, 90)                  # USB 22 ohm: 10 mm from the module's D- / D+ pins, where the pair from J1 has room (80.8 / 82.0 under the pins left D- open in
+put("R21", 93.2, 129.0, 90)                  # every board but one: the pair's pre-route could not reach the pad)
+put("C13", 92.0, 131.0, 90)                  # DNP pads
+put("C14", 93.2, 131.0, 90)
 # 33 ohm source terminations: D0-D4 above the module's top row, D5/D6 one row up, D7 and WR on the module's right side
 for k, x in enumerate((76.9, 75.6, 74.3, 73.1, 71.8)):
     put(f"R{70 + k}", x, 105.5, 90)
