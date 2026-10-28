@@ -144,7 +144,7 @@ FIXED while VER-129 was stale and are CLOSED again on its PASS. Counts: requirem
 PROPOSED, 33 DROPPED, 8 RETIRED); checks 248 (3 PASS, 58 NOT_RUN, 133 NOT_BUILT, 25 DROPPED, 24
 RETIRED, 5 CUT); DFMEA rows 251 (49 live, 31 of them H); defects 102 (85 DROPPED, 13 RETIRED, 2
 CLOSED, 1 FIXED, 1 OPEN). The grid: 126 cells of classes 1-15 planned, 0 bare GAP, 9 NOT_NEEDED. One
-saved output left the live tree: evidence/2026-10-28_VER-05_backlight.txt, the dropped board's VER-05
+saved output left the live tree: hardware/vv/evidence/2026-10-28_VER-05_backlight.txt@a975909, the dropped board's VER-05
 run that no row names, the only file under hardware/vv with an em-dash; it stays at vv-esp32s3-final
 and at 30131db.
 
