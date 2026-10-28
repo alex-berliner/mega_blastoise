@@ -317,3 +317,35 @@ Gen 1 device is the milestone that de-risks everything else.
   authentic Game Boy bitmap font. Expected to need iteration either way.
 - Whether the upstream engine fits on RP2350 (§7; moot since the Showdown split).
 - Doubles are out of scope but are a plausible future direction for Gen 3.
+
+## As built: controls
+
+Each seat has the same controls, placed with rotational symmetry so both players get an identical
+hand position. The reference design follows the DS Lite: a D-pad, A/B/X/Y in a diamond, and Start
+and Select side by side between the clusters.
+
+| Control | Meaning |
+|---|---|
+| D-pad | Moves the cursor (the web page repeats a held direction; the firmware does not yet) |
+| A | Confirms. Holding A in the lobby summons the AI as the opponent |
+| B | Backs out; every state has a back path. On a locked-in choice it takes the choice back |
+| X (INFO, shown as `?`) | Explains what the cursor is on (move details, party stats); outside a choice it opens the battle log |
+| Y (MENU) | Currently behaves as B on both platforms; a real menu action is still to come |
+| Start, Select | Present on the hardware and the web page, with no game meaning in core yet. On the reference design, seat 1's Start is also the power button |
+
+## As built: a session
+
+1. **Gen picker and options.** Gen 1 or Gen 3 (the Gen 3 entry is labelled "preview"), drawn into
+   both halves; either player can drive it. Options open per seat over shared settings: team size
+   (3v3 or 6v6), text speed, and a tutorial shown before the first game.
+2. **Lobby.** Each player presses to ready up; holding A fights the AI instead.
+3. **Teams** are a fresh random draft every battle, rematches included, from Showdown's random
+   battle sets for the chosen generation.
+4. **Choosing.** Each player picks a move or a switch on their own half with the cursor. A
+   committed player sees a waiting screen and can take the choice back; once both are ready the
+   turn fires after a 1 s grace window.
+5. **Playback.** Narration, HP drain, the sprite bob and a small set of attack effects play over
+   the shared scene. The battle log (the last 50 lines, with damage numbers and the reasons for
+   crits and effectiveness) is available on `?` and pauses only the reader.
+6. **Faints and switches** ask the owning player for the next mon, showing the rival's side.
+7. **Result and recap**, then back to the lobby.

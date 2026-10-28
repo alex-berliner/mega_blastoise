@@ -21,3 +21,17 @@ dossier labels which is which. Results of the owner's own measurements belong in
 tables once taken.
 
 Downloads (scans, FCC photos, manuals) were kept out of the repo; the notes link every source.
+
+## Membranes and the DS Lite research
+
+The membrane decision is documented in [hardware/membrane/README.md](../membrane/README.md):
+the donors surveyed (SNES, DS Lite, others), the DS Lite geometry measured from a breakout board's
+gerbers, the contact pattern, licence traps in other projects' footprints, and an open question:
+fine gold combs need ENIG or hard gold, while carbon ink (more durable) needs a coarser pattern.
+
+[hardware/ds_lite/](README.md) is a research packet on how the DS Lite is built and
+why it feels as it does, every number sourced and labelled by how it was obtained. Its key points
+for this project: density (a DS Lite works out to about 1.03 g/cm3, so about 160 g for a case this
+size), a 13.5 mm lower half, rounded edges, and the seam on the face. Its recommendations are
+inputs, not decisions. Alex owns a genuine DS Lite for scale and caliper checks; the dossier's
+"Measure your own unit" section lists them.

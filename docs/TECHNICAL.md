@@ -79,3 +79,30 @@ cargo run --release
 ```
 
 For build scripts and size stats, see `scripts/fw-build.sh`. Full architecture docs are in [architecture/](./architecture/README.md).
+
+## Verification: software
+
+- **The gate:** [scripts/check.sh](../scripts/check.sh) runs before every code commit: all host
+  tests, a firmware `cargo check` for its real target, the WASM build, and the headless UI probe
+  (`--fast` skips the last two). It exists because two test binaries once rotted silently.
+- **Showdown parity:** tools/showdown-parity/ runs the real
+  Showdown simulator under Node. `showdown_parity` compares hand-written scenarios and
+  `showdown_fuzz` compares seeded random ones (`FUZZ_N`, `FUZZ_SEED`, `FUZZ_ONLY`), with hit,
+  crit and damage roll scripted on both sides so every branch is compared. Unarmed checkouts skip
+  these suites loudly. Engine changes get a 2000-seed sweep before they are pushed.
+- **Headless UI probe:** [scripts/ui-probe.sh](../scripts/ui-probe.sh) boots the web page in headless
+  Chromium on a pinned seed, plays real turns in both generations through the same exports the
+  touch controls use, and asserts on a per-seat state trace. It catches wiring bugs that unit
+  tests cannot see.
+- **Screens:** the `screens` binary renders every UI state to image files on a host.
+- **Device debugging:** [scripts/mb-console.py](../scripts/mb-console.py) merges RTT and USB console
+  output and forwards typed lines; [scripts/fw-build.sh](../scripts/fw-build.sh) reports flash and RAM
+  use; `scripts/commands.sh` defines shell helpers; `.claude/commands/fwdebug.md` is the firmware
+  debug loop for Claude Code.
+
+## Working practices
+
+- Generated files are never hand-edited: the stripboard from `layout.py`, the reference design
+  from `design.py`, `placement.py` and `case.scad`, the pin map from `pinmap.py`.
+- For engine work, read Showdown's source first, then fuzz to confirm.
+- For case work, render and assert headless before printing.

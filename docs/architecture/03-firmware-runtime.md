@@ -38,3 +38,18 @@ The v1 firmware (two OLEDs, LED strips, buzzer, button matrix) is described in
 [docs/archive/v1/firmware/](../../docs/archive/v1/firmware/INTERACTIONS.md).
 
 Continue with [Host Runtime and Test Harness](./04-host-runtime.md).
+
+## Firmware
+
+`mega_blastoise_fw` runs on the Pico 2 in the stripboard v2 board. A plain `cargo build` in the
+crate builds the device; [03-firmware-runtime.md](03-firmware-runtime.md) has
+the startup and task list. In short: Embassy async tasks for the ST7796 panel (PIO SPI with DMA),
+the 16 buttons (debounce, A tap versus hold), the USB CDC console, battery sensing and the sprite
+bob, and [`board_v2.rs`](../../crates/mega_blastoise_fw/src/board_v2.rs) implements core's
+`DevicePort` and runs `DeviceRunner` forever. A panic lights the Pico's GP25 LED and its message
+survives a reset. Features: `input-debug` (held-key overlay), `mem-profile`, `trace`.
+
+There is no firmware yet for the reference design: it needs the `rp235xb` chip feature, its pin
+map, an ILI9488 panel driver (18-bit colour over SPI, unlike the ST7796), audio and power control.
+Bring-up tools (an RP2350 blink and a recovery-reset helper) are in
+[firmware/bringup/](../../firmware/bringup/rp2350_blink/README.md).

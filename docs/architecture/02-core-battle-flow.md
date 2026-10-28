@@ -33,3 +33,15 @@ no data store object.
 5. Repeat until the server's `end`.
 
 Continue with [Firmware Runtime (RP2350)](./03-firmware-runtime.md).
+
+## How a turn flows
+
+1. The engine writes battle log lines; core parses them into typed `BoardEvent`s (damage, faint,
+   switch-in, status and so on) and turns the engine's request into a prompt.
+2. `OledController` decides each seat's screen from those events; `DeviceRunner` paces narration.
+3. The renderer draws each half from the `Screen` plus per-seat context (foe HUD, cursor) and
+   composes the 320x480 frame. The platform's `present` hook only moves pixels: the firmware
+   sends the 16x16 tiles that changed; the web page blits the frame to a canvas.
+4. A press comes in from the platform as a classified `DeviceEvent`. `DeviceSession` and
+   `CursorNav` turn it into a pad event; `ChoiceCollector` validates it and, once both seats are
+   ready and the grace window has passed, hands the engine its command strings.

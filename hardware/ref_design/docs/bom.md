@@ -89,3 +89,38 @@ Cloudflare and the Wayback copy was down on 2026-10-26).
 | TH1 | 10k B3950 | 10k B4460 0805 (C525375, TCTR0805F10K0F4460T) | charge window: 48.2 C hot edge worst case, 45 C not reachable with a stocked 10k NTC |
 | U10, C54 | none | MCP6001T-I/OT (C116490) buffer, 100n (C1525) | cutoff: GPIO47 leakage no longer flows through the divider (DEC-07) |
 | J4 | PicoBlade 2-pin | JST SM02B-SRSS-TB (C160402) | speaker plug cannot enter the cell's port |
+
+## Manufacturing and cost
+
+**Route.** JLCPCB makes the 2-layer board and assembles one side (Economic PCBA). The panel,
+cell, speaker, DS Lite silicone and caps, screws and tape are bought separately and fitted by hand.
+The case is printed at home on FDM. [assembly.md](assembly.md) is the
+order and build procedure; [tools/quotes/](../tools/quotes/README.md) re-runs
+JLCPCB's and PCBWay's instant-quote forms headlessly when the design changes.
+
+**Cost, with the date of each figure:**
+
+| Figure | Per unit | Date | Source |
+|---|---|---|---|
+| v1 parts, excluding enclosure | about $40 | spring 2026 | [ELECTRONICS.md](../../../docs/archive/v1/ELECTRONICS.md) |
+| Stripboard v2 parts, bought in hobby packs (one unit) | about $125 | 2026-08 | [BUILD.md](../../stripboard_v2/BUILD.md) |
+| Reference design bare board, 4-layer with 0.25 mm holes, at 10 | $9.74 | 2026-09-24 | quotes |
+| Reference design bare board, 2-layer, at 10 | $3.34 | 2026-09-24 | quotes |
+| Reference design, factory part (board, parts, assembly fees, shipping) at 10 | about $16.47 | 2026-09-24, parts repriced 2026-10-20 | bom.md, until the audit replaced it |
+| Reference design, all in, at 10 | about $39-40 | same | same |
+| **Reference design, latest, at 10** | **$42.52** | **2026-10-21** | BOM audit, now in [bom.md](bom.md) |
+| **Reference design, latest, at 50** | **$27.98** | **2026-10-21** | same |
+
+The bom.md figures exclude import duties (not yet known), JLC's new-account coupons and hand
+labour. The panel is the
+largest single item (about $14 at 10, under $10 at 50); the case is about $1.50 of filament.
+
+**Supply risks.** The 2026-10-21 BOM audit found the RP2354B and its core inductor (L2) out of
+stock at JLC and LCSC. **That blocks ordering** until stock returns or an alternative is designed
+in. Stock has bitten before: on 2026-10-07 both the AP3156 backlight driver (replaced by discrete
+sinks) and the first USB ESD array (replaced by another maker's part) ran out. The panel has a
+single maker; its glass class has other sources that would need only case and pin-map changes.
+
+**Order plan.** The validation plan proposes 3 to 5 assembled boards plus 5 bare ones from the same
+order (for sectioning, rework practice and the contact test), and a dry run of JLC's order flow
+with screenshots of every polarised part before paying.
