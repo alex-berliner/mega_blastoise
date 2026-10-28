@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-28
-COMMIT: 8fbda5cf4419bd17ea991807403707253635fb68
+COMMIT: 333cfcd61ddff9f7b11fe1f95c498ce4ebf243b8
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -97,6 +97,14 @@ ok  structure new-MCU path: a stage token that is no need
 ok  structure new-MCU path: the stages out of order
 ok  report    new-MCU path: the chip selection's evidence gone from next_spin_requirements.md
 ok  report    new-MCU path: the stage the register is at moves when a stage's exit is met
+ok  structure baseline board: a PASS that reads a doc under hardware/ref_design is no dev-board check
+ok  structure baseline board: a PASS that names a part is no dev-board check
+ok  structure baseline board: a PASS that runs a register script is no dev-board check (the script reads design.py)
+ok  report    new-MCU path: a stage's entry need not met keeps it open
+ok  structure DROPPED: a dropped defect that names no live DF row its lesson carries to
+ok  structure DROPPED: a dropped defect whose lesson row is itself DROPPED
+ok  structure DROPPED: a dropped defect that does not say what it was there
+ok  structure repo paths: a misspelt path on a live check passes as planned no more
 ok      clean clone exits 0
 ok  structure row result disagrees with its evidence (git)
 ok  report    evidence past its valid_days (git)
@@ -146,7 +154,7 @@ ok  gate_no   accept: a check outside the accepted defect's list is not let thro
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
-140 seeded faults, 140 caught
+148 seeded faults, 148 caught
 RESULT: PASS
 
 exit 0
