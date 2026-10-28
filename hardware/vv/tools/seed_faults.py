@@ -343,8 +343,11 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", /USB_Charger/VBUS_D5")),
     ("O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)", "gate",
      "4 display planned: VER-05 VER-137",
+     # 2026-10-28: VER-05 runs on paper now and clears the cell too, so the seed un-runs both
      lambda d: (csv_edit(d, "verification.csv", "VER-137", last_result="NOT_RUN", evidence="", commit="", date=""),
-                block_field(d, "defects.md", "DEF-39", "Status", "FIXED (seeded: VER-137 not run)"))),
+                csv_edit(d, "verification.csv", "VER-05", last_result="NOT_RUN", evidence="", commit="", date=""),
+                block_field(d, "defects.md", "DEF-39", "Status", "FIXED (seeded: VER-137 not run)"),
+                block_field(d, "defects.md", "DEF-45", "Status", "FIXED (seeded: VER-05 not run)"))),
     # the framework fixes after vv-rp2354b-final's sign-off (2026-10-28)
     ("accept: a defect ACCEPTED with no DF-ACCEPT line at all", "structure",
      "DEF-62: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-62' line",
