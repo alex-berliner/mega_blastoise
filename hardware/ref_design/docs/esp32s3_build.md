@@ -6,6 +6,7 @@ ESP32-S3-WROOM-1U-N16R8 (LCSC C3013946) with its antenna off the board. Everythi
 `carryover_status.md` (in the session's scratchpad).
 
 ## Board
+- Routed 2-layer board: DRC 0 errors, 0 unconnected, 0 parity issues (check_pcb PASS), check_fit PASS; 170 footprints, 2388 tracks (6139 mm), 673 vias.
 - Module at KiCad (73.9, 117.1) turned 90 degrees: its U.FL side to the left wall. Body x 64.05 .. 83.25, y 108.1 .. 126.1, 3.2 mm tall.
   `check_fit.BODY_LOCAL` carries its body (KiCad's library has no WROOM-1U 3D model).
 - Antenna: the flex antenna (Kinghelm C4943394 or an equal within the module's FCC grant) lies on the left wall above the module, x 64.5 .. 71,
@@ -23,8 +24,9 @@ ESP32-S3-WROOM-1U-N16R8 (LCSC C3013946) with its antenna off the board. Everythi
   under the face inside a 6 mm pocket, so it cannot be pressed lying face down). Both Starts are plain dome buttons to GND now; Q7, D8, R62 are gone;
   P1 Start is bit 22 of the chain, bit 16 is the power button (docs/esp32s3_pinmap_diff.md).
 - BOOT and RESET buttons and their pinholes are not on this board (the left bezel is the module, antenna and slot; the right has no room);
-  J7 (3V3, EN, BOOT, GND pads on the back) stays. A question for Alex.
-- H4 moved from (67.5, 140) to (67, 151), a deck screw with the end screws' pilot.
+  J7 (3V3, EN, BOOT, GND pads on the back) stays. A question for Alex (scratchpad esp32_build/report.md).
+- H4 moved from (67.5, 140) to (67, 151), a deck screw with the end screws' pilot; the cell hole is 38.2 x 55.2 (extra 0.4 on the left and at seat 1's end).
+- The power key's face pocket is a 51 degree cone, 5.0 wide at the face (the top prints face down: a straight pocket was a 6.9 mm bridge).
 
 ## Tools changed
 - `tools/place_new.py`: nearest legal spot for the new parts; `placement_new.json` is its result, applied by placement.py.
