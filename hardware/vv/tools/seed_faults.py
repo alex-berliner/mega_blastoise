@@ -264,8 +264,8 @@ FAULTS = [
      lambda d: block_field(d, "defects.md", "DEF-07", "Gate", "")),
     ("O-R5: a CASE defect moved to the order gate blocks it", "gate", "OPEN (Gate ORDER or earlier): DEF-14 DEF-21 ",
      lambda d: block_field(d, "defects.md", "DEF-21", "Gate", "ORDER")),
-    ("O-R8: occurrence 3 with no 'Similar:'", "structure", "DF-92: occurrence 3 needs 'Similar:",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-92", prevention=lambda x: x.replace("Similar:", "Like:"))),
+    ("O-R8: occurrence 3 with no 'Similar:'", "structure", "DF-136: occurrence 3 needs 'Similar:",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-136", prevention=lambda x: x.replace("Similar:", "Like:"))),
     ("F-R14: a live check cites a RETIRED row", "structure", "VER-148: cites DF-106, which is RETIRED",
      lambda d: csv_edit(d, "verification.csv", "VER-148", pass_limit=lambda x: x + " (as DF-106)")),
     # round 2's sign-off objections (2026-10-26)
@@ -294,9 +294,10 @@ FAULTS = [
     ("VER-188: a live check names a net that left design.py (LS_GATE)", "structure",
      f"VER-21: names what design.py at {BASE7} does not have: LS_GATE (net",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", LS_GATE")),
-    ("VER-188: a live requirement names a part that left design.py (J6 outside 'Was:')", "structure",
-     f"REQ-MCU-04: names what design.py at {BASE7} does not have: J6 (part",
-     lambda d: text_edit(d, "requirements.md", "since 86bf694 (Was: J6).", "since 86bf694 (J6).")),
+    ("VER-188: a live requirement names a part that left design.py (D5 outside 'Was:')", "structure",
+     f"REQ-PWR-13: names what design.py at {BASE7} does not have: D5 (part",
+     lambda d: text_edit(d, "requirements.md", "(Was: the TP4056 design's D5, which left in 2d1124d).",
+                         "(the TP4056 design's D5, which left in 2d1124d).")),
     ("grid: a live check that names no classes", "structure", "VER-99: a live check names its classes and subsystems",
      lambda d: csv_edit(d, "verification.csv", "VER-99", classes="")),
     ("grid: a NOT_NEEDED cell that a check targets", "structure", "class 4 case is NOT_NEEDED, but VER-99",
@@ -318,16 +319,17 @@ FAULTS = [
     # not on disk), so only VER-13 (an analysis that ran: FAIL) clears class 15, for power and cell; the other six cells
     # are planned.  VER-13 not run leaves all eight planned; counting a NOT_RUN analysis would keep the count at 6.
     # (5 before, with VER-193 not run while VER-144 and VER-193 cleared the rest.)
-    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 8",
-     lambda d: csv_edit(d, "verification.csv", "VER-13", last_result="NOT_RUN", evidence="", commit="", date="")),
+    # since 39cc07f VER-193 alone clears class 15 for the module, the buttons, usb_debug, the case and storage
+    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 5",
+     lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN", evidence="", commit="", date="")),
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", R666")),
     # the review's findings applied at 71737ae (2026-10-27)
     ("F-R1: a defect marked FIXED while its own Status text says it stays OPEN", "structure",
      "DEF-50: Status is FIXED but its own text says 'stays OPEN'",
-     lambda d: text_edit(d, "defects.md", "- Status: OPEN (R14 47k and R43 220k",
-                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. R14 47k and R43 220k")),
+     lambda d: text_edit(d, "defects.md", "- Status: OPEN (39cc07f: U3 is the TLV75733P, its EN 6.0 V",
+                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. 39cc07f: U3 is the TLV75733P, its EN 6.0 V")),
     ("F-R3: an analysis that reads pinmap.md without naming it in covers", "structure",
      "VER-138: its procedure reads pinmap.md, but covers does not name",
      lambda d: csv_edit(d, "verification.csv", "VER-138",
@@ -524,7 +526,8 @@ def g_expired_accept(repo, base):
 
 def g_signed_waiver(repo, base):
     # VER-33 (G-ORD-06's check) passes since 2026-10-27: undo it in the clone so the criterion fails and the waiver acts
-    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-33", last_result="NOT_BUILT", evidence="",
+    # (NOT_RUN, not NOT_BUILT: DF-25, DF-27 and DF-188 rate detection 7 on it, which a NOT_BUILT check cannot give)
+    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-33", last_result="NOT_RUN", evidence="",
              commit="", date="")
     commit(repo, "VER-33 not built in this clone")
     approve(os.path.join(repo, "hardware/vv"), "| A-001 | W-01 | WAIVED | ORDER | the latch replica is cut | Alex | 2026-10-25 |")
@@ -774,14 +777,14 @@ def g_bulk_edited(repo, base):
 
 
 def g_cellgap_right_end(repo, base):
-    """Round 2: widening only the hole's right side (the first proposed fix; since 71737ae the cell lies along y, so
-    its long side) leaves VER-181 failing: the pocket follows the hole, and the cell's length still has no fit."""
+    """Round 2, restated at 39cc07f: the hole's left side back at 71737ae's -18.9 (the 0.4 mm on the left that C1's
+    fix added lost) leaves the pocket 36.0 mm wide, the worst-case cell's own width, so VER-181 fails on the fit."""
     p = os.path.join(repo, "hardware/ref_design/case/case.scad")
     s = open(p).read()
-    old = "cell_hole = [[-18.9, -7.8 + cell_dy], [18.9, 47.0 + cell_dy]]"
+    old = "cell_hole = [[-19.3, -8.2 + cell_dy], [18.9, 47.0 + cell_dy]]"
     if old not in s:
         raise SystemExit("seed_faults: case.scad's cell_hole line moved")
-    open(p, "w").write(s.replace(old, "cell_hole = [[-18.9, -7.8 + cell_dy], [19.4, 47.0 + cell_dy]]", 1))
+    open(p, "w").write(s.replace(old, "cell_hole = [[-18.9, -8.2 + cell_dy], [18.9, 47.0 + cell_dy]]", 1))
     return ("dn", [["cellgap"]])
 
 
@@ -1047,7 +1050,7 @@ GIT_FAULTS = [
      "A-001 pending: signed with another key", g_other_key),
     ("round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it", "structure",
      "REQ-PRD-06: Status APPROVED but releases/APPROVALS.md has no committed line for it", g_bulk_edited),
-    ("round 2 (O, F): widening only the cell hole's right end keeps VER-181 failing", "dn", "RESULT: FAIL",
+    ("round 2 (O, F): the cell hole's left side back at 71737ae's fails VER-181 on the fit", "dn", "RESULT: FAIL",
      g_cellgap_right_end),
     ("R8: a case.scad commit on the order branch holds the case gate", "gate",
      "seeded-order-case has design commits after", g_order_branch_case),
