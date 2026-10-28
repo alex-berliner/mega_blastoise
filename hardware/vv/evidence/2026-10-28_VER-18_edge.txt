@@ -1,24 +1,24 @@
 # VER-18 edge
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/design_numbers.py edge
-routed edges: 3 contours (outline, 11.0 x 16.0 mm hole, 38.2 x 55.2 mm hole); copper within about 1 mm of one: 70 features
+routed edges: 3 contours (outline, 11.0 x 16.0 mm hole, 38.2 x 55.2 mm hole); copper within about 1 mm of one: 71 features
   0.308 mm (worst case 0.108)  GND pour on B.Cu at (133.35, 131.52), to the 11.0 x 16.0 mm hole
   0.308 mm (worst case 0.108)  GND pour on F.Cu at (133.35, 131.52), to the 11.0 x 16.0 mm hole
-  0.309 mm (worst case 0.109)  GND pour on F.Cu at (118.50, 51.83), to the 38.2 x 55.2 mm hole
-  0.309 mm (worst case 0.109)  GND pour on B.Cu at (119.15, 52.60), to the 38.2 x 55.2 mm hole
+  0.308 mm (worst case 0.108)  GND pour on B.Cu at (118.28, 107.45), to the 38.2 x 55.2 mm hole
+  0.309 mm (worst case 0.109)  GND pour on F.Cu at (118.50, 51.84), to the 38.2 x 55.2 mm hole
   0.350 mm (worst case 0.150)  pad TH1.1 at (119.25, 80.17), to the 38.2 x 55.2 mm hole
   0.350 mm (worst case 0.150)  pad TH1.2 at (119.25, 78.35), to the 38.2 x 55.2 mm hole
   0.350 mm (worst case 0.150)  pad J8.SH at (62.65, 128.68), to the outline
-  0.394 mm (worst case 0.194)  track /Display/LCD_D1 at (80.23, 102.81), to the 38.2 x 55.2 mm hole
-  0.399 mm (worst case 0.199)  GND pour on B.Cu at (64.19, 26.16), to the outline
-  0.399 mm (worst case 0.199)  GND pour on F.Cu at (64.19, 26.16), to the outline
   0.400 mm (worst case 0.200)  pad U4.27 at (81.70, 107.60), to the 38.2 x 55.2 mm hole
-  0.400 mm (worst case 0.200)  via GND at (80.05, 91.26), to the 38.2 x 55.2 mm hole
+  0.425 mm (worst case 0.225)  pad J2.MP at (135.78, 70.45), to the outline
+  0.425 mm (worst case 0.225)  pad C10.1 at (62.73, 123.70), to the outline
+  0.425 mm (worst case 0.225)  pad C10.2 at (62.73, 122.15), to the outline
+  0.454 mm (worst case 0.254)  pad J1.SH at (136.75, 102.75), to the outline
 copper closer than 0.30 mm to a routed edge in the data (REQ-FAB-03): 0
-worst case, the data's distance less ROUTE_TOL 0.20 mm (printed, not failed: O-R2, DEF-56): 24 features under 0.30 mm, the closest 0.108 mm (GND pour on B.Cu, to the 11.0 x 16.0 mm hole)
+worst case, the data's distance less ROUTE_TOL 0.20 mm (printed, not failed: O-R2, DEF-56): 13 features under 0.30 mm, the closest 0.108 mm (GND pour on B.Cu, to the 11.0 x 16.0 mm hole)
 courtyards past the outline or into a hole (J1 by design excepted; printed, not failed): J2 0.08 mm past the outline
 pads or part bodies past the outline or into a hole (J1 by design excepted): none
 silkscreen texts not wholly on the board (off its edge or in a hole): none

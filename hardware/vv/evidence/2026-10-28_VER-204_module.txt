@@ -1,19 +1,19 @@
 # VER-204 module
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/paper_checks.py module
 U4 ESP32-S3-WROOM-1U-N16R8: 3V3 on pin 2, EN on pin 3; 'close to the pin' read as a capacitor pad within 5 mm of the pin's pad, centre to centre
-  FAIL  22 uF on 3V3 (esp32-s3-wroom-1.txt:2875): the nearest is C10 22u at 23.6 mm
+  ok    22 uF on 3V3 (esp32-s3-wroom-1.txt:2875): the nearest is C10 22u at 4.3 mm
   ok    0.1 uF on 3V3 (esp32-s3-wroom-1.txt:2875): the nearest is C11 100n at 3.4 mm
-  every capacitor of 10 uF or more on +3V3 and 3V3_LDO by distance from pin 2: C10 22u 23.6 mm
+  every capacitor of 10 uF or more on +3V3 and 3V3_LDO by distance from pin 2: C10 22u 4.3 mm
   ok    10 uF or more at the main power entrance (esp32-s3-hw-design-guidelines.txt:218, 300-303): C6, C7 at U3's output
   ok    EN's RC: R23 10k and C12 1u against 'R = 10 kOhm and C = 1 uF' (esp32-s3-hw-design-guidelines.txt:338)
   ok    EN reaches VIH_nRST (0.75 x VDD, esp32-s3.txt:3761) 13.9 ms after 3V3, past tSTBL's 50 us (esp32-s3-wroom-1.txt:931)
-  R23's EN pad 6.6 mm from pin 3
-  C12's EN pad 5.0 mm from pin 3
-  the EN trace is 64.8 mm long (to J7's pogo pad on the back): 'make the CHIP_PU trace as short as possible' (esp32-s3-hw-design-guidelines.txt:316) gives no number; a long EN picks up a reset from a nearby edge or ESD (DFMEA, VER-95's screen)
+  R23's EN pad 10.2 mm from pin 3
+  C12's EN pad 7.6 mm from pin 3
+  the EN trace is 66.4 mm long (to J7's pogo pad on the back): 'make the CHIP_PU trace as short as possible' (esp32-s3-hw-design-guidelines.txt:316) gives no number; a long EN picks up a reset from a nearby edge or ESD (DFMEA, VER-95's screen)
   3V3 during a TX burst at the 3.50 V cutoff: VBAT 3.50 V less U2's battery FET (0.1 ohm, bq24074.txt:724) at the system's 1238 mA (124 mV), less VSYS's copper from U2's OUT to U3's IN at 620 mA (137 mV, VER-13's solver on the routed board), less U3's dropout 263 mV (425 mV at 1 A, tlv757p.txt:298, scaled with the current) = 2.976 V
   FAIL  3V3 2.976 V at the module in that burst against VDD33's 3.0 V minimum (esp32-s3-wroom-1.txt:1596)
 RESULT: FAIL

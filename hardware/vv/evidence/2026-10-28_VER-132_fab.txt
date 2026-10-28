@@ -1,10 +1,10 @@
 # VER-132 fab
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/layout_checks.py fab
-fab.py's own export into /tmp/vv_fab_py54b2uk: 14 files; BOM 45 lines, CPL 114 rows
+fab.py's own export into /tmp/vv_fab_x6brc3la: 14 files; BOM 45 lines, CPL 114 rows
   ok    (a) every Excellon tool >= 0.3 mm: PTH [0.3, 0.6], NPTH [0.5, 0.65, 2.2]
   ok    (b) no F.Paste inside any of the 20 contacts' 4.8 mm circles
   ok    (b) no F.Silkscreen inside them
@@ -18,13 +18,13 @@ fab.py's own export into /tmp/vv_fab_py54b2uk: 14 files; BOM 45 lines, CPL 114 r
   ok    (g) all 9 layers, both drill files and the job file: present
   ok    (g) Edge.Cuts closed: 1 outline with 2 holes (the cell's and the speaker's)
   ok    (h) no auxiliary origin in the board (gerbers use the drill-file origin, the drill files the absolute one): none set, so both are (0, 0)
-  ok    (h) every one of 689 Excellon holes on a pad or via centre within 0.01 mm
+  ok    (h) every one of 662 Excellon holes on a pad or via centre within 0.01 mm
   ok    (i) the drill files as VER-131: design_numbers.py drill says RESULT: PASS
   ok    (j) the CPL as VER-176: design_numbers.py cpl says RESULT: PASS
   ok    (k) 'JLCJLCJLCJLC' on B.Silkscreen (REQ-FAB-05): present
-  sha256 31299b2e474ad77f48f125b8be8df42866e7390f8a6dfcb08e06501409a7a4a8  battler_gerbers.zip (into the release record; the zip's dates differ run to run)
-  sha256 4401b217e149471d311b06136168d808ab3a7dbf7d104e2d367721385b0bcee0  battler_bom_jlc.csv (into the release record; the zip's dates differ run to run)
-  sha256 a3158850a22031a80f4b832ae93c553531207453a815eac007c8be67bb4a8646  battler_cpl_jlc.csv (into the release record; the zip's dates differ run to run)
+  sha256 7245e58085b482627b4e51c09a0a1eca19e4983e5e97491d2316f713fd7e8ee9  battler_gerbers.zip (into the release record; the zip's dates differ run to run)
+  sha256 2739a3003d079584341b54d1526eff9db2295303ea2b804248463bfff06e078b  battler_bom_jlc.csv (into the release record; the zip's dates differ run to run)
+  sha256 cf8dedc9462bf3e203a45959110f04f86d572773fc718427a5eb09db6bb225c9  battler_cpl_jlc.csv (into the release record; the zip's dates differ run to run)
 0 failing
 RESULT: PASS
 
@@ -32,54 +32,54 @@ RESULT: PASS
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
-10:42:20: Debug: Adding duplicate image handler for 'PNG file'
-10:42:20: Debug: Adding duplicate image handler for 'JPEG file'
-10:42:20: Debug: Adding duplicate image handler for 'TIFF file'
-10:42:20: Debug: Adding duplicate image handler for 'GIF file'
-10:42:20: Debug: Adding duplicate image handler for 'PNM file'
-10:42:20: Debug: Adding duplicate image handler for 'PCX file'
-10:42:20: Debug: Adding duplicate image handler for 'IFF file'
-10:42:20: Debug: Adding duplicate image handler for 'Windows icon file'
-10:42:20: Debug: Adding duplicate image handler for 'Windows cursor file'
-10:42:20: Debug: Adding duplicate image handler for 'Windows animated cursor file'
-10:42:20: Debug: Adding duplicate image handler for 'TGA file'
-10:42:20: Debug: Adding duplicate image handler for 'XPM file'
-10:42:21: Debug: Adding duplicate image handler for 'PNG file'
-10:42:21: Debug: Adding duplicate image handler for 'JPEG file'
-10:42:21: Debug: Adding duplicate image handler for 'TIFF file'
-10:42:21: Debug: Adding duplicate image handler for 'GIF file'
-10:42:21: Debug: Adding duplicate image handler for 'PNM file'
-10:42:21: Debug: Adding duplicate image handler for 'PCX file'
-10:42:21: Debug: Adding duplicate image handler for 'IFF file'
-10:42:21: Debug: Adding duplicate image handler for 'Windows icon file'
-10:42:21: Debug: Adding duplicate image handler for 'Windows cursor file'
-10:42:21: Debug: Adding duplicate image handler for 'Windows animated cursor file'
-10:42:21: Debug: Adding duplicate image handler for 'TGA file'
-10:42:21: Debug: Adding duplicate image handler for 'XPM file'
-10:42:22: Debug: Adding duplicate image handler for 'PNG file'
-10:42:22: Debug: Adding duplicate image handler for 'JPEG file'
-10:42:22: Debug: Adding duplicate image handler for 'TIFF file'
-10:42:22: Debug: Adding duplicate image handler for 'GIF file'
-10:42:22: Debug: Adding duplicate image handler for 'PNM file'
-10:42:22: Debug: Adding duplicate image handler for 'PCX file'
-10:42:22: Debug: Adding duplicate image handler for 'IFF file'
-10:42:22: Debug: Adding duplicate image handler for 'Windows icon file'
-10:42:22: Debug: Adding duplicate image handler for 'Windows cursor file'
-10:42:22: Debug: Adding duplicate image handler for 'Windows animated cursor file'
-10:42:22: Debug: Adding duplicate image handler for 'TGA file'
-10:42:22: Debug: Adding duplicate image handler for 'XPM file'
-10:42:23: Debug: Adding duplicate image handler for 'PNG file'
-10:42:23: Debug: Adding duplicate image handler for 'JPEG file'
-10:42:23: Debug: Adding duplicate image handler for 'TIFF file'
-10:42:23: Debug: Adding duplicate image handler for 'GIF file'
-10:42:23: Debug: Adding duplicate image handler for 'PNM file'
-10:42:23: Debug: Adding duplicate image handler for 'PCX file'
-10:42:23: Debug: Adding duplicate image handler for 'IFF file'
-10:42:23: Debug: Adding duplicate image handler for 'Windows icon file'
-10:42:23: Debug: Adding duplicate image handler for 'Windows cursor file'
-10:42:23: Debug: Adding duplicate image handler for 'Windows animated cursor file'
-10:42:23: Debug: Adding duplicate image handler for 'TGA file'
-10:42:23: Debug: Adding duplicate image handler for 'XPM file'
+15:31:18: Debug: Adding duplicate image handler for 'PNG file'
+15:31:18: Debug: Adding duplicate image handler for 'JPEG file'
+15:31:18: Debug: Adding duplicate image handler for 'TIFF file'
+15:31:18: Debug: Adding duplicate image handler for 'GIF file'
+15:31:18: Debug: Adding duplicate image handler for 'PNM file'
+15:31:18: Debug: Adding duplicate image handler for 'PCX file'
+15:31:18: Debug: Adding duplicate image handler for 'IFF file'
+15:31:18: Debug: Adding duplicate image handler for 'Windows icon file'
+15:31:18: Debug: Adding duplicate image handler for 'Windows cursor file'
+15:31:18: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+15:31:18: Debug: Adding duplicate image handler for 'TGA file'
+15:31:18: Debug: Adding duplicate image handler for 'XPM file'
+15:31:19: Debug: Adding duplicate image handler for 'PNG file'
+15:31:19: Debug: Adding duplicate image handler for 'JPEG file'
+15:31:19: Debug: Adding duplicate image handler for 'TIFF file'
+15:31:19: Debug: Adding duplicate image handler for 'GIF file'
+15:31:19: Debug: Adding duplicate image handler for 'PNM file'
+15:31:19: Debug: Adding duplicate image handler for 'PCX file'
+15:31:19: Debug: Adding duplicate image handler for 'IFF file'
+15:31:19: Debug: Adding duplicate image handler for 'Windows icon file'
+15:31:19: Debug: Adding duplicate image handler for 'Windows cursor file'
+15:31:19: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+15:31:19: Debug: Adding duplicate image handler for 'TGA file'
+15:31:19: Debug: Adding duplicate image handler for 'XPM file'
+15:31:20: Debug: Adding duplicate image handler for 'PNG file'
+15:31:20: Debug: Adding duplicate image handler for 'JPEG file'
+15:31:20: Debug: Adding duplicate image handler for 'TIFF file'
+15:31:20: Debug: Adding duplicate image handler for 'GIF file'
+15:31:20: Debug: Adding duplicate image handler for 'PNM file'
+15:31:20: Debug: Adding duplicate image handler for 'PCX file'
+15:31:20: Debug: Adding duplicate image handler for 'IFF file'
+15:31:20: Debug: Adding duplicate image handler for 'Windows icon file'
+15:31:20: Debug: Adding duplicate image handler for 'Windows cursor file'
+15:31:20: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+15:31:20: Debug: Adding duplicate image handler for 'TGA file'
+15:31:20: Debug: Adding duplicate image handler for 'XPM file'
+15:31:20: Debug: Adding duplicate image handler for 'PNG file'
+15:31:20: Debug: Adding duplicate image handler for 'JPEG file'
+15:31:20: Debug: Adding duplicate image handler for 'TIFF file'
+15:31:20: Debug: Adding duplicate image handler for 'GIF file'
+15:31:20: Debug: Adding duplicate image handler for 'PNM file'
+15:31:20: Debug: Adding duplicate image handler for 'PCX file'
+15:31:20: Debug: Adding duplicate image handler for 'IFF file'
+15:31:20: Debug: Adding duplicate image handler for 'Windows icon file'
+15:31:20: Debug: Adding duplicate image handler for 'Windows cursor file'
+15:31:20: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+15:31:20: Debug: Adding duplicate image handler for 'TGA file'
+15:31:20: Debug: Adding duplicate image handler for 'XPM file'
 
 exit 0
 RESULT: PASS

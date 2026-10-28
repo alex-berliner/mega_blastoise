@@ -1,6 +1,6 @@
 # VER-30 mlccbias
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/paper_checks.py mlccbias
@@ -9,7 +9,7 @@ $ python3 hardware/vv/tools/paper_checks.py mlccbias
   SHORT   C3: 3.11 uF against 4.70 uF (U2 BAT 4.7-47 uF (bq24074.txt:501)); C3 CL10A106KP8NNNC at 4.20 V: 9.00 uF at -tol, -65.4% (samsung_cl10a106kp8nnnc_dcbias.csv) = 3.11 uF
   ok      C5: 2.88 uF against 1.00 uF (U3 CIN 1 uF or more (tlv757p.txt:210)); C5 CL10A106KP8NNNC at 4.50 V: 9.00 uF at -tol, -68.0% (samsung_cl10a106kp8nnnc_dcbias.csv) = 2.88 uF
   ok      C6+C7: 7.85 uF against 1.00 uF (U3 COUT 1 uF or more (tlv757p.txt:211)); C6 CL10A106KP8NNNC at 3.35 V: 9.00 uF at -tol, -56.4% (samsung_cl10a106kp8nnnc_dcbias.csv) = 3.92 uF; C7 CL10A106KP8NNNC at 3.35 V: 9.00 uF at -tol, -56.4% (samsung_cl10a106kp8nnnc_dcbias.csv) = 3.92 uF
-  BLOCKED C10: 17.60 uF against 10.00 uF (the module's bulk: 'highly recommended to add a 10 uF capacitor' for the TX bursts (esp32-s3-hw-design-guidelines.txt:299-301; the peripheral schematic's 22 uF nominal, esp32-s3-wroom-1.txt:2875)); C10 CL21A226MAQNNNE 17.60 uF at -tol, no curve
+  BLOCKED C10: 17.60 uF against 10.00 uF (the module's bulk: 'highly recommended to add a 10 uF capacitor' for the TX bursts (esp32-s3-hw-design-guidelines.txt:299-301; the peripheral schematic's 22 uF nominal, esp32-s3-wroom-1.txt:2875)); C10 CL10A226MQ8NRNC 17.60 uF at -tol, no curve
   ok      C34: 2.88 uF against 1.00 uF (FM8002A's VDD 1 uF (u7.json p6)); C34 CL10A106KP8NNNC at 4.50 V: 9.00 uF at -tol, -68.0% (samsung_cl10a106kp8nnnc_dcbias.csv) = 2.88 uF
 short at the part's tolerance and DC bias: C3
 RESULT: FAIL

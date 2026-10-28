@@ -1,44 +1,44 @@
 # VER-21 ret
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/layout_checks.py ret
 GND fills: F.Cu 1 zone(s), B.Cu 1; each fast net's tracks sampled every 0.1 mm, a sample over no GND fill on the other layer is a gap; limit 2.0 mm in a run
-  FAIL  LCD_WR: longest run over no GND on the other layer 5.58 mm (a F.Cu track from (86.71, 111.91))
-  ok    LCD_WR_MCU: longest run over no GND on the other layer 0.00 mm
-  FAIL  LCD_D0: longest run over no GND on the other layer 4.01 mm (a B.Cu track from (83.43, 112.95))
-  FAIL  LCD_D0_MCU: longest run over no GND on the other layer 2.32 mm (a F.Cu track from (76.92, 108.35))
-  FAIL  LCD_D1: longest run over no GND on the other layer 3.72 mm (a B.Cu track from (94.22, 108.37))
-  ok    LCD_D1_MCU: longest run over no GND on the other layer 1.23 mm (a F.Cu track from (75.56, 106.05))
-  FAIL  LCD_D2: longest run over no GND on the other layer 5.61 mm (a B.Cu track from (96.92, 114.05))
-  ok    LCD_D2_MCU: longest run over no GND on the other layer 1.28 mm (a F.Cu track from (74.3, 106.01))
-  FAIL  LCD_D3: longest run over no GND on the other layer 4.22 mm (a B.Cu track from (97.3, 113.74))
+  FAIL  LCD_WR: longest run over no GND on the other layer 6.21 mm (a F.Cu track from (94.75, 116.76))
+  ok    LCD_WR_MCU: longest run over no GND on the other layer 0.98 mm (a F.Cu track from (83.25, 111.39))
+  FAIL  LCD_D0: longest run over no GND on the other layer 11.09 mm (a B.Cu track from (91.05, 108.91))
+  FAIL  LCD_D0_MCU: longest run over no GND on the other layer 2.32 mm (a F.Cu track from (76.92, 106.03))
+  FAIL  LCD_D1: longest run over no GND on the other layer 17.00 mm (a B.Cu track from (96.91, 108.43))
+  FAIL  LCD_D1_MCU: longest run over no GND on the other layer 2.29 mm (a F.Cu track from (75.65, 108.35))
+  FAIL  LCD_D2: longest run over no GND on the other layer 18.78 mm (a B.Cu track from (99.02, 107.81))
+  ok    LCD_D2_MCU: longest run over no GND on the other layer 1.09 mm (a F.Cu track from (74.47, 107.27))
+  FAIL  LCD_D3: longest run over no GND on the other layer 10.79 mm (a B.Cu track from (87.18, 110.01))
   ok    LCD_D3_MCU: longest run over no GND on the other layer 1.35 mm (a F.Cu track from (73.1, 107.36))
-  FAIL  LCD_D4: longest run over no GND on the other layer 4.32 mm (a B.Cu track from (95.55, 110.38))
-  FAIL  LCD_D4_MCU: longest run over no GND on the other layer 3.58 mm (a F.Cu track from (71.84, 108.35))
-  FAIL  LCD_D5: longest run over no GND on the other layer 4.97 mm (a B.Cu track from (75.02, 102.43))
-  FAIL  LCD_D5_MCU: longest run over no GND on the other layer 4.70 mm (a B.Cu track from (72.03, 107.17))
-  FAIL  LCD_D6: longest run over no GND on the other layer 4.21 mm (a B.Cu track from (99.75, 113.38))
-  FAIL  LCD_D6_MCU: longest run over no GND on the other layer 2.83 mm (a B.Cu track from (74.37, 107.26))
-  FAIL  LCD_D7: longest run over no GND on the other layer 2.79 mm (a B.Cu track from (96.94, 115.63))
-  ok    LCD_D7_MCU: longest run over no GND on the other layer 1.34 mm (a F.Cu track from (83.25, 112.66))
-  FAIL  SD_CLK: longest run over no GND on the other layer 10.56 mm (a F.Cu track from (87.31, 118.67))
-  FAIL  SD_CMD: longest run over no GND on the other layer 7.87 mm (a F.Cu track from (87.0, 126.66))
-  FAIL  SD_D0: longest run over no GND on the other layer 10.73 mm (a B.Cu track from (74.23, 126.04))
-  FAIL  SD_D1: longest run over no GND on the other layer 7.98 mm (a F.Cu track from (81.58, 115.89))
-  FAIL  SD_D2: longest run over no GND on the other layer 8.65 mm (a B.Cu track from (83.9, 125.56))
-  FAIL  SD_D3: longest run over no GND on the other layer 14.22 mm (a B.Cu track from (76.43, 124.86))
-  FAIL  USB_DP: longest run over no GND on the other layer 5.71 mm (a F.Cu track from (126.25, 104.67))
-  FAIL  USB_DM: longest run over no GND on the other layer 5.43 mm (a F.Cu track from (127.47, 104.32))
-  FAIL  USB_DP_MCU: longest run over no GND on the other layer 8.64 mm (a B.Cu track from (82.1, 128.32))
-  FAIL  USB_DM_MCU: longest run over no GND on the other layer 7.93 mm (a B.Cu track from (90.98, 129.01))
-  FAIL  AUDIO_PWM: longest run over no GND on the other layer 13.22 mm (a B.Cu track from (93.28, 126.71))
-  FAIL  SR_CLK: longest run over no GND on the other layer 13.94 mm (a F.Cu track from (82.0, 49.93))
-  FAIL  SR_CLK_MCU: longest run over no GND on the other layer 8.94 mm (a F.Cu track from (78.19, 125.85))
-  FAIL  SR_PL: longest run over no GND on the other layer 10.16 mm (a B.Cu track from (88.09, 123.69))
-  FAIL  SR_DATA: longest run over no GND on the other layer 8.86 mm (a B.Cu track from (92.44, 127.75))
-28 failing
+  FAIL  LCD_D4: longest run over no GND on the other layer 11.13 mm (a B.Cu track from (98.56, 109.39))
+  ok    LCD_D4_MCU: longest run over no GND on the other layer 1.07 mm (a F.Cu track from (71.84, 104.77))
+  FAIL  LCD_D5: longest run over no GND on the other layer 18.51 mm (a B.Cu track from (80.12, 108.12))
+  FAIL  LCD_D5_MCU: longest run over no GND on the other layer 5.59 mm (a B.Cu track from (74.99, 109.72))
+  FAIL  LCD_D6: longest run over no GND on the other layer 8.50 mm (a B.Cu track from (78.1, 112.96))
+  FAIL  LCD_D6_MCU: longest run over no GND on the other layer 5.16 mm (a B.Cu track from (75.83, 109.16))
+  ok    LCD_D7: longest run over no GND on the other layer 1.47 mm (a F.Cu track from (100.25, 116.76))
+  ok    LCD_D7_MCU: longest run over no GND on the other layer 0.98 mm (a F.Cu track from (83.25, 112.66))
+  FAIL  SD_CLK: longest run over no GND on the other layer 6.70 mm (a F.Cu track from (85.34, 129.74))
+  FAIL  SD_CMD: longest run over no GND on the other layer 7.52 mm (a F.Cu track from (84.73, 121.56))
+  FAIL  SD_D0: longest run over no GND on the other layer 7.25 mm (a F.Cu track from (85.64, 123.16))
+  FAIL  SD_D1: longest run over no GND on the other layer 7.85 mm (a F.Cu track from (87.6, 129.92))
+  FAIL  SD_D2: longest run over no GND on the other layer 7.23 mm (a B.Cu track from (91.45, 123.97))
+  FAIL  SD_D3: longest run over no GND on the other layer 2.21 mm (a B.Cu track from (75.65, 127.17))
+  FAIL  USB_DP: longest run over no GND on the other layer 4.09 mm (a F.Cu track from (95.27, 123.98))
+  FAIL  USB_DM: longest run over no GND on the other layer 5.02 mm (a F.Cu track from (123.94, 100.38))
+  FAIL  USB_DP_MCU: longest run over no GND on the other layer 3.95 mm (a B.Cu track from (87.57, 127.19))
+  FAIL  USB_DM_MCU: longest run over no GND on the other layer 4.05 mm (a B.Cu track from (87.53, 127.89))
+  FAIL  AUDIO_PWM: longest run over no GND on the other layer 3.32 mm (a F.Cu track from (79.46, 124.87))
+  FAIL  SR_CLK: longest run over no GND on the other layer 8.87 mm (a B.Cu track from (75.33, 111.36))
+  FAIL  SR_CLK_MCU: longest run over no GND on the other layer 4.92 mm (a F.Cu track from (78.89, 112.9))
+  FAIL  SR_PL: longest run over no GND on the other layer 14.12 mm (a B.Cu track from (90.91, 126.07))
+  FAIL  SR_DATA: longest run over no GND on the other layer 3.90 mm (a B.Cu track from (81.94, 128.32))
+27 failing
 RESULT: FAIL
 
 --- stderr

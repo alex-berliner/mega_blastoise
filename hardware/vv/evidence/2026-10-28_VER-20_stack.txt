@@ -1,6 +1,6 @@
 # VER-20 stack
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/case_checks.py stack
@@ -9,7 +9,7 @@ case.scad's STACK line: "STACK floor 1.5 + ribs 0.7 + PCB 1.6 + under the panel 
 the board's top face is clamped to the top's bosses by the six screws, so the space over it is the top's own (print +-0.1 mm) and the board's thickness (+-0.16, stand-in) moves the tub: the seam steps by up to 0.16 mm, inside the 4.05 mm tongue
   ok    under the glass: 3.5 mm over the board, the tallest part J3 2.00 mm (its 3D model): 1.50 nominal, 1.38 worst case, 1.40 RSS (print 0.1, tape 0.03) against 0.2
   ok    over a 4.5 mm cell under the panel: 1.90 mm free, 1.50 after REQ-BAT-07's 0.4 mm of swelling, 1.37 at worst case: the swelling room holds (VER-182 reads the slope's ceiling too)
-  ok    under the button ends: 1.90 mm (3.15 in the top's pockets, case.scad's TOP line); the least room over a part: C42 1.59 mm under 1.90: 0.30 nominal, 0.20 worst case against 0.2
+  ok    under the button ends: 1.90 mm (3.15 in the top's pockets, case.scad's TOP line); the least room over a part: C43 1.59 mm under 1.90: 0.30 nominal, 0.20 worst case against 0.2
   FAIL  under the folded FPC: the tallest part but J3 J8 1.67 mm against fpc_low 1.05 (an ESTIMATE, VER-152) less 0.2
 1 failing
 RESULT: FAIL

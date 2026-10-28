@@ -1,6 +1,6 @@
 # VER-31 ratings
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/circuit_checks.py ratings
@@ -44,7 +44,8 @@ FETs and diodes at 80% of their ratings:
 [rocpu_tps850.pdf sha256 085a2be0e64467bd9a929cc944267dfde6d1fb578840786e57bc438690048a18; its pdftotext -layout text sha256 5bd9d28cf3fb0dde..., 156 lines]
   ok    SW24 TPS850: 4.50 V across it open, 0.18 mA through it closed (R13 and R15 from VSYS) against 12 V and 20 mA (rocpu_tps850.txt:17, 136)
 passives at 80% (MLCC voltage, resistor power) from JLC's part description, matched by LCSC number:
-  87 passives read; the five most stressed: C5 45%, C34 45%, C3 42%, C7 33%, C60 33%
+  ok    C10 22u 6.3 V: 3.35 V steady (53%)
+  87 passives read; the five most stressed: C10 53%, C5 45%, C34 45%, C3 42%, C7 33%
 the 3V3 load with Wi-Fi on (listening; a TX burst in place of RX for the peak):
     U4 CPU at 240 MHz, both cores             107.9 mA  107.9 mA (esp32-s3-wroom-1.txt:1741), all peripheral clocks on
     U4 Wi-Fi                                   97.0 mA  RX 97 mA peak (esp32-s3-wroom-1.txt:1670)

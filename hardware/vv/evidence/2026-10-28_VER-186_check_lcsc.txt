@@ -1,12 +1,12 @@
 # VER-186 check_lcsc
 DATE: 2026-10-28
-COMMIT: 6693870e5b42d09321a22e53bfbbb425f825c953
+COMMIT: 063756211b90ffcfe1d76fe6f7bb69e01dc39e76
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/check_lcsc.py
 [/home/alex/.konnect/jlcpcb.db: 514904064 bytes, sha256 3016f37314b51e57a9f60250d47bd1f136ae7604de714050f59c2f0f2261c0fd; 616593 parts, snapshot 2026-07-13 19:07 UTC]
   ok    C96446 C1 (1): CL10A106MA8NRNC, 0603, 2 joints, Basic, stock 3475471 at the snapshot; ratings 25V
-  ok    C45783 C10 (1): CL21A226MAQNNNE, 0805, 2 joints, Basic, stock 2574887 at the snapshot; ratings 25V
+  ok    C59461 C10 (1): CL10A226MQ8NRNC, 0603, 2 joints, Basic, stock 19334991 at the snapshot; ratings 6.3V
   ok    C19666 C2 (1): CL10A475KO8NNNC, 0603, 2 joints, Basic, stock 5643370 at the snapshot; ratings 16V
   ok    C19702 C3,C5,C6,C7,C34,C60 (6): CL10A106KP8NNNC, 0603, 2 joints, Basic, stock 6062779 at the snapshot; ratings 10V
   FAIL  C1538 C37,C38 (2): 0402B472K500NT, 0402, 2 joints, Basic, stock 1389574 at the snapshot; ratings 50V; maker Samsung != FH(Guangdong Fenghua Advanced Tech)
