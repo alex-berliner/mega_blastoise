@@ -53,7 +53,7 @@ Columns:
 
 Examples (not decisions):
 `| A-001 | DF-87 | ACCEPTED | DVT | hobby units kept by their builder; revisit before SALE | Alex | 2026-10-25 |`
-`| A-005 | DF-ACCEPT:DEF-50 | ACCEPTED | EVT | 9.1 V EN reach accepted for five attended units; clamp at DVT | Alex | 2026-10-28 |`
+`| A-NNN | DF-ACCEPT:DEF-50 | ACCEPTED | EVT | 9.1 V EN reach accepted for five attended units; clamp at DVT | Alex | 2026-10-28 |`
 `| A-002 | REQ-PRD-03.R | DEFERRED | EVT | set once the cell's spec sheet and a capacity sample exist | Alex | 2026-10-25 |`
 `| A-003 | REQ-ALL@<commit> | APPROVED | - | every requirement as worded at that commit | Alex | 2026-10-27 |`
 `| A-004 | GATE@<commit> | FROZEN | EVT | every check's phase, defect's Gate, criterion's Needs and requirement's Phase as they stand at that commit | Alex | 2026-10-27 |`
