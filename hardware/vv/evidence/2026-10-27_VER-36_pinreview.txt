@@ -1,6 +1,6 @@
 # VER-36 pinreview
 DATE: 2026-10-27
-COMMIT: 1dbf64026213ea0d82174f4a3e33aef556f0cec4
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/circuit_checks.py pinreview

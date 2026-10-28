@@ -1,6 +1,6 @@
 # VER-195 usbfault
 DATE: 2026-10-27
-COMMIT: bef5c19c4045b5a7c6f359fc91044a6b4556e77f
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/circuit_checks.py usbfault

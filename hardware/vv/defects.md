@@ -513,7 +513,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-45 (pill resistance on a bare board) and VER-56; REQ-BTN-01 restated at 3.3 kohm pending PLAN.md decision DEC-24 (RN1-RN4 at 47k, BOM only, restores about 18 kohm).
 - Updated: REQ-BTN-01, DF-164
 - Gate: ORDER
-- Status: OPEN (RN1-RN4 47k, C2028 4D02WGJ0473TCE, in design.py at 71737ae: a pill reads pressed under about 17 kohm against a 47k -5% pull-up, and REQ-BTN-01 now asks 15 kohm. The BOM half is in; VER-45 on a bare board from the order closes it and cannot run before the order. What closes this defect: Alex's ACCEPTED line for DF-164 with scope EVT, or VER-45's PASS. Until one of the two has happened this defect holds the order gate, which is what its own text says)
+- Status: OPEN (RN1-RN4 47k, C2028 4D02WGJ0473TCE, in design.py at 71737ae: a pill reads pressed under about 17 kohm against a 47k -5% pull-up, and REQ-BTN-01 now asks 15 kohm. The BOM half is in; VER-45 on a bare board from the order closes it and cannot run before the order. What closes this defect: Alex's ACCEPTED line for DF-164 with scope EVT, or VER-45's PASS. Until one of the two has happened it holds the order gate (O-R1, F-R1: it read FIXED, so R4 did not see it))
 
 ### DEF-50: A faulty USB source reaches the regulator's enable ahead of the charger's OVP
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py vbus
@@ -523,7 +523,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-177 (design_numbers.py vbus: FAIL at 6.9 V).
 - Updated: REQ-PWR-17, DF-101
 - Gate: ORDER
-- Status: OPEN (R14 47k and R43 220k in design.py at 71737ae: U3's EN now goes over its rating above VBUS 9.1 V and U2's EN1 above 12.4 V, was 6.9 V; EN1 still reads high down to VBUS 3.6 V at SLUS810N's 10 uA, bq24074.txt:848-850. VER-177 still fails against its 20 V and binds at EVT: it closes when Alex sets REQ-PWR-17's accepted value (proposed 9.1 V) or a DVT clamp reaches 20 V. The BOM half is in (R14 47k, R43 220k); the decision is not. Until Alex's ACCEPTED line for DF-101 with scope EVT is signed or a DVT clamp reaches 20 V, this defect holds the order gate)
+- Status: OPEN (R14 47k and R43 220k in design.py at 71737ae: U3's EN now goes over its rating above VBUS 9.1 V and U2's EN1 above 12.4 V, was 6.9 V; EN1 still reads high down to VBUS 3.6 V at SLUS810N's 10 uA, bq24074.txt:848-850. VER-177 still fails against its 20 V and binds at EVT: it closes when Alex sets REQ-PWR-17's accepted value (proposed 9.1 V) or a DVT clamp reaches 20 V. The BOM half is in; the decision is not. Until Alex's ACCEPTED line for DF-101 with scope EVT is signed, or a DVT clamp reaches 20 V, it holds the order gate (O-R1, F-R1: it read FIXED, so R4 did not see it))
 
 ### DEF-51: A worst-case cell had 0.30 mm to swell under the deck
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py swell

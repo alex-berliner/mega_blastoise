@@ -1,6 +1,6 @@
 # VER-162 check_placed_contacts
 DATE: 2026-10-27
-COMMIT: dd4f6614005135dc6d6e781a3ac3a9563b67fdbb
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/check_placed_contacts.py

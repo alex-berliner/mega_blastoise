@@ -54,6 +54,15 @@ The coverage grid and the stale-names scan add theirs (2026-10-27):
         class 15 analysis that has not run leaves its cells planned; a ref no design.py ever had
         (R666) fails the default mode.
 
+The review's findings applied at 71737ae add theirs (2026-10-27):
+
+  F-R1  a defect marked FIXED whose own Status text says it stays OPEN: the default mode fails.
+  F-R3  an analysis whose procedure reads pinmap.md and whose covers do not name it: the default mode fails.
+  F-R5  DF-48 pairing J4 with the PicoBlade family again: the connector-family rule fails the default mode.
+  O-R8  a gone net written in KiCad's path form (/USB_Charger/VBUS_D5): the stale-names scan sees it.
+  O-R6  VER-137 not run: the display's class 4 cell, cleared only by an unrun analysis, is planned at R9.
+  O-R1  a defect taken from OPEN to FIXED is listed by G0 with no GATE@ line and fails G1 after one.
+
 Python 3 standard library and git.
 """
 import csv
@@ -302,6 +311,25 @@ FAULTS = [
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", R666")),
+    # the review's findings applied at 71737ae (2026-10-27)
+    ("F-R1: a defect marked FIXED while its own Status text says it stays OPEN", "structure",
+     "DEF-50: Status is FIXED but its own text says 'stays OPEN'",
+     lambda d: text_edit(d, "defects.md", "- Status: OPEN (R14 47k and R43 220k",
+                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. R14 47k and R43 220k")),
+    ("F-R3: an analysis that reads pinmap.md without naming it in covers", "structure",
+     "VER-138: its procedure reads pinmap.md, but covers does not name",
+     lambda d: csv_edit(d, "verification.csv", "VER-138",
+                        covers=lambda x: x.replace("hardware/ref_design/docs/pinmap.md::[Cc]alibrat\\w* ", ""))),
+    ("F-R5: a live row pairs J4 with the PicoBlade family (DF-48 before its rewrite)", "structure",
+     "DF-48: names what design.py at " + BASE7 + " does not have: PicoBlade (PicoBlade) beside J4",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-48", prevention=lambda x: x.replace(
+         "the speaker's leads end in a JST SH SHR-02V-S housing", "the speaker's leads end in a PicoBlade plug"))),
+    ("O-R8: a live check names a gone net in KiCad's path form (/USB_Charger/VBUS_D5)", "structure",
+     "VER-21: names what design.py at " + BASE7 + " does not have: VBUS_D5 (net",
+     lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", /USB_Charger/VBUS_D5")),
+    ("O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)", "gate",
+     "4 display planned: VER-05 VER-137",
+     lambda d: csv_edit(d, "verification.csv", "VER-137", last_result="NOT_RUN", evidence="", commit="", date="")),
 ]
 
 
@@ -762,6 +790,24 @@ def g_moves_listed(repo, base):
     return "order"
 
 
+def g_status_listed(repo, base):
+    """O-R1: with no GATE@ line signed, a defect taken from OPEN to FIXED since the register state README names is
+    listed by the order gate (G0), like a Gate move: FIXED takes it off R4 at ORDER, CASE and EVT."""
+    block_field(os.path.join(repo, "hardware/vv"), "defects.md", "DEF-14", "Status", "FIXED (seeded)")
+    commit(repo, "DEF-14 FIXED")
+    return "order"
+
+
+def g_status_freeze(repo, base):
+    """O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1)."""
+    approve(os.path.join(repo, "hardware/vv"),
+            f"| A-001 | GATE@{base} | FROZEN | ORDER | the order gate state at this commit | Alex | {TODAY} |")
+    commit(repo, "freeze the gate state")
+    block_field(os.path.join(repo, "hardware/vv"), "defects.md", "DEF-14", "Status", "FIXED (seeded)")
+    commit(repo, "DEF-14 FIXED")
+    return "order"
+
+
 def g_case_move(repo, base):
     """O-R4: a case.scad commit on the order branch that moves a button position fails the order gate: the
     positions.json regenerated at that commit differs from the one at the baseline commit."""
@@ -950,6 +996,11 @@ GIT_FAULTS = [
      "VER-138 moved from EVT to DVT", g_moves_listed),
     ("VER-18: a connector's pad past the board's outline fails edge (a courtyard alone does not)", "dn",
      "J2 (a pad or its body past the outline)", g_body_past_edge),
+    # the review's findings applied at 71737ae (2026-10-27)
+    ("O-R1: a defect taken from OPEN to FIXED with no GATE@ line is listed by the order gate (G0)", "gate_line",
+     "DEF-14 went from OPEN to FIXED", g_status_listed),
+    ("O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1)", "gate",
+     "DEF-14 went from OPEN to FIXED", g_status_freeze),
 ]
 
 

@@ -1,6 +1,6 @@
 # VER-130 check_bom_cpl
 DATE: 2026-10-27
-COMMIT: 7bf626c75bade494b969ef3c131a5486bd655663
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/check_bom_cpl.py
@@ -20,18 +20,18 @@ RESULT: FAIL
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
 ./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
-17:49:00: Debug: Adding duplicate image handler for 'PNG file'
-17:49:00: Debug: Adding duplicate image handler for 'JPEG file'
-17:49:00: Debug: Adding duplicate image handler for 'TIFF file'
-17:49:00: Debug: Adding duplicate image handler for 'GIF file'
-17:49:00: Debug: Adding duplicate image handler for 'PNM file'
-17:49:00: Debug: Adding duplicate image handler for 'PCX file'
-17:49:00: Debug: Adding duplicate image handler for 'IFF file'
-17:49:00: Debug: Adding duplicate image handler for 'Windows icon file'
-17:49:00: Debug: Adding duplicate image handler for 'Windows cursor file'
-17:49:00: Debug: Adding duplicate image handler for 'Windows animated cursor file'
-17:49:00: Debug: Adding duplicate image handler for 'TGA file'
-17:49:00: Debug: Adding duplicate image handler for 'XPM file'
+22:07:31: Debug: Adding duplicate image handler for 'PNG file'
+22:07:31: Debug: Adding duplicate image handler for 'JPEG file'
+22:07:31: Debug: Adding duplicate image handler for 'TIFF file'
+22:07:31: Debug: Adding duplicate image handler for 'GIF file'
+22:07:31: Debug: Adding duplicate image handler for 'PNM file'
+22:07:31: Debug: Adding duplicate image handler for 'PCX file'
+22:07:31: Debug: Adding duplicate image handler for 'IFF file'
+22:07:31: Debug: Adding duplicate image handler for 'Windows icon file'
+22:07:31: Debug: Adding duplicate image handler for 'Windows cursor file'
+22:07:31: Debug: Adding duplicate image handler for 'Windows animated cursor file'
+22:07:31: Debug: Adding duplicate image handler for 'TGA file'
+22:07:31: Debug: Adding duplicate image handler for 'XPM file'
 
 exit 1
 RESULT: FAIL

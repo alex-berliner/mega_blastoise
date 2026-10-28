@@ -1,6 +1,6 @@
 # VER-31 ratings
 DATE: 2026-10-27
-COMMIT: 7f9934d563852f45934cb3a2347b6a255c11b8f1
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/circuit_checks.py ratings

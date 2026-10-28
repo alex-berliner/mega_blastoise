@@ -1,6 +1,6 @@
 # VER-190 arch
 DATE: 2026-10-27
-COMMIT: a8bfad4d1c91a687348e0bcecf626bc762d45678
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/case_checks.py arch

@@ -1,6 +1,6 @@
 # VER-198 appcircuit
 DATE: 2026-10-27
-COMMIT: a8bfad4d1c91a687348e0bcecf626bc762d45678
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/circuit_checks.py appcircuit
@@ -49,21 +49,22 @@ the panel ER-TFT035IPS-6 on J3 (er-tft035ips-6.pdf, its ILI9488):
   FAIL  [display] VCI and VDDI (40-42) on LCD_3V3 = +3V3 through JP4: up to 3.366 V (RT9013 +-2%) against 'Power Supply Voltage VCI 2.5 2.8 3.3 V' (er-tft035ips-6.txt:747-748): the known DEF-61, DEC-09 proposes accepting it
   ok    [power] the nearest CIN pad is 6.2 mm from U3's VIN, within 0.5 in (12.7 mm, rt9013.txt:481)
 constants the vv tools cite by line, against the extract's line:
-  ok    design_numbers.py:74 KPRECHG = 70 on bq24074.txt:787
-  ok    design_numbers.py:74 KPRECHG = 106 on bq24074.txt:787
-  ok    design_numbers.py:75 KISET = 797 on bq24074.txt:785
-  ok    design_numbers.py:75 KISET = 975 on bq24074.txt:785
-  ok    design_numbers.py:76 ITERM = 0.09 on bq24074.txt:789
-  ok    design_numbers.py:76 ITERM = 0.11 on bq24074.txt:789
-  ok    design_numbers.py:77 V_LOWV = 2.9 on bq24074.txt:776
-  ok    design_numbers.py:77 V_LOWV = 3.1 on bq24074.txt:776
-  ok    design_numbers.py:78 VBAT_REG = 4.16 on bq24074.txt:773
-  ok    design_numbers.py:78 VBAT_REG = 4.23 on bq24074.txt:773
-  ok    design_numbers.py:79 V_HOT = 0.27 on bq24074.txt:824
-  ok    design_numbers.py:79 V_HOT = 0.33 on bq24074.txt:824
-  ok    design_numbers.py:80 V_COLD = 2 on bq24074.txt:826
-  ok    design_numbers.py:80 V_COLD = 2.2 on bq24074.txt:826
-  ok    design_numbers.py:81 I_TS = 7.5e-05 on bq24074.txt:823
+  FAIL  circuit_checks.py:483 STAND_RP_VIN = 0.03675 on rp2350.txt:101676: NOT on the cited line
+  ok    design_numbers.py:78 KPRECHG = 70 on bq24074.txt:787
+  ok    design_numbers.py:78 KPRECHG = 106 on bq24074.txt:787
+  ok    design_numbers.py:79 KISET = 797 on bq24074.txt:785
+  ok    design_numbers.py:79 KISET = 975 on bq24074.txt:785
+  ok    design_numbers.py:80 ITERM = 0.09 on bq24074.txt:789
+  ok    design_numbers.py:80 ITERM = 0.11 on bq24074.txt:789
+  ok    design_numbers.py:81 V_LOWV = 2.9 on bq24074.txt:776
+  ok    design_numbers.py:81 V_LOWV = 3.1 on bq24074.txt:776
+  ok    design_numbers.py:82 VBAT_REG = 4.16 on bq24074.txt:773
+  ok    design_numbers.py:82 VBAT_REG = 4.23 on bq24074.txt:773
+  ok    design_numbers.py:83 V_HOT = 0.27 on bq24074.txt:824
+  ok    design_numbers.py:83 V_HOT = 0.33 on bq24074.txt:824
+  ok    design_numbers.py:84 V_COLD = 2 on bq24074.txt:826
+  ok    design_numbers.py:84 V_COLD = 2.2 on bq24074.txt:826
+  ok    design_numbers.py:85 I_TS = 7.5e-05 on bq24074.txt:823
   ok    paper_checks.py:47 U2_IBAT_PDWN = 6.5e-06 on bq24074.txt:714
   ok    paper_checks.py:48 U2_OVP_MIN = 6.4 on bq24074.txt:699
   ok    paper_checks.py:49 U2_EN_ABS = 7 on bq24074.txt:598,599
@@ -83,8 +84,8 @@ constants the vv tools cite by line, against the extract's line:
   skipped I_TS_TOL: the tolerance (78 - 72) / 2 / 75 of the cited band, not a printed number
   skipped RP_VREG_L: the line pair names the part; 3.3 uH is on 33608, checked there
   skipped I_PATH: VER-13's own test current; the cite is for the 475 mA USB500 limit it sits above
-  31 cited numbers read
-1 failing
+  32 cited numbers read
+2 failing
 RESULT: FAIL
 
 --- stderr

@@ -12,7 +12,8 @@ Contents: (a) the system on one page; (b) what changed in the design (be437f8 to
 (c) the board at 71737ae: the 13 problems sent to the board session, and what is new; (d)
 before the 5-board order; (e) the case gate, EVT, DVT and PVT; (f) decisions for Alex; (g)
 round 3's sign-off objections and where each landed; (h) what this plan still cannot catch;
-(i) the gate today; (j) past bugs and what catches them; (k) the coverage grid. The earlier
+(i) the gate today; (j) past bugs and what catches them; (k) the coverage grid; (l) the
+review of 2026-10-27, its 16 findings and where each landed. The earlier
 rounds' ledgers (round 2's objections, the first run's and the second review's ID ledgers,
 round 3's 23 findings, the grid's audit, be437f8's findings) are in [HISTORY.md](HISTORY.md)
 (O-S9).
@@ -99,22 +100,23 @@ committed in hardware/ref_design/datasheets with SOURCES.md). What touches this 
 | Change | Where | Register effect |
 |---|---|---|
 | R61 3.9k to 3.74k (C15172) | design.py | VER-137 PASS; DEF-39 CLOSED; DF-130 re-rated L; REQ-DSP-05's nominal 108 mA |
-| R14 10k to 47k (C25792), R43 100k to 220k (C25767) | design.py | VER-177 still FAIL (9.1 V against 20 V); DEF-50 FIXED; DF-101, REQ-PWR-17; VER-52's TP1 band (9.19-9.81 kohm) |
-| RN1-RN4 10k to 47k (C2028, 4D02WGJ0473TCE, 5%) | design.py | DEF-49 FIXED; DF-164; REQ-BTN-01 now 15 kohm |
+| R14 10k to 47k (C25792), R43 100k to 220k (C25767) | design.py | VER-177 still FAIL (9.1 V against 20 V); DEF-50 OPEN (the BOM half is in, Alex's value is not: O-R1); DF-101, REQ-PWR-17; VER-52's TP1 band (9.19-9.81 kohm) |
+| RN1-RN4 10k to 47k (C2028, 4D02WGJ0473TCE, 5%) | design.py | DEF-49 OPEN (VER-45 needs a bare board; DF-164's acceptance is Alex's: F-R1); DF-164; REQ-BTN-01 now 15 kohm |
 | TH1 0402 B3950 (C95939) to 0805 B4460 (TCTR0805F10K0F4460T, C525375) | design.py | VER-32 still FAIL (48.2 C); DEF-48 OPEN; DF-147; REQ-BAT-03, REQ-THM-03 (0.46 V), VER-68; tempwin reads TH1 from design.py now |
 | U10 (MCP6001T-I/OT, C116490) and C54 (100n) new; net VBAT_DIV new; VBAT_SENSE is now U10's output | design.py, pin_review/u10.json | the cutoff's leakage term fixed (VER-138's leakage line); DF-182 new (H); DF-95 RETIRED in 40281b8; DEF-63 new; DF-98, DF-138, REQ-BAT-12, REQ-PWR-07, VER-65, VER-159; u4.json pin 58's waiver rewritten for U10 (DEC-29) |
-| J4 PicoBlade 53261-0271 to JST SH SM02B-SRSS-TB (C160402) | design.py, pin_review/j4.json, case.scad | VER-184 PASS; DF-170 re-rated M; DF-183 and DEF-64 new (the speaker's SH plug, by hand, not bought); VER-128, VER-89, DF-118 |
+| J4 PicoBlade 53261-0271 to JST SH SM02B-SRSS-TB (C160402) | design.py, pin_review/j4.json, case.scad | the headers keyed apart by footprint; VER-184 (the cell's plug) BLOCKED on the cell's spec sheet, VER-202 (the speaker's plug) FAIL (F-R2); DF-170 re-rated M; DF-183 and DEF-64 new (the speaker's SH plug, by hand, not bought); VER-128, VER-89, DF-118 |
 | The cell's hole rotated and grown: 54.0 x 37.0 to 37.8 x 54.8 mm, the cell along the board, 1 mm towards seat 2; the pocket 0.9 mm inside it (1.9 mm at the lead end, cell_pocket_box) | placement.py CUTOUTS, case.scad | VER-181 FAIL on the fit alone (gaps exactly met); DEF-53 and DEF-58 FIXED; DEF-62 new; DF-85, DF-04; REQ-BAT-08's fit clause (PROPOSED); cellgap, swell and th1 read the new geometry |
 | J2 to the right strip by the hole's seat-2 end (131.55, 69.7); TH1 to (119.95, 79.0); JP5, TP3 moved with the hole | placement.py ADOPTED | VER-164 FAIL (TH1 1.05 mm from the edge, 1.95 mm from the cell); DEF-37; VER-18's J2 courtyard (0.08 mm past, pads and body inside) |
 | The power latch (Q1, R16, D2, R13, R42) to seat 1's end; seat 2's Start row (Q7, D8, R62, R15, C47, R63, TP6) to end2_l; PWR_BTN_RAW pre-routed by the maze (117 mm) | placement.py, route.py | netlist unchanged (VER-01 PASS); DF-184 new (the long, 33k-loaded PWR_BTN_RAW); VER-33 (the latch table) and VER-79 detect it, VER-179 reads the new lengths when built |
 | The core moved 2.2 mm left (CORE_HOME 73.8), R28/R29, TP11-TP14, U3, JP1, C1, R41, C10 and others re-placed | placement.py | VER-142 PASS (nearest MLCC C47, 8.45 mm from H2); VER-23, VER-108, VER-158 when built |
-| The board's copper: edge clearance 0.31 mm, a 0.30 mm copper-to-NPTH rule (battler.kicad_dru, new), routed again (0 DRC errors, 0 unconnected) | build_pcb.py, battler.kicad_pro, battler.kicad_dru | VER-04 PASS (6 silk warnings read by hand: DEF-66); VER-18 PASS; DEF-56 CLOSED; DEF-60 FIXED; battler.kicad_dru added to the baseline |
+| The board's copper: edge clearance 0.31 mm, a 0.30 mm copper-to-NPTH rule (battler.kicad_dru, new), routed again (0 DRC errors, 0 unconnected) | build_pcb.py, battler.kicad_pro, battler.kicad_dru | VER-04 PASS (6 silk warnings read by hand: DEF-66); VER-18 PASS in the data (0.308 mm), 0.108 mm with the 0.2 mm outline tolerance: DEF-56 reopened (O-R2); DEF-60 FIXED; battler.kicad_dru added to the baseline |
 | fab.py: separate PTH and NPTH drill files; the CPL carries each footprint's pads' centre | board/tools/fab.py | VER-131 PASS, DEF-32 CLOSED; VER-176 PASS, DEF-33 FIXED (JLC's preview still the reference: O-R7); F-S3's fab.py edits came with the board pass |
 | silk.py: the board's name, BOARD_REV and build line on clear spots; BOOT and RST at the pinholes; nothing in the speaker's hole | board/tools/silk.py | VER-18 PASS; DEF-57 FIXED (closes on VER-109); the JLC marker still missing (DEF-55) |
 | The dome footprint's centre pad 1.6 to 1.2 mm, the vent at r 1.15 (0.30 mm from both pads) | board/lib, fp_dome.py | DF-168, VER-178 (BLOCKED on the dome's drawing) |
 | case.scad: the panel's outline 54.56 x 82.84, neck 4.47, active-area border 2.22 from the drawing; fpc_low marked ESTIMATE; J4's body 3.0 mm tall | case.scad | DEF-59 FIXED; VER-152; O-S8 |
 | tools/build.py and placement_zones.py (the placement search) | tools/build.py, board/placement_zones.py | both in the design baseline now (O-S4), with battler.kicad_dru, fp-lib-table and sym-lib-table |
 | bom.md's changes table; the speaker's SH plug 'not yet ordered'; the panel still 54.50 x 83.00 x 2.30 | docs/bom.md | DEF-21 (u), DEF-64 |
+| The board 151.64 to 151.48 mm long (the panel's 82.84 mm outline through bay_l and board_l), 73.4 mm wide across J1's tab, the case 156.48 mm | case.scad, Edge.Cuts | REQ-FAB-11, REQ-PRD-09, VER-90 and VER-166 at 151.48 (O-R3); bom.md's order line and cost table DEF-79; SHELL.md, CELLCUT_FOR_CASE.md and ref_design/README.md DEF-21 (y)-(aa) (O-R4) |
 
 What stayed: the charger, the LDO, the panel and its J3 map (the display bus is still SPI:
 DEC-13), the cell connector J2's part, the backlight circuit but R61, the audio chain, the
@@ -134,10 +136,10 @@ Every number below comes from `tools/design_numbers.py` and the board's own chec
 | 3 | Cutoff can fail from GPIO47 pad leakage | U10 buffers VBAT_DIV: the temperature-varying error is +-0.87 mV of VBAT (was +-0.470 V), on pessimistic stand-ins until the MCP6001's datasheet is read. VER-138 still fails on its other two terms, unchanged: the CV calibration (3.465 V) and the dropout knee (3.521 V) | FIXED (the leakage term) |
 | 4 | Drill file mixes plated and unplated holes | battler-PTH.drl 738 holes and 4 slots, battler-NPTH.drl 12 holes; all 750 board holes in the right file (VER-131 PASS) | FIXED |
 | 5 | CPL offsets J1 1.50, J2 0.95, J3 0.95, J4 0.23 mm (the brief's order; at be437f8 it was J3 0.23, J4 0.95) | fab.py writes the pads' centre: 120 rows, none over 0.10 mm (VER-176 PASS); JLC's preview still decides (VER-28, O-R7) | FIXED |
-| 6 | Copper 0.20 mm from routed holes | 0 features under 0.30 mm; the closest 0.308 mm (a GND pour by the speaker's hole); J2's courtyard 0.08 mm past the edge with its pads 0.43 mm and body 0.78 mm inside (VER-18 PASS) | FIXED |
+| 6 | Copper 0.20 mm from routed holes | 0 features under 0.30 mm in the data; the closest 0.308 mm (a GND pour by the speaker's hole), 0.108 mm with the 0.2 mm outline tolerance; J2's courtyard 0.08 mm past the edge with its pads 0.43 mm and body 0.78 mm inside (VER-18 PASS) | FIXED in the data; DEF-56 reopened until JLC's dated page says which the rule is (O-R2) |
 | 7 | Silk in holes; BOARD_REV in the cell hole | every silk text on the board, none in a hole (VER-18 PASS); two legibility warnings remain (DEF-66) and the JLC marker is missing (DEF-55) | FIXED |
 | 8 | Backlight 122.4 mA against 120 mA | R61 3.74k: 117.7 mA worst case, 108.2 mA nominal, 19.6 mA an LED (VER-137 PASS) | FIXED |
-| 9 | The cell plug fits J4 | J4 is a JST SH SM02B-SRSS-TB, J2 the PicoBlade: different parts, 38.5 mm apart (VER-184 PASS); the speaker now needs an SH plug fitted by hand (DEF-64) | FIXED |
+| 9 | The cell plug fits J4 | J4 is a JST SH SM02B-SRSS-TB (1.00 mm), J2 the PicoBlade (1.25 mm): keyed apart by footprint. The cell's plug is the seller's (VER-184 BLOCKED on the spec sheet); the speaker's 1.25 mm plug does not fit J4 and its SH refit is not bought (VER-202 FAIL, DEF-64) | FIXED on the board; the plugs are open (F-R2) |
 | 10 | VBUS above 6.9 V overstresses U3's EN | R14 47k, R43 220k: U3's EN at 9.1 V, U2's EN1 at 12.4 V, against 20 V (VER-177 FAIL); EN1 still high down to VBUS 3.6 V | STILL FAILING (9.1 V against 20 V; Alex sets the accepted value) |
 | 11 | SPI caps a full frame at about 190 ms | not changed, as agreed: 184 ms at 20 MHz, 197 ms at 18.75 MHz (DF-180, REQ-DSP-11) | STILL FAILING (not being fixed: DEC-13) |
 | 12 | Panel supply up to 3.366 V against 3.3 V | not changed: 3V3 through JP4 (DEF-61, DF-96) | STILL FAILING (proposed: accept, DEC-09) |
@@ -543,13 +545,15 @@ scan and the seeded faults. The FAILs: VER-164 and VER-181 (ORDER); VER-32, VER-
 | DEF-43, 51 | inrush; swelling room | VER-99, VER-182 (both CLOSED) | every change |
 | DEF-45 | the backlight sim does not read design.py | VER-05 | EVT |
 | DEF-46 | bench cell emulation | VER-70, VER-67 | EVT |
-| DEF-49, 50 | the pill margin; the VBUS fault reach | VER-45, VER-177 (FAIL at 9.1 V; both FIXED in the BOM) | before the order |
+| DEF-49, 50 | the pill margin; the VBUS fault reach | VER-45, VER-177 (FAIL at 9.1 V; both OPEN: the BOM half in, the decisions Alex's) | before the order |
 | DEF-53, 62 | a worst-case cell 0.25 mm from the FR4 edge; then a pocket with no fit | VER-181 (FAIL on the fit) | before the order |
 | DEF-54 | rows still written for an older design after a re-seed | VER-161 (not built), the retired-citation rule | case gate |
 | DEF-55, 57, 66 | JLC's marker not on the board; the board's name and BOARD_REV in the cell's hole; J2's '+' over its label | VER-132 (k), VER-18 (PASS), VER-04's warnings read by hand | before the order |
-| DEF-56 | copper 0.20 mm from the routed holes | VER-18 (PASS at 71737ae, CLOSED) | before the order |
+| DEF-56 | copper 0.20 mm from the routed holes; then 0.108 mm as built | VER-18 (PASS in the data), VER-17 (JLC's dated page; reopened, O-R2) | before the order |
 | DEF-63 | U10 added without its datasheet | VER-34 (BLOCKED on it) | before the order |
-| DEF-64 | the speaker's plug no longer fits J4 | VER-128 | case gate |
+| DEF-64 | the speaker's plug no longer fits J4 | VER-202 (FAIL), VER-128 | case gate |
+| DEF-68 | CELL_P and AMP_VDD in no net class | VER-13, VER-201 (both FAIL) | before the order |
+| DEF-79 | bom.md's order line 0.16 mm long and its cost table one part number short | VER-39, VER-130 | before the order |
 | DEF-65 | the swelling check used the old decks' line | VER-182 (reads uni_ceil; CLOSED) | every change |
 
 ## (k) The coverage grid (2026-10-27)
@@ -662,3 +666,29 @@ cell, mcu and audio FAIL; display NOT_RUN (VER-05). Class 6: power and cell FAIL
 others show their bench tests (NOT_RUN or NOT_BUILT), their paper checks all pass. Classes 9 and 11
 read FAIL in every subsystem because VER-125 and VER-130 name all seven. VER-13's run also clears
 class 15 for power and cell.
+
+## (l) The review of 2026-10-27: 16 findings and where each landed
+
+O and F reviewed the register after the two gap-check passes (e09ec9b). A first integrate pass
+(another model, no shell) left its edits uncommitted and check_trace crashing; this pass re-read
+each of its edits against 71737ae, kept what was right and redid the rest (the commit message
+lists what was not kept). The REVISED fix is the one applied.
+
+| # | Finding | What was done | State |
+|---|---|---|---|
+| O-R1 major | DEF-50 FIXED, so nothing at the order gate held the VBUS overstress | DEF-50 and DEF-49 OPEN again, each naming what closes it (Alex's ACCEPTED line for DF-101 or DF-164 with scope EVT, a DVT clamp, VER-45); G0 and G1 now count a defect leaving OPEN as a move (seeded twice); REQ-PWR-17 stays PROPOSED at EVT | fixed |
+| O-R2 | VER-18's PASS is nominal: 0.308 mm is 0.108 mm with the 0.2 mm outline tolerance | edge prints each distance beside its worst case and the web's; VER-18 still compares the data (not flipped to FAIL); DEF-56 reopened until JLC's dated page says whether 0.30 mm is a data rule or an as-built one; REQ-FAB-03's Notes carry the numbers | fixed; VER-17 BLOCKED on the page |
+| O-R3 | the board is 151.48 mm long, the register said 151.64 | the preamble, REQ-PRD-09, REQ-FAB-11, VER-90 and VER-166 at 151.48; DEF-21 (k) corrected; DEF-79 (bom.md's order line, Gate ORDER); section (b)'s row. The Gerbers' extent is 73.4 x 151.48 mm: the outline has J1's 1.0 mm tab, so '72.5 x 151.58 over the outline' was wrong in width | fixed in the register; bom.md is the design session's |
+| O-R4 | SHELL.md and CELLCUT_FOR_CASE.md quote the old case, board, hole and panel; no check reads case/*.md | case/*.md added to VER-39's and VER-161's scope; DEF-21 (y), (z) and (aa) (ref_design/README.md too) | fixed in the register; the docs are the design session's |
+| O-R5 | the backlight's 3.9k, 56 mA, 103.9k and GPIO44 still live | VER-05, DF-44, DF-45, DF-59, REQ-PRD-03.R, REQ-MCU-07, REQ-DSP-06, REQ-DSP-07, REQ-DSP-08 and REQ-THM-04 rewritten to R61 3.74k on GPIO28, 0.119 V, 54.1 mA a pin, 108.2 mA nominal, 117.7 mA worst case, 103.74k; design.py's comments and the sim's defaults are DEF-21 (ab), (ac); VER-05 and DEF-45 stay | fixed in the register |
+| O-R6 | an unrun EVT analysis cleared the display's class 6 cell | grid.py: a clearing check of classes 1-14 counts once it has run (PASS or FAIL), as class 15 already did; a clearing check not of phase ORDER prints its phase (VER-05@EVT); seeded (VER-137 not run leaves 4/display planned) | fixed |
+| O-R7 | section (i) was an old snapshot | section (i) rewritten at this commit | fixed |
+| O-R8 | G-ORD-24 claimed more than VER-188 reads; path-form nets unseen; build_pcb.py's dead class entry | G-ORD-24 narrowed to the three files; the net pattern reads '/Sheet/NET' (seeded); VER-201 (design_numbers.py netclass, new, ORDER): every class net is a board net and every net of 0.25 A or more sits in a class; FAIL on VBUS_D5's entry, CELL_P and AMP_VDD (DEF-68) | fixed; the copper is DEF-68's |
+| O-R9 | DEF-47 FIXED while scripts/check.sh does not run check_trace | DEF-47 OPEN at Gate ORDER; the check.sh line is Alex's (step 0.3), or he moves the Gate to CASE | fixed in the register |
+| O-R10 | README's tool table missed five scripts | paper_checks.py, check_backpower.py, check_bom_cpl.py, check_land.py and check_placed_contacts.py added from their own docstrings | fixed |
+| O-R11 | the review ran nothing | this pass ran check_trace, grid.py, seed_faults.py, run_checks.py and --gate order, and read git status: the integrate pass's design.py and build_pcb.py edits had already been reverted | done |
+| F-R1 major | DEF-49 and DEF-50's keyword FIXED and their text 'stays OPEN' | both OPEN; a structure rule fails a Status keyword other than OPEN whose text says it stays OPEN or holds a gate (seeded; it found DEF-39, reworded); R4 lists the FIXED defects due by the gate beside its result; DEF-23 CLOSED on VER-06's PASS. No separate 'holds this gate' marker: OPEN is that marker, and the rule keeps the two from disagreeing | fixed |
+| F-R2 | VER-184 compared BOM lines, not plugs | plugs reads each header's family and pitch from its footprint name and the cell's plug from analysis/cell.json (VER-37): VER-184 is ORDER and BLOCKED until the spec sheet; the speaker's half is VER-202 (CASE): its plug from bom.md's row, its leads' reach to J4 and J2 asserted; FAIL while the SH refit is not ordered (DEF-64). The plug families are not put in design.py: the register does not edit it | fixed; BLOCKED and FAIL on the parts |
+| F-R3 | a doc edit stales nothing | a structure rule: an analysis whose procedure reads assembly.md, bom.md, bringup.md or pinmap.md names that doc in covers (seeded); VER-138 now covers pinmap.md's calibration lines, VER-184 and VER-202 bom.md's rows; README states the rule | fixed |
+| F-R4 | bom.md's feeder row says J4 reuses J2's part number | DEF-79 (the whole factory block re-derived by the design session); VER-39 reads the cost rows; VER-117 replaces the snapshot | fixed in the register |
+| F-R5 | DF-48's prevention named a PicoBlade plug for the SH header | DF-48 rewritten for the SH housing and its crimp (DF-183 carries the bad crimp); DF-112's old cause moved inside 'Was:'; stale_names.py's connector-family rule reads each header's family from its footprint name and fails DF-48's old text (seeded) while DF-170 and VER-128 pass | fixed |

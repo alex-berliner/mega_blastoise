@@ -1,6 +1,6 @@
 # VER-04 drc
 DATE: 2026-10-27
-COMMIT: 737e54e58378ca57e9ff9ec23d84e4843b382092
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/ref_design/board/tools/check_pcb.py

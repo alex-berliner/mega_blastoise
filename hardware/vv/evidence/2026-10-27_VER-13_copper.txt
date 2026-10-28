@@ -1,6 +1,6 @@
 # VER-13 copper
 DATE: 2026-10-27
-COMMIT: 7884d43b6bb27bda3138308ee19cd6ae46530276
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/paper_checks.py copper

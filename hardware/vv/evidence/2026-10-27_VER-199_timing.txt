@@ -1,6 +1,6 @@
 # VER-199 timing
 DATE: 2026-10-27
-COMMIT: 20d4e3cf59e89cd8de4141af75a3167b3fb6d865
+COMMIT: 5bedcef9ab70f5639894e59ac346089be7daf64b
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/circuit_checks.py timing
