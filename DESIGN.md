@@ -37,13 +37,14 @@ What the players see and do.
 - There is one screen in the middle. It is split in two halves, one per player, and the far half is drawn upside down so each player reads their own half the right way up. There is one arrangement and no orientation setting. (2026-08-06)
 - During a battle the two halves join into one scene: both Pokemon face each other across the middle, and the story text shows on both halves. (2026-08-11)
 - Information is open: each player can see the rival's active Pokemon, its health and its status. Only the move a player has locked in stays hidden until the turn plays. (2026-08-06)
+- When a half shows something private (choosing a move, the party, the battle log), it is framed in its seat's colour, red or white, so the whole screen reads as a Poke Ball. (2026-10-28)
 - Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select, laid out like the bottom half of a DS Lite. (2026-10-19)
 - A confirms, B goes back, and X explains what the cursor is on (move details, Pokemon stats). (2026-10-28)
 - A player can take back a locked-in choice until both players have chosen. (2026-10-28)
 - A session runs: pick Gen 1 or Gen 3 (the first and third Pokemon game generations), set options, ready up in the lobby, choose moves, watch the turn play, then see the result and return to the lobby. (2026-10-28)
 - The options are team size (3 against 3, or 6 against 6), text speed and a tutorial before the first game. (2026-10-28)
 - Teams are random every battle, rematches included. Random teams are the only team mode. (2026-10-28)
-- A single player can fight a computer opponent. (2026-10-28)
+- A single player can fight a computer opponent by holding A in the lobby. (2026-10-28)
 - Pressing X shows the battle log, with damage numbers and the reasons for critical hits and type effects. (2026-10-28)
 - When a Pokemon faints, its owner picks the next one while seeing the rival's side. (2026-10-28)
 - The console plays GBA (Game Boy Advance) games at full speed, with Pokemon FireRed as the test game. (2026-10-28)
@@ -64,7 +65,9 @@ What the physical device is.
 - It is never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)
 - The circuit board has two layers (the cheaper kind) and is assembled by a factory (JLCPCB) in batches. (2026-09-24)
 - There are no indicator lights on the board. (2026-09-24)
+- There is no separate reset button. (2026-10-28)
 - The board has test pads and a debug connector for bring-up. (2026-10-19)
+- Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off. (2026-10-28)
 - The battery is one lithium-ion cell. It sits in a hole in the board, under the screen, with its underside in a pocket in the case floor. It is turned 90 degrees so its long side runs along the board. (2026-10-27)
 - The speaker sits in the side margin of the board beside the screen and plays up through slots in the face. (2026-10-22)
 - Nothing is soldered when a unit is put together: the battery and the speaker both plug in. (2026-10-20)
@@ -80,7 +83,8 @@ How it behaves.
 - The battle is split the way Showdown itself is split: a battle simulator, and a separate viewer that only reads Showdown's messages. An online battle therefore uses the same messages as a local one. (2026-10-23)
 - The simulator follows Showdown's Random Battles rules by default. Gen 1 offers both the cartridge rules and the Custom Game (plain math) rules, with the cartridge rules on by default. (2026-10-23)
 - A tie shows as a tie on its own draw screen, with no health tiebreak. (2026-10-23)
-- Online play is as a Showdown guest only: no login, no accounts. (2026-10-26)
+- Online play is as a Showdown guest only: no login, no accounts. It uses Showdown's own servers; there is no server of ours. (2026-10-28)
+- Our own games run as native programs, with no WebAssembly or script engine on the device. GBA games run in an emulator. (2026-10-27)
 - The network is Wi-Fi only if it is nearly free; otherwise a USB host port (the console acts as the computer end) lets a phone tether or a Wi-Fi dongle provide it. (2026-10-28)
 - The console boots fast. Linux (a full operating system) is allowed only if it boots fast, and a bare-metal Rust boot (our own program with no operating system under it) is required. (2026-10-28)
 - Games and saves load from a computer or an SD card. (2026-10-28)
@@ -89,4 +93,4 @@ How it behaves.
 
 The next hardware spin's requirements, and what each needs from its chip, are in [docs/static/next_spin_requirements.md](docs/static/next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-28 13:40 EDT
+Last updated: 2026-10-28 13:55 EDT
