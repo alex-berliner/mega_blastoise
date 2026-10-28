@@ -66,16 +66,16 @@ BOARD = os.path.join(REF, "board")
 VREG_TOL = 0.015         # TLV75733P output accuracy +-1.5% over TJ -40 to 125 C (tlv757p.txt:255); +-1% to 85 C (252)
 VREG_TOL_85 = 0.01       # TLV75733P output accuracy, TJ -40 to 85 C (tlv757p.txt:252)
 U3_VDO_1A = 0.425        # V: TLV75733P dropout at 1 A, VOUT 3.3-5.0 V, DBV, TJ to 85 C (tlv757p.txt:298); 475 mV to 125 C (316)
-CV_TOL = 0.01            # BQ24073 VBAT(REG) 4.2 V +-1% (SLUS810N; design.py and pinmap.md quote +-1%)
+CV_TOL = 0.01            # BQ24073 VBAT(REG) 4.2 V +-1%, a bound on SLUS810N's 4.16-4.23 V (bq24074.txt:773)
 I_3V3_AT_CUTOFF = 0.15   # A: the 3V3 load between Wi-Fi bursts (REQ-PWR-15's average), the load the cutoff is read under
 I_3V3_PEAK = 0.355 + 0.15   # A: a Wi-Fi TX burst (802.11b 20.5 dBm, 355 mA peak, esp32-s3-wroom-1.txt:1662) on that load
 ADC_ATTEN3_ERR = 0.050   # V: the ESP32-S3 ADC's total error at ATTEN3 (0-2900 mV) after its calibration (esp32-s3.txt:3804)
-OPAMP_VOS = 0.0045       # V: MCP6002 input offset, maximum (pin_review/u6.json)
+OPAMP_VOS = 0.0045       # V: MCP6002 input offset, maximum, at VCM = VSS (mcp6001.txt:135)
 R_TOL = 0.01             # every resistor in design.py's RES table is 1%
-PANEL_MAX_MA = 120.0     # ER-TFT035IPS-6 backlight, 6 LEDs in parallel, 120 mA (pin_review/panel.json: 'If 120 mA',
-                         # read as the limit since the table prints '110 120' without columns)
-LED_MAX_MA = 20.0        # one LED: 120 mA over the six (pin_review/panel.json)
-LEDS_PER_PIN = 3         # the drawing's LED-K1 and LED-K2 carry three LEDs each (pin_review/panel.json pins 2, 3)
+PANEL_MAX_MA = 120.0     # ER-TFT035IPS-6 backlight, 6 LEDs in parallel, 120 mA (er-tft035ips-6.txt:760, its '110 120'
+                         # read as typical and maximum: the table's columns are Min, Typ, Max at 756)
+LED_MAX_MA = 20.0        # one LED: PANEL_MAX_MA over the six chips in parallel (er-tft035ips-6.txt:760-761)
+LEDS_PER_PIN = 3         # three LEDs on each of LED-K1 and LED-K2: the drawing's circuit figure read by eye, an estimate until VER-43
 # The charger's pre-charge, termination and TS bias, from SLUS810N (the BQ24073's datasheet, on disk as
 # bq24074.txt): VER-34 quotes the lines and tools/datasheet_hashes.py records the file's sha256, size
 # and date.  Pre-charge has a factor of its own in A-ohm (KPRECHG), not a share of ISET, so the
@@ -91,10 +91,10 @@ V_COLD = (2.0, 2.2)          # V: SLUS810N's TS cold threshold, VTS rising (bq24
 I_TS, I_TS_TOL = 75e-6, 0.04 # A: TS bias current 72-78 uA (SLUS810N's INTC, bq24074.txt:823): 75 uA +-3 uA
 # TH1's R25 and B are read from design.py's value ('10k B4460'; th1_spec below), so a TH1 change moves every number
 # here.  Its tolerances are not in design.py: 1% on R25 and 1% on B, as design.py's comment and the part numbers
-# say (TCTR0805F10K0F4460T at 71737ae; SDNT1005X103F3950FTF before).  The TCTR0805's datasheet is not on disk
-# (LCSC C525375): VER-34 holds the B tolerance BLOCKED until it is (2026-10-27).
-TH1_TOL = 0.01               # TH1's R25 tolerance
-TH1_B_TOL = 0.01             # TH1's B tolerance (to confirm on the TCTR0805 datasheet, VER-34)
+# say (TCTR0805F10K0F4460T at 71737ae; SDNT1005X103F3950FTF before).  The TCTR0805's datasheet is on disk since
+# 2026-10-28: its part-number key gives F = +-1% for both (tctr0805.txt:260), read by VER-34 (circuit_checks.py appdiff).
+TH1_TOL = 0.01               # TH1's R25 tolerance, the part number's first F (tctr0805.txt:260)
+TH1_B_TOL = 0.01             # TH1's B tolerance, the part number's second F (tctr0805.txt:260)
 # The VBAT sense buffer (U10, MCP6001T-I/OT).  Its datasheet is on disk since 2026-10-28 (mcp6001.pdf): the bias
 # is typical only (1 pA at 25 C, 19 pA at 85 C) and the drift typical only (2 uV/C), so those stay pessimistic:
 OPAMP_IB_MAX = 1e-9          # A: input bias over temperature, 50 x the datasheet's 19 pA typical at 85 C (mcp6001.txt:141)
@@ -128,7 +128,7 @@ JLC_FIXED = {
     # "J1": {"evidence": "hardware/vv/evidence/2026-10-27_VER-28_jlc_preview.txt",
     #         "offset": "JLC's library puts J1's origin 1.50 mm behind its pads' centre"},
 }
-EN1_INTERNAL = 285e3     # BQ24073 EN1 internal pull-down (pin_review/u2.json pin 6)
+EN1_INTERNAL = 285e3     # BQ24073 EN1 internal pull-down, approximately (bq24074.txt:512)
 D3_VF = 0.3              # BAT54WS at a few hundred uA
 ABS = {"U2 IN": 28.0, "U2 EN1": 7.0, "U3 EN": 6.0}    # absolute maxima (bq24074.txt:595, 599; TLV75733P EN 6.0 V, tlv757p.txt:179)
 PD_MAX = 20.0            # V: the highest fixed USB PD voltage, what a broken source may put out

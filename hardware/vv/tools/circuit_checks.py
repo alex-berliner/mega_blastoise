@@ -8,6 +8,11 @@
   appcircuit VER-198  each IC whose datasheet is on disk against its application circuit and pin rules
                       (U2, U3, U4's pins outside the core, U8, U9, the panel), and every constant the vv tools
                       cite as '<file>.txt:<line>' found on that line of its extract
+  appdiff    VER-34   the parts the other scripts do not read (U10, U6, U7, Q1, Q3, Q5, Q6, D2, D3, U1, TH1, SW24,
+                      J8's pins), each pin and application part against its datasheet's line; their pin reviews'
+                      part numbers; every vv constant still leaning on a pin_review quote whose datasheet is on disk
+  cellarch   VER-218  the cell's charge and discharge chain (U2's VBAT(REG), ICHG, timers, battery FET, the VBAT
+                      reading) against the cell's PROPOSED requirements
 
 Every datasheet number below is read through ds.quote(): the check fails if the cited line does not hold it.
 A number from a datasheet that is not on disk comes from board/pin_review/<part>.json (which quotes the page)
@@ -266,7 +271,10 @@ DERIVED = {"I_TS_TOL": "the tolerance (78 - 72) / 2 / 75 of the cited band, not 
            "U7_ISD": "u7.json's figure; fm8002a.txt:123 prints it, VER-34 compares",
            "ESP_PWM_CLK": "the APB clock design.py and pinmap.md name; no datasheet line cited",
            "V3V3": "3.3 V x (1 + the cited 1.5%), a product", "VF_DECADE": "320 - 240 mV, the difference of the two cited lines",
-           "STAND_ESP_USB_C": "a stand-in; the cited line gives a GPIO's 2 pF"}
+           "STAND_ESP_USB_C": "a stand-in; the cited line gives a GPIO's 2 pF",
+           "CV_TOL": "a +-1% bound on the cited 4.16-4.23 V, not a printed number",
+           "LED_MAX_MA": "120 mA over six chips, a quotient of the cited line",
+           "TH1_TOL": "the part number's F (+-1%) as a fraction", "TH1_B_TOL": "the part number's F (+-1%) as a fraction"}
 
 
 def numbers_near(name, lines):
@@ -573,6 +581,249 @@ def pinreview(seed=None):
     print("failures by kind: " + ", ".join(f"{k} {n}" for k, n in sorted(kinds.items())) if kinds else "no failures")
     print(f"A-lines check_trace counts in releases/APPROVALS.md: {len(signed)} of {n_rows} table rows (committed and signed "
           "with README's pinned key; the header's examples are not rows); a waiver counts only when it cites one")
+    return dn.result(not row.bad)
+
+
+# ---- VER-34: the parts the other scripts do not read, against their datasheets (2026-10-28: was by hand) ------------
+SEED_DIFF = {"D2": {"pins": {"1": "PWR_EN", "2": "PWR_HOLD", "3": "PWR_BTN_RAW"}}}   # BAT54C turned round: K on the button
+# a constant whose comment points at a pin_review file, or at a datasheet with no line, while that datasheet is on disk
+INHERIT = re.compile(r"pin_review/|\.json\b|SLUS810N|to confirm on the (\w+) datasheet|not on disk")
+
+
+def inherited(row):
+    """Every constant in the vv tools that still leans on a pin_review quote or an unlined datasheet whose PDF is now on
+    disk: it must cite the line (and pass the quote audit) or say it is a stand-in."""
+    names = {"pin_review/u6.json": "mcp6001", "pin_review/panel.json": "er-tft035ips-6", "pin_review/u2.json": "bq24074",
+             "SLUS810N": "bq24074", "TCTR0805": "tctr0805"}
+    n = 0
+    for path in sorted(glob.glob(os.path.join(HERE, "*.py"))):
+        for k, line in enumerate(open(path, encoding="utf-8"), 1):
+            m = re.match(r"^([A-Z][A-Z_0-9]*)\s*=\s*([^#]+)#(.*)$", line)
+            if not m or CITE.search(m.group(3)) or re.search(r"stand-in|from memory|estimate", m.group(3), re.I):
+                continue
+            hit = INHERIT.search(m.group(3))
+            if not hit:
+                continue
+            on = [v for key, v in names.items() if key in m.group(3) and ds.have(v)]
+            if not on:
+                continue
+            n += 1
+            row(False, f"{os.path.basename(path)}:{k} {m.group(1)} cites '{hit.group(0)}' though {on[0]}.pdf is on disk: "
+                "cite its line", "register")
+    print(f"  {n} constants left on an inherited quote whose datasheet is on disk")
+
+
+def appdiff(seed=None):
+    import json
+    parts, _ = load(seed)
+    row = Rows()
+
+    def pins(ref):
+        return parts[ref]["pins"]
+
+    print("U10 MCP6001T-I/OT, the VBAT buffer (mcp6001.pdf, DS20001733L), SOT-23-5:")
+    ds.quote("mcp6001", 813, "VOUT, VOUTA")
+    ds.quote("mcp6001", 814, "VIN-, VINA-")
+    ds.quote("mcp6001", 815, "VIN+, VINA+")
+    ds.quote("mcp6001", 816, "VDD", "Positive Power Supply")
+    ds.quote("mcp6001", 823, "VSS", "Negative Power Supply")
+    p = pins("U10")
+    row((p["1"], p["2"], p["3"], p["4"], p["5"]) == ("VBAT_SENSE", "GND", "VBAT_DIV", "VBAT_SENSE", "+3V3"),
+        f"VOUT 1 {p['1']}, VSS 2 {p['2']}, VIN+ 3 {p['3']}, VIN- 4 {p['4']}, VDD 5 {p['5']}: the SOT-23-5 column of Table 3-1 "
+        "(mcp6001.txt:813-816, 823), a unity buffer (VOUT on VIN-)", "cell")
+    ds.quote("mcp6001", 148, "Common-Mode Input Range", "VDD + 0.3")
+    vdiv = dn.VBAT_REG[1] * val(parts, "R18") / (val(parts, "R17") + val(parts, "R18"))
+    row(vdiv <= 3.0 + 0.3, f"VIN+ at most {vdiv:.3f} V (VBAT_REG's 4.23 V through R17/R18) inside VCMR VSS-0.3 to VDD+0.3 at "
+        "3V3's 3.0 V floor (mcp6001.txt:148)", "cell")
+    print("U6 MCP6002T-I/SN, the backlight's two sinks (mcp6001.pdf), SOIC-8:")
+    p = pins("U6")
+    row((p["1"], p["2"], p["3"], p["4"], p["5"], p["6"], p["7"], p["8"]) ==
+        ("BL_OUT2", "BL_FB2", "BL_REF", "GND", "BL_REF", "BL_FB1", "BL_OUT1", "+3V3"),
+        "VOUTA 1, VINA- 2, VINA+ 3, VSS 4, VINB+ 5, VINB- 6, VOUTB 7, VDD 8 (the SOIC column, mcp6001.txt:813-823): A drives "
+        "sink 2, B sink 1, both from BL_REF", "display")
+    print("U7 FM8002A, the amplifier (fm8002a.pdf, Version 1.0), SOP-8:")
+    want = {"1": ("SHUTDOWN", 27), "2": ("BYPASS", 29), "3": ("+IN", 31), "4": ("-IN", 33), "5": ("VO1", 35),
+            "6": ("VDD", 37), "7": ("GND", 39), "8": ("VO2", 41)}
+    for pin, (name, line) in want.items():
+        ds.quote("fm8002a", line, f"{pin} " if pin != "4" else "4 -IN", name)
+    p = pins("U7")
+    row(p["1"] == "AMP_SHDN" and p["2"] == "AMP_BYP" and p["3"] == "AMP_BYP" and p["4"] == "AMP_INN"
+        and {p["5"], p["8"]} == {"SPK_P", "SPK_N"} and p["6"] == "AMP_VDD" and p["7"] == "GND",
+        "SHUTDOWN 1, BYPASS 2 with +IN 3 (the single-ended input's reference), -IN 4 the input, VO1 5 and VO2 8 to the speaker, "
+        "VDD 6, GND 7 (fm8002a.txt:27-41)", "audio")
+    ds.quote("fm8002a", 75, "关断端为高电平")
+    pu = between(parts, "AMP_SHDN", "AMP_VDD", "R")
+    q3 = parts["Q3"]["pins"]
+    row(bool(pu) and q3["3"] == "AMP_SHDN" and q3["2"] == "GND" and q3["1"] == "AMP_EN"
+        and between(parts, "AMP_EN", "GND", "R"),
+        f"SHUTDOWN high (the supply) is off (fm8002a.txt:75-76): pulled to AMP_VDD by {', '.join(pu)}, pulled low by Q3 when "
+        "AMP_EN is high; AMP_EN held low by R37 while the module boots: off by default", "audio")
+    ds.quote("fm8002a", 104, "CBy=1uF", "0.1uF～0.39uF")
+    cby = sum(val(parts, r) for r in between(parts, "AMP_BYP", "GND", "C"))
+    ci = val(parts, "C39")
+    row(abs(cby - 1e-6) < 1e-9 and 0.1e-6 <= ci <= 0.39e-6,
+        f"CBy {cby * 1e6:g} uF on BYPASS and Ci (C39) {ci * 1e6:g} uF: 'CBy=1uF, Ci=0.1uF-0.39uF' (fm8002a.txt:104)", "audio")
+    ds.quote("fm8002a", 55, "AVD = 2×(Rf/Ri)")
+    rf = between(parts, "AMP_INN", p["5"], "R")              # Rf returns from VO1, the first amplifier's output
+    ri = [r for r in on(parts, "AMP_INN", "R") if r not in rf]
+    gain = 2 * val(parts, rf[0]) / val(parts, ri[0]) if len(rf) == 1 and len(ri) == 1 else 0
+    row(gain > 0, f"Rf {', '.join(rf) or 'none'} from VO1 ({p['5']}) to -IN, Ri {', '.join(ri) or 'none'} from the input: "
+        f"gain 2 Rf/Ri = {gain:g} (fm8002a.txt:55)", "audio")
+    import paper_checks as pc
+    ds.quote("fm8002a", 109, "VDD", "6")
+    ds.quote("bq24074", 729, "4.3", "4.5")
+    row(set(pins("JP3").values()) == {"VSYS", "AMP_VDD"} and pc.U2_VO_REG[1] <= 6.0,
+        f"VDD from VSYS through JP3, at most U2's {pc.U2_VO_REG[1]} V OUT regulation (bq24074.txt:729), under 6 V "
+        "(fm8002a.txt:109)", "audio")
+    print("Q1, Q3 2N7002 (2n7002_cj.pdf) and Q5, Q6 AO3400A (ao3400a.pdf), SOT-23:")
+    ds.quote("2n7002_cj", 13, "1. GATE")
+    ds.quote("2n7002_cj", 14, "2. SOURCE")
+    ds.quote("2n7002_cj", 16, "3. DRAIN")
+    ds.quote("2n7002_cj", 37, "VGS", "±20")
+    for q, g, d in (("Q1", "PWR_BTN_RAW", "PWR_BTN_N"), ("Q3", "AMP_EN", "AMP_SHDN")):
+        row(pins(q)["1"] == g and pins(q)["2"] == "GND" and pins(q)["3"] == d,
+            f"{q}: gate 1 {g}, source 2 GND, drain 3 {d} (2n7002_cj.txt:13-16); its gate at most VSYS 4.5 V against VGS +-20 V "
+            "(37)", "buttons" if q == "Q1" else "audio")
+    ds.quote("ao3400a", 37, "VGS", "±12")
+    for q in ("Q5", "Q6"):
+        k = "1" if q == "Q5" else "2"
+        row(pins(q)["1"] == f"BL_G{k}" and pins(q)["2"] == f"BL_S{k}" and pins(q)["3"] == f"LED_K{k}",
+            f"{q}: gate 1 BL_G{k}, source 2 BL_S{k} (the 2.2 ohm sense), drain 3 LED_K{k}; G, S, D as the SOT-23 drawing "
+            "(ao3400a.pdf page 1, a figure without pin numbers in its text) and KiCad's AO3400A symbol; its gate at most "
+            "3V3 against VGS +-12 V (ao3400a.txt:37)", "display")
+    print("D2 BAT54C and D3 BAT54WS, the power-key OR (bat54c.pdf, bat54ws.pdf):")
+    ds.quote("bat54c", 38, "anode (diode 1)")
+    ds.quote("bat54c", 40, "anode (diode 2)")
+    ds.quote("bat54c", 42, "common cathode")
+    p = pins("D2")
+    row(p["3"] == "PWR_EN" and {p["1"], p["2"]} == {"PWR_BTN_RAW", "PWR_HOLD"},
+        f"D2: anodes 1 {p['1']} and 2 {p['2']}, the common cathode 3 {p['3']} (bat54c.txt:38-42): the key or the module's hold "
+        "lifts PWR_EN, and PWR_EN feeds neither back", "buttons")
+    ds.quote("bat54ws", 24, "Cathode line denotes the cathode end")
+    p = pins("D3")
+    row(parts["D3"]["lib"] == "Device:D_Schottky" and p["1"] == "PWR_EN" and p["2"] == "VBUS_EN",
+        "D3: pin 1 (KiCad's cathode, the band, bat54ws.txt:24) on PWR_EN, pin 2 the anode on VBUS_EN: VBUS through R14 "
+        "lifts PWR_EN, never the reverse", "power")
+    print("U1 SRV05-4, USB's ESD array (srv05-4.pdf), SOT-23-6:")
+    ds.quote("srv05-4", 252, "pins 1, 3, 4 and 6")
+    ds.quote("srv05-4", 253, "REF1", "pin 2")
+    ds.quote("srv05-4", 89, "VRWM", "Pi n 5 to 2", "5")
+    p = pins("U1")
+    row(p["2"] == "GND" and p["5"] == "+3V3" and {p["1"], p["3"]} == {"USB_DP", "USB_DM"} and p["4"] is None and p["6"] is None,
+        f"I/O on 1 and 3 ({p['1']}, {p['3']}), 4 and 6 open, REF1 2 GND, REF2 5 +3V3 (srv05-4.txt:89, 252-253); REF2 on 3V3, "
+        "not VBUS (DEF-01, VER-159)", "usb_debug")
+    print("TH1 TCTR0805F10K0F4460T (tctr0805.pdf):")
+    ds.quote("tctr0805", 260, "TCTR", "F=±1%")
+    mpn = parts["TH1"]["mpn"]
+    m = re.match(r"TCTR0805([FG])(\d+K\d)([FG])(\d{4})", mpn)
+    row(bool(m) and m.group(1) == "F" and m.group(3) == "F" and m.group(4) == parts["TH1"]["value"].split("B")[-1].strip()
+        and abs(dn.TH1_TOL - 0.01) < 1e-9 and abs(dn.TH1_B_TOL - 0.01) < 1e-9,
+        f"{mpn}: R25 tolerance {m.group(1) if m else '?'} and B tolerance {m.group(3) if m else '?'} (F = +-1%, tctr0805.txt:260), "
+        f"B {m.group(4) if m else '?'} as design.py's value; design_numbers.py's TH1_TOL and TH1_B_TOL are 1%", "cell")
+    print("SW24 ROCPU TPS850 (rocpu_tps850.pdf):")
+    ds.quote("rocpu_tps850", 17, "MAXIMUM VOLTAGE", "12 VDC")
+    ds.quote("rocpu_tps850", 18, "MAXIMUM CURRENT DC", "50 mA")
+    ds.quote("rocpu_tps850", 136, "RATING : DC 15V 20mA")
+    ds.quote("rocpu_tps850", 137, "500mΩ MAX")
+    i_sw = dn.VBAT_REG[1] / val(parts, "R13") + dn.VBAT_REG[1] / val(parts, "R15")
+    row(set(pins("SW24").values()) == {"VSYS", "PWR_BTN_RAW"} and i_sw <= 20e-3,
+        f"SW24 switches VSYS (4.5 V at most) onto PWR_BTN_RAW: {i_sw * 1e3:.2f} mA steady (R13 and, through D2, R15) against the "
+        "drawing's 20 mA at 15 V and the table's 50 mA at 12 V (rocpu_tps850.txt:17-18, 136); C47's 1 uF charges through it "
+        "once per press, a few uC", "buttons")
+    print("J8 DM3AT-SF-PEJM5's pins and its detect switch (hirose_dm3_catalog_C114218.pdf, the DM3AT drawing):")
+    ds.quote("hirose_dm3_catalog_C114218", 145, "#5(CLK)")
+    ds.quote("hirose_dm3_catalog_C114218", 146, "#4(VDD)")
+    ds.quote("hirose_dm3_catalog_C114218", 147, "#6(VSS)")
+    ds.quote("hirose_dm3_catalog_C114218", 148, "#3(CMD)")
+    ds.quote("hirose_dm3_catalog_C114218", 149, "#7(DAT0)", "#2(CD/DAT3)")
+    ds.quote("hirose_dm3_catalog_C114218", 150, "#8(DAT1)", "#1(DAT2)")
+    ds.quote("hirose_dm3_catalog_C114218", 27, "Normally Open")
+    p = pins("J8")
+    row((p["1"], p["2"], p["3"], p["4"], p["5"], p["6"], p["7"], p["8"]) ==
+        ("SD_D2", "SD_D3", "SD_CMD", "SD_VDD", "SD_CLK", "GND", "SD_D0", "SD_D1"),
+        "pads 1-8 DAT2, CD/DAT3, CMD, VDD, CLK, VSS, DAT0, DAT1 as the DM3AT drawing's #1-#8 "
+        "(hirose_dm3_catalog_C114218.txt:145-150)", "storage")
+    row({p["9"], p["10"]} == {"SD_CD", "GND"},
+        "the detect switch's two pads on SD_CD and GND: 'Normally Open' (hirose_dm3_catalog_C114218.txt:27), so either pad "
+        "order works; which of switch A and B meets the shell is a drawing without text (DF-196 keeps it for VER-28's preview)",
+        "storage")
+    print("the pin reviews of these parts (board/pin_review, the board session's files):")
+    for ref, f in (("U3", "u3.json"), ("U10", "u10.json"), ("U7", "u7.json"), ("SW24", "sw24.json"), ("J8", "j8.json"),
+                   ("TH1", "th1.json"), ("U1", "u1.json"), ("U6", "u6.json")):
+        path = os.path.join(PR, f)
+        d = json.load(open(path, encoding="utf-8")) if os.path.isfile(path) else {}
+        mp = str(d.get("mpn", ""))
+        row(mp.startswith(parts[ref]["mpn"]), f"{f}: describes {mp or 'nothing'} against design.py's {ref} "
+            f"{parts[ref]['mpn']}" + ("" if mp.startswith(parts[ref]["mpn"]) else " (DEF-88)"), "power" if ref == "U3" else "")
+    inherited(row)
+    print("the flex antenna (Kinghelm C4943394): its datasheet is not on disk, so its cable, connector and gain are not read "
+          "here (VER-34's needs; VER-205 reads its keep-out)")
+    print(f"{len(row.bad)} failing")
+    return dn.result(not row.bad)
+
+
+# ---- VER-218: the cell's architecture against the requirements (2026-10-28) -----------------------------------------
+SEED_CELL = {"R5": {"value": "2.7k"}}   # a 2.7k ISET: up to 361 mA, over 0.5 C of REQ-BAT-16's 600 mAh
+
+
+def cellarch(seed=None):
+    parts, _ = load(seed)
+    row = Rows()
+    print("U2 BQ24073RGTR (bq24074.pdf, SLUS810N) against the cell's PROPOSED requirements (REQ-BAT-01, 02.R, 13, 16):")
+    ds.quote("bq24074", 306, "BQ24073", "6.6 V", "4.2 V")
+    q = ds.quote("bq24074", 773, "4.16", "4.20", "4.23")
+    row(parts["U2"]["mpn"].startswith("BQ24073") and 4.158 <= dn.VBAT_REG[0] and dn.VBAT_REG[1] <= 4.242,
+        f"charge voltage VBAT(REG) {dn.VBAT_REG[0]}-{dn.VBAT_REG[1]} V for the '73 (bq24074.txt:773-774) inside REQ-BAT-01's "
+        "4.158-4.242 V (PROPOSED)", "cell")
+    ds.quote("bq24074", 785, "KISET", "797", "890", "975")
+    r5 = val(parts, "R5")
+    ich = (dn.KISET[0] / (r5 * (1 + R_TOL)), dn.KISET[1] / (r5 * (1 - R_TOL)))
+    lot = 0.600                                             # Ah: REQ-BAT-16's lot floor, PROPOSED
+    row(ich[1] <= 0.5 * lot, f"fast charge KISET / R5 = {ich[0] * 1e3:.1f}-{ich[1] * 1e3:.1f} mA (R5 {parts['R5']['value']} 1%, "
+        f"KISET 797-975 A-ohm, bq24074.txt:785) against 0.5 C of REQ-BAT-16's {lot * 1e3:.0f} mAh lot floor, "
+        f"{0.5 * lot * 1e3:.0f} mA (both PROPOSED; the cell's own standard charge current is VER-37's)", "cell")
+    print(f"  REQ-BAT-02.R states 242-295 mA, KISET's band at R5's nominal: with R5's 1% it is {ich[0] * 1e3:.1f}-"
+          f"{ich[1] * 1e3:.1f} mA (a wording for Alex to settle when he approves it; VER-66 measures a unit)")
+    ds.quote("bq24074", 787, "KPRECHG", "70", "106")
+    ds.quote("bq24074", 776, "VLOWV", "2.9", "3.1")
+    pre = (dn.KPRECHG[0] / (r5 * (1 + R_TOL)), dn.KPRECHG[1] / (r5 * (1 - R_TOL)))
+    print(f"  pre-charge KPRECHG / R5 = {pre[0] * 1e3:.1f}-{pre[1] * 1e3:.1f} mA below VLOWV 2.9-3.1 V (bq24074.txt:776, 787); "
+          f"termination at 9-11% of ICHG, {0.09 * ich[0] * 1e3:.1f}-{0.11 * ich[1] * 1e3:.1f} mA (789), TD at GND (VER-198)")
+    ds.quote("bq24074", 817, "tPRECHG", "TMR = floating", "1440", "2160")
+    ds.quote("bq24074", 818, "tMAXCHG", "TMR = floating", "14400", "21600")
+    row(parts["U2"]["pins"]["14"] is None and 14400 >= 5 * 3600 * 0.8 and 21600 <= 5 * 3600 * 1.2
+        and 1440 >= 30 * 60 * 0.8 and 2160 <= 30 * 60 * 1.2,
+        "TMR open: fast-charge timer 14400-21600 s and pre-charge 1440-2160 s (bq24074.txt:817-818) inside REQ-BAT-13's "
+        "5 h +-20% (14400-21600 s) and 30 min read with the same 20% (PROPOSED)", "cell")
+    ds.quote("bq24074", 1853, "internal timers are slowed down proportionately")
+    print("  charging while playing: the DPPM loop takes the charge current the system needs, and the timers slow in "
+          "proportion (bq24074.txt:1850-1855), so a long charge under load does not end in a timer fault")
+    print(f"  the slowest unit's {ich[0] * 1e3:.0f} mA brings bom.md's 'about 700 mAh' cell through its CC phase in at most "
+          f"{0.7 / ich[0]:.2f} h of the timer's 4.00 h; the CV taper's share is not bounded by a datasheet (VER-66 times a "
+          "full charge on unit 1)")
+    # the discharge path with no USB: the cell through U2's battery FET to VSYS
+    import paper_checks as pc
+    i3 = sum(i for _, i, _ in loads_3v3(parts, "peak"))
+    i_sys = i3 + 0.1177 + pc.I_LOADS["U7"][1]
+    ds.quote("bq24074", 724, "VDO(BAT-OUT)", "100")
+    ds.quote("bq24074", 753, "VO(SC2)", "200", "250", "300")
+    ds.quote("bq24074", 1609, "short circuit circuitry is")
+    drop = pc.U2_BAT_OUT_R * i_sys
+    row(drop < 0.200, f"no USB, the system's peak {i_sys * 1e3:.0f} mA (3V3 {i3 * 1e3:.0f} mA in a TX burst, the backlight's 117.7, "
+        f"the amplifier's 500) drops {drop * 1e3:.0f} mV across U2's battery FET (100 mV at 1 A, bq24074.txt:724), under "
+        "VO(SC2)'s 200 mV minimum: U2's own short-circuit cut-off (bq24074.txt:753, 1608-1610) does not open OUT in a burst",
+        "cell")
+    ds.quote("bq24074", 604, "BAT (Discharge mode)", "5")
+    row(i_sys <= 5.0, f"BAT discharge {i_sys:.2f} A against 5 A continuous (bq24074.txt:604)", "cell")
+    # the cell voltage reading: R17/R18, U10, the ADC
+    ds.quote("esp32-s3", 3804, "ATTEN3", "2900")
+    ds.quote("mcp6001", 154, "VDD – 25")
+    vdiv = dn.VBAT_REG[1] * val(parts, "R18") / (val(parts, "R17") + val(parts, "R18"))
+    row(vdiv <= 2.900 and vdiv <= 3.0 - 0.025, f"VBAT_SENSE at charge-done {vdiv:.3f} V (4.23 V through R17/R18) inside ATTEN3's "
+        "0-2900 mV (esp32-s3.txt:3804) and U10's swing to VDD - 25 mV at 3V3's 3.0 V floor (mcp6001.txt:154)", "cell")
+    print("  the cell's own protection (the PCM) is the only layer between a short on CELL_P or VBAT and the cell: its trip "
+          "values are VER-37's and VER-88's; U2's cut-off covers VSYS and what hangs on it")
+    print(f"{len(row.bad)} failing")
     return dn.result(not row.bad)
 
 
@@ -979,7 +1230,7 @@ def timing(seed=None):
 
 CHECKS = {"appcircuit": (appcircuit, SEED_APP), "gpio": (gpio, SEED_GPIO), "pinreview": (pinreview, SEED_PR),
           "fwpins": (fwpins, SEED_FW), "ratings": (ratings, SEED_RATINGS), "usbfault": (usbfault, SEED_USBF),
-          "timing": (timing, SEED_TIMING)}
+          "timing": (timing, SEED_TIMING), "appdiff": (appdiff, SEED_DIFF), "cellarch": (cellarch, SEED_CELL)}
 
 
 def main():

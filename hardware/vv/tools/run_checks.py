@@ -115,6 +115,9 @@ CHECKS = {
     "VER-108": ("usbpair", ["python3", LC, "usbpair"], True),
     "VER-205": ("antenna", ["python3", LC, "antenna"], True),
     "VER-199": ("timing", ["python3", CC, "timing"], True),
+    # 2026-10-28: VER-34 scripted (was by hand) and the cell's architecture (class 2, cell)
+    "VER-34": ("appdiff", ["python3", CC, "appdiff"], False),
+    "VER-218": ("cellarch", ["python3", CC, "cellarch"], False),
     "VER-06": ("check_fit", ["python3", CS, "fit"], True),
     "VER-19": ("placement", ["python3", CS, "placement"], True),
     "VER-20": ("stack", ["python3", CS, "stack"], True),
