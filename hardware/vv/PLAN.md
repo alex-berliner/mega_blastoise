@@ -189,7 +189,7 @@ they must be made, those that can move copper first.
 
 | # | Step | IDs | Effort |
 |---|---|---|---|
-| 0.1 | **Alex confirms 39cc07f as the base** the register describes (DEC-01). If step 1 changes a design file, the order candidate is the commit after that pass (DEC-35), and the baseline moves to it. A later commit on ref-design-esp32s3 that touches a design path makes the default mode warn and the order gate fail (R8); the board session still commits renders and docs there. It already has: 589c6b5 (C10 a 0603 22 uF 4.28 mm from the module's pin 2, tracks 0.5 mm from the edge) and e872140 (the power key's pocket a cone, the SD opening 0.1 mm into the cavity), so R8 fails today; the next re-seed moves the baseline to the branch's tip and re-runs VER-204, VER-165, VER-20, VER-18 and VER-213. | DEF-30 | Alex: 5 min |
+| 0.1 | **Alex confirms 39cc07f as the base** the register describes (DEC-01). If step 1 changes a design file, the order candidate is the commit after that pass (DEC-35), and the baseline moves to it. A later commit on ref-design-esp32s3 that touches a design path makes the default mode warn and the order gate fail (R8); the board session still commits renders and docs there. It already has: 589c6b5 and c8d5744 (C10 a 0603 22 uF 4.28 mm from the module's pin 2, the board re-routed with tracks 0.5 mm from the edge) and e872140 (the power key's pocket a cone, the SD opening 0.1 mm into the cavity), so R8 fails today; the next re-seed moves the baseline to the branch's tip and re-runs VER-204, VER-165, VER-20, VER-18 and VER-213. | DEF-30 | Alex: 5 min |
 | 0.2 | **Order everything with a lead time** (`--shopping --gate evt`): cells from a seller with a spec sheet that gives the size with the PCM and names the plug (VER-37, VER-184); the ER-TFT035IPS-6, an FH12 breakout and an ESP32-S3 dev board (VER-43, VER-136, VER-44); the flex antenna and its U.FL cable (DEF-85); two GSPK151035PN and SH leads (DEF-64); domes and Start/Select strips; three microSD cards (VER-209); a 4-pin pogo jig (VER-212). **Download** into hardware/ref_design/datasheets: the antenna's datasheet (VER-205, VER-34), Samsung's CL21A226MAQNNNE DC-bias curve (VER-30), Espressif's ESP32-S3 errata (VER-214), JLC's dated capabilities page as jlc_capabilities.md (VER-17). JLC's parts database on order day for the four new parts (VER-41, DEF-81). The ESTIMATE ledger's measurements need calipers (VER-152). | VER-41, VER-37, VER-184, VER-43, VER-34, VER-152, VER-178 | Alex: 1 h, about $150-200 |
 | 0.3 | **Run the register on every commit**: one line in scripts/check.sh, `python3 hardware/vv/tools/check_trace.py` (outside hardware/vv, so it waits for Alex's OK). | DEF-47 | 15 min |
 | 0.4 | **Alex pins a signing key** (README, 'Approvals'). Until then no APPROVALS.md line counts (DEC-30). | | Alex: 15 min |
@@ -381,7 +381,51 @@ HISTORY.md section (o); the IDs it shares with this board keep their numbers.
 
 ## (i) The gate today
 
-@@I@@
+**Run at c564e99 (2026-10-28)**, the re-seed for 39cc07f. Every scripted check ran against
+39cc07f's files (evidence `evidence/2026-10-28_*`), the 9 PASSes BLOCKED at fd1f6e8 among them: with
+the datasheets on disk none is BLOCKED now. VER-33, VER-137, VER-124 and VER-196 pass; VER-31, VER-100,
+VER-144, VER-191 and VER-193 fail on their numbers (section c). Requirements 146 (141 PROPOSED, 5
+RETIRED); DFMEA rows 201 (66 H, 94 M, 41 L); checks 216 (31 PASS, 33 FAIL, 51 NOT_RUN, 79 NOT_BUILT,
+5 CUT, 17 RETIRED); defects 95 (43 OPEN, 23 FIXED, 16 CLOSED, 13 RETIRED); seeded faults 117 of 117
+caught (VER-129 at 0eabbd4, nine seeds moved to live rows). VER-36 now counts A-numbers from
+APPROVALS.md's table only (0 counted of 0 rows), not the README's example.
+
+```
+$ python3 hardware/vv/tools/check_trace.py
+STRUCTURE: OK (5 warnings: four DMM pass bands under 4 x the meter's accuracy; R8, the order
+branch has design commits after 39cc07f: e872140, 589c6b5, c8d5744)
+exit 0
+
+$ python3 hardware/vv/tools/check_trace.py --gate order
+  PASS  G-ORD-06, G-ORD-15, G-ORD-18, G-ORD-24, R5, R6 (no release yet), R7
+  INFO  G-ORD-05, -08, -12, -20, -26 (advisory); G0: 47 moves since fd1f6e8 (the 14 RETIRED
+        checks, 6 RETIRED and 6 FIXED or CLOSED defects, the gate criteria and requirements that
+        no longer name them, REQ-MCU-10 to EVT)
+  RETIRED G-ORD-13, G-ORD-23; N/A G-ORD-25 (prod_board)
+  FAIL  G-ORD-01 to -04, -07, -09 to -11, -14, -16, -17, -19, -21, -27
+  FAIL  G-ORD-22: 29 ORDER checks not passing
+  FAIL  R1 138 PROPOSED; R2 28 requirements with an ORDER check not passing; R3 52 H rows
+        neither accepted nor DONE
+  FAIL  R4 24 OPEN defects due at ORDER: DEF-14, 30, 47, 48, 49, 50, 56, 61, 66, 68, 75, 78,
+        79, 80, 81, 82, 83, 84, 86, 87, 88, 90, 93, 94; 12 FIXED ones listed beside it
+  FAIL  R8 ref-design-esp32s3 has design commits after 39cc07f (e872140, 589c6b5, c8d5744);
+        positions.json moved (case commit e872140)
+  FAIL  R9 12 cells planned: class 1 for all nine subsystems (VER-189), 2/audio (VER-34,
+        VER-40), 2/cell (VER-37, VER-40), 5/case (VER-192)
+RESULT: FAIL (21 of 28 not met); 1 N/A, 6 advisory, 2 retired
+```
+
+R8's proposal warning for dcb6a76 and e79f251 is gone: both are ancestors of 39cc07f. R8 fails
+instead on three commits the board session made on the order branch after 39cc07f (step 0.1):
+they move C10 beside the module's pin and re-route the board, which is DEF-86's fix, so the next
+re-seed starts from the branch's tip.
+
+The coverage grid, classes 1-15 by the worst status in each cell (135 cells, nine subsystems):
+PASS 10, FAIL 93, NOT_RUN 10, NOT_BUILT 1, ACCEPTED 0, BLOCKED 0, planned 12, not needed 9. No
+defect is ACCEPTED and G1 and K1 print nothing: no key is pinned, so no line in APPROVALS.md can
+count yet.
+
+The RP2354B board's gate history (fd1f6e8 and before) is in HISTORY.md section (o).
 
 ## (j) Past bugs and what catches them
 
