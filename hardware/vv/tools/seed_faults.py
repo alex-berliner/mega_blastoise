@@ -329,7 +329,8 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", /USB_Charger/VBUS_D5")),
     ("O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)", "gate",
      "4 display planned: VER-05 VER-137",
-     lambda d: csv_edit(d, "verification.csv", "VER-137", last_result="NOT_RUN", evidence="", commit="", date="")),
+     lambda d: (csv_edit(d, "verification.csv", "VER-137", last_result="NOT_RUN", evidence="", commit="", date=""),
+                block_field(d, "defects.md", "DEF-39", "Status", "FIXED (seeded: VER-137 not run)"))),
 ]
 
 
