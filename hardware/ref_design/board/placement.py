@@ -55,7 +55,7 @@ BOARD_X0, BOARD_X1 = 100 - BOARD_W / 2 - GROW_L, 100 + BOARD_W / 2
 # hole; the seat-1 ends run into the full-width board. The case backs the strips from the tub's
 # floor (case/CELLCUT_FOR_CASE.md, "The strips").
 CUTOUTS = [
-    dict(name="cell", box=(81.1, 52.0, 118.9, 106.8), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -6.8 .. 48 since the placement search of 2026-10-27, 1 mm towards seat 2 to widen the gap to J3 (case.scad cell_dy), was -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
+    dict(name="cell", box=(80.9, 52.0, 119.1, 107.2), r=1.0),     # 37.8 x 54.8 along the board (case x -18.9 .. 18.9, y -6.8 .. 48 since the placement search of 2026-10-27, 1 mm towards seat 2 to widen the gap to J3 (case.scad cell_dy), was -7.8 .. 47: 4 mm further towards seat 2 than the first try, which left the MCU-to-right-strip crossing 1.3 mm wide): the worst-case 52 x 36 cell with the pocket insets (V&V cellgap)
     # the speaker, sunk like the cell (2026-10-26): its outline plus 0.5, a stadium (case x 24.2 .. 35.2, y -31 .. -15)
     dict(name="speaker", box=(124.2, 116.5, 135.2, 132.5), r=5.5),
 ]
@@ -151,7 +151,7 @@ at("C52", -9.0, -51.0, 0)
 # ---- the module (2026-10-28): its U.FL side towards the left wall, the antenna's flex plate on the wall above it (x 64.5 .. 71, y 62.1 .. 107.9)
 # the footprint's natural pose has the antenna end up; turned 90 degrees CCW it is on the left. Body x 64.8 .. 84.0, y 107.8 .. 125.8
 # (0.7 up from the mock's spot: the slot's top pads keep 0.6 from its pads)
-put("U4", 73.9, 116.8, 90)
+put("U4", 73.9, 117.1, 90)
 # the antenna's copper-free zone (both layers, pours too): build_pcb.py's antenna_keepout (the flex antenna's footprint, a margin of 0.4
 # in x, and none below it so the module's top row of pads and their escapes keep their lane): not a Kinghelm number, see docs
 ANTENNA_KEEPOUT = (BOARD_X0 - 0.5, 62.6, 71.4, 107.0)   # (H2's boss, y 57.5 .. 62.5, already touches the mock's plate: 0.4 mm of its end)
@@ -175,12 +175,12 @@ put("R65", 85.4, 109.8, 0)                   # SR_CLK source termination (module
 # ---- the microSD slot (Hirose DM3AT-SF-PEJM5, C114218) below the module, its mouth to the left wall: the case's opening is y 127.2 .. 141.2
 # (case.scad sd_y), the slot's front 0.45 past the board's edge (card tip 0.4 short of the outside), its back at x 77.95 (the panel's FPC zone
 # starts at 78.05: 1.05 mm there, the slot is 1.68). Turned 270 so its mouth (+y of the footprint) is -x
-put("J8", 70.4, 134.6, 270)
+put("J8", 70.4, 135.0, 270)
 for k in range(6):                           # pull-ups: CMD, D0-D3, CD
     put(f"R{79 + k}", 80.6, 129.0 + 1.4 * k, 90)
 put("JP6", 83.0, 138.0, 0)
-put("C60", 83.0, 145.0, 0)
-put("C61", 86.0, 145.0, 0)
+put("C60", 84.0, 134.0, 0)
+put("C61", 86.5, 134.0, 0)
 
 # ---- the third shift register (Starts, Selects, charger status), in seat 1's spine
 put("U11", 101.0, 147.2, 0)
@@ -255,7 +255,7 @@ at("C37", 18.8, -29.0, 90)
 at("R33", 20.0, -29.0, 90)
 at("C38", 21.2, -29.0, 90)
 at("Q3", 21.0, -13.0, 0)                     # SHUTDOWN switch
-at("TP8", 14.8, -25.9, 0)                    # SHUTDOWN: flat, under the tail's edge
+at("TP8", 17.0, -25.9, 0)                    # SHUTDOWN: flat, under the tail's edge
 at("JP3", 14.8, -27.8, 0)                    # VSYS -> amplifier
 at("TP15", 14.8, -30.5, 0)
 at("J4", 31.6, -8.2, 0)                      # PicoBlade: mouth towards the speaker (case -y), pins by the wall
@@ -290,7 +290,7 @@ ADOPTED = {
     "TH1": (119.95, 79.0, 90, "F"),
     "JP5": (124.0, 70.0, 0, "F"),
     "TP3": (126.0, 74.0, 0, "B"),
-    "Q1": (75.2, 144.7, 0, "F"),
+    "Q1": (69.6, 144.0, 0, "F"),
     "D2": (109.08, 149.543, 0, "F"),
     "R13": (106.489, 150.046, 90, "F"),
     "R42": (117.43, 148.073, 90, "F"),

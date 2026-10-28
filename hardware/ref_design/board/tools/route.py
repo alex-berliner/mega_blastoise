@@ -192,7 +192,7 @@ PLANE_NETS = ("GND",)       # nets the pours carry; everything else is routed
 
 def planes(board):
     for ref, (x, y) in CASE["buttons"].items():
-        add_zone(board, None, pcbnew.F_Cu, circle(x, y, CONTACT_R), 0, f"{ref} contact", keepout=("pour", "vias"))
+        add_zone(board, None, pcbnew.F_Cu, circle(x, y, CONTACT_R / math.cos(math.radians(7.5))), 0, f"{ref} contact", keepout=("pour", "vias"))
     u4 = board.FindFootprintByReference("U4")
     cx, cy = xy(u4.GetPosition())
     add_zone(board, "+3V3", core_layer(pcbnew.F_Cu), rect(cx - PAD_RING, cy - PAD_RING, cx + PAD_RING, cy + PAD_RING), 2,

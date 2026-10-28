@@ -587,7 +587,15 @@
       },
       {
         "netclass": "PWR",
-        "pattern": "/USB_Charger/VBUS_D5"
+        "pattern": "/USB_Charger/CELL_P"
+      },
+      {
+        "netclass": "PWR",
+        "pattern": "/USB_Charger/VBUS_C1"
+      },
+      {
+        "netclass": "PWR",
+        "pattern": "/Audio/AMP_VDD"
       },
       {
         "netclass": "PWR",

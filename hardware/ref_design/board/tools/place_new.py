@@ -24,9 +24,11 @@ REGIONS = {   # name: (x0, y0, x1, y1) KiCad; a part's box must lie inside its r
     "left_strip": (62.3, 109.0, 64.3, 126.7),
     "above_module": (72.0, 99.0, 81.0, 107.6),
     "channel": (81.5, 107.3, 117.0, 113.5),
-    "fpc": (78.1, 127.2, 126.9, 142.8),            # under the panel's FPC: 1.05 mm
+    "fpc": (78.1, 127.2, 126.9, 136.2),            # under the panel FPC (not its neck, y > 136.45): 1.05 mm
     "spine": (88.0, 143.6, 107.5, 150.5),
-    "any_low": (64.0, 108.0, 135.0, 175.0),
+    "left_of_hole": (72.4, 62.0, 80.5, 106.0), "right_of_hole": (119.2, 62.0, 124.0, 100.0),
+    "seat2_l": (63.0, 40.0, 80.5, 60.0),
+    "any_low": (62.8, 108.0, 135.5, 175.0),
 }
 ORDER = [   # ref, region, preferred (x, y, rot) from placement.P unless given, turns
     ("C11", "left_strip", (0, 90)), ("C12", "left_strip", (0, 90)), ("R23", "left_strip", (0, 90)),
@@ -36,6 +38,10 @@ ORDER = [   # ref, region, preferred (x, y, rot) from placement.P unless given, 
     ("R21", "fpc", (90, 0)), ("R22", "fpc", (90, 0)), ("C13", "fpc", (90, 0)), ("C14", "fpc", (90, 0)),
     *[(f"R{79 + k}", "fpc", (90, 0)) for k in range(6)],
     ("JP6", "fpc", (0, 90)), ("C60", "fpc", (0, 90)), ("C61", "fpc", (0, 90)),
+    ("U3", "left_of_hole", (90, 0, 180, 270)), ("C5", "left_of_hole", (90, 0)), ("C6", "left_of_hole", (90, 0)), ("C7", "left_of_hole", (90, 0)),
+    ("JP1", "left_of_hole", (0, 90)), ("TH1", "right_of_hole", (90, 0)),
+    ("Q7", "seat2_l", (180, 0)), ("D8", "seat2_l", (180, 0)),
+    ("TP8", "any_low", (0,)), ("Q1", "any_low", (0, 180)),
     ("U11", "spine", (0, 90)), ("C62", "spine", (0, 90)), ("R86", "spine", (90, 0)), ("R87", "spine", (90, 0)),
 ]
 

@@ -173,7 +173,7 @@ R("R38", S, "10k", "VBUS", "GND")
 # 4.4 V into VSYS with the system first (DPPM), a 475 mA input limit with VIN-DPM, a 5 h
 # safety timer, and a TS input. Its battery FET supplements OUT 40 mV under VBAT: no unplug gap
 part("U2", S, "Battery_Management:BQ24073RGT", "BQ24073RGTR",
-     "Package_DFN_QFN:VQFN-16-1EP_3x3mm_P0.5mm_EP1.68x1.68mm",   # its pad vias from route.py (0.3 mm)
+     "battler:VQFN-16-1EP_3x3mm_RGT0016C",   # TI's land pattern, 0.26 pad to exposed pad (tools/fp_u2.py); its pad vias from route.py (0.3 mm)
      {"13": "VBUS", "10": "VSYS", "11": "VSYS", "2": "VBAT", "3": "VBAT", "16": "CHG_ISET",
       "12": "CHG_ILIM", "6": "CHG_EN1", "5": "GND", "4": "CHG_OFF", "15": "GND", "14": None,
       "1": "CHG_TEMP", "7": "CHG_PG_N", "9": "CHG_STAT_N", "8": "GND", "17": "GND"},

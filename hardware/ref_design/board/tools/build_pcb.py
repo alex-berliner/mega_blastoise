@@ -55,7 +55,7 @@ CLASSES = {
     # 3V3 pins reach the pour over the core through the copied stubs); GND is the pours
     "PWR": dict(track=0.3, clear=0.15, via=0.6, drill=0.3,
                 nets=["VSYS", "VBAT", "VBUS", "+3V3", "/Display/LED_A", "/Audio/SPK_P", "/Audio/SPK_N",
-                      "/USB_Charger/VBUS_D5", "/Power/3V3_LDO", "/Display/LED_K1", "/Display/LED_K2"]),
+                      "/USB_Charger/CELL_P", "/USB_Charger/VBUS_C1", "/Audio/AMP_VDD", "/Power/3V3_LDO", "/Display/LED_K1", "/Display/LED_K2"]),
     "USB": dict(track=0.2, clear=0.15, via=0.5, drill=0.3,
                 nets=["USB_DP", "USB_DM", "/MCU/USB_DP_MCU", "/MCU/USB_DM_MCU"]),
 }

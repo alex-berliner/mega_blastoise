@@ -75,6 +75,24 @@ PACKAGE_HEIGHT = {"SOIC-8": 1.75, "QFN": 1.0, "SON": 1.0, "DRC0010J": 1.0, "SOT-
                   "1008": 1.2, "0806": 1.0, "SolderJumper": 0.05}
 
 
+# Parts with no 3D model in this KiCad install (the 1U module's STEP is not in KiCad's library, only the PCB-antenna WROOM-1's):
+# their body in the footprint's own frame, (x0, y0, x1, y1), and its height over the board. The ESP32-S3-WROOM-1U-N16R8's
+# datasheet: 18 x 19.2 x 3.2; its pads (the castellations) lie 0.5 outside the 18, the body from y -9.85 (the U.FL end) to 9.35
+BODY_LOCAL = {"U4": ((-9.0, -9.85, 9.0, 9.35), 3.2)}
+
+
+def body_box(ref):
+    import pcbnew
+    b = pcbnew.LoadBoard(PCB)
+    fp = b.FindFootprintByReference(ref)
+    (x0, y0, x1, y1), h = BODY_LOCAL[ref]
+    a = math.radians(fp.GetOrientationDegrees())
+    px, py = pcbnew.ToMM(fp.GetX()), pcbnew.ToMM(fp.GetY())
+    pts = [(px + x * math.cos(a) + y * math.sin(a), py - x * math.sin(a) + y * math.cos(a)) for x in (x0, x1) for y in (y0, y1)]
+    xs, ys = [p[0] for p in pts], [p[1] for p in pts]
+    return (min(xs), min(ys), max(xs), max(ys), 0.0, h)           # KiCad frame, like extent()
+
+
 def refs():
     import pcbnew
     b = pcbnew.LoadBoard(PCB)
@@ -284,6 +302,9 @@ def main():
             b = boxes[ref]
             boxes[ref] = (b[0], b[1], b[2], b[3], 0.0, KNOWN_HEIGHT[ref])
             notes.append(f"{ref}: checked at {KNOWN_HEIGHT[ref]} mm")
+        if boxes.get(ref) is None and ref in BODY_LOCAL:
+            boxes[ref] = body_box(ref)
+            notes.append(f"{ref}: no 3D model in this KiCad install, checked as its datasheet body (check_fit.BODY_LOCAL)")
         if boxes.get(ref) is None:
             h = next((v for k, v in PACKAGE_HEIGHT.items() if k in name), 1.5)
             boxes[ref] = (court[0], court[1], court[2], court[3], 0.0, h)
