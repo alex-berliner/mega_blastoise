@@ -359,6 +359,22 @@ side_pins = [[32.5, 40.0], [-32.5, 40.0], [32.5, -40.0]];
 // H4 left the glass's corner (y -40) for the SD slot (below the module, y -27.2 to -41.2): it stands in seat 1's deck now, 0.4 past the
 // slope's foot (48.1) and clear of the D-pad's piece (16.0 from its centre, 15.5 needed), with the end screws' pilot and boss
 h4_pin = [-33.0, -51.0];
+
+// ---- the power button (2026-10-28, Alex: a dedicated button on seat 1's deck, "centre top before the slope"; the Starts are plain buttons) ----
+// SW24, a ROCPU TPS850 J14K (3.5 x 2.75 x 1.4, its actuator dia 2.0 standing 0.4 over the body, 0.2 +0.1 travel) on the board between U8 and the
+// Start/Select frame; a printed cap through the deck: a pin in a hole, a flange under the deck's plate in a recess (it cannot fall out), its
+// top 0.5 under the face inside a dia 6 pocket (nothing lying face down presses it). The cap rests on the actuator. [x, y]: the centre line is
+// taken by H6's boss, this is the nearest free spot (case/power button analysis, spot B)
+pwr_pos = [3.25, -62.75];
+pwr_sw_h = 1.4;  pwr_act_h = 0.4;  pwr_travel = 0.3;      // body, actuator over it, travel with the +0.1 tolerance and a little more
+pwr_hole_d = 3.0;  pwr_pin_d = 2.8;                        // the hole through the deck and the cap's pin
+pwr_flange_d = 4.6;  pwr_flange_t = 0.3;                   // the flange under the deck
+pwr_recess_d = 5.0;  pwr_recess_h = 0.4;                   // its recess in the deck's underside, and how far up
+pwr_pocket_d = 6.0;  pwr_pocket_h = 0.8;                   // the pocket in the deck's face (finger room)
+pwr_cap_below_face = 0.5;                                  // the cap's top under the face
+pwr_act_top = z_top_cu + pwr_sw_h + pwr_act_h;             // 5.6
+pwr_cap_top = deck_face - pwr_cap_below_face;              // 7.2
+pwr_cap_h = pwr_cap_top - pwr_act_top;
 pin_key = 3.0;            // the end bosses sit off the centre line (seat 1's board hole is there)
 pin_out = 1.4;            // and this much further out than the clusters
 // seat 2's end boss is seat 1's turned round (2026-10-20)
@@ -641,6 +657,18 @@ assert(ss_y - ss_mem[1] / 2 - 0.75 >= spine_end, "Start/Select under the spine")
 assert(ss_y + ss_mem[1] / 2 + 1 <= board_l / 2, "Start/Select off the board's end");
 for (c = clusters) assert(norm([ss_mem[0] / 2, abs(abs(c[1]) - ss_y) < ss_mem[1] / 2 ? 0 : abs(abs(c[1]) - ss_y) - ss_mem[1] / 2] - [abs(c[0]), 0]) >= piece_d / 2 + 0.5, "Start/Select runs into a silicone piece");
 
+// the power key: in seat 1's deck, clear of the slope, H6's boss, U8's box and the Start/Select frame; its plate over the recess 0.8 or more; the cap
+// captive (flange under the plate, 0.1 or more to the recess's roof), its stroke free of the switch body, its top under the face
+assert(pwr_pos[1] < 0 && abs(pwr_pos[1]) - pwr_pocket_d / 2 >= uni_foot + 0.3, "the power key's pocket runs into the slope");
+assert(norm(pwr_pos - pins[5]) >= boss_d / 2 + pwr_pocket_d / 2 + 0.3 && norm(pwr_pos - pins[3]) >= boss_d / 2 + pwr_pocket_d / 2, "the power key's pocket runs into an end boss");
+assert(ss_y - (ss_cell + 2 * ss_frame_w) / 2 >= abs(pwr_pos[1]) + pwr_pocket_d / 2 + 0.3 && abs(pwr_pos[0]) + pwr_pocket_d / 2 <= spine_w / 2 + 3.5, "the power key's pocket runs into Start/Select's frame");
+assert(deck_face - z_deck_under - pwr_pocket_h - pwr_recess_h >= 0.8 - 1e-6, "the plate between the power key's recess and its pocket is thinner than 0.8");
+assert(pwr_hole_d >= pwr_pin_d + 0.2 && pwr_recess_d >= pwr_flange_d + 0.3 && pwr_flange_d >= pwr_hole_d + 1.0, "the power cap's pin, flange or recess is the wrong size");
+assert(z_deck_under + pwr_recess_h - (pwr_act_top + pwr_flange_t) >= 0.1, "the power cap's flange touches its recess's roof at rest");
+assert(pwr_act_top - pwr_travel - (z_top_cu + pwr_sw_h) >= 0.1, "the power cap's flange touches the switch's body at the end of its stroke");
+assert(pwr_pocket_h - (pwr_cap_top - (deck_face - pwr_pocket_h)) <= pwr_pocket_h && pwr_cap_below_face >= 0.4, "the power cap stands too near the face");
+assert(pwr_cap_top - pwr_travel >= deck_face - pwr_pocket_h - 1e-6, "the pressed power cap sinks under its pocket's floor");
+
 // ---------------- echo: everything the board script needs ----------------
 function jnum(v) = str(round(v * 1000) / 1000);
 function jpt(p) = str("[", jnum(kicad(p)[0]), ", ", jnum(kicad(p)[1]), "]");
@@ -671,7 +699,7 @@ echo(str("JSON {",
   "\"usb\": {\"y\": ", jnum(kicad([0, usb_y])[1]), ", \"front_x\": ", jnum(kicad([usb_front, 0])[0]),
     ", \"tab\": [", jpt([board_w / 2, usb_y + usb_tab_w / 2]), ", ", jpt([board_w / 2 + usb_tab, usb_y - usb_tab_w / 2]), "]}, ",
   "\"rib_free\": [", join([for (r = rib_free) str("[", jpt([r[0], r[3]]), ", ", jpt([r[2], r[1]]), "]")]), "], ",
-  "\"pinholes\": [", join([for (p = pin_pos) jpt(p)]), "], ",
+  "\"pinholes\": [", join([for (p = pin_pos) jpt(p)]), "], \"power\": {\"c\": ", jpt(pwr_pos), ", \"pocket_d\": ", pwr_pocket_d, ", \"act_top\": ", jnum(pwr_act_top - z_top_cu), "}, ",
   "\"swd\": ", jpt(swd_pos), ", ",
   "\"cell_hole\": [", jpt([cell_hole[0][0], cell_hole[1][1]]), ", ", jpt([cell_hole[1][0], cell_hole[0][1]]), "], \"cell_top\": ", cell_top, ", ",
   "\"back_limit\": ", jnum(board_lift - 0.2), ", ",
@@ -1168,7 +1196,15 @@ module end_inner(sy) {
   if (sy < 0) at(h4_pin, z_top_cu) cylinder(d = boss_d, h = z_deck_under - z_top_cu + 0.01);     // H4's
 }
 // and its buttons' openings, the pads' reliefs and its pilot
+module pwr_cuts() {
+  translate([pwr_pos[0], pwr_pos[1], z_deck_under - 0.01]) cylinder(d = pwr_recess_d, h = pwr_recess_h + 0.01, $fn = 48);   // the flange's recess
+  translate([pwr_pos[0], pwr_pos[1], z_deck_under - 0.5]) cylinder(d = pwr_hole_d, h = deck_face - z_deck_under + 1, $fn = 48);
+  translate([pwr_pos[0], pwr_pos[1], deck_face - pwr_pocket_h]) cylinder(d = pwr_pocket_d, h = pwr_pocket_h + 1, $fn = 48);
+}
+// the cap (printed, flange down: the pin up), at rest on the actuator
+module pwr_cap() { cylinder(d = pwr_flange_d, h = pwr_flange_t, $fn = 48); cylinder(d = pwr_pin_d, h = pwr_cap_h, $fn = 48); }
 module end_cuts(sy) {
+  if (sy < 0) pwr_cuts();
   for (k = abxy_keys()) if (k[0][1] * sy > 0) at(k[0], retainer_bot - 0.01) rotate(k[1]) abxy_cut(case_h, k[2]);
   for (c = [dpad1, dpad2]) if (c[1] * sy > 0) at(c, retainer_bot - 0.01) dpad_cut(case_h);
   for (b = ss_buttons) if (b[2][1] * sy > 0) at(b[2], retainer_bot - 0.01) ss_cut(case_h);
@@ -1542,5 +1578,6 @@ if (part == "3d") {
   color("#e8e8ee") caps();
 }
 if (part == "tub") tub();
+if (part == "pwr_cap") pwr_cap();
 if (part == "top") translate([0, 0, case_h]) rotate([180, 0, 0]) top();         // printed face down
 if (part == "top_up") translate([0, 0, -z_bot]) top();                          // face up, its skirts' tips on the bed

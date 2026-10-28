@@ -1,7 +1,7 @@
 """Regenerate everything derived from case.scad.
 
     python3 export.py          # positions.json, board.dxf
-    python3 export.py --stl    # also tub.stl and top.stl (the one-piece top), each in its print pose
+    python3 export.py --stl    # also tub.stl, top.stl (the one-piece top) and pwr_cap.stl (the power button's cap), each in its print pose
 
 positions.json is what the board scripts read: button centres, screw holes,
 connector positions and height limits, all in KiCad coordinates. It comes from
@@ -45,7 +45,7 @@ def main():
     for part in ("board",):
         renders.append((f"{part}.dxf", pool.submit(openscad, os.path.join(HERE, f"{part}.dxf"), part)))
     if "--stl" in sys.argv:
-        for part in ("tub", "top"):
+        for part in ("tub", "top", "pwr_cap"):
             renders.append((f"{part}.stl", pool.submit(openscad, os.path.join(HERE, f"{part}.stl"), part)))
     for name, render in renders:
         render.result()

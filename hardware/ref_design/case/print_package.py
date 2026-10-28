@@ -60,6 +60,7 @@ SUPPORT_TOOL = 2             # Bambu Support For PLA: toolhead 2 (U1), AMS slot 
 NOT_FILAMENT = {"printable_area"}   # per-slot-length lists that aren't filament settings
 
 KIT = os.path.join(HERE, "fitkit")
+PWR_CAP = os.path.join(HERE, "pwr_cap.stl")    # the power button's cap, flange down
 PRINT_TUB = os.path.join(HERE, "tub.stl")    # prints flat as exported (no feet since 2026-10-20)
 
 # The plate-level support settings are all off (no plate's supports): each part that needs them gets its own (OBJECT_SUPPORT,
@@ -112,7 +113,7 @@ TOWER_AT = {"U1": (210.0, 206.0), "P1S": (200.0, 8.0)}
 TOP_STL = os.path.join(HERE, "top.stl")
 PLATES = {
     "0_buttons_end": [(n, f"{KIT}/coupon_{n}.stl") for n in ("buttons_tub", "buttons_board", "buttons_top")],
-    "1_case": [("tub_print", PRINT_TUB), ("top", TOP_STL)],
+    "1_case": [("tub_print", PRINT_TUB), ("top", TOP_STL), ("pwr_cap", PWR_CAP)],
     "2_buttons_quick": [("tune_openings", f"{KIT}/tune_openings.stl")] +
         [(f"tune_stack_{c}_board", f"{KIT}/tune_stack_{c}_board.stl") for c in ("dpad", "abxy", "ss")] +
         [(f"tune_stack_{c}_lid_dome1.75", f"{KIT}/tune_stack_{c}_lid_dome1.75.stl") for c in ("dpad", "abxy", "ss")],
@@ -122,7 +123,7 @@ PLATES = {
                       ("usb_tub", "usb_top", "usb_board", "seam_tub", "seam_top", "frame_top",
                        "buttons_tub", "buttons_board", "buttons_top")],
     # one whole unit and the dummies to fit in it (Alex, 2026-10-22): the board mock, panel, speaker, cell and its plug
-    "5_unit": [("tub_print", PRINT_TUB), ("top", TOP_STL),
+    "5_unit": [("tub_print", PRINT_TUB), ("top", TOP_STL), ("pwr_cap", PWR_CAP),
                ("board_mock", f"{KIT}/board_mock.stl"), ("panel_dummy", f"{KIT}/panel_dummy.stl"),
                ("speaker_dummy", f"{KIT}/speaker_dummy.stl"), ("cell_dummy", f"{KIT}/cell_dummy.stl"),
                ("cell_plug_dummy", f"{KIT}/cell_plug_dummy.stl")],
