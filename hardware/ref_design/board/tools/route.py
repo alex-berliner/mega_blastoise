@@ -456,6 +456,15 @@ def strips():
     return out
 
 
+def stitch_edge_ok(p):
+    """A stitching via keeps its copper 0.5 mm from the board's edge and the cutouts' (V&V F3: 0.30 after JLC's 0.2 outline tolerance, with 0.02 spare)."""
+    from shapely.geometry import Point, Polygon
+    reach = 0.5 + VIA_D / 2 + 0.02
+    if not Polygon(board_polygon(reach)).contains(Point(p)):
+        return False
+    return not any(b[0] - reach < p[0] < b[2] + reach and b[1] - reach < p[1] < b[3] + reach for b in slot_boxes())
+
+
 def strip_stitch(board, pitch=2.0):
     """After the pours: GND vias in the strips wherever both layers' pours are filled round the
     spot, so each strip's two pours act as one beside the signals crossing it."""
@@ -482,7 +491,7 @@ def strip_stitch(board, pitch=2.0):
             while x <= x1 - 0.6:
                 p = (x, y)
                 if (all(math.dist(p, v) >= pitch for v in vias) and filled(pcbnew.F_Cu, p) and filled(pcbnew.B_Cu, p)
-                        and space.clear_at(p, VIA_D / 2 + CLEAR, "GND", via=True)):
+                        and stitch_edge_ok(p) and space.clear_at(p, VIA_D / 2 + CLEAR, "GND", via=True)):
                     v = add_via(board, p, gnd)
                     v.SetLocked(False)
                     space.add(v)
@@ -629,7 +638,7 @@ def via_near(board, space, origin, net, layer, avoid_angle=None, hit=None, origi
             p = (ox + dist * math.cos(a), oy + dist * math.sin(a))
             if hit and hit(p) and not (origin_pad is not None and exposed_pad(origin_pad)):
                 continue                     # no via inside its own pad (a long pad would wick it dry)
-            if not space.clear_at(p, VIA_D / 2 + CLEAR, net, via=True):
+            if not space.clear_at(p, VIA_D / 2 + CLEAR, net, via=True) or not stitch_edge_ok(p):
                 continue
             n = max(3, int(dist / 0.1))
             path = [(ox + (p[0] - ox) * k / n, oy + (p[1] - oy) * k / n) for k in range(1, n)]
@@ -1255,7 +1264,7 @@ def stitch(board, pitch=5.0):
     while y <= y1:
         x = x0
         while x <= x1:
-            if not (cx0 <= x <= cx1 and cy0 <= y <= cy1) and space.clear_at((x, y), VIA_D / 2 + 0.25, "GND", via=True):
+            if not (cx0 <= x <= cx1 and cy0 <= y <= cy1) and stitch_edge_ok((x, y)) and space.clear_at((x, y), VIA_D / 2 + 0.25, "GND", via=True):
                 v = pcbnew.PCB_VIA(board)
                 v.SetPosition(V(x, y))
                 v.SetWidth(mm(VIA_D))

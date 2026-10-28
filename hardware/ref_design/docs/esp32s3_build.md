@@ -6,7 +6,8 @@ ESP32-S3-WROOM-1U-N16R8 (LCSC C3013946) with its antenna off the board. Everythi
 `carryover_status.md` (in the session's scratchpad).
 
 ## Board
-- Routed 2-layer board: DRC 0 errors, 0 unconnected, 0 parity issues (check_pcb PASS), check_fit PASS; 170 footprints, 2388 tracks (6139 mm), 673 vias.
+- Routed 2-layer board: DRC 0 errors, 0 unconnected, 0 parity issues (check_pcb PASS), check_fit PASS; 170 footprints, 2262 tracks (6152 mm), 646 vias. Tracks and vias 0.518 mm from the routed edge or more.
+- C10 (22 uF, 0603 C59461, 6.3 V X5R) and C11 sit in the strip beside the module: +3V3 pads 4.28 and 3.40 mm from U4 pin 2.
 - Module at KiCad (73.9, 117.1) turned 90 degrees: its U.FL side to the left wall. Body x 64.05 .. 83.25, y 108.1 .. 126.1, 3.2 mm tall.
   `check_fit.BODY_LOCAL` carries its body (KiCad's library has no WROOM-1U 3D model).
 - Antenna: the flex antenna (Kinghelm C4943394 or an equal within the module's FCC grant) lies on the left wall above the module, x 64.5 .. 71,
