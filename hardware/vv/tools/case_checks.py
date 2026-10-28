@@ -105,7 +105,7 @@ def arch(seed=None):
          e["glass_gap"] - e["cell_top"] >= 0.4, "VER-182 (the slope's ceiling too), VER-20"),
         ("REQ-BAT-08", "cell_pocket_box in the tub's floor, cell_hole2d in the board",
          f"pocket {pw:.2f} x {pl:.2f} mm against a nominal cell {nom[1]} x {nom[0]} plus 0.4 (the fit clause, PROPOSED)",
-         pw >= nom[1] + 0.4 - 1e-6 and pl >= nom[0] + 0.4 - 1e-6, "VER-181 at the worst-case cell (FAIL: DEF-62)"),
+         pw >= nom[1] + 0.4 - 1e-6 and pl >= nom[0] + 0.4 - 1e-6, "VER-181 at the worst-case cell (PASS at 39cc07f: DEF-62 CLOSED)"),
         ("REQ-MEC-01", "positions.json's height zones (glass_limit, bezel_limit, retainer_limit, deck_limit, back_limit)",
          f"glass {pos['glass_limit']}, bezel {pos['bezel_limit']}, retainer {pos['retainer_limit']}, decks {pos['deck_limit']}, "
          f"back {pos['back_limit']} mm, every zone named and positive",
