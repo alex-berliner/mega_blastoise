@@ -312,7 +312,7 @@ part("U4", S, "RF_Module:ESP32-S3-WROOM-1", "ESP32-S3-WROOM-1U-N16R8", "battler:
      {str(k): v for k, v in ESP32.items()}, "C3013946", "ESP32-S3-WROOM-1U-N16R8", "Espressif Systems")
 C("C10", S, "22u 25V", "+3V3")                   # the module's 3V3 pin: 22 uF (Espressif) with 100 nF
 C("C11", S, "100n", "+3V3")
-# EN: 10k to 3V3 and 1 uF to ground (power-up delay), RESET (SW19) pulls it low. Never floating
+# EN: 10k to 3V3 and 1 uF to ground (power-up delay), J7's EN pad pulls it low. Never floating
 R("R23", S, "10k", "+3V3", "EN")
 C("C12", S, "1u", "EN")
 # USB D-/D+: 22 ohm in series close to the module and spare pads for capacitors to ground (not fitted), as the design guidelines
@@ -322,12 +322,9 @@ R("R21", S, "22", "USB_DP", "USB_DP_MCU")
 R("R22", S, "22", "USB_DM", "USB_DM_MCU")
 part("C13", S, "Device:C", "DNP", C0402, {"1": "USB_DP_MCU", "2": "GND"}, bom=False)
 part("C14", S, "Device:C", "DNP", C0402, {"1": "USB_DM_MCU", "2": "GND"}, bom=False)
-# BOOT (IO0) and RESET (EN) under pinholes in the lid; J7 the same signals on bare pads on the board's back (pogo jig, clip):
-# power through its 3V3 pad only with the cell out and nothing on USB. BOOT low at reset enters the ROM's download mode
-part("SW18", "debug.kicad_sch", "Switch:SW_Push", "BOOT", "battler:SW_SPST_TS-1088-xR020",
-     {"1": "BOOT", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
-part("SW19", "debug.kicad_sch", "Switch:SW_Push", "RESET", "battler:SW_SPST_TS-1088-xR020",
-     {"1": "EN", "2": "GND"}, "C720477", "TS-1088-AR02016", "XKB")
+# J7: BOOT (IO0) and EN on bare pads on the board's back with 3V3 and GND (pogo jig, clip); power through its 3V3 pad only with the
+# cell out and nothing on USB. BOOT low at reset enters the ROM's download mode. The BOOT and RESET buttons (SW18, SW19) under pinholes
+# are not on this board: the microSD slot took the left bezel and the right one has no room (progress.md, 2026-10-28)
 part("J7", "debug.kicad_sch", "Connector_Generic:Conn_01x04", "DEBUG PADS", "battler:Pogo_Pads_1x04_P2.54mm",
      {"1": "+3V3", "2": "EN", "3": "BOOT", "4": "GND"}, bom=False)
 
@@ -438,8 +435,8 @@ part("J4", S, "Connector_Generic_MountingPin:Conn_01x02_MountingPin", "SM02B-SRS
 # =================================================================================
 S = "storage.kicad_sch"
 # Hirose DM3AT-SF-PEJM5 (C114218): push-push, 8 contacts and a normally open card-detect switch that closes to ground when
-# a card is in, 1.85 mm tall. The module's SDMMC host takes any GPIO (the matrix), so the bus follows the module's pin order
-part("J8", S, "Connector:Micro_SD_Card_Det_Hirose_DM3AT", "DM3AT-SF-PEJM5", "Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5",
+# a card is in, 1.68 mm tall. The module's SDMMC host takes any GPIO (the matrix), so the bus follows the module's pin order
+part("J8", S, "Connector:Micro_SD_Card_Det_Hirose_DM3AT", "DM3AT-SF-PEJM5", "battler:microSD_HC_Hirose_DM3AT-SF-PEJM5",
      {"1": "SD_D2", "2": "SD_D3", "3": "SD_CMD", "4": "SD_VDD", "5": "SD_CLK", "6": "GND", "7": "SD_D0", "8": "SD_D1",
       "9": "SD_CD", "10": "GND", "SH": "GND"}, "C114218", "DM3AT-SF-PEJM5", "HRS(Hirose)")
 # 10k pull-ups on CMD and D0-D3 (the SD spec's idle levels; D3 doubles as the card's SPI chip select) and on the detect line

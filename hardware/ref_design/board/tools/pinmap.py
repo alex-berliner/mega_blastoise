@@ -32,13 +32,13 @@ ROLE = {
     "VBAT_SENSE": "ADC1_CH0: battery voltage / 2 (R17/R18, 470k each, 100 nF)",
     "CC1_SENSE": "ADC1_CH1: USB-C CC1 through 10k; the source's current offer",
     "CC2_SENSE": "ADC1_CH3: USB-C CC2 through 10k",
-    "BOOT": "strapping pin IO0: BOOT button SW18 and J7; low at reset enters the ROM's download mode; free as an input afterwards",
+    "BOOT": "strapping pin IO0: J7 pad (no button); low at reset enters the ROM's download mode; free as an input afterwards",
     "SD_CMD": "SDMMC CMD (GPIO matrix), 10k pull-up R79", "SD_CLK": "SDMMC CLK (GPIO matrix)",
     "SD_D0": "SDMMC D0, 10k pull-up R80", "SD_D1": "SDMMC D1, 10k pull-up R83", "SD_D2": "SDMMC D2, 10k pull-up R81",
     "SD_D3": "SDMMC D3, 10k pull-up R82", "SD_CD": "card detect: low with a card in, 10k pull-up R84",
     "USB_DM_MCU": "USB D- (IO19, the ROM's USB Serial/JTAG too), 22 ohm R22 to the connector",
     "USB_DP_MCU": "USB D+ (IO20), 22 ohm R21 to the connector",
-    "EN": "chip enable: 10k / 1 uF (R23, C12), RESET button SW19 and J7 pull it low",
+    "EN": "chip enable: 10k / 1 uF (R23, C12), J7's EN pad pulls it low",
 }
 for k in range(8):
     ROLE[f"LCD_D{k}_MCU"] = f"LCD_CAM data bit {k} (panel DB{k}), 33 ohm source termination R{70 + k}" + (

@@ -7,7 +7,7 @@
  "lcsc": "C114218",
  "manufacturer": "Hirose",
  "symbol": "Connector:Micro_SD_Card_Det_Hirose_DM3AT",
- "footprint": "Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5",
+ "footprint": "battler:microSD_HC_Hirose_DM3AT-SF-PEJM5",
  "datasheet": {
   "url": "https://www.hirose.com/product/series/DM3",
   "revision_or_date": "not downloaded (LCSC datasheet link returned a web page): pins from the SD Physical Layer spec and KiCad's symbol"

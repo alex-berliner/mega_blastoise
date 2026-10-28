@@ -302,12 +302,12 @@ ss_lip_z = retainer_z + ss_lift;                        // the Start/Select flan
 ss_cap_d = 3.2;  ss_flange_d = 5.0;  ss_cap_h = 3.0;    // cap body, flange, flange bottom to top (ESTIMATES: the body
                                                         // and flange from the faceplate's openings; were 4.5 and 6.0)
 
-// ---------------- the ESP32-S3 board's microSD slot: the left wall out (2026-10-28, Alex: "Hirose, one side") ----------------
+// ---------------- the ESP32-S3 board's microSD slot: the left wall out (2026-10-28, Alex: "Hirose, one side"; 1.5 not 1.3: the slot's shell tabs need 0.31 of copper to the board's edge) ----------------
 // The Hirose DM3AT-SF-PEJM5 (15.95 deep, its back to stay out from under the panel's FPC at x >= 78.05 KiCad, case -21.95) sits below
 // the module with its front at the left wall: the left wall, and only it, moves grow_l out (outline, back, skirts, tongue, rounds,
 // the board's edge and ribs, the crush ribs and grips on it). The right edge, the panel, the clusters, the screws and everything
 // else stay where they were, so the screen sits grow_l / 2 off the case's centre.
-grow_l = 1.3;
+grow_l = 1.5;
 wall_l = case_w / 2 + grow_l;                           // the left wall's outside, from the panel's centre (case_w / 2 on the right)
 
 // ---------------- derived ----------------
@@ -948,10 +948,10 @@ cell_x1 = cell_pocket_box[1][0];                                   // its right 
 // (the hole's extra 1.0 there) to J2 in the right strip
 module cell2d(size) translate([cell_x1 - size[1], cell_pocket_box[0][1]]) square([size[1], size[0]]);
 
-// The SD slot's opening in the left wall (Hirose DM3AT-SF-PEJM5, front 0.4 past the board's edge, the card's tip 1.6 further: 0.5 short
-// of the outside): 14 wide over the slot's 13.85, from the board's top up 2.6, through the skirt and the tongue; the slot's centre
-// y -34.2 (KiCad 134.2: placement.py), its back to stay under x -21.95
-sd_y = [-41.2, -27.2];  sd_z = [z_top_cu - 0.2, z_top_cu + 2.6];
+// The SD slot's opening in the left wall (Hirose DM3AT-SF-PEJM5, front 0.23 past the board's edge, the card's tip 1.6 further: 0.7 short
+// of the outside): 14 wide over the slot's 13.85 body, from the board's top up 2.6, through the skirt and the tongue; the slot's centre
+// y -34.6 (KiCad 134.6: placement.py), its back to stay under x -21.95
+sd_y = [-41.6, -27.6];  sd_z = [z_top_cu - 0.2, z_top_cu + 2.6];
 module sd_cut() translate([-wall_l - 2, sd_y[0], sd_z[0]]) cube([wall + board_clear + 2 - 0.3, sd_y[1] - sd_y[0], sd_z[1] - sd_z[0]]);
 
 // ---- the tub (the back): printed back down, as exported ----

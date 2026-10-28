@@ -26,7 +26,7 @@ SMALL = ("R_0402", "C_0402", "R_0603", "C_0603", "L_0603", "LED_0603", "D_SOD-32
          "Fiducial", "MountingHole", "DSL_button", "AOTA", "ABM8")
 TEXT_H = 0.8        # mm; JLC's minimum legible silk is about 0.8 mm tall, 0.15 mm line
 # parts whose label below says more than their reference would
-LABELLED = {"J2", "J3", "J5", "J7", "SW18", "SW19", "TP1", "TP2", "TP3", "TP4", "TP5",
+LABELLED = {"J2", "J3", "J5", "J7", "TP1", "TP2", "TP3", "TP4", "TP5",
             "TP9", "TP10", "TP11", "TP12", "TP13", "TP14", "TP15", "TP16"}
 # the probe pads added for bring-up (2026-10-19): the name printed beside each
 PROBE_NAMES = {"TP9": "1V1", "TP10": "BLREF", "TP11": "SCK", "TP12": "MOSI", "TP13": "CS", "TP14": "DC",

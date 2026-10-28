@@ -227,170 +227,6 @@
 			)
 			(embedded_fonts no)
 		)
-		(symbol "Switch:SW_Push"
-			(pin_numbers
-				(hide yes)
-			)
-			(pin_names
-				(offset 1.016)
-				(hide yes)
-			)
-			(exclude_from_sim no)
-			(in_bom yes)
-			(on_board yes)
-			(in_pos_files yes)
-			(duplicate_pin_numbers_are_jumpers no)
-			(property "Reference" "SW"
-				(at 1.27 2.54 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-					(justify left)
-				)
-			)
-			(property "Value" "SW_Push"
-				(at 0 -1.524 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Footprint" ""
-				(at 0 5.08 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Datasheet" ""
-				(at 0 5.08 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "Description" "Push button switch, generic, two pins"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(property "ki_keywords" "switch normally-open pushbutton push-button"
-				(at 0 0 0)
-				(show_name no)
-				(do_not_autoplace no)
-				(hide yes)
-				(effects
-					(font
-						(size 1.27 1.27)
-					)
-				)
-			)
-			(symbol "SW_Push_0_1"
-				(circle
-					(center -2.032 0)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 0 1.27) (xy 0 3.048)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(circle
-					(center 2.032 0)
-					(radius 0.508)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(polyline
-					(pts
-						(xy 2.54 1.27) (xy -2.54 1.27)
-					)
-					(stroke
-						(width 0)
-						(type default)
-					)
-					(fill
-						(type none)
-					)
-				)
-				(pin passive line
-					(at -5.08 0 0)
-					(length 2.54)
-					(name "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "1"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-				(pin passive line
-					(at 5.08 0 180)
-					(length 2.54)
-					(name "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-					(number "2"
-						(effects
-							(font
-								(size 1.27 1.27)
-							)
-						)
-					)
-				)
-			)
-			(embedded_fonts no)
-		)
 		(symbol "power:+3V3"
 			(power global)
 			(pin_numbers
@@ -648,26 +484,6 @@
 	)
 	(wire
 		(pts
-			(xy 40.64 55.88) (xy 40.64 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "74349e2e-1b8a-5c69-98a1-b595586622ab")
-	)
-	(wire
-		(pts
-			(xy 40.64 68.58) (xy 40.64 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "fc3b014c-c307-58d5-b575-c6cd3d1ec2c1")
-	)
-	(wire
-		(pts
 			(xy 88.9 53.34) (xy 91.44 53.34)
 		)
 		(stroke
@@ -716,29 +532,9 @@
 		)
 		(uuid "e8df328f-6597-5aea-bc09-553aba410943")
 	)
-	(wire
-		(pts
-			(xy 152.4 55.88) (xy 152.4 58.42)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "98aa2244-01ab-5ddd-8eed-f5ee2da2432c")
-	)
-	(wire
-		(pts
-			(xy 152.4 68.58) (xy 152.4 71.12)
-		)
-		(stroke
-			(width 0)
-			(type default)
-		)
-		(uuid "2f7b780d-40ef-5e11-858f-90ec0a4185ad")
-	)
-	(text "BOOT button (IO0)"
+	(text "Debug pads J7 (back side, 2.54 mm)"
 		(exclude_from_sim no)
-		(at 40.3276 45.72 0)
+		(at 99.3334 40.64 0)
 		(effects
 			(font
 				(size 1.8 1.8)
@@ -746,101 +542,35 @@
 		)
 		(uuid "05c64c7a-14a8-59f0-8154-d6f5c388becd")
 	)
-	(text "RESET button (EN)"
+	(text "J7: 3V3, EN, BOOT (IO0), GND on bare pads for a pogo jig or a clip. Power it through 3V3 only with the cell out and nothing on USB;"
 		(exclude_from_sim no)
-		(at 152.2163 45.72 0)
+		(at 83.8556 165.1 0)
 		(effects
 			(font
-				(size 1.8 1.8)
+				(size 1.27 1.27)
 			)
 		)
 		(uuid "587c9b68-9020-5b64-8494-b1c71d71a9c9")
 	)
-	(text "Debug pads J7 (back side, 2.54 mm)"
+	(text "EN to GND resets; IO0 to GND at reset enters the ROM's download mode (USB Serial/JTAG on the board's USB-C, or UART0 pads, not brought out)."
 		(exclude_from_sim no)
-		(at 99.3334 45.72 0)
+		(at 90.5085 168.91 0)
 		(effects
 			(font
-				(size 1.8 1.8)
+				(size 1.27 1.27)
 			)
 		)
 		(uuid "b19b75a6-59c0-595c-83ce-94b1a1f2f965")
 	)
-	(text "SW18 BOOT (IO0) and SW19 RESET (EN, through the module's 10k / 1 uF) sit under pinholes in the lid. BOOT low at reset enters"
+	(text "BOOT and RESET buttons are not on this board (no room for their pinholes beside the microSD slot, 2026-10-28)."
 		(exclude_from_sim no)
-		(at 81.6477 165.1 0)
+		(at 74.6906 172.72 0)
 		(effects
 			(font
 				(size 1.27 1.27)
 			)
 		)
 		(uuid "73cd17b6-5114-55bc-aa74-74e91924b6d2")
-	)
-	(text "the ROM's download mode (USB Serial/JTAG on the board's USB-C, or UART0 on the module's TXD0/RXD0 pads, not brought out)."
-		(exclude_from_sim no)
-		(at 82.0109 168.91 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "de0493fe-d8c1-5ce4-9e2c-8ce2afc29a80")
-	)
-	(text "J7: power through its 3V3 pad only with the cell out and nothing on USB; EN to GND resets; IO0 to GND at reset: download mode."
-		(exclude_from_sim no)
-		(at 82.0407 172.72 0)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-		)
-		(uuid "6891a09a-69a4-56af-88c1-c553ce72fc3b")
-	)
-	(global_label "BOOT"
-		(shape passive)
-		(at 40.64 55.88 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "32848676-441b-5868-afaf-a15839ed8feb")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 40.64 55.88 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(global_label "EN"
-		(shape passive)
-		(at 152.4 55.88 0)
-		(fields_autoplaced yes)
-		(effects
-			(font
-				(size 1.27 1.27)
-			)
-			(justify left)
-		)
-		(uuid "b4b05249-6df9-588d-8f58-f24444e80b3b")
-		(property "Intersheetrefs" "${INTERSHEET_REFS}"
-			(at 152.4 55.88 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
 	)
 	(global_label "EN"
 		(shape passive)
@@ -884,230 +614,6 @@
 			(effects
 				(font
 					(size 1.27 1.27)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Switch:SW_Push")
-		(at 40.64 63.5 270)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "dde7ed70-5a1b-59ef-b508-e6d99df82ea8")
-		(property "Reference" "SW18"
-			(at 36.83 62.23 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "BOOT"
-			(at 36.83 64.77 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "battler:SW_SPST_TS-1088-xR020"
-			(at 40.64 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 40.64 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Push button switch, generic, two pins"
-			(at 40.64 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C720477"
-			(at 40.64 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "TS-1088-AR02016"
-			(at 40.64 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer" "XKB"
-			(at 40.64 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "ec61c14e-3d10-5ae4-a6d4-b4ac095ea712")
-		)
-		(pin "2"
-			(uuid "f00435dc-88b9-5847-b1e4-2212f945e9fc")
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "SW18")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "Switch:SW_Push")
-		(at 152.4 63.5 270)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "80246235-47da-532b-86b7-0bc99528317b")
-		(property "Reference" "SW19"
-			(at 147.955 62.23 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "RESET"
-			(at 147.955 64.77 90)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" "battler:SW_SPST_TS-1088-xR020"
-			(at 152.4 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 152.4 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Push button switch, generic, two pins"
-			(at 152.4 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "LCSC" "C720477"
-			(at 152.4 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "MPN" "TS-1088-AR02016"
-			(at 152.4 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Manufacturer" "XKB"
-			(at 152.4 63.5 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "e95f24f8-47eb-52b5-b2a0-ee182759c515")
-		)
-		(pin "2"
-			(uuid "11830746-299d-501e-bc3d-c626bfe27360")
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "SW19")
-					(unit 1)
 				)
 			)
 		)
@@ -1209,160 +715,6 @@
 		)
 	)
 	(symbol
-		(lib_id "power:GND")
-		(at 40.64 71.12 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "fdc20c53-b145-577a-915d-fb946bcec5d7")
-		(property "Reference" "#PWR081"
-			(at 40.64 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 40.64 74.93 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 40.64 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 40.64 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 40.64 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "4762f1e1-d8d4-5786-8edd-35b5f0e704bd")
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR081")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
-		(lib_id "power:GND")
-		(at 152.4 71.12 0)
-		(unit 1)
-		(body_style 1)
-		(exclude_from_sim no)
-		(in_bom yes)
-		(on_board yes)
-		(in_pos_files yes)
-		(dnp no)
-		(uuid "4e0813e3-406b-56a1-8f18-310d3991c3b7")
-		(property "Reference" "#PWR082"
-			(at 152.4 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Value" "GND"
-			(at 152.4 74.93 0)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Footprint" ""
-			(at 152.4 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Datasheet" ""
-			(at 152.4 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(property "Description" "Power symbol creates a global label with name \"GND\" , ground"
-			(at 152.4 71.12 0)
-			(hide yes)
-			(show_name no)
-			(do_not_autoplace no)
-			(effects
-				(font
-					(size 1.27 1.27)
-				)
-			)
-		)
-		(pin "1"
-			(uuid "543849c3-e85e-54d5-a63b-cf94151a78cd")
-		)
-		(instances
-			(project "battler"
-				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR082")
-					(unit 1)
-				)
-			)
-		)
-	)
-	(symbol
 		(lib_id "power:+3V3")
 		(at 88.9 53.34 0)
 		(unit 1)
@@ -1372,8 +724,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "eb68c950-9246-5229-89cf-ef63c456a6a1")
-		(property "Reference" "#PWR083"
+		(uuid "fdc20c53-b145-577a-915d-fb946bcec5d7")
+		(property "Reference" "#PWR081"
 			(at 88.9 53.34 0)
 			(hide yes)
 			(show_name no)
@@ -1428,12 +780,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "019fa314-2548-549d-b7a3-cffc2ba1a153")
+			(uuid "4762f1e1-d8d4-5786-8edd-35b5f0e704bd")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR083")
+					(reference "#PWR081")
 					(unit 1)
 				)
 			)
@@ -1449,8 +801,8 @@
 		(on_board yes)
 		(in_pos_files yes)
 		(dnp no)
-		(uuid "5f17b9cf-26ee-591c-8314-370668e420c2")
-		(property "Reference" "#PWR084"
+		(uuid "4e0813e3-406b-56a1-8f18-310d3991c3b7")
+		(property "Reference" "#PWR082"
 			(at 88.9 63.5 0)
 			(hide yes)
 			(show_name no)
@@ -1505,12 +857,12 @@
 			)
 		)
 		(pin "1"
-			(uuid "3fe9cf64-c19a-5c75-8f31-dbc9b11ee9ad")
+			(uuid "543849c3-e85e-54d5-a63b-cf94151a78cd")
 		)
 		(instances
 			(project "battler"
 				(path "/8922e0a8-6f76-52f6-b0ec-4de6a784796f/74ddddc3-4675-58f5-ac59-5565a292508e"
-					(reference "#PWR084")
+					(reference "#PWR082")
 					(unit 1)
 				)
 			)

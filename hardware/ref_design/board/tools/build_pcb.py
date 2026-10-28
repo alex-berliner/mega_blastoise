@@ -31,7 +31,7 @@ sys.path.insert(0, HERE)
 sys.path.insert(0, BOARD_DIR)
 
 import netlist  # noqa: E402
-from placement import CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P, SPEAKER, USB_TAB  # noqa: E402
+from placement import ANTENNA_KEEPOUT, BOARD_X0, BOARD_X1, CASE, CORE, CORE_AT, CORE_ESCAPES, CORE_NETS, CORE_ROT, CORE_SIDE, CUTOUTS, P, SPEAKER, USB_TAB  # noqa: E402
 
 PCB = os.path.join(BOARD_DIR, "battler.kicad_pcb")
 REF = os.path.join(os.path.dirname(BOARD_DIR), "..", "..", "..", "tmp")  # replaced below
@@ -190,7 +190,7 @@ def rounded_rect(board, x0, y0, x1, y1, r):
 
 def outline(board):
     bw, bl, r = CASE["board"]["w"], CASE["board"]["l"], CASE["board"]["r"]
-    x0, y0, x1, y1 = 100 - bw / 2, 100 - bl / 2, 100 + bw / 2, 100 + bl / 2
+    x0, y0, x1, y1 = BOARD_X0, 100 - bl / 2, BOARD_X1, 100 + bl / 2      # (the left edge out for the microSD slot)
     tab = USB_TAB
     if not tab:
         rounded_rect(board, x0, y0, x1, y1, r)
@@ -240,6 +240,43 @@ def speaker(board):
                  (cx + w / 2 + g, cy + l / 2 + g), (cx - w / 2 - g, cy + l / 2 + g)):
         z.Outline().Append(mm(x), mm(y))
     board.Add(z)
+
+
+def antenna_keepout(board):
+    """The flex antenna's copper-free zone (placement.ANTENNA_KEEPOUT): a rule area on both layers that keeps tracks, vias,
+    pours and parts out (the antenna lies on the left wall above the module; its U.FL cable runs to the module's connector)."""
+    x0, y0, x1, y1 = ANTENNA_KEEPOUT
+    z = pcbnew.ZONE(board)
+    z.SetIsRuleArea(True)
+    z.SetDoNotAllowFootprints(True)
+    z.SetDoNotAllowTracks(True)
+    z.SetDoNotAllowVias(True)
+    z.SetDoNotAllowZoneFills(True)
+    z.SetDoNotAllowPads(False)
+    ls = pcbnew.LSET()
+    ls.AddLayer(pcbnew.F_Cu)
+    ls.AddLayer(pcbnew.B_Cu)
+    z.SetLayerSet(ls)
+    z.SetZoneName("antenna_keepout")
+    z.Outline().NewOutline()
+    for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1)):
+        z.Outline().Append(mm(x), mm(y))
+    board.Add(z)
+
+
+def module_vias(board, fps, netinfo):
+    """Four GND vias in the module's ground pad (pad 41, 3.9 mm square), the pad's only way to the pours: the pad's paste is nine
+    squares, so the vias sit between them."""
+    u4 = fps["U4"]
+    pad = next(p for p in u4.Pads() if p.GetNumber() == "41")
+    c = xy(pad.GetPosition())
+    for dx, dy in ((-1.4, -1.4), (1.4, -1.4), (-1.4, 1.4), (1.4, 1.4)):
+        v = pcbnew.PCB_VIA(board)
+        v.SetPosition(V(c[0] + dx, c[1] + dy))
+        v.SetWidth(mm(0.6))
+        v.SetDrill(mm(0.3))
+        v.SetNet(netinfo["GND"])
+        board.Add(v)
 
 
 def footprints(board, comps, nets, pins):
@@ -636,7 +673,7 @@ def straight_escapes(board, fps, netinfo):
 
 def main():
     global REF_PCB
-    if not REF_PCB:
+    if CORE and not REF_PCB:
         sys.exit("set RP2350B_REF to RPI-RP2350B-MINIMAL_R4-S1.kicad_pcb (Raspberry Pi RP-010329-CA)")
     if os.path.exists(os.path.join(BOARD_DIR, "~battler.kicad_pcb.lck")):
         sys.exit("the board is open in KiCad; close it first")
@@ -646,17 +683,21 @@ def main():
     setup(board)
     outline(board)
     speaker(board)
+    antenna_keepout(board)
     fps, netinfo = footprints(board, comps, nets, pins)
     missing = [r for r in fps if r not in P and r not in CORE.values()]
     if missing:
         sys.exit(f"no position for {missing}")
     for ref, (x, y, rot, side) in P.items():
         place(fps[ref], x, y, rot, side)
-    copy_core(board, fps, netinfo)
-    if CORE_ESCAPES:
-        copy_escapes(board, fps, netinfo)
+    if CORE:
+        copy_core(board, fps, netinfo)
+        if CORE_ESCAPES:
+            copy_escapes(board, fps, netinfo)
+        else:
+            straight_escapes(board, fps, netinfo)
     else:
-        straight_escapes(board, fps, netinfo)
+        module_vias(board, fps, netinfo)
     pcbnew.SaveBoard(PCB, board)
     print("saved", PCB, len(fps), "footprints,", len(nets), "nets")
 

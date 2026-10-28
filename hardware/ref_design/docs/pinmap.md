@@ -8,7 +8,7 @@ peripheral in 8-bit i80 mode, the card on SDMMC (GPIO matrix), buttons through t
 
 | GPIO | Module pin | Net | Use |
 |---|---|---|---|
-| 0 | 27 | `BOOT` | strapping pin IO0: BOOT button SW18 and J7; low at reset enters the ROM's download mode; free as an input afterwards |
+| 0 | 27 | `BOOT` | strapping pin IO0: J7 pad (no button); low at reset enters the ROM's download mode; free as an input afterwards |
 | 1 | 39 | `VBAT_SENSE` | ADC1_CH0: battery voltage / 2 (R17/R18, 470k each, 100 nF) |
 | 2 | 38 | `CC1_SENSE` | ADC1_CH1: USB-C CC1 through 10k; the source's current offer |
 | 3 | 15 | `SR_DATA` | input: U8's Q7, the end of the chain: 24 bits, low = pressed (see Buttons); strapping pin IO3 (JTAG source: leave the eFuse alone) |

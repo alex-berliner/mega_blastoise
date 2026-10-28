@@ -2019,7 +2019,7 @@
 				)
 			)
 		)
-		(property "Footprint" "Connector_Card:microSD_HC_Hirose_DM3AT-SF-PEJM5"
+		(property "Footprint" "battler:microSD_HC_Hirose_DM3AT-SF-PEJM5"
 			(at 139.7 96.52 0)
 			(hide yes)
 			(show_name no)

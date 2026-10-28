@@ -166,21 +166,14 @@ def audio():
 
 def debug():
     sh = Sheet("debug.kicad_sch")
-    # -- BOOT (IO0) and RESET (EN) buttons, J7 (the same signals on bare pads, for a pogo jig) between them
-    by = 63.5
-    for bx, sw, title, net in ((40.64, "SW18", "BOOT button (IO0)", "BOOT"), (152.4, "SW19", "RESET button (EN)", "EN")):
-        sh.heading(bx - 12.7, by - 17.78, title)
-        sh.place(sw, bx, by, 270, f="l")
-        sh.tag(f"{sw}.1", G)
-        sh.tag(f"{sw}.2", G)
     x = 96.52
-    sh.heading(x - 22.86, by - 17.78, "Debug pads J7 (back side, 2.54 mm)")
-    sh.place("J7", x, by - 7.62, 0, f="r")
+    sh.heading(x - 22.86, 40.64, "Debug pads J7 (back side, 2.54 mm)")
+    sh.place("J7", x, 55.88, 0, f="r")
     for n in ("1", "2", "3", "4"):
         sh.tag(f"J7.{n}")
-    sh.text(17.78, 165.1, "SW18 BOOT (IO0) and SW19 RESET (EN, through the module's 10k / 1 uF) sit under pinholes in the lid. BOOT low at reset enters")
-    sh.text(17.78, 168.91, "the ROM's download mode (USB Serial/JTAG on the board's USB-C, or UART0 on the module's TXD0/RXD0 pads, not brought out).")
-    sh.text(17.78, 172.72, "J7: power through its 3V3 pad only with the cell out and nothing on USB; EN to GND resets; IO0 to GND at reset: download mode.")
+    sh.text(17.78, 165.1, "J7: 3V3, EN, BOOT (IO0), GND on bare pads for a pogo jig or a clip. Power it through 3V3 only with the cell out and nothing on USB;")
+    sh.text(17.78, 168.91, "EN to GND resets; IO0 to GND at reset enters the ROM's download mode (USB Serial/JTAG on the board's USB-C, or UART0 pads, not brought out).")
+    sh.text(17.78, 172.72, "BOOT and RESET buttons are not on this board (no room for their pinholes beside the microSD slot, 2026-10-28).")
     return sh
 
 

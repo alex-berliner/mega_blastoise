@@ -31,10 +31,10 @@ PICKS = placement_zones.load_picks()
 # had only the 2.8 mm between J1's pads and the hole. case/CELLCUT_FOR_CASE.md has the outline.
 # The case took it on 2026-10-22 (case.scad writes the 72.4 board, USB-C and tab into
 # positions.json), so this adds nothing now; it stays so the placement can't widen it twice
-WIDEN = 72.4 - CASE["board"]["w"]
-CASE["board"]["w"] += WIDEN
-CASE["usb"]["front_x"] += WIDEN / 2
-CASE["usb"]["tab"] = [[x + WIDEN / 2, y] for x, y in CASE["usb"]["tab"]]
+WIDEN = 0.0      # (positions.json has the 72.4 wide board since 2026-10-22; the ESP32-S3 board's left edge is out by GROW_L, below)
+GROW_L = CASE["board"].get("grow_l", 0.0)          # the microSD slot's 1.3 mm on the left edge only (case.scad grow_l)
+BOARD_W = CASE["board"]["w"] - GROW_L              # the board as it was, centred on x 100
+BOARD_X0, BOARD_X1 = 100 - BOARD_W / 2 - GROW_L, 100 + BOARD_W / 2
 
 # ---- the hole the cell sits in (2026-10-21, row 19 of Alex's list) ------------------------------
 # The case is too thick with the cell under the board, so it sits in a cutout in the board's
@@ -75,39 +75,17 @@ CUTOUTS = placement_zones.shift_hole(CUTOUTS, PICKS)
 SPEAKER = dict(at=(129.7, 124.5), size=(10.0, 15.0), grow=0.5)   # KiCad x, y; x by y, mm (the hole's outline: CUTOUTS)
 CUTOUTS, SPEAKER = placement_zones.shift_speaker(CUTOUTS, SPEAKER, PICKS)    # the search may have moved it
 
-# ---- RP2350B core: copied from the reference board ------------------------------
-# In the left bezel since the cell took the middle of the board (2026-10-21), as Raspberry Pi drew
-# it: seat 2's pins face the strip beside the cell's hole, the panel's pins face J3, seat 1's
-# cross is below. The decouplers on its long sides would land on the side screw, J2 or the folded
-# FPC: they are placed by hand below, as close to their pins as that allows.
+# ---- no core any more (2026-10-28): the ESP32-S3-WROOM-1U-N16R8 module is placed like any other part, below ----------------------
+# (build_pcb.py's copy_core and its reference board are unused: these names stay so it imports)
 CORE_SIDE = "F"
-CORE_HOME = (73.8, 114.0, 0)                  # x, y of the RP2350B's centre, turn (degrees CCW on screen)
-CORE_AT, CORE_ROT = placement_zones.core_pose(CORE_HOME, PICKS)
-CORE_Y = CORE_AT[1]
-CORE_ESCAPES = True         # Raspberry Pi's pin escapes (False: straight stubs, build_pcb.straight_escapes)
-CORE = {                     # reference designator -> ours (same nets, same job); the RP2354B
-    "U1": "U4", "X1": "X1", "L1": "L2",    # has its flash inside, so the reference's U3 and R10 stay behind,
-    "C12": "C11", "C13": "C12", "C10": "C21",   # and its C2, R1 and R6 (C10, R23, R25 here) sat out by
-    "C6": "C24", "C7": "C25", "C9": "C26",      # the flash; the decouplers C13-C20, C22 and C23 here
-    "C3": "C27", "C4": "C28",                   # are placed by hand (the screw, J2 and the folded FPC)
-    "R2": "R20", "R3": "R19", "R7": "R21", "R8": "R22",
-}
-CORE_NETS = {                # reference net -> ours, for the copied tracks and zones
-    "+1V1": "+1V1", "+3V3": "+3V3", "GND": "GND", "/QSPI_SS": "QSPI_SS",
-    "/VREG_AVDD": "VREG_AVDD", "/VREG_LX": "VREG_LX",
-    "/XIN": "/MCU/XIN", "/XOUT": "/MCU/XOUT", "Net-(C4-Pad1)": "/MCU/XO",
-    "Net-(U1-USB_DM)": "/MCU/USB_DM_MCU", "Net-(U1-USB_DP)": "/MCU/USB_DP_MCU",
-}
-
+CORE_AT, CORE_ROT, CORE_Y = (0.0, 0.0), 0, 0.0
+CORE_ESCAPES = False
+CORE = {}
+CORE_NETS = {}
 
 
 def core_pt(dx, dy):
-    """A point of Raspberry Pi's layout, dx, dy from its U1, on this board (build_pcb.core_xy)."""
-    import math
-    a = math.radians(CORE_ROT)
-    nx = dx * math.cos(a) + dy * math.sin(a)
-    ny = -dx * math.sin(a) + dy * math.cos(a)
-    return round(CORE_AT[0] + nx, 3), round(CORE_AT[1] + (-ny if CORE_SIDE == "B" else ny), 3)
+    return (0.0, 0.0)
 
 
 # ---- everything else (re-placed for the 3.5 in panel, 2026-10-26) ----------------------------------
@@ -140,9 +118,7 @@ at("FID3", -34.0, 72.5)
 put("J3", CASE["fpc_conn"]["x"], CASE["fpc_conn"]["y"], 0)
 at("C29", -10.6, -13.0, 90)                  # panel VCI/VDDI, over J3's 3V3 pins
 at("C30", -9.4, -13.0, 90)
-at("JP4", -10.0, -24.0, 0)                   # 3V3 -> panel: flat, under the tail
-at("R28", -14.0, -24.0, 90)                    # SPI source terminations, below J3 left end: out of the fan-out of the core's east pins (V&V round 3 routing)
-at("R29", -14.0, -26.2, 90)
+at("JP4", -10.0, -25.4, 0)                   # 3V3 -> panel: flat, under the tail
 at("JP2", 26.9, -13.0, 0)                    # VSYS to LED_A (J3 pin 50): flat, by J3's right end
 
 # ---- backlight current sinks: the ends' spine (U6, 1.7 tall in its pocket) and the row under the slope above it
@@ -172,13 +148,45 @@ at("RN1", -23.5, -45.8, 90)
 at("RN2", -26.5, -45.8, 90)
 at("C52", -9.0, -51.0, 0)
 
-# ---- debug: left strip
-PINHOLES = [(-31.0, -30.2), (-31.0, -33.85)]
-at("SW18", *PINHOLES[0], 0)
-at("SW19", *PINHOLES[1], 0)
-at("R25", -34.8, -30.0, 90)                  # QSPI_SS -> BOOTSEL
-at("R26", -34.8, -33.5, 90)                  # RUN -> RUN_SW
-at("J5", -32.1, -5.0, 270)                  # SWD, its mouth towards the left edge
+# ---- the module (2026-10-28): its U.FL side towards the left wall, the antenna's flex plate on the wall above it (x 64.5 .. 71, y 62.1 .. 107.9)
+# the footprint's natural pose has the antenna end up; turned 90 degrees CCW it is on the left. Body x 64.8 .. 84.0, y 107.8 .. 125.8
+# (0.7 up from the mock's spot: the slot's top pads keep 0.6 from its pads)
+put("U4", 73.9, 116.8, 90)
+# the antenna's copper-free zone (both layers, pours too): build_pcb.py's antenna_keepout (the flex antenna's footprint, a margin of 0.4
+# in x, and none below it so the module's top row of pads and their escapes keep their lane): not a Kinghelm number, see docs
+ANTENNA_KEEPOUT = (BOARD_X0 - 0.5, 62.6, 71.4, 107.0)   # (H2's boss, y 57.5 .. 62.5, already touches the mock's plate: 0.4 mm of its end)
+put("C11", 63.4, 125.6, 90)                  # 3V3 at the module's pin 2, in the strip beside it
+put("C12", 63.4, 124.1, 90)                  # EN's 1 uF
+put("R23", 63.4, 122.6, 90)                  # EN's 10k
+put("C10", 79.6, 104.9, 0)                   # the module's 22 uF, above its top row
+put("R22", 80.8, 128.6, 90)                  # USB 22 ohm, by the module's D- / D+ pins
+put("R21", 82.0, 128.6, 90)
+put("C13", 80.8, 130.4, 90)                  # DNP pads
+put("C14", 82.0, 130.4, 90)
+# 33 ohm source terminations: D0-D4 above the module's top row, D5/D6 one row up, D7 and WR on the module's right side
+for k, x in enumerate((76.9, 75.6, 74.3, 73.1, 71.8)):
+    put(f"R{70 + k}", x, 105.5, 90)
+put("R75", 72.2, 103.9, 90)
+put("R76", 73.5, 103.9, 90)
+put("R77", 85.4, 112.36, 0)
+put("R78", 85.4, 111.1, 0)
+put("R65", 85.4, 109.8, 0)                   # SR_CLK source termination (module pin 18's neighbour on the right side)
+
+# ---- the microSD slot (Hirose DM3AT-SF-PEJM5, C114218) below the module, its mouth to the left wall: the case's opening is y 127.2 .. 141.2
+# (case.scad sd_y), the slot's front 0.45 past the board's edge (card tip 0.4 short of the outside), its back at x 77.95 (the panel's FPC zone
+# starts at 78.05: 1.05 mm there, the slot is 1.68). Turned 270 so its mouth (+y of the footprint) is -x
+put("J8", 70.4, 134.6, 270)
+for k in range(6):                           # pull-ups: CMD, D0-D3, CD
+    put(f"R{79 + k}", 80.6, 129.0 + 1.4 * k, 90)
+put("JP6", 83.0, 138.0, 0)
+put("C60", 83.0, 145.0, 0)
+put("C61", 86.0, 145.0, 0)
+
+# ---- the third shift register (Starts, Selects, charger status), in seat 1's spine
+put("U11", 101.0, 147.2, 0)
+put("C62", 106.5, 147.2, 0)
+put("R86", 96.3, 146.0, 90)
+put("R87", 96.3, 147.6, 90)
 
 # ---- USB-C on the right wall, its ESD array and the CC resistors
 USB_Y = CASE["usb"]["y"]
@@ -216,27 +224,20 @@ at("R64", 27.8, 21.5, 90)                    # ILIM
 at("TP7", 26.6, 17.8, 0)                     # CHG_TEMP
 at("TH1", 19.95, 20.0, 90)                    # the cell's temperature, at the hole's right edge
 
-# ---- 3V3 LDO in the left strip (1.5 tall, under the slope)
-at("U3", -30.0, 9.0, 90)
-at("C5", -34.0, 14.0, 90)
-at("C6", -31.8, 14.0, 90)
-at("C7", -29.6, 14.0, 90)
-at("JP1", -24.0, 9.0, 0)
-
-# ---- the core's loose parts: the reference's (R23, C13, C14 ...) moved with it by (-1.8, +5.5) from the old board
-for ref, (ox, oy, rot) in {"R23": (-28.8, -14.9, 90), "C13": (-20.0, -5.2, 90), "C23": (-19.4, -7.9, 90), "C18": (-22.4, -5.2, 90),
-                           "C14": (-28.8, -17.0, 90), "C15": (-13.3, -32.2, 90), "C17": (-12.1, -32.2, 90), "C22": (-13.3, -34.4, 90),
-                           "C16": (-28.8, -21.6, 270), "C20": (-28.8, -19.3, 90), "C19": (-26.4, -26.8, 90), "R65": (-17.4, -32.7, 90)}.items():
-    at(ref, ox - 4.0, oy + 5.5, rot)
-at("C10", 24.4, -12.4, 90)
+# ---- 3V3 LDO under the glass left of the cell's hole (x 72.5 .. 80.5, the antenna's strip is left of it; U3 is 1.45 tall: not under the FPC)
+put("U3", 77.0, 92.0, 90)
+put("C5", 75.0, 86.5, 90)
+put("C6", 77.2, 86.5, 90)
+put("C7", 79.4, 86.5, 90)
+put("JP1", 77.0, 98.0, 0)
 
 # ---- test pads on the back
 for i in range(5):
     at(f"TP{i + 1}", -8.0 + 4.0 * i, 51.5, 0, "B")      # between seat 2's clusters
 at("TP3", 26.0, 25.0, 0, "B")                # VBAT: on the back by JP5 and the cell's path
 at("J7", 0.0, -48.5, 0, "B")                 # SWD pogo pads on the back, under the row
-put("TP9", *core_pt(0.8, 7.22), 0, "B" if CORE_SIDE == "F" else "F")    # +1V1: on the core's own +1V1 via
-for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD SCK, MOSI, CS, DC on the back, below J3 (they sat in the channel between the hole and J3 and took its back-side lanes)
+at("TP9", 14.8, -33.5, 0)                    # the audio PWM, by its filter
+for i, ref in enumerate(("TP11", "TP12", "TP13", "TP14")):    # LCD WR, DC, D0, TE on the back, below J3
     at(ref, -6.0 + 2.54 * i, -25.0, 0, "B")
 
 # ---- audio: the amplifier under the glass right of J3, J4 in the strip (mouth towards the speaker), the filter in the rows below
@@ -254,7 +255,7 @@ at("C37", 18.8, -29.0, 90)
 at("R33", 20.0, -29.0, 90)
 at("C38", 21.2, -29.0, 90)
 at("Q3", 21.0, -13.0, 0)                     # SHUTDOWN switch
-at("TP8", 14.8, -24.5, 0)                    # SHUTDOWN: flat, under the tail's edge
+at("TP8", 14.8, -25.9, 0)                    # SHUTDOWN: flat, under the tail's edge
 at("JP3", 14.8, -27.8, 0)                    # VSYS -> amplifier
 at("TP15", 14.8, -30.5, 0)
 at("J4", 31.6, -8.2, 0)                      # PicoBlade: mouth towards the speaker (case -y), pins by the wall
@@ -289,7 +290,7 @@ ADOPTED = {
     "TH1": (119.95, 79.0, 90, "F"),
     "JP5": (124.0, 70.0, 0, "F"),
     "TP3": (126.0, 74.0, 0, "B"),
-    "Q1": (74.759, 142.987, 0, "F"),
+    "Q1": (75.2, 144.7, 0, "F"),
     "D2": (109.08, 149.543, 0, "F"),
     "R13": (106.489, 150.046, 90, "F"),
     "R42": (117.43, 148.073, 90, "F"),
@@ -304,6 +305,12 @@ ADOPTED = {
 }
 for _ref, (_x, _y, _rot, _side) in ADOPTED.items():
     P[_ref] = (round(_x, 3), round(_y, 3), _rot, _side)
+
+# ---- tools/place_new.py's result for the ESP32-S3 build's new parts (placement_new.json): nearest legal spots to the poses above ----
+_NEW = os.path.join(HERE, "placement_new.json")
+if os.path.exists(_NEW):
+    for _ref, (_x, _y, _rot, _side) in json.load(open(_NEW)).items():
+        P[_ref] = (_x, _y, _rot, _side)
 
 # ---- the placement search's result (tools/place_search.py): a no-op unless picks.json or PLACE_PICKS says otherwise ----------------
 placement_zones.apply(P, PICKS)
