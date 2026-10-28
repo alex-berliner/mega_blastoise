@@ -15,7 +15,7 @@ Claude (Anthropic's model) working in this repository.
 2. [Product concept and player experience](#2-product-concept-and-player-experience)
 3. [History and generations](#3-history-and-generations)
 4. [Decisions and their reasons](#4-decisions-and-their-reasons)
-5. [Software architecture](#5-software-architecture)
+5. [Software architecture: the Pokemon battler](#5-software-architecture-the-pokemon-battler)
 6. [Hardware](#6-hardware)
 7. [The reference design (REF-A)](#7-the-reference-design-ref-a)
 8. [Manufacturing and cost](#8-manufacturing-and-cost)
@@ -55,8 +55,9 @@ The technical requirements for the next spin, and what each one needs from the c
 
 ### The table, the screen and the seats
 
-The console is never picked up or turned. Two [seats](#g-seat) face each other across it, so no screen may
-assume a single reader. The [panel](#g-panel) is portrait and split into two [halves](#g-half), one per seat, and the
+The console is played flat on a table between two people sitting across from each other, and it
+is also picked up and played standing, for example while waiting in line. Two [seats](#g-seat) face each
+other across it, so no screen may assume a single reader. The [panel](#g-panel) is portrait and split into two [halves](#g-half), one per seat, and the
 far half is drawn rotated 180 degrees so both players read their own half upright. There is
 exactly one arrangement and no orientation setting.
 
@@ -68,9 +69,6 @@ halves. Each private half is framed in its seat's colour (red or white), so the 
 as a Poke Ball. The full rules are in
 [docs/archive/architecture/09-single-screen.md](docs/archive/architecture/09-single-screen.md) section 3, and the
 visual spec is [crates/mega_blastoise_web/www/ui_flow.html](crates/mega_blastoise_web/www/ui_flow.html).
-
-The screen needs an [IPS panel](#g-ips): a [TN panel](#g-tn) shows inverted contrast to whichever seat views it from
-the far side.
 
 ### Controls
 
@@ -92,22 +90,20 @@ drawn at that corner and a stray tap committed a choice with no way back.
 
 ### A session
 
-1. **Attract demo.** After 15 s idle in the lobby, the device plays an AI-versus-AI battle across
-   both halves.
-2. **Gen picker and options.** [Gen 1](#g-gen) or Gen 3 (the Gen 3 entry is labelled "preview"), drawn into
+1. **Gen picker and options.** [Gen 1](#g-gen) or Gen 3 (the Gen 3 entry is labelled "preview"), drawn into
    both halves; either player can drive it. Options open per seat over shared settings: team size
    (3v3 or 6v6), text speed, and a tutorial shown before the first game.
-3. **Lobby.** Each player presses to ready up; holding A fights the AI instead.
-4. **Teams** are a fresh random draft every battle, rematches included, from [Showdown](#g-showdown)'s [random
+2. **Lobby.** Each player presses to ready up; holding A fights the AI instead.
+3. **Teams** are a fresh random draft every battle, rematches included, from [Showdown](#g-showdown)'s [random
    battle sets](#g-randbat) for the chosen generation.
-5. **Choosing.** Each player picks a move or a switch on their own half with the cursor. A
+4. **Choosing.** Each player picks a move or a switch on their own half with the cursor. A
    committed player sees a waiting screen and can take the choice back; once both are ready the
    turn fires after a 1 s [grace window](#g-grace).
-6. **Playback.** Narration, HP drain, the [sprite bob](#g-sprite) and a small set of attack effects play over
+5. **Playback.** Narration, HP drain, the [sprite bob](#g-sprite) and a small set of attack effects play over
    the shared scene. The battle log (the last 50 lines, with damage numbers and the reasons for
    [crits](#g-crit) and [effectiveness](#g-type)) is available on `?` and pauses only the reader.
-7. **Faints and switches** ask the owning player for the next mon, showing the rival's side.
-8. **Result and recap**, then back to the lobby.
+6. **Faints and switches** ask the owning player for the next mon, showing the rival's side.
+7. **Result and recap**, then back to the lobby.
 
 ### Open information
 
@@ -185,18 +181,24 @@ The decisions that shape the project, newest last. Each links to where it is arg
 | 2026-10-19 | Start and Select per seat; seat 1's Start is the power button | Matches the DS Lite layout; no game button doubles as power | PLAN.md |
 | 2026-10-20 | Speaker on a plug-in [header](#g-header), playing out of the side wall | A floor grille faces the table; no soldering at assembly | PLAN.md |
 
-## 5. Software architecture
+## 5. Software architecture: the Pokemon battler
+
+This section covers the Pokemon battler only. The software around it on the next spin (the GBA
+emulator, and Linux or a boot select) is decided with the chip; see
+[docs/next_spin_requirements.md](docs/next_spin_requirements.md).
 
 ### 5.1 Shape
 
-One [`no_std`](#g-no-std) [core](#g-core) holds the [battle engines](#g-battle-engine) and the whole game: menus, lobby, input rules, screen
-decisions and rendering. Three thin [platforms](#g-platform) wrap it.
+One [`no_std`](#g-no-std) [core](#g-core) holds the whole game: menus, lobby, input rules, screen decisions and rendering.
+It drives a Showdown-compatible battle server and reads the battle back through a Showdown
+protocol client, the same split as Pokemon Showdown itself, so an online battle is the same
+protocol. Three thin [platforms](#g-platform) wrap the core.
 
 ```
-            gen1_battle   gen3_battle      (battle engines, no_std)
-                   \         /
-                 battle_types              (the type chart's alphabet)
-                        |
+   ps_dex (data)    ps_protocol (messages)
+         \               /
+   ps_sim (battle server)   ps_client (battle view from protocol)
+                  \          /
                mega_blastoise_core         (game loop, input rules, screens, renderer)
               /         |          \
  mega_blastoise_fw  mega_blastoise_web  mega_blastoise_test
@@ -205,9 +207,11 @@ decisions and rendering. Three thin [platforms](#g-platform) wrap it.
 
 | Crate | Role |
 |---|---|
-| [`gen1_battle`](crates/gen1_battle/SPEC.md) | [Gen 1](#g-gen) [singles](#g-singles) engine, cartridge-accurate as [Showdown](#g-showdown) models it, about 800 B of RAM per battle |
-| `gen3_battle` | Gen 3 singles engine: [Special split](#g-special-split), [natures](#g-ev-iv-nature), IVs and EVs, [17 types](#g-type), [weather](#g-weather), [abilities](#g-ability), [held items](#g-held-item) |
-| `battle_types` | The type enum shared by both engines |
+| `ps_sim` | Pokemon Showdown-compatible battle server: state, queue, events, PRNG, damage, protocol output. `no_std` + alloc |
+| `ps_client` | Showdown protocol client: builds its battle view only from protocol messages and feeds `choice_collect` |
+| `ps_dex` | Showdown's dex tables (species, moves, items, abilities, types, conditions), generated for each gen |
+| `ps_protocol` | Showdown sim protocol types (messages, commands, requests, teams) |
+| `ps_harness` | Test only: the `ps_sim_cli` binary that the protocol diff against real Showdown drives (`tools/ps-diff/`) |
 | `mega_blastoise_core` | Everything the device does, shared verbatim by the platforms |
 | `mega_blastoise_fw` | [Firmware](#g-firmware) for the [stripboard v2](#g-stripboard-v2) board ([Embassy](#g-embassy) on [RP2350](#g-rp2350)) |
 | `mega_blastoise_web` | The same device in a browser page; its own [WASM](#g-wasm) [workspace](#g-workspace) |
