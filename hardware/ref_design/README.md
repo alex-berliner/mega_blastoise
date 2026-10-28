@@ -12,7 +12,7 @@ well (2026-10-21: Freerouting leaves the same connections open after 15 as after
 **This is the 2-layer build**, on `main` since 2026-09-24: the first, 4-layer
 design (kept at tag `archive/ref-design-4layer`) with every cost change Alex approved
 that day, on two copper layers with JLC's standard 0.3 mm holes. Built by Claude in parallel with
-Alex's own hand-made board (`hardware/prod_board/`, `hardware/prod_case/`),
+Alex's own hand-made board (prod_board and prod_case, now at tag `prod-learning-archive`),
 which this folder never touches.
 
 ![board](board/fab/battler_iso.png)
@@ -50,7 +50,7 @@ which this folder never touches.
 | `case/*.stl`, `case/board.dxf`, `case/positions.json` | printable parts (tub, top), board outline, positions for the board scripts: build output from `case/export.py`, not in git (run it first) |
 | `case/SHELL.md`, `case/BOARD_OUTLINE.md` | the shell's design (the one-piece top, 2026-10-25; [the island's and decks' notes](case/SHELL_ISLAND.md) are the rejected design's) and what it asks of the board |
 | `case/fitkit/` | a printable fit kit: board mock, part dummies and case coupons, to test the real parts before ordering ([its README](case/fitkit/README.md)) |
-| `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md), [Konnect notes](docs/konnect_notes.md) |
+| `docs/` | [BOM](docs/bom.md) (factory and self-assembled), [assembly](docs/assembly.md), [bring-up](docs/bringup.md), [pin map](docs/pinmap.md), [design review](docs/design_review.md) |
 | `tools/quotes/` | JLCPCB and PCBWay instant-quote scripts for the bare board and assembly |
 | `datasheets/SOURCES.md` | where each datasheet comes from |
 

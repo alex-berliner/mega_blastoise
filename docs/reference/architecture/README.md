@@ -43,9 +43,7 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 | `scripts/` | The gate, UI probe, console, build and publish helpers |
 | `site/` | The Pages front page |
 | [hardware/README.md](../../../hardware/README.md) | Hardware index |
-| [hardware/stripboard_v2/](../../../hardware/stripboard_v2/BUILD.md) | The built board: generator, build guide, assembly stages, models |
 | [hardware/ref_design/](../../../hardware/ref_design/README.md) | The reference design: `board/`, `case/`, `docs/`, `datasheets/`, `tools/quotes/`, `viewer/` |
-| `hardware/prod_board/`, [hardware/prod_case/](../../../hardware/prod_case/README.md) | Alex's own board and case (read only for others) |
 | [hardware/membrane/](../../../hardware/membrane/README.md) | Membrane contact footprints and their generator and checker |
 | [hardware/ds_lite/](../../../hardware/ds_lite/README.md) | DS Lite construction research |
 

@@ -5,13 +5,13 @@ The boards and cases for the two-player handheld, newest first.
 | Folder | What it is | Whose | Status |
 |---|---|---|---|
 | [`ref_design/`](ref_design/README.md) | The reference design (REF-A): RP2354B, 3.5in IPS panel, DS Lite buttons (D-pad, A/B/X/Y, Start, Select per seat), one Li-ion cell; the schematic, routed 2-layer board, JLCPCB fab files, printable case, fit kit and docs, all generated from `board/design.py`, `board/placement.py` and `case/case.scad` | Claude, built alongside Alex's own board | Designed and checked, not yet ordered; parts marked ESTIMATE need a real sample first ([PLAN.md](ref_design/PLAN.md)) |
-| [`prod_board/`](prod_board/), [`prod_case/`](prod_case/README.md) | Alex's own production board and case, made by hand in KiCad and OpenSCAD to learn the tools | Alex | In progress |
-| [`membrane/`](membrane/README.md) | DS Lite membrane contact footprints and the generator for them, shared by both boards | shared | In use |
+| [`membrane/`](membrane/README.md) | DS Lite membrane contact footprints and the generator for them, used by the reference design | shared | In use |
 | [`ds_lite/`](ds_lite/README.md) | Research on how the Nintendo DS Lite is built and what makes its bottom half look and feel like one: a dossier, its sourced notes, and recommendations for the case | Claude | Research; the owner's caliper and scale checks still to fold in |
-| [`stripboard_v2/`](stripboard_v2/BUILD.md) | The working prototype: Pico 2, ST7796 panel, 16 direct buttons on stripboard; the firmware's `board_v2` target | Alex and Claude | Built; the firmware's current target |
 
 The v1 device (Pico, two OLEDs, button matrix: its KiCad board, stripboard and case) is out of
-the tree; tag `v1-archive` has it, and [docs/archive/v1/](../docs/archive/v1/) its notes.
+the tree; tag `v1-archive` has it, and [docs/archive/v1/](../docs/archive/v1/) its notes. The stripboard v2
+is at tag `stripboard-v2-archive` (the firmware still builds for it), and Alex's hand-made learning board and
+case (prod_board, prod_case) at tag `prod-learning-archive`.
 
 Each folder's own README says how to rebuild it. Build output (gerbers, STLs, STEP, renders)
 is not committed where a script makes it: run the folder's pipeline.
@@ -36,8 +36,8 @@ built.
 | Generation | Dates | What it was | Where it is now |
 |---|---|---|---|
 | **v1: two OLEDs** | 2026-04 to 2026-08 | Raspberry Pi Pico (RP2040), one 128x64 mono OLED per player, WS2812B LED strips for HP and party, a button matrix with move buttons at the screen corners. Built first on breadboard and stripboard, then as a fabricated PCB designed by a collaborator (Eddy Zheng; files committed 2026-07-13), which ran in a printed case on 2xAA cells by early August | Removed from the tree on 2026-10-19; tag `v1-archive` holds its board, stripboard and case files; notes in [docs/archive/v1/](../docs/archive/v1/DESIGN.md) |
-| **Stripboard v2: single screen** | designed 2026-08-19/20, running 2026-08-26 | Pico 2 (RP2350), one 3.5 in ST7796 320x480 panel, 16 direct-GPIO tactile switches, a LiPo with a TP4056 module, all on one 24x56 stripboard | Built and working; the firmware's current target ([hardware/stripboard_v2/](stripboard_v2/BUILD.md)) |
-| **prod_board / prod_case: Alex's production board** | from 2026-09-23 | Alex's own KiCad board and OpenSCAD case, made by hand to learn the tools | In progress ([hardware/prod_case/](prod_case/README.md), `hardware/prod_board/`) |
+| **Stripboard v2: single screen** | designed 2026-08-19/20, running 2026-08-26 | Pico 2 (RP2350), one 3.5 in ST7796 320x480 panel, 16 direct-GPIO tactile switches, a LiPo with a TP4056 module, all on one 24x56 stripboard | Built and working; the firmware's current target. Its files are at tag `stripboard-v2-archive` |
+| **prod_board / prod_case: Alex's production board** | from 2026-09-23 | Alex's own KiCad board and OpenSCAD case, made by hand to learn the tools | At tag `prod-learning-archive` |
 | **ref_design (REF-A): the reference design** | from 2026-09-24 | Claude's complete, orderable version: RP2354B, 3.5 in IPS panel in a ZIF connector, DS Lite membranes, one Li-ion cell, speaker, 2-layer JLCPCB-assembled board, printed DS Lite style case | Designed and checked, not yet ordered ([hardware/ref_design/](ref_design/README.md)) |
 
 Milestones:
@@ -170,7 +170,7 @@ Terms used in these documents, alphabetical.
 - <a id="g-jlc"></a>**JLCPCB (JLC)**: The board maker that fabricates and assembles REF-A; JLC for short. Its parts come from LCSC. More: [jlcpcb.com](https://jlcpcb.com/).
 - <a id="g-jst"></a>**JST SH, JST PH**: Small wire-to-board connector families from JST: SH at 1.0 mm pitch (the Debug Probe's cables, J5 and J6) and PH at 2.0 mm (the cell connector REF-A dropped for its height). More: [Wikipedia](https://en.wikipedia.org/wiki/JST_connector).
 - <a id="g-kicad"></a>**KiCad**: The open-source electronics design suite: schematic, board layout, checks and fab outputs. REF-A uses KiCad 10 with every file generated by scripts. More: [kicad.org](https://www.kicad.org/).
-- <a id="g-konnect"></a>**Konnect**: A tool that drives KiCad from scripts. REF-A's schematic was written through it until 2026-10-20; since then `build_sch.py` writes KiCad's files directly. More: [konnect_notes.md](ref_design/docs/konnect_notes.md).
+- <a id="g-konnect"></a>**Konnect**: A tool that drives KiCad from scripts. REF-A's schematic was written through it until 2026-10-20; since then `build_sch.py` writes KiCad's files directly.
 - <a id="g-layout"></a>**Layout**: The board design itself: where each part sits and how the copper joins them, as against the schematic, which shows only what connects to what. More: [KiCad docs](https://docs.kicad.org/10.0/en/pcbnew/pcbnew.html#placement-and-drawing-operations).
 - <a id="g-lcsc"></a>**LCSC**: JLCPCB's parts distributor. Each REF-A part has an LCSC number in `design.py`. More: [lcsc.com](https://www.lcsc.com/).
 - <a id="g-leakage"></a>**Leakage**: Small unwanted current: through a reverse-biased diode (more when warm, most in Schottkys), into an unpowered chip's pins, or across a board's surface under sweat or condensation. On REF-A's high-value nodes a few uA matter. More: [Wikipedia](https://en.wikipedia.org/wiki/Leakage_(electronics)).
@@ -218,7 +218,7 @@ Terms used in these documents, alphabetical.
 - <a id="g-power-symbol"></a>**Power symbol**: A schematic symbol that names a rail (VSYS, +3V3, GND). Every power symbol with the same name is the same net on every sheet. More: [KiCad docs](https://docs.kicad.org/10.0/en/eeschema/eeschema.html#power-symbols).
 - <a id="g-pre-push"></a>**Pre-push hook**: A git script that runs before each push; here it rebuilds the assembly viewer. More: [Pro Git](https://git-scm.com/book/en/v2/Customizing-Git-Git-Hooks).
 - <a id="g-probe-pad"></a>**Probe pad**: A bare copper pad on a net for a meter or scope probe (TP1 to TP16 on REF-A). More: [Wikipedia](https://en.wikipedia.org/wiki/Test_point).
-- <a id="g-prod-board"></a>**prod_board, prod_case**: Alex's own production board (KiCad) and case (OpenSCAD), made by hand to learn the tools. Other work reads them and never edits them. More: [prod_case README](prod_case/README.md).
+- <a id="g-prod-board"></a>**prod_board, prod_case**: Alex's own production board (KiCad) and case (OpenSCAD), made by hand to learn the tools. At tag `prod-learning-archive`.
 - <a id="g-protection"></a>**Protection board**: A small circuit on a lithium cell that cuts it off on over-charge, over-discharge or a short; a tripped pack has cut itself off. REF-A's cell has one; stripboard v2's TP4056 module has one built in. More: [Wikipedia](https://en.wikipedia.org/wiki/Lithium-ion_battery).
 - <a id="g-proud"></a>**Proud**: Standing out above a surface: REF-A's caps stand 1.3 mm proud of the case.
 - <a id="g-pull-up"></a>**Pull-up and pull-down**: A resistor from a pin to the supply (pull-up) or to ground (pull-down) that sets its level when nothing drives it. RP2350 pins have weak internal ones, and every GPIO resets with its pull-down on. More: [Wikipedia](https://en.wikipedia.org/wiki/Pull-up_resistor).
@@ -263,7 +263,7 @@ Terms used in these documents, alphabetical.
 - <a id="g-spi"></a>**SPI**: Serial Peripheral Interface: a clocked serial bus with a clock (SCK), data out (MOSI), data in (MISO) and a chip select per device. The panel's 4-wire SPI adds a data/command line (DC). More: [Wikipedia](https://en.wikipedia.org/wiki/Serial_Peripheral_Interface).
 - <a id="g-stepping"></a>**Stepping**: A chip's silicon revision, such as the RP2350's A2. Some errata apply to one stepping only. More: [Wikipedia](https://en.wikipedia.org/wiki/Stepping_level).
 - <a id="g-stripboard"></a>**Stripboard**: Prototyping board with holes on a 2.54 mm grid and copper strips joining each row; cut the strips and solder in parts and wires to make a circuit. More: [Wikipedia](https://en.wikipedia.org/wiki/Stripboard).
-- <a id="g-stripboard-v2"></a>**Stripboard v2**: The single-screen prototype that runs today: a Pico 2, a 3.5 in ST7796 panel, 16 tactile switches and a LiPo on one 24x56 stripboard, all generated by `layout.py`. More: [BUILD.md](stripboard_v2/BUILD.md).
+- <a id="g-stripboard-v2"></a>**Stripboard v2**: The single-screen prototype that runs today: a Pico 2, a 3.5 in ST7796 panel, 16 tactile switches and a LiPo on one 24x56 stripboard, all generated by `layout.py`. More: BUILD.md at tag `stripboard-v2-archive`.
 - <a id="g-sub-sheet"></a>**Sub-sheet**: A schematic sheet placed inside another through a sheet symbol. REF-A's eight hang off the root sheet. More: [KiCad docs](https://docs.kicad.org/10.0/en/eeschema/eeschema.html#drawing-hierarchical-sheets).
 - <a id="g-supports"></a>**Supports**: Temporary printed scaffolding under the overhanging parts of a 3D print, broken off afterwards. Parts designed to need none come out cleaner. More: [Wikipedia](https://en.wikipedia.org/wiki/Fused_filament_fabrication).
 - <a id="g-switcher"></a>**Switching regulator (switcher)**: A regulator that switches current through an inductor at high speed: efficient across a large voltage gap, but noisy and sensitive to layout. The RP2354B's internal one makes its 1.1 V core supply from 3V3 through L2. More: [Wikipedia](https://en.wikipedia.org/wiki/Switched-mode_power_supply).

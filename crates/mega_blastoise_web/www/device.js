@@ -58,7 +58,7 @@ let AI_HOLD_MS = 2000;
 // the case size is honest, the pixel density is not.
 const PANEL_NATIVE = { w: 320, h: 480 };
 // The panel the firmware is actually being built for, per
-// hardware/stripboard_v2/BUILD.md: 3.5" IPS ST7796, 320x480, SPI. Its own
+// The stripboard v2 (tag stripboard-v2-archive, BUILD.md): 3.5" IPS ST7796, 320x480, SPI. Its own
 // entry (rather than reusing the generic 2.8" row) so that layout judgements
 // are made against THE target — if the hardware spec ever changes, change
 // this one line and the picker follows.

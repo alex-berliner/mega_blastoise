@@ -103,7 +103,7 @@ JLCPCB's and PCBWay's instant-quote forms headlessly when the design changes.
 | Figure | Per unit | Date | Source |
 |---|---|---|---|
 | v1 parts, excluding enclosure | about $40 | spring 2026 | [ELECTRONICS.md](../../../docs/archive/v1/ELECTRONICS.md) |
-| Stripboard v2 parts, bought in hobby packs (one unit) | about $125 | 2026-08 | [BUILD.md](../../stripboard_v2/BUILD.md) |
+| Stripboard v2 parts, bought in hobby packs (one unit) | about $125 | 2026-08 | BUILD.md at tag `stripboard-v2-archive` |
 | Reference design bare board, 4-layer with 0.25 mm holes, at 10 | $9.74 | 2026-09-24 | quotes |
 | Reference design bare board, 2-layer, at 10 | $3.34 | 2026-09-24 | quotes |
 | Reference design, factory part (board, parts, assembly fees, shipping) at 10 | about $16.47 | 2026-09-24, parts repriced 2026-10-20 | bom.md, until the audit replaced it |

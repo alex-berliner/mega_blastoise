@@ -1,7 +1,7 @@
 # Reference design: the complete version
 
 Claude's full design of the two-player handheld, built in parallel with Alex's
-hand-made learning project (`hardware/prod_board/`, `hardware/prod_case/`),
+hand-made learning project (prod_board and prod_case, now at tag `prod-learning-archive`),
 which this folder never touches.
 
 "Finished" here means a design package ready to order a first prototype:

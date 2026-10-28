@@ -19,7 +19,7 @@ whole, in KiCad 10's own format.
 The result is checked again by check_netlist.py (KiCad's netlist against
 design.py) and by KiCad's ERC. Rewrites the .kicad_sch files; nothing else in
 the folder. (Until 2026-10-20 the sheets were written through Konnect:
-docs/konnect_notes.md has what that ran into.)
+the deleted docs/konnect_notes.md, in git history, has what that ran into.)
 """
 import os
 import sys

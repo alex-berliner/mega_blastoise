@@ -1,8 +1,7 @@
 # Membrane button contact pads
 
 Reference footprints for silicone membrane buttons (rubber dome + carbon pill
-pressing on bare PCB pads), for the production board that replaces
-`hardware/stripboard_v2/`. Buttons are aftermarket Nintendo replacement
+pressing on bare PCB pads), for the reference design's board. Buttons are aftermarket Nintendo replacement
 membranes, so the PCB pads must match what those pills were molded for.
 
 ## What is here
@@ -22,7 +21,7 @@ Both define `F.Mask` openings, so the contact area stays bare copper.
 ## The production footprint: `DSL_button_4ring`
 
 Generated, not hand-drawn, by `tools/gen_dsl_button.py` into the project library
-(`hardware/prod_board/prod_board/prod.pretty/`). Re-run it to change a
+(the reference design's is `hardware/ref_design/board/lib/battler.pretty/`). Re-run it to change a
 dimension; do not edit the output.
 
     python3 tools/gen_dsl_button.py <path>/prod.pretty

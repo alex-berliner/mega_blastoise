@@ -26,12 +26,11 @@ Start and Select at each player's end. Gen 1 and Gen 3 battle engines in `crates
 (`no_std`), the same core driving the firmware and the browser build.
 
 - **Firmware** (`crates/mega_blastoise_fw`) targets the stripboard v2 board (Pico 2,
-  RP2350, ST7796 panel): a plain `cargo build` there builds it.
+  RP2350, ST7796 panel): a plain `cargo build` there builds it. The stripboard's own
+  hardware files are at tag `stripboard-v2-archive`.
 - **Browser build** (`crates/mega_blastoise_web`, its own wasm workspace) ships to GitHub
   Pages under `/battler/`; `site/` is the Pages front page.
-- **Hardware** is indexed in `hardware/README.md`. `hardware/prod_board` and
-  `hardware/prod_case` are Alex's own learning project: read them, and change them only
-  when he asks. `hardware/ref_design` is Claude's reference design: its KiCad files are
+- **Hardware** is indexed in `hardware/README.md`. `hardware/ref_design` is Claude's reference design: its KiCad files are
   generated, so edit `board/design.py`, `board/placement.py` or `case/case.scad` and run
   its README's pipeline.
 - **The gate** before committing code: `scripts/check.sh` (host tests, firmware check,
