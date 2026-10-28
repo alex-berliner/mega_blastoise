@@ -39,7 +39,7 @@ ORDER = [   # ref, region, preferred (x, y, rot) from placement.P unless given, 
     *[(f"R{79 + k}", "fpc", (90, 0)) for k in range(6)],
     ("JP6", "fpc", (0, 90)), ("C60", "fpc", (0, 90)), ("C61", "fpc", (0, 90)),
     ("U3", "left_of_hole", (90, 0, 180, 270)), ("C5", "left_of_hole", (90, 0)), ("C6", "left_of_hole", (90, 0)), ("C7", "left_of_hole", (90, 0)),
-    ("JP1", "left_of_hole", (0, 90)), ("TH1", "right_of_hole", (90, 0)),
+    ("JP1", "left_of_hole", (0, 90)),
     ("TP8", "any_low", (0,)), ("Q1", "any_low", (0, 180)),
     ("U11", "spine", (0, 90)), ("C62", "spine", (0, 90)), ("R86", "spine", (90, 0)), ("R87", "spine", (90, 0)), ("R88", "spine", (90, 0)), ("R63", "any_low", (90, 0)),
 ]

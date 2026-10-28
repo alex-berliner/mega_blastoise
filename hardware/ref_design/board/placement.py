@@ -287,7 +287,7 @@ at("R42", 34.2, 44.0, 90)
 # landed on, put where the search found room (the zones in placement_zones.py; check_fit passes). KiCad frame: x, y, rot, side.
 ADOPTED = {
     "J2": (131.55, 69.7, 180, "F"),
-    "TH1": (119.95, 79.0, 90, "F"),
+    "TH1": (120.2, 79.0, 90, "F"),
     "JP5": (124.0, 70.0, 0, "F"),
     "TP3": (126.0, 74.0, 0, "B"),
     "Q1": (69.6, 144.0, 0, "F"),
