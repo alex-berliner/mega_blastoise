@@ -1,6 +1,6 @@
 # VER-190 arch
 DATE: 2026-10-28
-COMMIT: 82eddf5d29daf0134e2427cf04a991f7271724c1
+COMMIT: ad7fe1a7bcf1645b9c41051de318573d1c4c2a13
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/case_checks.py arch
@@ -8,7 +8,7 @@ case-side requirements in requirements.md: REQ-ASM-01 REQ-ASM-01.R REQ-ASM-02 RE
 requirement -> the case's feature -> its nominal number (the worst case is the named check's):
   ok    REQ-PRD-06: outline2d (case_w + grow_l, case_l), case_h, deck_face: 78.90 x 156.48 x 10.70 mm, ends 7.70 against 78.9 x 156.64 x 10.7, 7.7 [worst case: VER-20, VER-48]
   ok    REQ-BAT-07: glass_gap over the board, cell_top (the worst cell's top over the board): 1.90 mm free above the cell under the panel against 0.4 [worst case: VER-182 (the slope's ceiling too), VER-20]
-  ok    REQ-BAT-08: cell_pocket_box in the tub's floor, cell_hole2d in the board: pocket 36.40 x 52.40 mm against a nominal cell 34 x 50 plus 0.4 (the fit clause, PROPOSED) [worst case: VER-181 at the worst-case cell (FAIL: DEF-62)]
+  ok    REQ-BAT-08: cell_pocket_box in the tub's floor, cell_hole2d in the board: pocket 36.40 x 52.40 mm against a nominal cell 34 x 50 plus 0.4 (the fit clause, PROPOSED) [worst case: VER-181 at the worst-case cell (PASS at 39cc07f: DEF-62 CLOSED)]
   ok    REQ-MEC-01: positions.json's height zones (glass_limit, bezel_limit, retainer_limit, deck_limit, back_limit): glass 3.3, bezel 4.6, retainer 0.5, decks 1.6, back 0.5 mm, every zone named and positive [worst case: VER-06 (check_fit), VER-112]
   ok    REQ-MEC-02: the STACK echo line: floor, ribs, PCB, under the panel, panel, tape, top over the panel: 10.70 mm against case_h 10.70: closes at nominal ("STACK floor 1.5 + ribs 0.7 + PCB 1.6 + under the panel 3.5 ...) [worst case: VER-20 (tolerances)]
   ok    REQ-MEC-03: caps in the ends' pockets over the silicone: cap_proud, dome_travel, dpad_gap: cap stands 1.41 mm proud, travels 1.00: 0.41 left pressed (case.scad wants 0.4); D-pad gap 0.60 in 0.3-1.0 [worst case: VER-07, VER-48]

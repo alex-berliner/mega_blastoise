@@ -1,6 +1,6 @@
 # VER-19 placement
 DATE: 2026-10-28
-COMMIT: 82eddf5d29daf0134e2427cf04a991f7271724c1
+COMMIT: ad7fe1a7bcf1645b9c41051de318573d1c4c2a13
 TREE: clean under its covers
 TOOLS: python 3.12.3; kicad-cli 10.0.6
 $ python3 hardware/vv/tools/case_checks.py placement
