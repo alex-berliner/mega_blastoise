@@ -6,7 +6,8 @@ fix). On 2026-10-27 this register, which described be437f8, was re-seeded for it
 scripted check and every check that failed at be437f8 was re-run against 71737ae's files
 (section c), the rows for parts and nets that changed were rewritten, retired or added
 (section b), and round 3's twelve sign-off objections were answered (section g). The default
-mode passes; the order gate fails, as it should (section i).
+mode passes; the order gate fails, as it should (section i). The review of 2026-10-27 and
+where each of its 16 findings landed is section (l).
 
 Contents: (a) the system on one page; (b) what changed in the design (be437f8 to 71737ae);
 (c) the board at 71737ae: the 13 problems sent to the board session, and what is new; (d)
@@ -438,84 +439,50 @@ the row says why not.
 - **Quoted values until VER-161 exists.** A GPIO, a count or a dimension quoted in a row can
   still drift from design.py unseen (DEF-54).
 
-## (i) The gate today (snapshot at 71737ae; O-R7)
+## (i) The gate today
 
-This section is what `python3 hardware/vv/tools/check_trace.py --gate order` printed at the
-c4fdd45 commit on 2026-10-27, written into the register so a future reader can compare the gate
-then with the gate now. It is not regenerated every commit; re-run the gate on the current commit
-to read the gate now, and update section (i) when the gate moves.
-
-### Today, after F-R1 / O-R8 fixes (c4fdd45 + edits, 2026-10-27)
-
-F-R1, O-R8, O-R2, O-R3, O-R4, O-R5, O-R6, O-R7, F-R2, F-R3, F-R5 and O-R10 are folded in:
-check_trace.py's structure rule catches a defect whose Status field and prose disagree (F-R1);
-its R4 reads both OPEN defects at the gate and FIXED defects whose check has not yet passed
-(F-R1); its default mode also reads design.PLUG_FAMILIES and build_pcb.py's CLASSES (O-R8);
-grid.py's class 1-14 cell counts as covered only when the clearing check has run, not just
-built (O-R6); design_numbers.py's edge() prints nominal and worst-case distances (O-R2) and
-plugs() now tests the family rule, reading design.PLUG_FAMILIES (F-R2); stale_names.py holds
-the connector-family and net-class checks (O-R8, F-R5); gates.md's G-ORD-24 wording is
-narrowed to what VER-188 specifically proves (O-R8 (a)); README's tools table names the 5
-scripts run_checks.py drives (O-R10); requirements.md, dfmea.csv and verification.csv are
-updated against the design.py at 71737ae (O-R3, O-R5; R61 3.74k, BL_PWM on GPIO28, the panel
-6-LED 120 mA, 54.1 mA a pin nominal, 117.7 mA worst case at 100%); PLAN.md's section (i) is
-this snapshot.
-
-Gate state at the snapshot: 9 OPEN defects with Gate ORDER (DEF-14, 29, 30, 48, 55, 61, 62,
-63, 66; unchanged by F-R1 since none of them had been FIXED-without-check); G-ORD-22 still
-reads 34 ORDER checks not passing (19 PASS); R9 still reads 33 GAP-or-planned cells of
-classes 1-15; structure OK with the same 4 DMM-accuracy warnings. The gate state moved by
-the additions: G-ORD-24's wording narrowed without changing the criterion, VER-188's scope
-widened (now reads PLUG_FAMILIES and CLASSES) without changing the count, DEF-39's prose
-matches its field, and the order gate is still FAIL of the same set it was at c4fdd45
-(the order gate has been FAIL throughout; the fixes do not unlock it).
-
-The 79-gate rows under each section are unchanged.
-
-### 2026-10-27, c4fdd45: the snapshot
-
-**The run after the 71737ae re-seed**, at c4fdd45 (2026-10-27); the scripted checks' evidence
-was made at 737e54e, VER-129's at 449dcb9 (after the last tool edit) and VER-188's at 42332f8: requirements 133 (130
-PROPOSED, 3 RETIRED); DFMEA rows 184 (63 H, 86 M, 35 L by action priority; DF-182, DF-183 and
-DF-184 new, DF-95 RETIRED); checks 195 (19 PASS, 8 FAIL, 51 NOT_RUN, 109 NOT_BUILT, 5 CUT, 3 RETIRED);
-defects 66 (21 OPEN, 28 FIXED, 10 CLOSED, 7 RETIRED); seeded faults 100 of 100 caught (VER-129).
+**Run at 95a9d26 (2026-10-27)**, after the review's 16 findings (section l). The scripted checks'
+evidence was made at 5bedcef, VER-129's at 69e9c0c. Requirements 133 (130 PROPOSED, 3 RETIRED);
+DFMEA rows 184 (63 H, 86 M, 35 L); checks 201 (35 PASS, 27 FAIL, 54 NOT_RUN, 77 NOT_BUILT, 5 CUT,
+3 RETIRED); defects 79 (38 OPEN, 24 FIXED, 10 CLOSED, 7 RETIRED); seeded faults 107 of 107
+caught (VER-129). The re-seed's snapshot (c4fdd45) is in that commit's PLAN.md.
 
 ```
 $ python3 hardware/vv/tools/check_trace.py
-STRUCTURE: OK (4 warnings)
-  order branch: main has no design commit after 71737ae
-  design baseline: matches HEAD
-  coverage grid: 77 covered, 10 not needed, GAP 33 (0 with no check, 33 planned)
-  warnings: the pass bands of VER-67, VER-88, VER-134 and VER-139 are 1.4-2.2 x their DMM's
-  accuracy (want 4 x)
+STRUCTURE: OK (5 warnings: four DMM pass bands under 4 x the meter's accuracy; VER-196's
+'needs' still names the FM8002A's and 2N7002's datasheets, which VER-34 waits for)
 exit 0
 
 $ python3 hardware/vv/tools/check_trace.py --gate order
-  PASS  G-ORD-15 (VER-98 advisory, DFMEA:COVERAGE), G-ORD-24 (VER-129, VER-188), R5, R6 (no
-        release yet), R7, R8
-  INFO  G-ORD-05, G-ORD-08, G-ORD-12, G-ORD-20, G-ORD-26 (advisory); G0: 4 moves since
-        b9b38a9 (VER-130 and VER-160 from ORDER to EVT, G-ORD-02 and G-ORD-03 without them);
-        RETIRED G-ORD-13; N/A G-ORD-25 (prod_board)
-  FAIL  G-ORD-01 to G-ORD-04, G-ORD-06, G-ORD-07, G-ORD-09 to G-ORD-11, G-ORD-14, G-ORD-16
-        to G-ORD-19, G-ORD-21, G-ORD-23, G-ORD-27 (the FAILs among them: VER-164 TH1's place,
-        VER-181 the cell's pocket fit)
-  FAIL  G-ORD-22: 34 ORDER checks not passing (36 at be437f8); 19 checks pass
-  FAIL  R1 127 PROPOSED; R2 30 requirements with an ORDER check not passing;
-        R3 52 H rows neither accepted nor DONE; R4 9 OPEN defects with Gate ORDER (DEF-14,
-        29, 30, 48, 55, 61, 62, 63, 66; 15 at be437f8)
-  FAIL  R9 33 cells of classes 1-15 planned (no clearing check built or run)
-RESULT: FAIL (23 of 29 not met); 1 N/A, 6 advisory, 1 retired
+  PASS  G-ORD-06, G-ORD-15, G-ORD-18, G-ORD-24, R5, R6 (no release yet), R7, R8
+  INFO  G-ORD-05, -08, -12, -20, -26 (advisory); G0: 12 moves since b9b38a9 (VER-130 and
+        VER-160 to EVT; DEF-32 and DEF-39 OPEN to CLOSED; DEF-33, 53, 57, 58, 59 and 60 OPEN
+        to FIXED, listed since O-R1; G-ORD-02 and G-ORD-03 without VER-130 and VER-160)
+  RETIRED G-ORD-13; N/A G-ORD-25 (prod_board)
+  FAIL  G-ORD-01 to -04, -07, -09 to -11, -14, -16, -17, -19, -21, -23, -27
+  FAIL  G-ORD-22: 30 ORDER checks not passing
+  FAIL  R1 127 PROPOSED; R2 22 requirements with an ORDER check not passing; R3 52 H rows
+        neither accepted nor DONE
+  FAIL  R4 21 OPEN defects due at ORDER: DEF-14, 29, 30, 47, 48, 49, 50, 55, 56, 61, 62, 63,
+        66, 67, 68, 70, 72, 74, 75, 78, 79 (DEF-47, 49, 50 and 56 OPEN again, DEF-79 new);
+        13 FIXED ones listed beside it (DEF-01, 02, 10, 11, 12, 13, 22, 33, 44, 53, 54, 57, 60)
+  FAIL  R9 12 cells planned: class 1 for all eight subsystems (VER-189), 2/audio (VER-34,
+        VER-40), 2/cell (VER-37, VER-40), 5/case (VER-192), 15/audio (VER-200)
+RESULT: FAIL (21 of 29 not met); 1 N/A, 6 advisory, 1 retired
 ```
 
-The coverage grid's classes 1-15 by the worst status in each cell: 0 PASS, 10 FAIL, 6 NOT_RUN,
-61 NOT_BUILT, 33 planned, 10 not needed (120 cells; at be437f8 28 FAIL, 5 NOT_RUN, 44
-NOT_BUILT, 33 planned, 10 not needed). No cell passes yet because every covered cell also
-holds a check that is not built or not run. G1 and K1 print nothing: no `GATE@` line is signed
-and no key is pinned. The checks that pass: the netlist, the pin gate, ERC, DRC with parity, both
-4-ring contact footprints, inrush, holes, the drill files, the CPL, the backlight, the edges,
-the plugs, the MLCC keep-out, swelling room, two inspections (VER-104, VER-124), the stale-names
-scan and the seeded faults. The FAILs: VER-164 and VER-181 (ORDER); VER-32, VER-138 and VER-177
-(EVT, printed at the order gate as advisory); VER-39, VER-147 and VER-167 (CASE).
+The coverage grid, classes 1-15 by the worst status in each cell (120 cells): PASS 15, FAIL 80,
+NOT_RUN 2, NOT_BUILT 1, planned 12, not needed 10. Before this pass: PASS 15, FAIL 80, NOT_RUN 4,
+NOT_BUILT 2, planned 9. O-R6 moved 2/audio and 2/cell to planned (their clearing analyses have
+not run); 14/buttons is NOT_BUILT (VER-178, VER-180). G1 and K1 print nothing: no `GATE@` line
+is signed and no key is pinned.
+
+New results this pass: VER-201 FAIL (build_pcb.py's PWR class names VBUS_D5, no net of the
+board, and leaves CELL_P and AMP_VDD out: DEF-68); VER-202 FAIL (the speaker's 1.25 mm plug does
+not fit J4 and its SH refit is not bought: DEF-64; its 35 mm leads reach J4 at 16.4 mm and not
+J2 at 54.8 mm); VER-184 BLOCKED (the headers are keyed apart, the cell's plug waits for its
+spec sheet); VER-18 PASS in the data, the closest copper 0.108 mm from the edge as built
+(DEF-56); VER-188 PASS with the connector-family rule.
 
 ## (j) Past bugs and what catches them
 
