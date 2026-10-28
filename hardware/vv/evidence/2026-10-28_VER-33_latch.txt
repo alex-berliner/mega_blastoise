@@ -1,0 +1,22 @@
+# VER-33 latch
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py latch
+U3 TLV75733P EN: VIH 1.0 V min, VIL 0.3 V max (tlv757p.txt:328, 331), IEN 1 uA (stand-in; 10 nA typical, 333); Q1 2N7002 VGS(th) 1.0-2.5 V (2n7002_cj.txt:55)
+Schottky VF max 240 mV at 0.1 mA, 80 mV a decade (bat54c.txt:113-115, bat54ws.txt:75-77); for the off cases VF is taken as 0, the worst there
+power contacts (VSYS to PWR_BTN_RAW): SW24; Starts (SW21, SW23) on VSYS: none, they are plain buttons to GND
+SW24 at its 500 mOhm maximum (rocpu_tps850.txt:137) plus 1 kohm of dirt, VSYS 3.42 V: Q1's gate 3.287 V (+0.787 V over its 2.5 V maximum threshold), EN 3.087 V (+2.087 V over VIH): on
+SW24 at its 500 mOhm maximum (rocpu_tps850.txt:137) plus 1 kohm of dirt, VSYS 3.0 V: Q1's gate 2.884 V (+0.384 V over its 2.5 V maximum threshold), EN 2.688 V (+1.688 V over VIH): on
+1 Mohm across SW24 at VSYS 4.4 V: RAW 0.108 V, EN at most 0.108 V (VIL 0.3); Q1's gate against its 1.0 V minimum threshold: off
+  bands: sure on (EN and Q1 both) up to 5.0 kohm at VSYS 3.0 V (the switch is rated 500 mOhm); Q1 may read a ghost press under 85 kohm of leakage at 4.4 V; EN may turn on under 342 kohm; sure off above 342 kohm (1 Mohm is above it)
+after a reset or crash: PWR_HOLD (GPIO21) an input, its 50 nA leakage maximum (esp32-s3.txt:3748) through R42 4.7k: 0.24 mV, so EN falls once SW24 is up (the ESP32-S3 has no pad erratum like the RP2350's E9: R42 could be 100k)
+held by firmware (PWR_HOLD at the pad's VOH 0.8 x VDD = 2.64 V, esp32-s3.txt:3750, into a light load): EN 2.447 V (+1.447 V over VIH); GPIO21 sources 0.57 mA into R42 (VOH is specified into a high impedance, 3768: at 0.56 mA the pad stays near it)
+a press must last: U3's start-up 550 us (tlv757p.txt:326) + EN's RC to 0.75 x VDD (VIH_nRST, esp32-s3.txt:3761) 13.9 ms with R23/C12 + the ROM and bootloader (not in any datasheet: VER-73 times it) + pinmap.md's 1 s hold rule
+USB at 4.75 V: PWR_EN 3.04 V through R14 47k and D3 (turns the device on: True)
+USB at 5.25 V: PWR_EN 3.38 V through R14 47k and D3 (turns the device on: True)
+RESULT: PASS
+
+exit 0
+RESULT: PASS

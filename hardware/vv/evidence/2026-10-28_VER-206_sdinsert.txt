@@ -1,0 +1,16 @@
+# VER-206 sdinsert
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/paper_checks.py sdinsert
+the 3V3 rail's capacitance at 3.35 V, each part at its -tolerance and its Samsung DC-bias curve: C10 22u 8.80 uF (no curve: half of -tol, stand-in), C11 100n 0.05 uF (no curve: half of -tol, stand-in), C29 1u 0.45 uF (no curve: half of -tol, stand-in), C30 100n 0.05 uF (no curve: half of -tol, stand-in), C51 100n 0.05 uF (no curve: half of -tol, stand-in), C52 100n 0.05 uF (no curve: half of -tol, stand-in), C53 100n 0.05 uF (no curve: half of -tol, stand-in), C54 100n 0.05 uF (no curve: half of -tol, stand-in), C6 10u 3.92 uF, C60 10u 3.92 uF, C61 100n 0.05 uF (no curve: half of -tol, stand-in), C62 100n 0.05 uF (no curve: half of -tol, stand-in), C7 10u 3.92 uF; 21.4 uF in all
+  a card with 1 uF (stand-in): 3V3 from 3.250 V falls 0.15 V to 3.11 V at once, then U3 refills it in about 5 us at its 1.2 A limit (tlv757p.txt:267) less the 0.62 A peak load
+  a card with 10 uF (stand-in): 3V3 from 3.250 V falls 1.04 V to 2.21 V at once, then U3 refills it in about 38 us at its 1.2 A limit (tlv757p.txt:267) less the 0.62 A peak load
+  a card's capacitance that takes 3V3 under the module's 3.0 V (esp32-s3-wroom-1.txt:1596): 1.8 uF
+  FAIL  3V3 at its lowest 2.21 V for a 10 uF card against 3.0 V; the card's real capacitance and the dip's length on the scope are VER-209's (unit 1)
+  no DC-bias curve on disk for C10, C11, C29, C30, C51, C52, C53, C54, C61, C62 (CL21A226MAQNNNE: Samsung's library)
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

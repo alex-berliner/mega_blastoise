@@ -1,0 +1,13 @@
+# VER-147 screws
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py screws
+bom.md's Screws line names M2 x 6; case.scad uses M2 x 6: ok
+side (H1-H3): M2 x 6 from a 1 mm counterbore, tip at z 7.00, board top at z 3.80: 3.20 mm of thread in a 6.00 mm pilot, tip 2.80 mm short of its end (want 4 mm and 0.5 mm): fails; lengths that meet it: M2 x 7, M2 x 8
+deck (H4, H5, H6): M2 x 6 from a 1 mm counterbore, tip at z 7.00, board top at z 3.80: 3.20 mm of thread in a 3.30 mm pilot, tip 0.10 mm short of its end (want 3 mm and 0.1 mm): ok; lengths that meet it: M2 x 6
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

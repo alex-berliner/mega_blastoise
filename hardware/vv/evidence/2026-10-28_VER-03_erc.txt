@@ -1,0 +1,40 @@
+# VER-03 erc
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ kicad-cli sch erc --severity-all --exit-code-violations -o {tmp}/erc.rpt hardware/ref_design/board/battler.kicad_sch
+Found 0 violations
+Saved ERC Report to /tmp/tmpcwovi40t/erc.rpt
+--- report
+ERC report (2026-10-28T08:56:53, Encoding UTF8)
+Report includes: Errors, Warnings, Exclusions
+
+***** Sheet /
+
+***** Sheet /USB_Charger/
+
+***** Sheet /Power/
+
+***** Sheet /MCU/
+
+***** Sheet /Storage/
+
+***** Sheet /Debug/
+
+***** Sheet /Display/
+
+***** Sheet /Audio/
+
+***** Sheet /Buttons/
+
+ ** ERC messages: 0  Errors 0  Warnings 0
+
+ ** Ignored checks:
+    - Global label only appears once in the schematic
+    - Four connection points are joined together
+    - SPICE model issue
+    - Assigned footprint doesn't match footprint filters
+
+exit 0
+RESULT: PASS

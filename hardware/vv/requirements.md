@@ -159,14 +159,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-06: Size
 - Level: product
 - Board: ref_design
-- Statement: The closed case shall measure at most 77.4 x 156.64 mm in plan and 9.6 mm thick at the screen, 7.7 mm at the button ends, each +0.3 mm for print tolerance.
+- Statement: The closed case shall measure at most 78.9 x 156.64 mm in plan and 10.7 mm thick at the screen, 7.7 mm at the button ends, each +0.3 mm for print tolerance.
 - Rationale: a DS Lite's feel with the width the buttons set and the length the 3.5 in panel sets (hardware/ref_design/PLAN.md, Case).
 - Source: hardware/ref_design/README.md; case.scad (case_w, case_l, case_h, deck_face).
 - Method: I, A
 - Verified by: VER-48, VER-20
 - Phase: CASE
 - Status: PROPOSED
-- Notes: ref_design only. prod_case's preliminary layout is 70.5 x 153 mm and about 19.1 mm thick; Alex sets his own number.
+- Notes: restated at 39cc07f from 77.4 x 156.64 x 9.6 mm: Alex raised the glass 1.1 mm for the module under it (glass_gap 3.5, 2026-10-27: 'raising the glass seems fine') and moved the left wall 1.5 mm out for the microSD slot (grow_l, 2026-10-28); the restated numbers are PROPOSED like the rest. VER-190 reads the outline with grow_l.
 
 ### REQ-PRD-07: Single-fault safety
 - Level: product

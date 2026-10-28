@@ -1,0 +1,69 @@
+# VER-31 ratings
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/circuit_checks.py ratings
+modes off, cell, usb, charging, plus hot plug (VBUS up to 5.50 V, paper_checks.py hotplug's worst corner) and unplug (U2's battery FET takes VSYS from OUT: no node rises above its steady value, bq24074.txt:530)
+VBUS 5.25 V, CC 2.18 V, D+/D- 3.6 V: USB figures from memory (README: clauses to check); +3V3 up to 3.349 V
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+[tlv757p.pdf sha256 239d1f1e9bce270377e9af29bd06a5f99fe45f489878612d249d88cf9f2dd7a1; its pdftotext -layout text sha256 69647d726fec5e66..., 2436 lines]
+[esp32-s3-wroom-1.pdf sha256 27d71971da07c280c6068d08c74720d1a25b8f20cf8494dc1765bdd28d40d435; its pdftotext -layout text sha256 0b40dc77fe19addf..., 3771 lines]
+[esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+[mcp6001.pdf sha256 4f879ab31115ecfa149dfea62073c9efdbc4beccbdfc3a8d7e10281f3877f8fb; its pdftotext -layout text sha256 389d546fd726d011..., 2769 lines]
+[fm8002a.pdf sha256 9b87e3a7f10103c65bb378d1c9c8cf00c7086fd888a9678899fb16be8c7943a9; its pdftotext -layout text sha256 7ab05aebb0bc20b6..., 212 lines]
+[srv05-4.pdf sha256 a164eb7954004c1b9d6c6fe5047dcca89db686b1270c8f534fc724e3e2764ec5; its pdftotext -layout text sha256 8fc17c36e618bcbf..., 616 lines]
+ICs: steady at or under the recommended maximum (or 0.3 V under the absolute maximum where none is printed), the hot-plug transient 0.3 V under the absolute maximum:
+  ok    U2 VBUS: steady 5.250 V, transient 5.50 V against IN: 4.35-6.4 V recommended (bq24074.txt:634), 28 V absolute (595)
+  ok    U2 VBAT: steady 4.230 V, transient 4.23 V against BAT: 5 V absolute (bq24074.txt:596)
+  ok    U2 CHG_EN1,CHG_ILIM,CHG_ISET,CHG_OFF,CHG_PG_N,CHG_STAT_N,CHG_TE: steady 4.500 V, transient 4.50 V against OUT, EN1, EN2, CE, TS, ISET, PGOOD, CHG, ILIM, TD: 7 V absolute (bq24074.txt:598-600)
+  ok    U3 VSYS: steady 4.500 V, transient 4.50 V against IN: 1.45-5.5 V recommended (tlv757p.txt:206), 6.0 V absolute (178)
+  ok    U3 PWR_EN: steady 4.500 V, transient 4.50 V against EN: 0-5.5 V recommended (tlv757p.txt:208), 6.0 V absolute (179)
+  ok    U4 +3V3: steady 3.349 V, transient 3.35 V against 3V3: 3.0-3.6 V recommended (esp32-s3-wroom-1.txt:1596), 3.6 V absolute (1586)
+  ok    U4 AMP_EN,AUDIO_PWM,BL_PWM,BOOT,CC1_SENSE,CC2_SENSE,CHG_OFF,EN,: steady 3.349 V, transient 3.35 V against every signal pin: VIH at most VDD + 0.3 V (esp32-s3.txt:3746), steady at most VDD
+  ok    U8 +3V3: steady 3.349 V, transient 3.35 V against VCC: 2-6 V (sn74hc165.txt:255), 7 V absolute (233)
+  ok    U9 +3V3: steady 3.349 V, transient 3.35 V against VCC (sn74hc165.txt:255, 233)
+  ok    U11 +3V3: steady 3.349 V, transient 3.35 V against VCC (sn74hc165.txt:255, 233)
+  ok    U6 +3V3: steady 3.349 V, transient 3.35 V against VDD 1.8-6.0 V (mcp6001.txt:159, the MCP6002 shares the sheet), 7.0 V absolute (113)
+  ok    U7 AMP_VDD: steady 4.500 V, transient 4.50 V against VDD 1.6-6 V (fm8002a.txt:122), 6 V absolute (109)
+  ok    U10 +3V3: steady 3.349 V, transient 3.35 V against VDD 1.8-6.0 V (mcp6001.txt:159), 7.0 V absolute (113)
+  ok    U1 +3V3,USB_DM,USB_DP: steady 3.600 V, transient 3.60 V against VRWM 5 V (srv05-4.txt:89)
+  ok    J3 LCD_3V3: steady 3.349 V, transient 3.35 V against the panel's VCI and VDDI: 3.3 V recommended (er-tft035ips-6.txt:747-748), 4.6 V absolute (734) [REQ-PWR-14 exception (2): the panel at 3.333 V, 3.350 V at TJ 125 C (DF-96, DEF-61, DEC-09)]
+  ok    J8 SD_VDD: steady 3.349 V, transient 3.35 V against the card's VDD 2.7-3.6 V (the SD spec, from memory: pin_review/j8.json)
+  ok    U10 pin 3 VBAT_DIV while its supply is 0 V (off): clamped near 0.5 V, 7.9 uA through R17: inside 'VSS - 1.0 V to VDD + 1.0 V' at '+-2 mA' (mcp6001.txt:115-117); REQ-PWR-14's exception (1) is no longer needed (DF-182)
+[2n7002_cj.pdf sha256 7941fb423af7c6c6c8979063a7e8819bb19217ece275efcce18948950a41d9f6; its pdftotext -layout text sha256 8f457be6865e4d72..., 356 lines]
+FETs and diodes at 80% of their ratings:
+  ok    Q1 2N7002: VDS 3.35 V of 60 (6%), VGS 4.50 V of 20 (22%), ID 0.1 mA of 115 (2n7002_cj.pdf)
+  ok    Q3 2N7002: VDS 4.50 V of 60 (8%), VGS 3.35 V of 20 (17%), ID 0.1 mA of 115 (2n7002_cj.pdf)
+  ok    Q5 AO3400A: VDS 4.50 V of 30 (15%), VGS 3.35 V of 12 (28%), ID 60.0 mA of 5700 (ao3400a.pdf)
+  ok    Q6 AO3400A: VDS 4.50 V of 30 (15%), VGS 3.35 V of 12 (28%), ID 60.0 mA of 5700 (ao3400a.pdf)
+  ok    D2 BAT54C,215: VR at most 4.50 V of 30 V (15%), IF well under 200 mA (bat54c.pdf, bat54ws.pdf)
+  ok    D3 BAT54WS: VR at most 5.25 V of 30 V (18%), IF well under 200 mA (bat54c.pdf, bat54ws.pdf)
+[rocpu_tps850.pdf sha256 085a2be0e64467bd9a929cc944267dfde6d1fb578840786e57bc438690048a18; its pdftotext -layout text sha256 5bd9d28cf3fb0dde..., 156 lines]
+  ok    SW24 TPS850: 4.50 V across it open, 0.18 mA through it closed (R13 and R15 from VSYS) against 12 V and 20 mA (rocpu_tps850.txt:17, 136)
+passives at 80% (MLCC voltage, resistor power) from JLC's part description, matched by LCSC number:
+  87 passives read; the five most stressed: C5 45%, C34 45%, C3 42%, C7 33%, C60 33%
+the 3V3 load with Wi-Fi on (listening; a TX burst in place of RX for the peak):
+    U4 CPU at 240 MHz, both cores             107.9 mA  107.9 mA (esp32-s3-wroom-1.txt:1741), all peripheral clocks on
+    U4 Wi-Fi                                   97.0 mA  RX 97 mA peak (esp32-s3-wroom-1.txt:1670)
+    U4's PSRAM and flash                       20.0 mA  stand-in (the module's tables leave PSRAM out, 1698)
+    J8, a microSD card writing                100.0 mA  stand-in, 100 mA
+    the panel's VCI and VDDI                   20.0 mA  stand-in: the panel prints none
+    U6, U10                                     0.5 mA  170 uA a channel, maximum (mcp6001.txt:160)
+    U8, U9, U11                                 0.2 mA  ICC 80 uA at 6 V, the SN74HC165's maximum (not quoted), each
+    pull-ups and pull-downs driven against      5.0 mA  R42 and R44 driven high, 20 x 47k, 2 x 100k, the SD bus's 6 x 10k held low, R60+R61
+    the panel bus at its write clock           11.3 mA  C V f on D0-D7 and WR, stand-in 30 pF
+  ok    3V3 peak 620 mA (a TX burst), average 362 mA, against 80% of U3's 1 A (tlv757p.txt:209); its current limit 1.2 A minimum (267) is over the module's 0.5 A supply minimum (esp32-s3-wroom-1.txt:1597)
+[jst_sh.pdf sha256 ea3071ca5ee5a6069eba534fa39a10f34c9fb742ee42135a69ab4156bfa0f5de; its pdftotext -layout text sha256 baa2cae8a4a97884..., 311 lines]
+connectors at 80% of their current (J4's from jst_sh.txt:7; J1, J2 and J8 catalogue figures, stand-ins: molex_53261.pdf has no text layer, so J2's 1 A is not read from it):
+  ok    J1: 0.50 A of 5 A (10%): VBUS at U2's USB500 limit (bq24074.txt:733)
+  FAIL  J2: 1.24 A of 1 A (124%): the cell's peak: 3V3 620 mA in a TX burst + backlight 117.7 mA + the amplifier's 0.5 A, all at once
+  ok    J4: 0.56 A of 1 A (56%): the speaker's peak, AMP_VDD across 8 ohm bridged
+  ok    J8: 0.10 A of 0.5 A (20%): a card writing, through its VDD contact
+1 failing
+RESULT: FAIL
+
+exit 1
+RESULT: FAIL

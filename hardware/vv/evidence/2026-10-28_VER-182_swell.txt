@@ -1,0 +1,19 @@
+# VER-182 swell
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/vv/tools/design_numbers.py swell
+worst-case cell 4.5 mm, its top 1.6 mm over the board; its pocket x -18.40 to 18.00, y -6.30 to 46.10 (case frame)
+  over the cell: the panel's back, 3.50 mm over the board: 1.90 mm free
+  over the cell: the panel frame's walls, 3.90 mm over the board: 2.30 mm free
+  over the cell: the slope's inside past the panel's frame (seat 2's side, uni_ceil), 3.47 mm over the board: 1.87 mm free
+  not over the cell: the ends' underside from the slope's foot out (seat 2's, |y| >= 48.11) (1.90 mm over the board)
+  not over the cell: the slope's inside past the panel's frame (seat 1's side, uni_ceil) (4.90 mm over the board)
+  not over the cell: the ends' underside from the slope's foot out (seat 1's, |y| >= 48.11) (1.90 mm over the board)
+  over the cell: the band's underside, 4.90 mm over the board: 3.30 mm free
+free height above the cell: 1.87 mm; swelling of 10% of 4.0 mm: 0.40 mm
+RESULT: PASS
+
+exit 0
+RESULT: PASS

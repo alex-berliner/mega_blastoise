@@ -1,0 +1,20 @@
+# VER-131 drill
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/design_numbers.py drill
+battler-NPTH.drl: FileFunction NonPlated, 12 holes, 0 slots
+battler-PTH.drl: FileFunction Plated, 677 holes, 4 slots
+unplated holes on the board: 0.5 mm: SW20 SW21 SW22 SW23; 0.65 mm: J1; 2.2 mm: H1 H2 H3 H4 H5 H6
+plated slots: 0.6 mm (Plated) (JLC's minimum 0.5 mm)
+board holes 689, in the drill files 689; missing 0, in the wrong file 0, unaccounted 0
+RESULT: PASS
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 0
+RESULT: PASS

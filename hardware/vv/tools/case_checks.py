@@ -71,6 +71,8 @@ class Rows:
 
 
 # ---- VER-190: the case's architecture against its requirements ----------------------------------------------------
+# REQ-PRD-06's numbers as restated at 39cc07f (Alex: the glass up 1.1 mm, 2026-10-27; the left wall out 1.5 mm, 2026-10-28)
+REQ_SIZE = (78.9, 156.64, 10.7, 7.7)
 # the case-side requirements (VER-190's procedure): REQ-MEC-*, REQ-PRD-06, REQ-ASM-*, REQ-BAT-07, REQ-BAT-08 and the
 # case items of REQ-BTN-* (05 feel, 06 registration, 08 the domes; 01-04 and 07 are the board's copper and contacts)
 CASE_REQ = re.compile(r"^### (REQ-(?:MEC-\d+|PRD-06|ASM-\d+(?:\.R)?|BAT-0[78]|BTN-0[568]))\b", re.M)
@@ -92,10 +94,12 @@ def arch(seed=None):
     side_eng = e["screw_cb"][1] + e["screw_l"] - e["z_top_cu"]
     # (requirement, the case's feature, its nominal number, meets it, the check that holds the worst case)
     m = [
-        ("REQ-PRD-06", "outline2d (case_w, case_l), case_h, deck_face",
-         f"{e['case_w']:.2f} x {e['case_l']:.2f} x {e['case_h']:.2f} mm, ends {e['deck_face']:.2f} against 77.4 x 156.64 x 9.6, 7.7",
-         e["case_w"] <= 77.4 + 1e-6 and e["case_l"] <= 156.64 + 1e-6 and e["case_h"] <= 9.6 + 1e-6 and e["deck_face"] <= 7.7 + 1e-6,
-         "VER-20, VER-48"),
+        # 39cc07f: the outline is case_w + grow_l wide (the left wall out for the SD slot), case_h with the glass 3.5 mm up
+        ("REQ-PRD-06", "outline2d (case_w + grow_l, case_l), case_h, deck_face",
+         f"{e['case_w'] + e.get('grow_l', 0):.2f} x {e['case_l']:.2f} x {e['case_h']:.2f} mm, ends {e['deck_face']:.2f} against "
+         f"{REQ_SIZE[0]} x {REQ_SIZE[1]} x {REQ_SIZE[2]}, {REQ_SIZE[3]}",
+         e["case_w"] + e.get("grow_l", 0) <= REQ_SIZE[0] + 1e-6 and e["case_l"] <= REQ_SIZE[1] + 1e-6
+         and e["case_h"] <= REQ_SIZE[2] + 1e-6 and e["deck_face"] <= REQ_SIZE[3] + 1e-6, "VER-20, VER-48"),
         ("REQ-BAT-07", "glass_gap over the board, cell_top (the worst cell's top over the board)",
          f"{e['glass_gap'] - e['cell_top']:.2f} mm free above the cell under the panel against 0.4",
          e["glass_gap"] - e["cell_top"] >= 0.4, "VER-182 (the slope's ceiling too), VER-20"),
@@ -129,9 +133,12 @@ def arch(seed=None):
          f"opening {e['usb_hole'][0]:.2f} x {e['usb_hole'][1]:.2f} for a {e['usb_w']:.2f} x {e['usb_h']:.2f} receptacle; recess "
          f"{e['usb_recess']:.2f} mm against plug_len_min - mate - 0.1 = {usbc.get('plug_len_min', 0) - usbc.get('mate', 0) - 0.1:.2f}",
          e["usb_recess"] <= usbc.get("plug_len_min", 0) - usbc.get("mate", 0) - 0.1 + 1e-6, "VER-80, VER-165"),
-        ("REQ-MEC-08", "the listed openings: USB-C, two pinholes (pin_pos), the grille (grille_x, grille_slot), six screw counterbores",
-         f"{len(e['pin_pos'])} pinholes, grille {e['grille_x'][0]}-{e['grille_x'][1]} mm, {len(pos['pins'])} screws, 1 USB-C opening",
-         len(e["pin_pos"]) == 2 and len(pos["pins"]) == 6, "VER-113 (NOT_BUILT), VER-48"),
+        # 39cc07f: no pinholes; the microSD opening (sd_y) in the left wall and the power key's hole (pwr_hole_d) in seat 1's deck
+        ("REQ-MEC-08", "the listed openings: USB-C, the microSD opening (sd_y, sd_z), the power key's hole (pwr_pos, pwr_hole_d), "
+         "the grille (grille_x, grille_slot), six screw counterbores, no pinholes (pin_pos)",
+         f"{len(e['pin_pos'])} pinholes, SD opening {e.get('sd_y')}, power key hole d {e.get('pwr_hole_d')} at {e.get('pwr_pos')}, grille "
+         f"{e['grille_x'][0]}-{e['grille_x'][1]} mm, {len(pos['pins'])} screws, 1 USB-C opening",
+         len(e["pin_pos"]) == 0 and "sd_y" in e and "pwr_hole_d" in e and len(pos["pins"]) == 6, "VER-113 (NOT_BUILT), VER-48"),
         ("REQ-MEC-09", "screw_l in the pilots above the board (z_top_cu, screw_cb, side_engage, deck_engage)",
          f"M2 x {e['screw_l']}: {side_eng:.2f} mm above the board in every pilot against 4.0 at the sides and 3.0 at the ends",
          side_eng >= 4.0 - 1e-6, "VER-147 (FAIL: DEF-31, DEC-18)"),

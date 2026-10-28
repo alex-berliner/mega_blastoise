@@ -1,0 +1,155 @@
+# VER-198 appcircuit
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3; kicad-cli 10.0.6
+$ python3 hardware/vv/tools/circuit_checks.py appcircuit
+U2 BQ24073RGTR (bq24074.pdf, SLUS810N), Table 7-1 and section 8:
+[bq24074.pdf sha256 4fe4e4f9855501f83b400c6932e3098439e51c50539e40dc45b44a8d509e8db1; its pdftotext -layout text sha256 63b3a751d8108320..., 3218 lines]
+  ok    [power] IN bypass 10.0 uF (C1 through R41) against '1 μF to 10 μF to VSS.' (bq24074.txt:520)
+  ok    [power] OUT bypass 14.7 uF (C2, C5) against '4.7-uF to 47-uF' (bq24074.txt:533)
+  ok    [power] BAT bypass 10.0 uF (C3) against 4.7-47 uF (bq24074.txt:501)
+  ok    [power] ISET (pin 16) to VSS through R5 3.3k: 590-8900 ohm (bq24074.txt:643); 'Charging is disabled if ISET is left unconnected' (522)
+  ok    [power] ILIM (pin 12) to VSS through R64: 1100-8000 ohm (bq24074.txt:642), never open (515)
+  ok    [power] pin 15 is TD on the '73 (bq24074.txt:558): at GND, termination enabled ('Connect TD to VSS to enable charger termination', 556)
+  ok    [power] TMR (pin 14) open: the default safety timers (bq24074.txt:568)
+  ok    [power] TS (pin 1) to a 10 kohm NTC (TH1 10k B4460): 'TS monitors a 10kOhm NTC thermistor' (bq24074.txt:570); its window is VER-32's
+  ok    [power] EN2 (pin 5) at GND, EN1 (pin 6) from VBUS through R43 220k: USB500, 'EN2 0, EN1 1: 500 mA' (bq24074.txt:578); EN1 at IN's 4.35 V minimum 2.44 V against VIH 1.4 V (848) with the ~285k pull-down (512)
+  ok    [power] CE (pin 4) on CHG_OFF from U4 with R44 4.7k to GND: never floating (bq24074.txt:505)
+  ok    [power] CHG (pin 9) open drain to +3V3 through R10 100k: 1k-100k (bq24074.txt:509)
+  ok    [power] PGOOD (pin 7) open drain to +3V3 through R9 100k: 1k-100k (bq24074.txt:536)
+  ok    [power] the thermal pad (17) and VSS (8) on GND (bq24074.txt:562, 572)
+U3 TLV75733PDBVR (tlv757p.pdf, SBVS322C):
+[tlv757p.pdf sha256 239d1f1e9bce270377e9af29bd06a5f99fe45f489878612d249d88cf9f2dd7a1; its pdftotext -layout text sha256 69647d726fec5e66..., 2436 lines]
+  ok    [power] CIN on IN (VSYS): C2, C5 15 uF >= 1 uF (tlv757p.txt:210); its distance is checked below on the routed board
+  ok    [power] COUT: C6, C7 on 3V3_LDO and 7 more on +3V3 through JP1, 42.6 uF nominal, inside 1-200 uF (tlv757p.txt:211)
+  ok    [power] EN (PWR_EN) held low by R15 when nothing drives it (tlv757p.txt:917)
+  ok    [power] pin 4 NC on the DBV SOT-23-5 (IN 1, GND 2, EN 3, NC 4, OUT 5; tlv757p.txt:114, design.py U3)
+U8, U9, U11 SN74HC165PWR (sn74hc165.pdf, SCLS116):
+[sn74hc165.pdf sha256 7ebf4358fa42dc1e0f50848e513a05fe0829a5d83eb4851c310532d2f0f3424e; its pdftotext -layout text sha256 0d66f7e8e67c34d7..., 1989 lines]
+  ok    [buttons] three registers in the chain: U11, U8, U9 (24 bits, pinmap.md Buttons)
+  ok    [buttons] U11 CLK INH (pin 15) at GND: low enables the clock (sn74hc165.txt:157, 198)
+  ok    [buttons] U11 VCC (16) on +3V3, inside 2-6 V (sn74hc165.txt:255)
+  ok    [buttons] U11 SER (pin 10) at +3V3: driven or tied, not floating
+  ok    [buttons] U11 D0-D7 each pulled up or tied high: no input floats with its contact open
+  ok    [buttons] U8 CLK INH (pin 15) at GND: low enables the clock (sn74hc165.txt:157, 198)
+  ok    [buttons] U8 VCC (16) on +3V3, inside 2-6 V (sn74hc165.txt:255)
+  ok    [buttons] U8 SER (pin 10) at SR_CHAIN: driven or tied, not floating
+  ok    [buttons] U8 D0-D7 each pulled up or tied high: no input floats with its contact open
+  ok    [buttons] U9 CLK INH (pin 15) at GND: low enables the clock (sn74hc165.txt:157, 198)
+  ok    [buttons] U9 VCC (16) on +3V3, inside 2-6 V (sn74hc165.txt:255)
+  ok    [buttons] U9 SER (pin 10) at SR_CHAIN2: driven or tied, not floating
+  ok    [buttons] U9 D0-D7 each pulled up or tied high: no input floats with its contact open
+U4 ESP32-S3-WROOM-1U-N16R8 (esp32-s3-wroom-1.pdf, the module; esp32-s3-hw-design-guidelines.pdf):
+[esp32-s3-hw-design-guidelines.pdf sha256 f1b5fff38a22bb533cbefed23c3634a1ca8cd80355296cc428f517167e8d1991; its pdftotext -layout text sha256 1f932ca03679617e..., 1735 lines]
+  ok    [mcu] EN (pin 3): R23 to +3V3 and C12 to GND, the RC delay 'usually R = 10 kOhm and C = 1 uF' (esp32-s3-hw-design-guidelines.txt:338), never floating (336)
+[esp32-s3-wroom-1.pdf sha256 27d71971da07c280c6068d08c74720d1a25b8f20cf8494dc1765bdd28d40d435; its pdftotext -layout text sha256 0b40dc77fe19addf..., 3771 lines]
+  ok    [mcu] 3V3 (pin 2): a 22 uF and a 0.1 uF on +3V3, as the module's peripheral schematic (esp32-s3-wroom-1.txt:2875); their distance to pin 2 is VER-204's
+  ok    [usb_debug] USB D+ (pin 14, IO20) and D- (pin 13, IO19) each through a series resistor of 22-33 ohm (R21, R22 22 ohm; esp32-s3-hw-design-guidelines.txt:874); their distance to the module is VER-191's
+  ok    [mcu] IO35-IO37 (pins 28-30) unconnected: the octal PSRAM's (esp32-s3-wroom-1.txt, the pin table's footnote; pinmap.md)
+  ok    [mcu] GND on pins 1, 40 and the 41 pad
+  ok    [usb_debug] J7's pads carry EN and BOOT (IO0, pin 27) with 3V3 and GND: the download mode by a pogo jig (no buttons)
+the panel ER-TFT035IPS-6 on J3 (er-tft035ips-6.pdf, its ILI9488), on its 8-bit 8080 bus since 39cc07f:
+[er-tft035ips-6.pdf sha256 f8822bd3a335c610fa1862de58173020e76ac6cdaf9da744a71e3a50a620a371; its pdftotext -layout text sha256 f00a3f20e5e01c9e..., 1383 lines]
+  ok    [display] IM2 (pin 9) low, IM1 (8) and IM0 (7) high: '0 1 1 8080 MCU 8-bit Bus Interface D[7:0]' (er-tft035ips-6.txt:718)
+  ok    [display] VSYNC, HSYNC, DOTCLK, DE and DB17-DB8 (11-24) at GND ('Fix to DGND level when not in use', er-tft035ips-6.txt:659-667); DB7-DB0 (25-32) on LCD_D7-LCD_D0 (pins 15-32 are DB17-DB0, 667)
+  ok    [display] RD (35) at the logic supply (er-tft035ips-6.txt:675)
+  ok    [display] SDO (33) open, SDA (34) at GND, TE (39) to the module (er-tft035ips-6.txt:669, 673, 686)
+  ok    [display] WRX (36), D/CX (37), RESET (10) from the module; CSX (38) tied low, always selected (the sheet says 'Fix to IOVCC when not in use', 683: it is in use, held selected)
+  FAIL  [display] VCI and VDDI (40-42) on LCD_3V3 = +3V3 through JP4: up to 3.333 V (TLV75733P +-1% to TJ 85 C, tlv757p.txt:252; 3.349 V at +-1.5%, 255) against 'Power Supply Voltage VCI 2.5 2.8 3.3 V' (er-tft035ips-6.txt:747-748): DEF-61, DEC-09 proposes accepting it
+J8 microSD (Hirose DM3AT-SF-PEJM5) and its bus (esp32-s3-hw-design-guidelines.txt:864):
+  ok    [storage] SD_CMD: pull-up R79 10k (the guidelines' 1.3.12; the SD spec's 10-100 kohm, from memory)
+  ok    [storage] SD_D0: pull-up R80 10k (the guidelines' 1.3.12; the SD spec's 10-100 kohm, from memory)
+  ok    [storage] SD_D1: pull-up R81 10k (the guidelines' 1.3.12; the SD spec's 10-100 kohm, from memory)
+  ok    [storage] SD_D2: pull-up R82 10k (the guidelines' 1.3.12; the SD spec's 10-100 kohm, from memory)
+  ok    [storage] SD_D3: pull-up R83 10k (the guidelines' 1.3.12; the SD spec's 10-100 kohm, from memory)
+  ok    [storage] SD_CD pulled up, the detect switch to GND: low with a card in (normally open, hirose_dm3_catalog_C114218.txt:27)
+  ok    [storage] the card's VDD (pin 4) on SD_VDD with C60, C61 (10.1 uF) beside it
+  ok    [power] the nearest CIN pad is 6.0 mm from U3's IN: 'as close as possible' (tlv757p.txt:1333) gives no number; read as the register's 0.5 in (12.7 mm, the RT9013's own figure before 39cc07f), pad centre to pad centre
+constants the vv tools cite by line, against the extract's line:
+  ok    circuit_checks.py:622 ESP_CPU = 0.1079 on esp32-s3-wroom-1.txt:1741
+  ok    circuit_checks.py:623 ESP_RX = 0.097 on esp32-s3-wroom-1.txt:1670
+  ok    circuit_checks.py:624 ESP_TX = 0.355 on esp32-s3-wroom-1.txt:1662
+  ok    circuit_checks.py:625 ESP_IVDD = 0.5 on esp32-s3-wroom-1.txt:1597
+[mcp6001.pdf sha256 4f879ab31115ecfa149dfea62073c9efdbc4beccbdfc3a8d7e10281f3877f8fb; its pdftotext -layout text sha256 389d546fd726d011..., 2769 lines]
+  ok    circuit_checks.py:629 STAND_OPAMP_IQ = 0.00017 on mcp6001.txt:160
+[srv05-4.pdf sha256 a164eb7954004c1b9d6c6fe5047dcca89db686b1270c8f534fc724e3e2764ec5; its pdftotext -layout text sha256 8fc17c36e618bcbf..., 616 lines]
+  ok    circuit_checks.py:841 U1_VC = 17.5 on srv05-4.txt:102
+  ok    design_numbers.py:64 VREG_TOL = 0.015 on tlv757p.txt:255
+  ok    design_numbers.py:65 VREG_TOL_85 = 0.01 on tlv757p.txt:252
+  ok    design_numbers.py:66 U3_VDO_1A = 0.425 on tlv757p.txt:298
+[esp32-s3.pdf sha256 2d5a7cb7fd559d8d972bd88db32669c0196d23f22d7afaafb0f63d099b589a3f; its pdftotext -layout text sha256 45b2ced1ef2f02a4..., 4941 lines]
+  ok    design_numbers.py:70 ADC_ATTEN3_ERR = 0.05 on esp32-s3.txt:3804
+  ok    design_numbers.py:82 KPRECHG = 70 on bq24074.txt:787
+  ok    design_numbers.py:82 KPRECHG = 106 on bq24074.txt:787
+  ok    design_numbers.py:83 KISET = 797 on bq24074.txt:785
+  ok    design_numbers.py:83 KISET = 975 on bq24074.txt:785
+  ok    design_numbers.py:84 ITERM = 0.09 on bq24074.txt:789
+  ok    design_numbers.py:84 ITERM = 0.11 on bq24074.txt:789
+  ok    design_numbers.py:85 V_LOWV = 2.9 on bq24074.txt:776
+  ok    design_numbers.py:85 V_LOWV = 3.1 on bq24074.txt:776
+  ok    design_numbers.py:86 VBAT_REG = 4.16 on bq24074.txt:773
+  ok    design_numbers.py:86 VBAT_REG = 4.23 on bq24074.txt:773
+  ok    design_numbers.py:87 V_HOT = 0.27 on bq24074.txt:824
+  ok    design_numbers.py:87 V_HOT = 0.33 on bq24074.txt:824
+  ok    design_numbers.py:88 V_COLD = 2 on bq24074.txt:826
+  ok    design_numbers.py:88 V_COLD = 2.2 on bq24074.txt:826
+  ok    design_numbers.py:89 I_TS = 7.5e-05 on bq24074.txt:823
+  ok    design_numbers.py:100 OPAMP_VOS_BUF = 0.0045 on mcp6001.txt:135
+  ok    layout_checks.py:696 ANT_CLEAR = 15 on esp32-s3-hw-design-guidelines.txt:1299
+  ok    paper_checks.py:42 U3_VIH = 1 on tlv757p.txt:328
+  ok    paper_checks.py:43 U3_VIL = 0.3 on tlv757p.txt:331
+  ok    paper_checks.py:45 U3_ISHDN = 1e-06 on tlv757p.txt:265
+  ok    paper_checks.py:46 U3_EN_ABS = 6 on tlv757p.txt:179
+  ok    paper_checks.py:47 U3_EN_REC = 5.5 on tlv757p.txt:208
+  ok    paper_checks.py:48 U3_TSTR = 0.00055 on tlv757p.txt:326
+  ok    paper_checks.py:50 U2_IBAT_PDWN = 6.5e-06 on bq24074.txt:714
+  ok    paper_checks.py:51 U2_OVP_MIN = 6.4 on bq24074.txt:699
+  ok    paper_checks.py:52 U2_EN_ABS = 7 on bq24074.txt:598,599
+  ok    paper_checks.py:53 U2_EN_PD = 285000 on bq24074.txt:512
+  ok    paper_checks.py:54 U2_VO_REG = 4.3 on bq24074.txt:729
+  ok    paper_checks.py:54 U2_VO_REG = 4.5 on bq24074.txt:729
+  ok    paper_checks.py:55 U2_BAT_OUT_R = 0.1 on bq24074.txt:724
+  ok    paper_checks.py:57 ESP_IIN = 5e-08 on esp32-s3.txt:3748,3749
+  ok    paper_checks.py:59 ESP_VDD_MIN = 3 on esp32-s3-wroom-1.txt:1596
+  ok    paper_checks.py:60 ESP_TX_PEAK = 0.355 on esp32-s3-wroom-1.txt:1662
+  ok    paper_checks.py:61 ESP_EN_RC = 10000 on esp32-s3-hw-design-guidelines.txt:338
+  ok    paper_checks.py:61 ESP_EN_RC = 1e-06 on esp32-s3-hw-design-guidelines.txt:338
+  ok    paper_checks.py:62 ESP_USB_R = 22 on esp32-s3-hw-design-guidelines.txt:874
+  ok    paper_checks.py:62 ESP_USB_R = 33 on esp32-s3-hw-design-guidelines.txt:874
+  ok    paper_checks.py:63 ESP_3V3_C = 2.2e-05 on esp32-s3-wroom-1.txt:2875
+  ok    paper_checks.py:63 ESP_3V3_C = 1e-07 on esp32-s3-wroom-1.txt:2875
+[2n7002_cj.pdf sha256 7941fb423af7c6c6c8979063a7e8819bb19217ece275efcce18948950a41d9f6; its pdftotext -layout text sha256 8f457be6865e4d72..., 356 lines]
+  ok    paper_checks.py:66 Q_VTH = 1 on 2n7002_cj.txt:55
+  ok    paper_checks.py:66 Q_VTH = 2.5 on 2n7002_cj.txt:55
+[bat54c.pdf sha256 38d4cf5982dcaaa3dadba4eac506917de6798ef565062ef2abbecbb6023071ce; its pdftotext -layout text sha256 19006bad8f38df1c..., 500 lines]
+  ok    paper_checks.py:67 VF_01MA = 0.24 on bat54c.txt:113,114,115
+  ok    paper_checks.py:68 U1_C = 5e-12 on srv05-4.txt:105
+[rocpu_tps850.pdf sha256 085a2be0e64467bd9a929cc944267dfde6d1fb578840786e57bc438690048a18; its pdftotext -layout text sha256 5bd9d28cf3fb0dde..., 156 lines]
+  ok    paper_checks.py:70 SW24_R = 0.1 on rocpu_tps850.txt:20,137
+  ok    paper_checks.py:70 SW24_R = 0.5 on rocpu_tps850.txt:20,137
+  skipped I_TS_TOL: the tolerance (78 - 72) / 2 / 75 of the cited band, not a printed number
+  skipped I_PATH: VER-13's own test current; the cite is for the 475 mA USB500 limit it sits above
+  skipped I_LEAK: a stand-in, 20 x the cited 50 nA
+  skipped I_3V3_PEAK: the cited 355 mA plus the 150 mA average load: a sum, not a printed number
+  skipped U3_IEN: a stand-in; the cited line gives 10 nA typical
+  skipped OPAMP_IB_MAX: a stand-in, 50 x the cited 19 pA
+  skipped OPAMP_DRIFT: a stand-in, 2.5 x the cited 2 uV/C
+  skipped CLAMP_V: an estimate; the cited lines give the input's limits
+  skipped ESP_VOH: 0.8 x VDD at 3.3 V, the cited formula
+  skipped U7_ISD: u7.json's figure; fm8002a.txt:123 prints it, VER-34 compares
+  skipped ESP_PWM_CLK: the APB clock design.py and pinmap.md name; no datasheet line cited
+  skipped V3V3: 3.3 V x (1 + the cited 1.5%), a product
+  skipped VF_DECADE: 320 - 240 mV, the difference of the two cited lines
+  skipped STAND_ESP_USB_C: a stand-in; the cited line gives a GPIO's 2 pF
+  55 cited numbers read
+1 failing
+RESULT: FAIL
+
+--- stderr
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+./kicad/include/properties/property.h(607): assert "m_choices.GetCount() > 0" failed in PROPERTY_ENUM(): No enum choices defined
+
+exit 1
+RESULT: FAIL

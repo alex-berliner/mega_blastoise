@@ -1,0 +1,35 @@
+# VER-10 check_contact_fp
+DATE: 2026-10-28
+COMMIT: 6f10a6bc5a20124b9aadebe1989dad8ab2e8b4de
+TREE: clean under its covers
+TOOLS: python 3.12.3
+$ python3 hardware/membrane/tools/check_contact_fp.py hardware/prod_board/prod_board/prod.pretty/DSL_button_4ring.kicad_mod
+pad 1: 7 shapes, anchor (-1.604, 1.477)
+    arc   r=0.7200  sweep 150.7 deg  centre (+0.0000, +0.0000)
+    step  r 0.7200 -> 1.2600
+    arc   r=1.2600  sweep 163.8 deg  centre (+0.0000, +0.0000)
+    step  r 1.2600 -> 1.7200
+    arc   r=1.7200  sweep 168.2 deg  centre (+0.0000, -0.0000)
+    step  r 1.7200 -> 2.1800
+    arc   r=2.1800  sweep 170.7 deg  centre (+0.0000, -0.0000)
+    one connected piece: yes   anchor on copper: yes
+pad 2: 7 shapes, anchor (1.604, -1.477)
+    arc   r=0.7200  sweep 150.7 deg  centre (-0.0000, -0.0000)
+    step  r 0.7200 -> 1.2600
+    arc   r=1.2600  sweep 163.8 deg  centre (-0.0000, -0.0000)
+    step  r 1.2600 -> 1.7200
+    arc   r=1.7200  sweep 168.2 deg  centre (-0.0000, +0.0000)
+    step  r 1.7200 -> 2.1800
+    arc   r=2.1800  sweep 170.7 deg  centre (-0.0000, +0.0000)
+    one connected piece: yes   anchor on copper: yes
+
+min copper gap pad 1 <-> pad 2: 0.2000 mm (need >= 0.20)  OK  near (1.081, 0.647)
+mask opening r=2.400 vs outermost copper r=2.256: covers it
+
+smallest contact spot that bridges both nets anywhere on the pad: 1.60 mm across
+    worst spot centred at (0.00, -0.35); a 3.5 mm pill clears it comfortably
+
+RESULT: PASS
+
+exit 0
+RESULT: PASS
