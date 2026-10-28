@@ -55,7 +55,7 @@ button caps are cheap and widely stocked.
 
 Geometry measured from the SNES OEM controller replacement PCB
 (`snes-controller-main-pcb.kicad_pcb`, CC BY-SA 4.0, see
-`hardware/membrane/README.md` for the licence caveat):
+`hardware/ref_design/board/membrane/README.md` for the licence caveat):
 
 | Cluster | Spacing |
 |---|---|
@@ -67,7 +67,7 @@ Geometry measured from the SNES OEM controller replacement PCB
 **The compact alternative is DS Lite**: a **15.0 x 15.0 mm** face-button diamond
 against the SNES 27.0 x 21.0 mm, measured from a membrane breakout board's
 gerbers and corroborated by an unrelated project aligned to the real console
-(`hardware/membrane/README.md`). Its contacts are 4.52 mm concentric rings
+(`hardware/ref_design/board/membrane/README.md`). Its contacts are 4.52 mm concentric rings
 rather than combs, which tolerates a rotated pill better. DS Lite membranes are
 in production as repair spares, and Adafruit's cuttable elastomer keypad sits on
 the same 15 mm grid as a second source.

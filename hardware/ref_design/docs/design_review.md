@@ -850,7 +850,7 @@ full scale on USB. Firmware:
 
 - 16 x DSL_button_4ring (D-pads, A/B/X/Y) and 4 x DSL_button_3ring (Start, Select: the same comb
   without its outer ring, for the Start/Select membrane's smaller pills; ESTIMATE): two interleaved combs (0.15 mm lines, 0.20 mm gaps,
-  checked by `hardware/membrane/tools/check_contact_fp.py`) under one 4.8 mm mask
+  checked by `hardware/ref_design/board/membrane/tools/check_contact_fp.py`) under one 4.8 mm mask
   opening, ENIG. A carbon pill of 1.6 mm or more bridges them anywhere on the pad.
 - Each comb leaves through a 0.2 mm stub to a via 3.3 mm from the contact's
   centre; nothing else (no vias, no pour) inside 2.9 mm.
@@ -876,7 +876,7 @@ on the pad. The 3-ring version is the same comb without its outer ring, for the 
 membrane's smaller pills (an estimate). Each comb leaves through a 0.2 mm stub to a via 3.3 mm from
 the contact's centre, with nothing else (no vias, no pour) inside 2.9 mm. The contacts are copper,
 not parts: JLC places nothing here. The footprints are generated and checked by the tools in
-[hardware/membrane/](../../membrane/README.md) (0.200 mm minimum gap, 1.60 mm bridging spot).
+[hardware/ref_design/board/membrane/](../board/membrane/README.md) (0.200 mm minimum gap, 1.60 mm bridging spot).
 
 **Why it is built this way.**
 
@@ -946,7 +946,7 @@ Start and Select have no game meaning in core yet.
 | ERC | kicad-cli | 0 errors, 0 warnings |
 | DRC with schematic parity | kicad-cli, `board/tools/check_pcb.py` | 0 errors, 0 unconnected, 0 parity issues; 2 cosmetic warnings (USB-C outline silk at the board edge, where the receptacle overhangs by design). `board/fab/drc.txt` |
 | Every hole 0.3 mm or larger | the drill file, `board/fab/gerbers/battler.drl` | 0.3, 0.6, 0.65 and 2.2 mm only |
-| Contact pattern | `hardware/membrane/tools/check_contact_fp.py` | 0.200 mm minimum gap, 1.60 mm bridging spot |
+| Contact pattern | `hardware/ref_design/board/membrane/tools/check_contact_fp.py` | 0.200 mm minimum gap, 1.60 mm bridging spot |
 | Board inside the case | every part's 3D model against the case's height limits, bosses, snap hooks and keep-outs (`case/check_fit.py`) | 123 parts, no collisions, including under the lid's panel frame (`case/fit_report.txt`) |
 
 Routing: two things make the 2-layer board route completely, in about ten minutes.

@@ -24,12 +24,12 @@ Downloads (scans, FCC photos, manuals) were kept out of the repo; the notes link
 
 ## Membranes and the DS Lite research
 
-The membrane decision is documented in [hardware/membrane/README.md](../membrane/README.md):
+The membrane decision is documented in [hardware/ref_design/board/membrane/README.md](../../../hardware/ref_design/board/membrane/README.md):
 the donors surveyed (SNES, DS Lite, others), the DS Lite geometry measured from a breakout board's
 gerbers, the contact pattern, licence traps in other projects' footprints, and an open question:
 fine gold combs need ENIG or hard gold, while carbon ink (more durable) needs a coarser pattern.
 
-[hardware/ds_lite/](README.md) is a research packet on how the DS Lite is built and
+[docs/reference/ds_lite/](README.md) is a research packet on how the DS Lite is built and
 why it feels as it does, every number sourced and labelled by how it was obtained. Its key points
 for this project: density (a DS Lite works out to about 1.03 g/cm3, so about 160 g for a case this
 size), a 13.5 mm lower half, rounded edges, and the seam on the face. Its recommendations are

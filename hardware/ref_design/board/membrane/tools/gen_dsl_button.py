@@ -7,7 +7,7 @@ crosses signal, common, signal, common (or the reverse). Neither comb ever
 crosses the other, so every pad is one connected piece of copper.
 
 Ring radii and conductor width are the DS Lite breakout's, measured from its
-gerbers (hardware/membrane/README.md). The step angles are ours: each ring's
+gerbers (hardware/ref_design/board/membrane/README.md). The step angles are ours: each ring's
 gap between nets is sized so the two combs never come closer than CLEARANCE,
 which is why the gap is wider on the inner rings than the outer.
 

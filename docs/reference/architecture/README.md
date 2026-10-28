@@ -44,8 +44,8 @@ This directory contains the architecture documentation for the Mega Blastoise wo
 | `site/` | The Pages front page |
 | [hardware/README.md](../../../hardware/README.md) | Hardware index |
 | [hardware/ref_design/](../../../hardware/ref_design/README.md) | The reference design: `board/`, `case/`, `docs/`, `datasheets/`, `tools/quotes/`, `viewer/` |
-| [hardware/membrane/](../../../hardware/membrane/README.md) | Membrane contact footprints and their generator and checker |
-| [hardware/ds_lite/](../../../hardware/ds_lite/README.md) | DS Lite construction research |
+| [hardware/ref_design/board/membrane/](../../../hardware/ref_design/board/membrane/README.md) | Membrane contact footprints and their generator and checker |
+| [docs/reference/ds_lite/](../ds_lite/README.md) | DS Lite construction research |
 
 ## Glossary (software and the game)
 

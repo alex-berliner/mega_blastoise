@@ -1,4 +1,4 @@
-"""The Start/Select membrane contact: hardware/membrane's DS Lite comb with its outer
+"""The Start/Select membrane contact: hardware/ref_design/board/membrane's DS Lite comb with its outer
 ring left off (3 rings: copper 3.6 mm across, mask 3.9), for the smaller pills on the Start/Select membrane.
 Written into lib/battler.pretty through the same generator, so the comb geometry,
 clearances and attributes are the 4-ring contact's.
