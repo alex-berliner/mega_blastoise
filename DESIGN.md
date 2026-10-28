@@ -1,7 +1,8 @@
 # Mega Blastoise: design document
 
 The whole project on one page: what it is, why it is built this way, how the pieces fit, and
-where the details live. It is current as of 2026-10-21. Detailed specifications ([pin tables](#g-pin-map),
+where the details live. Section 1 is current as of 2026-10-28; the rest is current as of 2026-10-21 and
+gets updated for the next spin once its chip is chosen. Detailed specifications ([pin tables](#g-pin-map),
 part values, [BOM](#g-bom) lines, layouts) stay in the documents this one links to; where a number appears
 here it is to explain a decision, and the linked document is the authority.
 
@@ -31,34 +32,51 @@ Claude (Anthropic's model) working in this repository.
 Mega Blastoise is a two-player handheld Pokemon battler. The device lies flat on a table between
 two people sitting across from each other. One shared colour screen in the middle is split
 between them, and each player has a [DS Lite](#g-ds-lite) style D-pad and face buttons at their own end. They
-pick random teams and fight a full [singles battle](#g-singles) under [Gen 1](#g-gen) or Gen 3 rules. Everything runs on
-one [microcontroller](#g-mcu): no phone, no PC, no network.
+get random teams and fight a full [singles battle](#g-singles) under [Gen 1](#g-gen) or Gen 3 rules. The next spin
+also plays GBA games through an emulator.
 
 The same game also runs in a web browser, built from the same Rust code, and is published on
 [GitHub Pages](#g-github-pages): [play it here](https://alex-berliner.github.io/mega_blastoise/battler/device.html).
 
-Goals, in the order the project has held them:
+Goals (reviewed by Alex on 2026-10-28; queue issue
+[#3](https://github.com/alex-berliner/claude-queue/issues/3) has the review):
 
-1. **Two strangers can sit down and play.** The first device was aimed at demoing at a
-   convention (Open Sauce 2026, per [the v1 overview](docs/archive/v1/DESIGN.md)): no setup,
-   no loose pieces, a first match within seconds. An [attract demo](#g-attract-demo) and a "hold A to fight the AI"
-   option exist for a lone visitor.
-2. **It must feel like a purpose-built game device**, not an emulator or a phone app. Since
-   2026-10-19 the explicit target is that the case should feel like holding the bottom half of a
-   Nintendo DS Lite ([hardware/ds_lite/](hardware/ds_lite/README.md)).
-3. **The battle rules must be verifiably the same as a community-accepted reference.** Since
-   2026-08-16 the goal is a complete recreation of [Pokemon Showdown](#g-showdown)'s Gen 1 and Gen 3 singles
-   combat, [abilities](#g-ability) and [held items](#g-held-item) included. Showdown wins every disagreement, and the [engines](#g-battle-engine)
+1. **Two people can sit down and play, like any video game.** No setup, no loose pieces, a
+   first match within seconds, and a "hold A to fight the AI" option for one player. (The first
+   device was aimed at convention demos; that framing is dropped, and the
+   [attract demo](#g-attract-demo) is no longer a focus.)
+2. **It must feel like a purpose-built game device**, in the spirit of existing emulator
+   handhelds. The case should feel like holding the bottom half of a Nintendo DS Lite
+   ([hardware/ds_lite/](hardware/ds_lite/README.md)).
+3. **The battle rules must be verifiably the same as [Pokemon Showdown](#g-showdown)'s:** Gen 1 and Gen 3 singles,
+   [abilities](#g-ability) and [held items](#g-held-item) included. Showdown wins every disagreement, and the [engines](#g-battle-engine)
    are checked against it by [differential tests](#g-differential).
 4. **The browser build and the device must be indistinguishable** in everything a player sees
    and does (the [zero-drift rule](#g-zero-drift), [section 5.3](#53-the-zero-drift-rule)). The browser is where
    the game is developed and tested; the device is the source of truth when they disagree.
-5. **The hardware should become something that could be batch-produced and sold.** Since
-   2026-09-17 the hand-wired prototype is being turned into a factory-assembled [PCB](#g-pcb) with a
-   printed case.
+5. **The hardware should become something that could be batch-produced and sold:** a
+   factory-assembled [PCB](#g-pcb), a printed case, and a low price.
 
-Out of scope for now: radios (no Wi-Fi, no Bluetooth), doubles battles, per-move attack
-animations beyond a small shared vocabulary, and shipping any Pokemon assets on the product.
+### Feature set for the next spin
+
+| Feature | Status | What it needs from the chip |
+|---|---|---|
+| Two seats, one shared 3.5 in IPS screen, DS Lite controls per seat, battery, USB-C, speaker | have | a parallel display bus for 60 fps (8080 or RGB) |
+| Random teams from Showdown's random battle sets (Gen 1 or 3, 3v3 or 6v6), the only team mode | have | runs the `no_std` Rust core (about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today) |
+| Open information, the battle log on `?`, taking back a locked choice | have | none beyond the core |
+| GBA emulation at 60 fps (Pokemon FireRed as the test) | must-have, new | an ARM9 at about 400 MHz or more with 32 MB+ of RAM (F1C200s class); the ESP32-S3 reaches about 20 fps |
+| Online play against Showdown as a guest, no login | must-have, new | a network: Wi-Fi only if nearly free, else USB host for a phone tether or a Wi-Fi dongle |
+| Load games and saves from a computer, over USB or SD | must-have, new | USB mass storage or an SD card, and room for a 16 MB ROM plus saves |
+| Fast boot: Linux allowed if tuned, bare-metal Rust boot required | must-have, new | a Rust target and documented boot ROM and RAM init |
+
+How Pokemon and GBA share the chip is open, and is decided with the chip (queue issue
+[#4](https://github.com/alex-berliner/claude-queue/issues/4)): either a boot select (the bare-metal battler by default, Linux with the emulator
+selectable) or everything on Linux. It replaces the 2026-10-27 plan of a launcher of RP2350
+binaries.
+
+Out of scope for now: doubles battles and per-move attack animations beyond a small shared
+vocabulary. Out of scope for good: shipping Pokemon assets, ROMs or a GBA BIOS on the product
+(players supply their own).
 
 ## 2. Product concept and player experience
 
