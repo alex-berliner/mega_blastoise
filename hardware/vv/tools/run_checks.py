@@ -18,7 +18,10 @@ header. Add a check here once its script exists (check_fab_content, ...). A scri
 is BLOCKED (an input it needs is not on disk): nothing is written for it. A
 check that FAILs is recorded as FAIL with its evidence: a finding the order gate shows. A
 script that tests only part of its row's pass limit does not belong here: split the row first
-(VER-20 and VER-182, O-R21), so an exit 0 is a whole PASS.
+(VER-20 and VER-182, O-R21), so an exit 0 is a whole PASS. Since 2026-10-28 a DROPPED, RETIRED or CUT
+row is not run, and while README's '- Baseline board:' is a dropped board (the ESP32-S3 board's files
+are still on main) no check of the F1C200s board is run either: only the register's own checks (board
+'both') run until an F1C200s design is the baseline.
 
 Python 3 standard library only.
 """
@@ -152,6 +155,7 @@ def main():
     byid = {r[0]: r for r in rows[1:] if r}
     dirty = ct.dirty_files()
     commit = ct.HEAD
+    ct.BASELINE_BOARD = ct.parse_baseline_board()
     today = datetime.date.today().isoformat()
     bad = 0
     for vid in want:
@@ -159,6 +163,16 @@ def main():
             sys.exit(f"run_checks: {vid} is not a quick scripted check here")
         name, cmd, kicad = CHECKS[vid]
         row = dict(zip(head, byid[vid]))
+        # 2026-10-28: a check of a dropped board is not run; and while the design files at the baseline are a dropped
+        # board's (README '- Baseline board:'), a check of the live board is not run on them: its result would be
+        # the dropped board's, not the F1C200s board's (check_trace refuses such a PASS or FAIL)
+        if row["last_result"] in ct.GONE + ("CUT",):
+            print(f"{vid} {name}: not run: {row['last_result']}")
+            continue
+        if row["board"] in ct.BOARDS and ct.BASELINE_BOARD in ct.DROPPED_BOARDS:
+            print(f"{vid} {name}: not run: the baseline's design files are the dropped {ct.BASELINE_BOARD} board's; "
+                  f"it runs once a {row['board']} design is the baseline")
+            continue
         cov = ct.parse_covers(row["covers"])
         hit = sorted({f for k, s, _ in cov if k == "glob" for f in dirty if s[0].match(f)}
                      | ({ct.DESIGN_PY} & dirty if any(k == "part" for k, _, _ in cov) else set()))

@@ -74,6 +74,21 @@ The framework fixes after vv-rp2354b-final's sign-off add theirs (2026-10-28):
            mode warns and the order gate fails.
   grid     a GRID line signed with no ACCEPTED_GAP row leaves its cell a GAP, and R9 says why.
 
+The F1C200s re-target adds theirs (2026-10-28):
+
+  DROPPED  a dropped check or defect that names no board and tag; a DFMEA row or a gate criterion DROPPED on the
+           live board; a live check on a dropped board; a live requirement, risk or parent leaning on a DROPPED
+           row; a live row citing one outside 'Was:': the default mode fails on each.
+  baseline an F1C200s PASS while README's '- Baseline board:' is the dropped ESP32-S3 board's, and no such line.
+  subsys   a live requirement with no '- Subsystem:', and a requirement or a check on the dropped board's mcu or
+           usb_debug.
+  new-MCU  a stage naming a DROPPED check, an entry that skips the stage before, a token that is no need, stages
+           out of order (structure); the chip selection's evidence gone, and the stage the register is at moving
+           to NM-03 when NM-01's exit is met (report).
+The seeds that leaned on the ESP32-S3 board's rows (DF-35, DF-87, DEF-62, DEF-84, VER-99's PASS and the like) moved
+to the F1C200s board's; where a seed needs an F1C200s PASS it takes the baseline as the live board's in its copy
+(live_baseline), and where it needs a live defect it adds one (add_defect).
+
 Python 3 standard library and git.
 """
 import csv
@@ -187,12 +202,12 @@ FAULTS = [
     ("an analysis PASS with no saved output", "structure", "needs its saved output under",
      lambda d: csv_edit(d, "verification.csv", "VER-01", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/vv/README.md")),
-    ("a test (T) PASS with no saved output", "structure", "VER-43: needs its saved output under",
-     lambda d: csv_edit(d, "verification.csv", "VER-43", last_result="PASS", commit=HEAD7, date=TODAY,
+    ("a test (T) PASS with no saved output", "structure", "VER-60: needs its saved output under",
+     lambda d: csv_edit(d, "verification.csv", "VER-60", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/ref_design/docs/assembly.md")),
     ("CLOSED defect with no check", "structure", "CLOSED with no VER",
-     lambda d: (block_field(d, "defects.md", "DEF-07", "Check added or changed", "none"),
-                block_field(d, "defects.md", "DEF-07", "Status", "CLOSED (seeded)"))),
+     lambda d: (block_field(d, "defects.md", "DEF-35", "Check added or changed", "none"),
+                block_field(d, "defects.md", "DEF-35", "Status", "CLOSED (seeded)"))),
     ("covers glob matching nothing", "structure", "matches no tracked file",
      lambda d: csv_edit(d, "verification.csv", "VER-01", covers=lambda c: c + " hardware/nothing/*.py")),
     ("covers regex matching no line", "structure", "matches no current line",
@@ -208,8 +223,8 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-09", evidence="RETIRED: the 3-ring is gone")),
     ("a live requirement verified by a retired check", "structure", "REQ-PRD-05: verified by VER-11, which is RETIRED",
      lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Verified by", "VER-65, VER-11")),
-    ("a live risk detected by a retired check", "structure", "DF-35: detects VER-11, which is RETIRED",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-35", detects=lambda x: x + " VER-11", detection=lambda x: x + "; VER-11")),
+    ("a live risk detected by a retired check", "structure", "DF-214: detects VER-11, which is RETIRED",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-214", detects=lambda x: x + " VER-11", detection=lambda x: x + "; VER-11")),
     ("a gate criterion naming a retired check", "structure", "G-EVT-04: needs VER-11, which is RETIRED",
      lambda d: text_edit(d, "gates.md", "| VER-12 VER-30 VER-13 VER-31 ", "| VER-11 VER-12 VER-30 VER-13 VER-31 ")),
     ("vp_map status changed with no evidence", "structure", "with no evidence",
@@ -218,28 +233,27 @@ FAULTS = [
      lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Verified by", "")),
     ("requirement APPROVED with no APPROVALS line", "structure", "has no committed line for it",
      lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Status", "APPROVED")),
-    ("allocation on the wrong board", "structure", "a .R allocation is Board: ref_design",
-     lambda d: block_field(d, "requirements.md", "REQ-PRD-01.R", "Board", "both")),
+    ("allocation on the wrong board", "structure", "a .F allocation is Board: f1c200s",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-01.F", "Board", "both")),
     ("risk ACCEPTED with no APPROVALS line", "structure", "ACCEPTED but releases/APPROVALS.md",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-87", status="ACCEPTED")),
+     lambda d: csv_edit(d, "dfmea.csv", "DF-247", status="ACCEPTED")),
     ("approval line signed by Claude", "structure", "only Alex signs",
      lambda d: approve(d, "| A-001 | REQ-PRD-05 | APPROVED | - | - | Claude | 2026-10-24 |")),
     ("a deferral with no scope phase", "structure", "REQ-PRD-05 DEFERRED needs a scope phase",
      lambda d: approve(d, "| A-001 | REQ-PRD-05 | DEFERRED | - | waiting for the cell | Alex | 2026-10-25 |")),
     ("detects names a check the text does not", "structure", "which the detection text does not describe",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-70", detects=lambda x: x + " VER-02",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-238", detects=lambda x: x + " VER-02",
                         detection=lambda x: x.replace("VER-02", "the pin gate"))),
     ("detection rating better than its checks", "structure", "must be 8 or more",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-152", detection_rating="6", action_priority="M")),
+     lambda d: csv_edit(d, "dfmea.csv", "DF-210", detection_rating="6", action_priority="H")),
     ("occurrence 2 with no built hardware", "structure", "occurrence 2 needs a passing T check",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-20", occurrence="2", action_priority="M")),
+     lambda d: csv_edit(d, "dfmea.csv", "DF-224", occurrence="2", action_priority="L")),
     ("DONE with no detects", "structure", "DONE needs at least one 'detects' check",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-87", status="DONE")),
-    # every ORDER check is now also named by a criterion or a requirement (2026-10-26), so dropping PHASE:ORDER
-    # alone no longer strands one: with it, an advisory check taken out of its advisory criterion is reached by nothing
-    ("an ORDER check no gate reaches", "structure", "VER-21: phase ORDER, but no gate criterion",
-     lambda d: (text_edit(d, "gates.md", "| ADVISORY VER-40 VER-21 |", "| ADVISORY VER-40 |"),
-                text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| VER-01 | both |"))),
+     lambda d: csv_edit(d, "dfmea.csv", "DF-247", status="DONE")),
+    # 2026-10-28: VER-218 (the cell's chain on paper) is reached only through G-ORD-22's PHASE:ORDER, so taking that
+    # need away strands it (VER-21, the earlier seed, is reached by DF-209 since the F1C200s re-seed)
+    ("an ORDER check no gate reaches", "structure", "VER-218: phase ORDER, but no gate criterion",
+     lambda d: text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| VER-01 | both |")),
     ("criterion with a bad board", "structure", "board 'nowhere' not in",
      lambda d: text_edit(d, "gates.md", "| PHASE:ORDER | both |", "| PHASE:ORDER | nowhere |")),
     ("new BOM under an old BOARD_REV", "structure", "BOARD_REV is still",
@@ -260,13 +274,14 @@ FAULTS = [
      lambda d: csv_edit(d, "verification.csv", "VER-28", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/ref_design/README.md")),
     ("O-R3: an inspection's evidence with no WHO or ARTEFACT", "structure", "has no 'WHO:' line",
-     lambda d: borrow_evidence(d, "VER-28", "VER-99")),
-    ("O-R5: a defect with no Gate", "structure", "DEF-07: Gate ''",
-     lambda d: block_field(d, "defects.md", "DEF-07", "Gate", "")),
-    ("O-R5: a CASE defect moved to the order gate blocks it", "gate", "OPEN (Gate ORDER or earlier): DEF-14 DEF-21 ",
-     lambda d: block_field(d, "defects.md", "DEF-21", "Gate", "ORDER")),
-    ("O-R8: occurrence 3 with no 'Similar:'", "structure", "DF-136: occurrence 3 needs 'Similar:",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-136", prevention=lambda x: x.replace("Similar:", "Like:"))),
+     lambda d: borrow_evidence(d, "VER-28", "VER-220")),
+    ("O-R5: a defect with no Gate", "structure", "DEF-47: Gate ''",
+     lambda d: block_field(d, "defects.md", "DEF-47", "Gate", "")),
+    # 2026-10-28: the F1C200s board has no live defect of its own yet, so the seed adds one with Gate CASE, then moves it
+    ("O-R5: a CASE defect moved to the order gate blocks it", "gate", "OPEN (Gate ORDER or earlier): DEF-47 DEF-103",
+     lambda d: (add_defect(d, "DEF-103", "VER-147", "CASE"), block_field(d, "defects.md", "DEF-103", "Gate", "ORDER"))),
+    ("O-R8: occurrence 3 with no 'Similar:'", "structure", "DF-224: occurrence 3 needs 'Similar:",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-224", occurrence="3", action_priority="L")),
     ("F-R14: a live check cites a RETIRED row", "structure", "VER-148: cites DF-106, which is RETIRED",
      lambda d: csv_edit(d, "verification.csv", "VER-148", pass_limit=lambda x: x + " (as DF-106)")),
     # round 2's sign-off objections (2026-10-26)
@@ -283,11 +298,15 @@ FAULTS = [
     ("round 2 (F): a requirement whose only check moved to a later phase", "structure",
      "REQ-PWR-13: Phase ORDER, but its earliest live check (VER-99) is EVT",
      lambda d: csv_edit(d, "verification.csv", "VER-99", phase="EVT")),
-    ("round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE", "gate", "parts in no DFMEA row: R64",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-153", item="the ILIM resistor", failure_mode="the ILIM resistor open")),
+    # 2026-10-28: with the baseline's design.py taken as the live board's, no F1C200s row names its parts: every one is
+    # in no row (with the dropped board's files named as the baseline it is not counted at all: the next seed)
+    ("round 2 (F): a part no DFMEA row names fails DFMEA:COVERAGE", "gate", "parts in no DFMEA row: ",
+     lambda d: live_baseline(d)),
+    ("2026-10-28: DFMEA:COVERAGE fails while design.py is a dropped board's", "gate",
+     "DFMEA:COVERAGE reads design.py, which is the esp32s3 board's", lambda d: None),
     ("round 2 (F): detection rating 2 on a single 'detects' check", "structure",
-     "DF-96: detection_rating 2 needs two or more independent 'detects' checks",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-96", detection_rating="2", action_priority="L")),
+     "DF-224: detection_rating 2 needs two or more independent 'detects' checks",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-224", detection_rating="2", action_priority="L")),
     # 2026-10-28: a path main moved (hardware/membrane to hardware/ref_design/board/membrane in fd66be9), written
     # back into a procedure, and a deleted board's file pinned at a commit that never had it (VER-220)
     ("VER-220: a procedure names a path main moved (hardware/membrane)", "structure",
@@ -300,8 +319,8 @@ FAULTS = [
                          "hardware/prod_case/README.md@574c94c")),
     # the coverage grid and the stale-names scan (2026-10-27)
     ("VER-188: a live row names a part number that left design.py (TP4056 outside 'Was:')", "structure",
-     f"DF-147: names what design.py at {BASE7} does not have: TP4056",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-147", cause=lambda x: x.replace("(Was: the TP4056's,", "(the TP4056's,"))),
+     f"DF-217: names what design.py at {BASE7} does not have: TP4056",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-217", cause=lambda x: x + " (as the TP4056's was)")),
     ("VER-188: a live check names a net that left design.py (LS_GATE)", "structure",
      f"VER-21: names what design.py at {BASE7} does not have: LS_GATE (net",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", LS_GATE")),
@@ -326,53 +345,121 @@ FAULTS = [
      "3 case no check",
      lambda d: (drop_line(d, "grid_reasons.csv", "3,case,"),
                 csv_edit(d, "verification.csv", "VER-70", classes="3", subsystems="case"))),
-    # 8 since 2026-10-28: VER-144 and VER-193 are BLOCKED (their PASS rests on ao3400a.pdf, srv05-4.pdf and mcp6001.pdf,
-    # not on disk), so only VER-13 (an analysis that ran: FAIL) clears class 15, for power and cell; the other six cells
-    # are planned.  VER-13 not run leaves all eight planned; counting a NOT_RUN analysis would keep the count at 6.
-    # (5 before, with VER-193 not run while VER-144 and VER-193 cleared the rest.)
-    # since 39cc07f VER-193 alone clears class 15 for the module, the buttons, usb_debug, the case and storage
-    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 5",
+    # 2026-10-28, the F1C200s re-seed: no class 15 analysis has run on an F1C200s design, so all 9 cells are planned;
+    # VER-193 (soc, buttons, usbc, cell, case, storage) made NOT_RUN, a built analysis that has not run, must leave
+    # them planned: counting it would give 3
+    ("grid: a class 15 analysis that has not run is no paper estimate", "report", "15 Thermal 9",
      lambda d: csv_edit(d, "verification.csv", "VER-193", last_result="NOT_RUN", evidence="", commit="", date="")),
     ("VER-188: a live check names a ref no design.py ever had (R666, a typo)", "structure",
      "R666 (part, never in design.py)",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", R666")),
     # the review's findings applied at 71737ae (2026-10-27)
     ("F-R1: a defect marked FIXED while its own Status text says it stays OPEN", "structure",
-     "DEF-50: Status is FIXED but its own text says 'stays OPEN'",
-     lambda d: text_edit(d, "defects.md", "- Status: OPEN (39cc07f: U3 is the TLV75733P, its EN 6.0 V",
-                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. 39cc07f: U3 is the TLV75733P, its EN 6.0 V")),
+     "DEF-47: Status is FIXED but its own text says 'stays OPEN'",
+     lambda d: text_edit(d, "defects.md", "- Status: OPEN (O-R9, 2026-10-27:",
+                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. O-R9, 2026-10-27:")),
     ("F-R3: an analysis that reads pinmap.md without naming it in covers", "structure",
-     "VER-138: its procedure reads pinmap.md, but covers does not name",
-     lambda d: csv_edit(d, "verification.csv", "VER-138",
-                        covers=lambda x: x.replace("hardware/ref_design/docs/pinmap.md::[Cc]alibrat\\w* ", ""))),
-    ("F-R5: a live row pairs J4 with the PicoBlade family (DF-48 before its rewrite)", "structure",
-     "DF-48: names what design.py at " + BASE7 + " does not have: PicoBlade (PicoBlade) beside J4",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-48", prevention=lambda x: x.replace(
-         "the speaker's leads end in a JST SH SHR-02V-S housing", "the speaker's leads end in a PicoBlade plug"))),
+     "VER-231: its procedure reads pinmap.md, but covers does not name",
+     lambda d: csv_edit(d, "verification.csv", "VER-231", procedure=lambda x: x + "; the rails pinmap.md lists")),
+    ("F-R5: a live row pairs J4 with the PicoBlade family", "structure",
+     "DF-231: names what design.py at " + BASE7 + " does not have: PicoBlade (PicoBlade) beside J4",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-231", prevention=lambda x: x + "; J4 takes a PicoBlade plug")),
     ("O-R8: a live check names a gone net in KiCad's path form (/USB_Charger/VBUS_D5)", "structure",
      "VER-21: names what design.py at " + BASE7 + " does not have: VBUS_D5 (net",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", /USB_Charger/VBUS_D5")),
-    ("O-R6: an analysis that has not run does not clear a class 1-14 cell (display, class 4)", "gate",
-     "4 display planned: VER-05 VER-137",
-     # 2026-10-28: VER-05 runs on paper now and clears the cell too, so the seed un-runs both
-     lambda d: (csv_edit(d, "verification.csv", "VER-137", last_result="NOT_RUN", evidence="", commit="", date=""),
-                csv_edit(d, "verification.csv", "VER-05", last_result="NOT_RUN", evidence="", commit="", date=""),
-                block_field(d, "defects.md", "DEF-39", "Status", "FIXED (seeded: VER-137 not run)"),
-                block_field(d, "defects.md", "DEF-45", "Status", "FIXED (seeded: VER-05 not run)"))),
+    # 2026-10-28, the F1C200s re-seed: VER-190 (the case's architecture, an ORDER analysis) is built and NOT_RUN, the
+    # only check of class 2 for the case besides VER-232's planned one: it must leave the cell planned, so all nine
+    # class 2 cells stay GAP (counting a NOT_RUN analysis would give 8)
+    ("O-R6: an analysis that has not run does not clear a class 1-14 cell (case, class 2)", "report",
+     "2 Architecture fit 9",
+     lambda d: csv_edit(d, "verification.csv", "VER-190", last_result="NOT_RUN", evidence="", commit="", date="")),
     # the framework fixes after vv-rp2354b-final's sign-off (2026-10-28)
     ("accept: a defect ACCEPTED with no DF-ACCEPT line at all", "structure",
-     "DEF-62: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-62' line",
-     lambda d: block_field(d, "defects.md", "DEF-62", "Status", "ACCEPTED (to EVT, seeded)")),
+     "DEF-47: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-47' line",
+     lambda d: block_field(d, "defects.md", "DEF-47", "Status", "ACCEPTED (to EVT, seeded)")),
+    # 2026-10-28: VER-220 (the register's own path check, board both) is a PASS the F1C200s re-seed kept
     ("sources: a PASS whose datasheet is not on disk is BLOCKED at the order gate", "gate",
-     "VER-99 BLOCKED: its PASS rests on nosuch_datasheet.pdf",
-     lambda d: csv_edit(d, "verification.csv", "VER-99", sources="nosuch_datasheet.pdf")),
+     "VER-220 BLOCKED: its PASS rests on nosuch_datasheet.pdf",
+     lambda d: csv_edit(d, "verification.csv", "VER-220", sources="nosuch_datasheet.pdf")),
     ("sources: the default mode reports a PASS on a datasheet not on disk as BLOCKED", "report",
-     "    VER-99: nosuch_datasheet.pdf",
-     lambda d: csv_edit(d, "verification.csv", "VER-99", sources="nosuch_datasheet.pdf")),
+     "    VER-220: nosuch_datasheet.pdf",
+     lambda d: csv_edit(d, "verification.csv", "VER-220", sources="nosuch_datasheet.pdf")),
     ("sources: a source that is a path, not a file in the datasheets directory", "structure",
-     "VER-99: sources token 'datasheets/bq24074.pdf' is not a file name",
-     lambda d: csv_edit(d, "verification.csv", "VER-99", sources="datasheets/bq24074.pdf")),
+     "VER-220: sources token 'datasheets/bq24074.pdf' is not a file name",
+     lambda d: csv_edit(d, "verification.csv", "VER-220", sources="datasheets/bq24074.pdf")),
+    # the F1C200s re-target (2026-10-28): a dropped board's rows, the subsystems, the baseline's board, the new-MCU path
+    ("DROPPED: a dropped check that names no board and tag", "structure",
+     "VER-203: DROPPED needs 'DROPPED with esp32s3 (tag vv-esp32s3-final): <why>'",
+     lambda d: csv_edit(d, "verification.csv", "VER-203", evidence="DROPPED: the module left")),
+    ("DROPPED: a dropped defect that names no board and tag", "structure",
+     "DEF-01: DROPPED needs 'DROPPED with esp32s3 (tag vv-esp32s3-final): <why>'",
+     lambda d: block_field(d, "defects.md", "DEF-01", "Status", "DROPPED (the board left)")),
+    ("DROPPED: a DFMEA row DROPPED on the live board", "structure",
+     "DF-04: DROPPED, but its board 'f1c200s' is not a dropped board",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-04", board="f1c200s")),
+    ("DROPPED: a gate criterion DROPPED on the live board", "structure",
+     "G-ORD-25: DROPPED, but its board 'f1c200s' is not a dropped board",
+     lambda d: text_edit(d, "gates.md", "| RETIRED | prod_board |", "| DROPPED | f1c200s |")),
+    ("DROPPED: a live check on a dropped board", "structure", "VER-01: board 'esp32s3' was dropped",
+     lambda d: csv_edit(d, "verification.csv", "VER-01", board="esp32s3")),
+    ("DROPPED: a live requirement verified by a dropped check", "structure",
+     "REQ-PRD-05: verified by VER-203, which is DROPPED",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Verified by", "VER-65, VER-203")),
+    ("DROPPED: a live risk detected by a dropped check", "structure", "DF-214: detects VER-205, which is DROPPED",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-214", detects=lambda x: x + " VER-205", detection=lambda x: x + "; VER-205")),
+    ("DROPPED: a live parent allocated to its dropped child", "structure",
+     "REQ-PRD-01: allocated to REQ-PRD-01.R, which is DROPPED",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-01", "Verified by", "allocated: REQ-PRD-01.R")),
+    ("DROPPED: a live row cites a dropped row outside 'Was:'", "structure",
+     "DF-219: cites DF-148, which is DROPPED",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-219", prevention=lambda x: x + "; as DF-148 asked")),
+    ("baseline board: an F1C200s PASS on the dropped board's files", "structure",
+     "VER-01: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     lambda d: csv_edit(d, "verification.csv", "VER-01", last_result="PASS", commit="0637562", date="2026-10-28",
+                        evidence="hardware/vv/evidence/2026-10-28_VER-01_check_netlist.txt")),
+    ("baseline board: README names no baseline board", "structure", "the design baseline names no board",
+     lambda d: drop_line(d, "README.md", "- Baseline board:")),
+    ("subsystems: a live requirement that names none", "structure", "REQ-PRD-12: a live requirement names its subsystems",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-12", "Subsystem", "")),
+    ("subsystems: a live requirement on the dropped board's subsystem", "structure",
+     "REQ-PRD-12: subsystem 'mcu' is not one of",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-12", "Subsystem", "mcu display")),
+    ("subsystems: a live check on the dropped board's subsystem", "structure", "VER-01: subsystem 'usb_debug' is not one of",
+     lambda d: csv_edit(d, "verification.csv", "VER-01", subsystems="power usb_debug")),
+    ("new-MCU path: a stage that names a dropped check", "structure", "NM-04: needs VER-203, which is DROPPED",
+     lambda d: text_edit(d, "gates.md", "| VER-232 VER-231 VER-235 VER-234 VER-238 |",
+                         "| VER-232 VER-203 VER-231 VER-235 VER-234 VER-238 |")),
+    ("new-MCU path: a stage whose entry skips the stage before it", "structure",
+     "NM-05: its entry needs the stage before it (NM-04)",
+     lambda d: text_edit(d, "gates.md", "| NM-04 | VER-01 VER-03", "| NM-03 | VER-01 VER-03")),
+    ("new-MCU path: a stage token that is no need", "structure", "NM-03: token 'ISSUE#11' is not an ID",
+     lambda d: text_edit(d, "gates.md", "| NM-02 VER-233 |", "| NM-02 VER-233 ISSUE#11 |")),
+    ("new-MCU path: the stages out of order", "structure", "number them NM-01 to NM-10 in order",
+     lambda d: text_edit(d, "gates.md", "| NM-10 | DVT and PVT", "| NM-11 | DVT and PVT")),
+    ("new-MCU path: the chip selection's evidence gone from next_spin_requirements.md", "report",
+     "exit not met: docs/static/next_spin_requirements.md has no line matching",
+     lambda d: text_edit(d, "gates.md", "claude-queue/issues/4 |", "claude-queue/issues/999 |")),
+    ("new-MCU path: the stage the register is at moves when a stage's exit is met", "report",
+     "new-MCU path (gates.md): at stage NM-03",
+     lambda d: text_edit(d, "gates.md", "| APPROVED:REQ-PRD VER-189 |", "| DOC:docs/static/DESIGN.md::Mega.Blastoise |")),
 ]
+
+
+def live_baseline(d):
+    """2026-10-28: take the baseline's design files as the live board's (README '- Baseline board: `f1c200s`'), so a
+    seed can give an F1C200s check a PASS: on the real register they are the dropped ESP32-S3 board's, and the default
+    mode refuses one (the seeds test the trace gate's rules, not the design)."""
+    p = os.path.join(d, "README.md")
+    s = open(p, encoding="utf-8").read()
+    open(p, "w", encoding="utf-8").write(s.replace("- Baseline board: `esp32s3`", "- Baseline board: `f1c200s`", 1))
+
+
+def add_defect(d, did, checks, gate="ORDER"):
+    """A live defect of the F1C200s board for a seed (the re-seed left it none of its own)."""
+    with open(os.path.join(d, "defects.md"), "a", encoding="utf-8") as f:
+        f.write(f"\n### {did}: a seeded defect\n- Board: f1c200s\n- Found: seed_faults.py\n- Symptom: seeded\n"
+                f"- Root cause: seeded\n- Why missed: seeded\n- Check added or changed: {checks}\n- Updated: none\n"
+                f"- Gate: {gate}\n- Status: OPEN\n")
 
 
 def drop_line(d, name, prefix):
@@ -504,7 +591,9 @@ def rebaseline(repo, move_base=True):
 
 
 def fake_pass(repo, vid, base, extra=""):
-    """Record a PASS for vid at commit base with a header that check_trace accepts."""
+    """Record a PASS for vid at commit base with a header that check_trace accepts (the baseline taken as the live
+    board's: an F1C200s check may not pass on a dropped board's files)."""
+    live_baseline(os.path.join(repo, "hardware/vv"))
     rel = f"hardware/vv/evidence/{TODAY}_{vid}_seeded.txt"
     open(os.path.join(repo, rel), "w").write(f"# {vid} seeded\nCOMMIT: {base}\nTOOLS: seed_faults\n{extra}RESULT: PASS\n")
     csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", vid, last_result="PASS", evidence=rel,
@@ -532,18 +621,14 @@ def g_r6(repo, base):
 
 
 def g_expired_accept(repo, base):
-    approve(os.path.join(repo, "hardware/vv"), "| A-001 | DF-04 | ACCEPTED | ORDER | for the order only | Alex | 2026-10-25 |")
-    csv_edit(os.path.join(repo, "hardware/vv"), "dfmea.csv", "DF-04", status="ACCEPTED")
-    commit(repo, "accept DF-04 for ORDER")
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | DF-214 | ACCEPTED | ORDER | for the order only | Alex | 2026-10-25 |")
+    csv_edit(os.path.join(repo, "hardware/vv"), "dfmea.csv", "DF-214", status="ACCEPTED")
+    commit(repo, "accept DF-214 for ORDER")
     return "evt"
 
 
 def g_signed_waiver(repo, base):
-    # VER-33 (G-ORD-06's check) passes since 2026-10-27: undo it in the clone so the criterion fails and the waiver acts
-    # (NOT_RUN, not NOT_BUILT: DF-25, DF-27 and DF-188 rate detection 7 on it, which a NOT_BUILT check cannot give)
-    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-33", last_result="NOT_RUN", evidence="",
-             commit="", date="")
-    commit(repo, "VER-33 not built in this clone")
+    # G-ORD-06 needs VER-239 since 2026-10-28 (the power slider, not built), so the criterion fails and the waiver acts
     approve(os.path.join(repo, "hardware/vv"), "| A-001 | W-01 | WAIVED | ORDER | the latch replica is cut | Alex | 2026-10-25 |")
     commit(repo, "waive W-01")
     return "order"
@@ -562,6 +647,8 @@ def g_part_stale(repo, base):
     from HEAD to hide a design change), so the register itself is sound and only the evidence is stale."""
     reopen_closed(repo)
     fake_pass(repo, "VER-99", base)
+    # the F1C200s re-seed took the dropped board's part: covers off its carried rows; this seed puts C1's back
+    csv_edit(os.path.join(repo, "hardware/vv"), "verification.csv", "VER-99", covers=lambda c: c + " part:C1")
     commit(repo, "VER-99 passes")
     p = os.path.join(repo, "hardware/ref_design/board/design.py")
     s = open(p).read()
@@ -628,9 +715,9 @@ def g_expired(repo, base):
 
 
 def g_unsigned_approval(repo, base):
-    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-06 | APPROVED | - | - | Alex | 2026-10-25 |")
-    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
-    commit(repo, "approve REQ-PRD-06", sign=False)
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-17 | APPROVED | - | - | Alex | 2026-10-25 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-17", "Status", "APPROVED")
+    commit(repo, "approve REQ-PRD-17", sign=False)
     return None
 
 
@@ -641,21 +728,22 @@ def g_merge_approval(repo, base):
     commit(repo, "side")
     git(repo, "checkout", "-q", "-")
     git(repo, "merge", "-q", "--no-ff", "--no-commit", "seeded-side")
-    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-06 | APPROVED | - | - | Alex | 2026-10-25 |")
-    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-17 | APPROVED | - | - | Alex | 2026-10-25 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-17", "Status", "APPROVED")
     commit(repo, "Merge branch 'seeded-side'")
     git(repo, "branch", "-q", "-D", "seeded-side")
     return None
 
 
 def g_uncommitted_register(repo, base):
-    """O-R2's attack: VER-138 FAIL to PASS, and its evidence's RESULT with it, left uncommitted."""
+    """O-R2's attack: a check's result and its evidence's RESULT edited together, left uncommitted (2026-10-28: VER-220
+    PASS to FAIL; the F1C200s re-seed left no FAIL to turn into a PASS, and the rule reads either way)."""
     d = os.path.join(repo, "hardware/vv")
-    row = next(r for r in csv.DictReader(open(os.path.join(d, "verification.csv"), encoding="utf-8")) if r["id"] == "VER-138")
+    row = next(r for r in csv.DictReader(open(os.path.join(d, "verification.csv"), encoding="utf-8")) if r["id"] == "VER-220")
     p = os.path.join(repo, row["evidence"].split()[0])
     s = open(p).read()
-    open(p, "w").write(re.sub(r"^RESULT: FAIL", "RESULT: PASS", s, flags=re.M))
-    csv_edit(d, "verification.csv", "VER-138", last_result="PASS")
+    open(p, "w").write(re.sub(r"^RESULT: PASS", "RESULT: FAIL", s, flags=re.M))
+    csv_edit(d, "verification.csv", "VER-220", last_result="FAIL")
     return "order"
 
 
@@ -725,6 +813,9 @@ def g_chg_omits(repo, base):
     open(p, "w").write(s)
     sha = commit(repo, "C1 to 22u")
     rebaseline(repo)
+    # 2026-10-28: no live F1C200s row names a part yet, so a DFMEA row ties C1 to the hot-plug bench test here
+    csv_edit(os.path.join(repo, "hardware/vv"), "dfmea.csv", "DF-224", item="VBUS capacitance (C1)",
+             detects=lambda x: x + " VER-71", detection=lambda x: x + "; VER-71 the hot plug on the bench")
     open(os.path.join(repo, "hardware/vv/releases/CHG-01-c1.md"), "w").write(
         f"# CHG-01: C1 to 22u\n\n- Date: {TODAY}\n- Author: Alex\n- Commit(s): {sha[:7]}\n- Reason: seeded\n\n"
         "## What to re-run\n\n| Check | Why | New result | Commit | Date |\n|---|---|---|---|---|\n"
@@ -773,20 +864,20 @@ def g_body_past_edge(repo, base):
 
 def g_other_key(repo, base):
     """Round 2: a commit signed by another key in the allowed-signers file gives %G? = G, and must not count."""
-    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-06 | APPROVED | - | - | Alex | 2026-10-26 |")
-    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
-    commit(repo, "approve REQ-PRD-06 (signed with the other key)", key=KEYS["other"])
+    approve(os.path.join(repo, "hardware/vv"), "| A-001 | REQ-PRD-17 | APPROVED | - | - | Alex | 2026-10-26 |")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-17", "Status", "APPROVED")
+    commit(repo, "approve REQ-PRD-17 (signed with the other key)", key=KEYS["other"])
     return None
 
 
 def g_bulk_edited(repo, base):
     """Round 2: a bulk 'REQ-ALL@<commit>' line covers a requirement only while its statement is unchanged."""
     approve(os.path.join(repo, "hardware/vv"), f"| A-001 | REQ-ALL@{base[:7]} | APPROVED | - | - | Alex | 2026-10-26 |")
-    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Status", "APPROVED")
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-17", "Status", "APPROVED")
     commit(repo, "approve every requirement as worded at the base")
-    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-06", "Statement",
+    block_field(os.path.join(repo, "hardware/vv"), "requirements.md", "REQ-PRD-17", "Statement",
                 "The closed case shall measure at most 80 x 160 mm in plan.")
-    commit(repo, "loosen REQ-PRD-06")
+    commit(repo, "loosen REQ-PRD-17")
     return None
 
 
@@ -837,8 +928,8 @@ def g_moves_listed(repo, base):
 def g_status_listed(repo, base):
     """O-R1: with no GATE@ line signed, a defect taken from OPEN to FIXED since the register state README names is
     listed by the order gate (G0), like a Gate move: FIXED takes it off R4 at ORDER, CASE and EVT."""
-    block_field(os.path.join(repo, "hardware/vv"), "defects.md", "DEF-14", "Status", "FIXED (seeded)")
-    commit(repo, "DEF-14 FIXED")
+    block_field(os.path.join(repo, "hardware/vv"), "defects.md", "DEF-47", "Status", "FIXED (seeded)")
+    commit(repo, "DEF-47 FIXED")
     return "order"
 
 
@@ -847,8 +938,8 @@ def g_status_freeze(repo, base):
     approve(os.path.join(repo, "hardware/vv"),
             f"| A-001 | GATE@{base} | FROZEN | ORDER | the order gate state at this commit | Alex | {TODAY} |")
     commit(repo, "freeze the gate state")
-    block_field(os.path.join(repo, "hardware/vv"), "defects.md", "DEF-14", "Status", "FIXED (seeded)")
-    commit(repo, "DEF-14 FIXED")
+    block_field(os.path.join(repo, "hardware/vv"), "defects.md", "DEF-47", "Status", "FIXED (seeded)")
+    commit(repo, "DEF-47 FIXED")
     return "order"
 
 
@@ -903,8 +994,8 @@ def g_gate_freeze_advisory(repo, base):
     approve(os.path.join(repo, "hardware/vv"),
             f"| A-001 | GATE@{base} | FROZEN | ORDER | the order gate state at this commit | Alex | {TODAY} |")
     commit(repo, "freeze the gate state")
-    text_edit(os.path.join(repo, "hardware/vv"), "gates.md", "| VER-33 VER-99 VER-137 ", "| ADVISORY:VER-33 VER-99 VER-137 ")
-    commit(repo, "VER-33 advisory at the order gate")
+    text_edit(os.path.join(repo, "hardware/vv"), "gates.md", "| VER-235 VER-231 ", "| ADVISORY:VER-235 VER-231 ")
+    commit(repo, "VER-235 advisory at the order gate")
     return "order"
 
 
@@ -972,9 +1063,9 @@ def g_accept_unsigned(repo, base):
     """1. (2026-10-28): a defect ACCEPTED on a DF-ACCEPT line committed without Alex's signature fails the default
     mode: an unsigned acceptance moves nothing."""
     vv = os.path.join(repo, "hardware/vv")
-    approve(vv, f"| A-001 | DF-ACCEPT:DEF-62 | ACCEPTED | EVT | DEC-27 decided at EVT | Alex | {TODAY} |")
-    block_field(vv, "defects.md", "DEF-62", "Status", "ACCEPTED (to EVT, A-001)")
-    commit(repo, "DEF-62 accepted to EVT, unsigned", sign=False)
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-47 | ACCEPTED | EVT | decided at EVT | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-47", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-47 accepted to EVT, unsigned", sign=False)
     return None
 
 
@@ -983,9 +1074,11 @@ def g_accept_signed(repo, base):
     not in the OPEN list, G-ORD-02 lets VER-125 (a check DEF-84 names) through as ACCEPTED, and G0 does not list
     the move (it is his own signed one). Since 39cc07f DEF-62's VER-181 passes, so DEF-84 (VER-125 FAIL) stands in."""
     vv = os.path.join(repo, "hardware/vv")
-    approve(vv, f"| A-001 | DF-ACCEPT:DEF-84 | ACCEPTED | EVT | DEC-47 decided at EVT | Alex | {TODAY} |")
-    block_field(vv, "defects.md", "DEF-84", "Status", "ACCEPTED (to EVT, A-001)")
-    commit(repo, "DEF-84 accepted to EVT")
+    # 2026-10-28: DEF-84 was DROPPED with the ESP32-S3 board; a seeded F1C200s defect naming VER-125 stands in
+    add_defect(vv, "DEF-103", "VER-125")
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-103 | ACCEPTED | EVT | decided at EVT | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-103", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-103 accepted to EVT")
     return "order"
 
 
@@ -993,9 +1086,11 @@ def g_accept_outside(repo, base):
     """1.: a signed acceptance lets through only the checks its defect names.  DEF-37 (VER-164, VER-87) accepted to
     EVT: G-ORD-07 shows VER-164 ACCEPTED, and VER-125, which DEF-37 does not name, still FAIL."""
     vv = os.path.join(repo, "hardware/vv")
-    approve(vv, f"| A-001 | DF-ACCEPT:DEF-37 | ACCEPTED | EVT | DEC-25's pad is a case part | Alex | {TODAY} |")
-    block_field(vv, "defects.md", "DEF-37", "Status", "ACCEPTED (to EVT, A-001)")
-    commit(repo, "DEF-37 accepted to EVT")
+    # 2026-10-28: DEF-37 was DROPPED with the ESP32-S3 board; a seeded F1C200s defect naming VER-164 and VER-87 stands in
+    add_defect(vv, "DEF-104", "VER-164, VER-87")
+    approve(vv, f"| A-001 | DF-ACCEPT:DEF-104 | ACCEPTED | EVT | the pad is a case part | Alex | {TODAY} |")
+    block_field(vv, "defects.md", "DEF-104", "Status", "ACCEPTED (to EVT, A-001)")
+    commit(repo, "DEF-104 accepted to EVT")
     return "order"
 
 
@@ -1033,7 +1128,7 @@ GIT_FAULTS = [
     ("row result disagrees with its evidence", "structure", "the row says FAIL", g_result_disagrees),
     ("evidence past its valid_days", "report", "expired", g_expired),
     ("R6: a routed-board script changed after a release with no change record", "gate", "unrecorded design change", g_r6),
-    ("an acceptance used past its scope", "gate", "DF-04 accepted only up to ORDER", g_expired_accept),
+    ("an acceptance used past its scope", "gate", "DF-214 accepted only up to ORDER", g_expired_accept),
     ("a waiver Alex signed meets its criterion", "gate", "waived by Alex", g_signed_waiver),
     ("a waiver signed in a commit with a Claude trailer", "structure", "carries a Claude trailer", g_claude_waiver),
     ("staleness through a part: cover", "report", "design.py parts C1", g_part_stale),
@@ -1056,7 +1151,7 @@ GIT_FAULTS = [
     ("O-R13: a design commit on the order branch after the baseline", "gate",
      "seeded-order has design commits after", g_order_branch_moves),
     ("O-R21: a change record that omits a bench test of the changed part", "structure",
-     "CHG-01: 'What to re-run' omits VER-52", g_chg_omits),
+     "CHG-01: 'What to re-run' omits VER-71", g_chg_omits),
     ("O-R1: a comment in fab.py does not pass the CPL or drill check", "dn", "RESULT: FAIL", g_fab_comment),
     ("O-R14: a back-side test point next to the cell's hole fails th1", "dn",
      "back-side pads within 1 mm of the hole: TP11", g_tp_near_hole),
@@ -1064,7 +1159,7 @@ GIT_FAULTS = [
     ("round 2 (O): an approval signed by another key in the allowed-signers file", "structure",
      "A-001 pending: signed with another key", g_other_key),
     ("round 2 (O): a bulk REQ-ALL line does not cover a statement edited after it", "structure",
-     "REQ-PRD-06: Status APPROVED but releases/APPROVALS.md has no committed line for it", g_bulk_edited),
+     "REQ-PRD-17: Status APPROVED but releases/APPROVALS.md has no committed line for it", g_bulk_edited),
     ("round 2 (O, F): the cell hole's left side back at 71737ae's fails VER-181 on the fit", "dn", "RESULT: FAIL",
      g_cellgap_right_end),
     ("R8: a case.scad commit on the order branch holds the case gate", "gate",
@@ -1082,7 +1177,7 @@ GIT_FAULTS = [
     ("O-R5: a check moved after Alex's signed GATE@ line fails the order gate", "gate",
      "moved after A-001", g_gate_freeze),
     ("O-R5: a check made advisory after Alex's signed GATE@ line fails the order gate", "gate",
-     "G-ORD-18 gained ADVISORY:VER-33", g_gate_freeze_advisory),
+     "G-ORD-18 gained ADVISORY:VER-235", g_gate_freeze_advisory),
     ("O-R12: a software signing key fails the order gate", "gate",
      "FAIL  K1 the pinned signing key is a hardware key", g_software_key),
     ("O-R12: --accept-software-key passes K1 and prints the choice", "gate_line",
@@ -1103,17 +1198,17 @@ GIT_FAULTS = [
      "J2 (a pad or its body past the outline)", g_body_past_edge),
     # the review's findings applied at 71737ae (2026-10-27)
     ("O-R1: a defect taken from OPEN to FIXED with no GATE@ line is listed by the order gate (G0)", "gate_line",
-     "DEF-14 went from OPEN to FIXED", g_status_listed),
+     "DEF-47 went from OPEN to FIXED", g_status_listed),
     ("O-R1: a defect taken from OPEN to FIXED after Alex's signed GATE@ line fails the order gate (G1)", "gate",
-     "DEF-14 went from OPEN to FIXED", g_status_freeze),
+     "DEF-47 went from OPEN to FIXED", g_status_freeze),
     # the framework fixes after vv-rp2354b-final's sign-off (2026-10-28)
     ("accept: a defect ACCEPTED on an unsigned DF-ACCEPT line", "structure",
-     "DEF-62: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-62' line naming the gate it moves to "
+     "DEF-47: ACCEPTED but releases/APPROVALS.md has no signed 'DF-ACCEPT:DEF-47' line naming the gate it moves to "
      "and why (A-001 pending: not signed with Alex's key)", g_accept_unsigned),
-    ("accept (control): a signed DF-ACCEPT line moves DEF-84 past the order gate and lets VER-125 through", "gate_no",
-     "VER-125 ACCEPTED (DEF-84 to EVT, A-001", g_accept_signed, "DEF-84 went from OPEN"),
-    ("accept: a check outside the accepted defect's list stays FAIL (DEF-37 names VER-164, not VER-125)", "gate_no",
-     "VER-164 ACCEPTED (DEF-37 to EVT, A-001", g_accept_outside, "VER-125 ACCEPTED"),
+    ("accept (control): a signed DF-ACCEPT line moves DEF-103 past the order gate and lets VER-125 through", "gate_no",
+     "VER-125 ACCEPTED (DEF-103 to EVT, A-001", g_accept_signed, "DEF-103 went from OPEN"),
+    ("accept: a check outside the accepted defect's list is not let through (DEF-104 names VER-164, not VER-125)",
+     "gate_no", "VER-164 ACCEPTED (DEF-104 to EVT, A-001", g_accept_outside, "VER-125 ACCEPTED"),
     ("R8: a proposal doc changed on the order branch after the baseline fails the order gate", "gate",
      "seeded-proposal has architecture proposal commits after", g_proposal_branch),
     ("R8: a proposal doc changed on the order branch after the baseline warns in the default mode", "report",
