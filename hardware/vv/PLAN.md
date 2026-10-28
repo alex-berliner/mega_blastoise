@@ -393,6 +393,23 @@ HISTORY.md section (o); the IDs it shares with this board keep their numbers.
 
 ## (i) The gate today
 
+**Run at 4849983 (2026-10-28, later)**, step 1 of the re-target to the F1C200s board: the paths main
+moved or deleted. vv-plan merged main (b764965), where 88 repository paths this register named had
+moved or left: 57 to docs/living and hardware/ref_design/board/membrane (012254b, fd66be9), 24 deleted
+with prod_board, prod_case and the datasheets (574c94c), 7 older. Moved paths point at their new
+place; deleted ones are pinned `path@<commit>` where they last were (611ebe3). prod_board's rows are
+RETIRED in 574c94c (Alex: not needed): VER-10, VER-119 to VER-122, VER-163, VER-183, DF-174 to DF-177,
+REQ-PBD-01 to -03, G-ORD-25 and G-EVT-15; `--board` and the .P allocations left the tools. VER-220
+(tools/repo_paths.py, new) fails on any path the register names that HEAD no longer has; the default
+mode runs it, and VER-129 seeds two faults for it (119 of 119 caught at 3cd3f42). The design baseline
+moved to fd66be9 on main (the ESP32-S3 board's last copper, c8d5744, and case, e872140, both dropped
+with the board) and every quick check was re-run on it: results as before, except VER-108 PASS (the
+re-route) and VER-220 PASS. VER-148's PASS is BLOCKED: its sources name rp2350.pdf, deleted in
+574c94c. Default mode: STRUCTURE OK, 4 warnings (the DMM pass bands). Order gate: 20 of 28 not met
+(G-ORD-24, R5, R7 and R8 pass); checks 219 (34 PASS, 39 FAIL, 47 NOT_RUN, 70 NOT_BUILT, 5 CUT,
+24 RETIRED); requirements 146 (138 PROPOSED, 8 RETIRED); defects 102 (49 OPEN, 23 FIXED, 17 CLOSED,
+13 RETIRED). The register still describes the ESP32-S3 board: steps 2 and 3 re-target it.
+
 **Run at 6119960 (2026-10-28)**, after the class 2, 5, 10, 13 and 14 round: the NOT_BUILT and planned
 checks of classes 2, 3, 5, 7, 8, 10, 12, 13, 14 and 15 that can run before the boards exist were built
 and run against 39cc07f. VER-34 is a script now (circuit_checks.py appdiff): FAIL only on u3.json,
@@ -524,4 +541,4 @@ opening), each cell COVERED with its checks and worst status, planned, GAP or NO
 order gate R9 holds every cell of classes 1-15 that no built pre-order check has cleared. The counts
 of 2026-10-28 are in section (i); the earlier grid's audit and its history are HISTORY.md's.
 
-Last updated: 2026-10-28 10:16 EDT (the class 4, 6, 9 and 11 round)
+Last updated: 2026-10-28 15:45 EDT (step 1 of the F1C200s re-target: the paths main moved or deleted)
