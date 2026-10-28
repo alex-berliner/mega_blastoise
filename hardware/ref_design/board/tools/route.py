@@ -660,7 +660,14 @@ def fanout(board, nets=PLANE_NETS):
             layer = pcbnew.B_Cu if pad.IsOnLayer(pcbnew.B_Cu) else pcbnew.F_Cu
             px, py = xy(pad.GetPosition())
             base = math.atan2(py - fy, px - fx) if abs(px - fx) + abs(py - fy) > 1e-3 else 0.0
-            if via_near(board, space, (px, py), net, layer, base, lambda q, pad=pad: pad.HitTest(V(*q)), pad):
+            sx, sy = pad.GetSize(pcbnew.F_Cu).x, pad.GetSize(pcbnew.F_Cu).y
+            if sy > 2 * sx:                  # a narrow pad in a fine-pitch row (J3's 0.3 x 1.3): the stub goes out along it, straight
+                base = math.pi / 2 * (1 if py >= fy else -1)
+            elif sx > 2 * sy:
+                base = 0.0 if px >= fx else math.pi
+            old = math.atan2(py - fy, px - fx) if abs(px - fx) + abs(py - fy) > 1e-3 else 0.0
+            if via_near(board, space, (px, py), net, layer, base, lambda q, pad=pad: pad.HitTest(V(*q)), pad) or \
+                    via_near(board, space, (px, py), net, layer, old, lambda q, pad=pad: pad.HitTest(V(*q)), pad):
                 done += 1
             else:
                 left.append(f"{fp.GetReference()}.{pad.GetNumber()}")
