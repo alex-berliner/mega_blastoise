@@ -32,3 +32,11 @@ are not committed either: `board/sim/models.py` fetches and translates them.
 `RPI-RP2350B-MINIMAL_LICENSE.txt` is committed: the RP2350B core (schematic
 values, the QFN80, crystal and inductor footprints and their 3D models) comes
 from Raspberry Pi's minimal design under that licence.
+
+microSD slots (2026-10-27, SD slot sizing for the ESP32-S3 board): `tf-01a_C91145.pdf` is the Korean Hroparts TF-01A drawing
+(1 page, from LCSC C91145, https://datasheet.lcsc.com/datasheet/pdf/7650eac21a54674b08ad4ba21e17fceb.pdf?productCode=C91145);
+`hirose_dm3_catalog_C114218.pdf` is Hirose's DM3 catalog (May 2017) as LCSC C114218 carries it, DM3AT-SF-PEJM5 on page 3
+(https://datasheet.lcsc.com/datasheet/pdf/ed7c38214cbd45158a701879217600e9.pdf?productCode=C114218; hirose.com refused the
+download); `jmeconn_5001B-TF128-054_C53278151.pdf` is the JMEconn 1.28 mm push-push drawing (LCSC C53278151,
+https://datasheet.lcsc.com/datasheet/pdf/e7a21fcb804bb8d9a0644d5e97087279.pdf?productCode=C53278151). The TF-01A and JMEconn
+drawings are images (no text layer): read by eye.
