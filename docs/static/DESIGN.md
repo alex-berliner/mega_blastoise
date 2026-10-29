@@ -10,7 +10,7 @@ disagree.
 Mega Blastoise is a pocket-sized handheld for two players. It lies flat on a table between two
 people sitting across from each other, with one shared screen in the middle split between them and
 a D-pad and face buttons at each end. They fight Pokemon battles against each other, against the
-console, or against players online, and the console also plays GBA games.
+console, or against players online.
 
 Goals:
 
@@ -20,11 +20,9 @@ Goals:
    physical design language follows the DS Lite: the curves, the buttons, the feel in the hand.
 3. **Its battles are Pokemon Showdown's battles.** A battle on the console plays out as it would on
    Pokemon Showdown, so the same console can take on players online.
-4. **It plays GBA games at full speed**, and two consoles can link with a USB-C cable to play GBA
-   games together.
-5. **It fits in a pocket.** It is never bigger than a smartphone in its case, and every spin makes it
+4. **It fits in a pocket.** It is never bigger than a smartphone in its case, and every spin makes it
    as small as it can.
-6. **It can be built in batches and sold** at a low price.
+5. **It can be built in batches and sold** at a low price.
 
 The technical requirements for the next spin, and what each one needs from the chip, are in
 [next_spin_requirements.md](next_spin_requirements.md).
@@ -47,10 +45,7 @@ What the players see and do.
 - A single player can fight a computer opponent by holding A in the lobby. (2026-10-28)
 - Pressing X shows the battle log, with damage numbers and the reasons for critical hits and type effects. (2026-10-28)
 - When a Pokemon faints, its owner picks the next one while seeing the rival's side. (2026-10-28)
-- The console plays GBA (Game Boy Advance) games at full speed, with Pokemon FireRed as the test game. (2026-10-28)
-- Two consoles can link with a USB-C cable to play GBA games together. (2026-10-28)
 - Players can play against others online, as a guest on Pokemon Showdown (the free online Pokemon battle site) with no login. (2026-10-26)
-- Games and save files load from a computer over USB, or from an SD card. (2026-10-28)
 - It starts fast: a match within seconds of power-on. (2026-10-28)
 
 ## 3. The hardware
@@ -73,8 +68,7 @@ What the physical device is.
 - Nothing is soldered when a unit is put together: the battery and the speaker both plug in. (2026-10-20)
 - The case is 3D printed and built from two parts: a tub and one flowing top piece. (2026-10-25)
 - The top piece is a full-width band at the screen, with the DS Lite slope at its two button ends only. (2026-10-26)
-- The current reference design uses the RP2354B (a Raspberry Pi microcontroller with its flash memory inside). (2026-10-28)
-- The next spin uses the Allwinner F1C200s chip (64 MB of memory inside it), with games and saves on a microSD card, one USB-C port that can act as either end of a cable, and no Wi-Fi. If a dev board can't run FireRed at full speed, the Allwinner V3s replaces it. (2026-10-28)
+- The next spin uses the RP2350B (a Raspberry Pi microcontroller) with a 16 MB flash memory chip beside it, which holds the program and the sound. There is no Wi-Fi and no SD card. (2026-10-29)
 
 ## 4. The software
 
@@ -85,15 +79,12 @@ How it behaves.
 - The simulator follows Showdown's Random Battles rules by default. Gen 1 offers both the cartridge rules and the Custom Game (plain math) rules, with the cartridge rules on by default. (2026-10-23)
 - A tie shows as a tie on its own draw screen, with no health tiebreak. (2026-10-23)
 - Online play is as a Showdown guest only: no login, no accounts. It uses Showdown's own servers; there is no server of ours. (2026-10-28)
-- Our own games run as native programs, with no WebAssembly or script engine on the device. GBA games run in an emulator. (2026-10-27)
-- The network is Wi-Fi only if it is nearly free; otherwise a USB host port (the console acts as the computer end) lets a phone tether or a Wi-Fi dongle provide it. (2026-10-28)
-- The console boots fast. Linux (a full operating system) is allowed only if it boots fast, and a bare-metal Rust boot (our own program with no operating system under it) is required. (2026-10-28)
-- At power-on the Pokemon battler starts on its own, with no operating system, within about a second. Holding a button at power-on starts Linux instead, for GBA games, online play and link play. (2026-10-28)
-- GBA link play goes over the USB-C cable between two consoles, using the emulator's GBA Wireless Adapter support. (2026-10-28)
-- Games and saves load from a computer or an SD card. (2026-10-28)
+- Our own games run as native programs, with no WebAssembly or script engine on the device. (2026-10-27)
+- Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29)
+- At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)
 
 ## 5. Next spin
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-28 14:50 EDT
+Last updated: 2026-10-29 09:34 EDT
