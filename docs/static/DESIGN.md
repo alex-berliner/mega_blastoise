@@ -61,6 +61,8 @@ What the physical device is.
 - The circuit board has two layers (the cheaper kind) and is assembled by a factory (JLCPCB) in batches. (2026-09-24)
 - There are no indicator lights on the board. (2026-09-24)
 - There is no separate reset button. (2026-10-28)
+- Holding the power key for about 8 seconds forces the console off, even if it has frozen. (2026-10-29)
+- Holding seat 1's Select while turning the console on starts update mode: it shows up on a computer as a USB drive, and copying one file onto it updates it or restores it from any state. (2026-10-29)
 - The board has test pads and a debug connector for bring-up. (2026-10-19)
 - Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off. (2026-10-28)
 - The battery is one lithium-ion cell. It sits in a hole in the board, under the screen, with its underside in a pocket in the case floor. It is turned 90 degrees so its long side runs along the board. (2026-10-27)
@@ -87,4 +89,4 @@ How it behaves.
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-29 09:34 EDT
+Last updated: 2026-10-29 11:43 EDT
