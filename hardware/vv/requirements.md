@@ -89,17 +89,18 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Status: DROPPED
 - Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the three 74HC165s (U11 the third) and the power key SW24 were the ESP32-S3 board's; REQ-PRD-01.B allocates the need to the RP2350B board
 
-### REQ-PRD-01.B: Twenty independent inputs and the power slider (rp2350b)
+### REQ-PRD-01.B: Twenty independent inputs (rp2350b)
 - Level: product
 - Board: rp2350b
 - Subsystem: buttons
-- Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), and the power slider (or seat 1's Start, if it is the power key), each on its own line, with any combination held at once read correctly.
-- Rationale: two players press at the same time; the 20 contacts and the power slider are read directly on 21 of the RP2350B's 48 GPIOs, with the 47k pull-up arrays (Alex, 2026-10-29). The 74HC165 chain (about $0.95 a unit at 10, freeing about 18 pins) is the designated pin-relief option and the first thing to change if the pin plan runs short (Alex, 2026-10-29: 'make it the first choice to change if we need more pins ever'; VER-232, VER-262).
-- Source: DESIGN.md:39 ('Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select'), DESIGN.md:59 (the power slider).
+- Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), each on its own line, with any combination held at once read correctly. Seat 1's Start is also the power key. There is no power slider.
+- Rationale: two players press at the same time; the 20 contacts are read directly on 20 of the RP2350B's 48 GPIOs, with the 47k pull-up arrays (Alex, 2026-10-29); seat 1's Start also joins VSYS to PWR_EN through a diode and is read through the buffered power-key line, so it takes no extra pin (REQ-PWR-21). The DS Lite power slider is dropped (Alex, 2026-10-29). The 74HC165 chain (about $0.95 a unit at 10, freeing about 18 pins) is the designated pin-relief option and the first thing to change if the pin plan runs short (Alex, 2026-10-29: 'make it the first choice to change if we need more pins ever'; VER-232, VER-262).
+- Source: DESIGN.md:39 ('Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select'), DESIGN.md:60 (seat 1's Start is the power key).
 - Method: T
 - Verified by: VER-56, VER-76
 - Phase: EVT
-- Status: APPROVED
+- Status: PROPOSED
+- Notes: Reworded on 2026-10-29 at Alex's decision (the power slider is dropped; seat 1's Start is the power key). The statement changed, so it needs Alex's re-approval.
 
 ### REQ-PRD-02: One readable screen
 - Level: product
@@ -281,14 +282,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: rp2350b
 - Subsystem: soc usbc storage power buttons
-- Statement: Holding the power slider for about 8 s shall reset and turn off the unit whatever the firmware is doing. Holding seat 1's Select while turning the power on shall enter the RP2350's USB boot mode whatever state the main firmware is in. A blank unit shall enter USB boot mode by itself, a corrupted image or partition table shall fail the boot ROM's hash check and drop to USB boot mode by itself, and a failed update shall fall back to the previous firmware. All of this with the case closed, 3 out of 3 tries each.
-- Rationale: there is no reset button and no BOOT button on the case, and a hung main firmware must not need the case opened. Four layers, each a design fact: (1) the hard reset is a TI TPS3421 push-button controller (LCSC C2067262, $0.36 at 30) on the slider's line, driving the RP2350's RUN pin low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts; the exact delay depends on the variant and its delay-select pin, and 'about 8 s' means the nearest available delay, to confirm from its datasheet (VER-258). (2) A small bootloader of our own lives in its own flash partition, write-protected with the GD25Q128's block protection; it reads seat 1's Select first thing (GPIO only, before the display, sound or USB start), enters USB boot mode if it is held, and otherwise starts the main firmware (REQ-SOC-10). (3) The main firmware sits in A/B slots with the boot ROM's try-before-you-buy, plus a hash in each image; a failed-boot counter in a watchdog scratch register sends the unit to USB boot mode after 3 failed boots (REQ-SOC-10). (4) With the case open, a BOOTSEL test pad on QSPI SS forces USB boot. The firmware itself turns the unit off on a 1 to 2 s hold of the slider (REQ-PWR-21), so the 8 s hold is only for a unit that does not answer. A new image goes in by dragging a .uf2 file to the unit's USB drive (REQ-PRD-19).
-- Source: DESIGN.md:63 ('There is no separate reset button.'); Alex, 2026-10-29, in chat (rewritten and approved: the statement is his text); the RP2350 datasheet's boot sequence, partition table, hash check and try-before-you-buy (to download: VER-233; VER-259 reads them); the TPS3421 datasheet (VER-258).
+- Statement: Holding seat 1's Start for about 8 s shall reset and turn off the unit whatever the firmware is doing. Holding seat 1's Select while turning the power on shall enter the RP2350's USB boot mode whatever state the main firmware is in. A blank unit shall enter USB boot mode by itself, a corrupted image or partition table shall fail the boot ROM's hash check and drop to USB boot mode by itself, and a failed update shall fall back to the previous firmware. All of this with the case closed, 3 out of 3 tries each.
+- Rationale: there is no reset button and no BOOT button on the case, and a hung main firmware must not need the case opened. Four layers, each a design fact: (1) the hard reset is a TI TPS3421 push-button controller (LCSC C2067262, $0.36 at 30) on seat 1's Start's buffered line, driving the RP2350's RUN pin low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts; the exact delay depends on the variant and its delay-select pin, and 'about 8 s' means the nearest available delay, to confirm from its datasheet (VER-258). (2) A small bootloader of our own lives in its own flash partition, write-protected with the GD25Q128's block protection; it reads seat 1's Select first thing (GPIO only, before the display, sound or USB start), enters USB boot mode if it is held, and otherwise starts the main firmware (REQ-SOC-10). (3) The main firmware sits in A/B slots with the boot ROM's try-before-you-buy, plus a hash in each image; a failed-boot counter in a watchdog scratch register sends the unit to USB boot mode after 3 failed boots (REQ-SOC-10). (4) With the case open, a BOOTSEL test pad on QSPI SS forces USB boot. The firmware itself turns the unit off on a 1 to 2 s hold of seat 1's Start (REQ-PWR-21), so the 8 s hold is only for a unit that does not answer. A new image goes in by dragging a .uf2 file to the unit's USB drive (REQ-PRD-19).
+- Source: DESIGN.md:64 ('There is no separate reset button.'); DESIGN.md:65 (hold seat 1's Start about 8 s); Alex, 2026-10-29, in chat (rewritten and approved: the statement is his text); the RP2350 datasheet's boot sequence, partition table, hash check and try-before-you-buy (to download: VER-233; VER-259 reads them); the TPS3421 datasheet (VER-258).
 - Method: D, T
 - Verified by: VER-241, VER-252, VER-258, VER-259
 - Phase: EVT
-- Status: APPROVED
-- Notes: Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263).
+- Status: PROPOSED
+- Notes: Reworded on 2026-10-29 at Alex's decision (the 8 s hold is on seat 1's Start, not the dropped power slider); only that phrase of the statement changed, and it needs Alex's re-approval. Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263).
 
 ### REQ-PRD-09: Cost
 - Level: product
@@ -371,15 +372,15 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-15: A match within seconds of power-on
 - Level: product
 - Board: both
-- Subsystem: soc storage
-- Statement: From the power slider to the battler's lobby on screen shall take 1.0 s or less, 10 of 10 power-ons, with no operating system under the bare-metal Rust battler.
-- Rationale: goal 1: a match within seconds. DESIGN.md:84 gives 'within about a second'; the 1.0 s limit and the 10 of 10 power-ons were Claude's proposal for it, and Alex approved them as written on 2026-10-29. The 1.0 s is VER-223's pass limit.
-- Source: DESIGN.md:49 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:84 ('At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)'); next_spin_requirements.md:17.
+- Subsystem: soc storage power buttons
+- Statement: Within 0.5 s of pressing seat 1's Start the screen shall show a 'keep holding' bar; the lobby shall show within 1.0 s after the 2.5 s hold completes; 10 of 10 power-ons. Released before the hold completes, the console shall turn fully off.
+- Rationale: goal 1: a match within seconds. DESIGN.md:84 gives 'within about a second' and a 2 to 3 s hold to turn on (DESIGN.md:60), so a bump in a pocket does not switch it on; the 1.0 s limit and the 10 of 10 power-ons were Claude's proposal, and the re-timed statement is Alex's approved text of 2026-10-29. The 1.0 s after the hold is VER-228's pass limit; VER-223 measures the supply to the lobby, which is the stricter number.
+- Source: DESIGN.md:49 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:60 (hold seat 1's Start 2 to 3 s to turn on); DESIGN.md:84 ('At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)'); next_spin_requirements.md:17.
 - Method: T
 - Verified by: VER-223, VER-228
 - Phase: ORDER
-- Status: APPROVED
-- Notes: Rewritten on 2026-10-29: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final). Alex reviewed this row in chat on 2026-10-29: approved as written, and the RP board's hold-to-latch at power-on is dropped (it raised PWR_HOLD only after Start was held for about a second): a slide of the power slider turns the unit on at once and the firmware latches power immediately, so nothing before the 1.0 s waits for a hold (REQ-PWR-21, VER-240).
+- Status: PROPOSED
+- Notes: Re-timed on 2026-10-29 at Alex's decision: the statement is the text he approved in chat, and it needs his re-approval in the register. It reverses the earlier 'no hold-to-latch' change of the same day: pressing Start powers the regulator, the firmware latches PWR_HOLD only after Start has been held 2.5 s, and an early release drops the power (REQ-PWR-21, VER-228, VER-240). Earlier: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final).
 
 ### REQ-PRD-16: Games and saves over USB or SD
 - Level: product
@@ -432,6 +433,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: APPROVED
 - Notes: New on 2026-10-29. The flash layout proposal (Claude's, REQ-SOC-10): partition table 4 KB, bootloader 64 KB (locked), firmware A 2 MB, firmware B 2 MB, sound data, and spare for settings and the debug log. To confirm against the RP2350 datasheet (VER-259), then on a dev board (VER-260): how a dragged firmware .uf2 picks the A or B slot, and whether the boot ROM accepts a whole-flash (absolute) UF2 over a valid partition table. If it does not, the recovery step is `picotool erase` and then the one file; the statement says 'copying one recovery .uf2 file', so that extra step would need Alex's decision (DF-263 holds the related question of the locked bootloader).
+
+### REQ-PRD-20: Sleep a local battle
+- Level: product
+- Board: both
+- Subsystem: soc storage power
+- Statement: During a local battle, choosing Sleep from the pause menu shall save the battle to flash and turn the console off within 1 s; the next power-on shall return to the same battle, both players at their choice screens, with every Pokemon's state identical (HP, status, boosts, field), 10 of 10 tries, including after the cell has been unplugged. Online battles shall not offer Sleep. A save made by different firmware shall be discarded at power-on (the save carries the firmware's build ID; a mismatch, or a save that fails its check, starts at the lobby instead), 3 of 3 after an update.
+- Rationale: DESIGN.md:42 (pause a local battle with Sleep; online battles cannot be paused). The statement is Alex's approved text of 2026-10-29. The save is a snapshot of the battle state, a few KB, in the flash's spare area (REQ-SOC-11); there is no input-log replay, so it does not depend on the engine being deterministic across firmware, and a build-ID mismatch discards it.
+- Source: DESIGN.md:42; Alex, 2026-10-29, in chat (new: the statement is his text; the snapshot in the spare area, no input-log replay).
+- Method: T, D
+- Verified by: VER-263, VER-264
+- Phase: EVT
+- Status: PROPOSED
+- Notes: New on 2026-10-29; it needs Alex's approval in the register. Claude's assumption, to confirm: update mode (Select held at power-on) is entered before the save is read, so an update never resumes an old battle.
 
 ## Subsystem: cell and charging (BAT)
 
@@ -778,7 +792,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power cell
 - Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V, the hard reset's controller (the TPS3421) being fed from 3V3 and so drawing nothing.
-- Rationale: designed under 30 uA at 25 C from the RP board's circuits, kept on the RP2350B board: U2 6.5, R17 into U10's unpowered input 7.9 at a 4.2 V cell, U7 8.4 on a stand-in, the FETs' leakage 3.0, and U3 (C47773) at the shutdown current its datasheet gives, summed in VER-103; leakage rises with temperature (O-51). The TPS3421 (the hard reset, REQ-PRD-08.B) runs from 3V3, not VSYS or the cell (Alex, 2026-10-29): 3V3 is off while the unit is off, so it draws nothing then, and the 30 uA budget and REQ-PRD-05's shelf life are unchanged. It watches the slider through the 3V3-side buffered power-key line (the RP board's PWR_BTN_N: Q1 with R16 to 3V3), so no VSYS or cell voltage reaches its unpowered input (DF-266, VER-159). The slider still turns the unit on through its own latch path (PWR_EN, the diode OR of D2), which needs no TPS3421. The hard reset works whenever the unit is on, with USB in or not.
+- Rationale: designed under 30 uA at 25 C from the RP board's circuits, kept on the RP2350B board: U2 6.5, R17 into U10's unpowered input 7.9 at a 4.2 V cell, U7 8.4 on a stand-in, the FETs' leakage 3.0, and U3 (C47773) at the shutdown current its datasheet gives, summed in VER-103; leakage rises with temperature (O-51). The TPS3421 (the hard reset, REQ-PRD-08.B) runs from 3V3, not VSYS or the cell (Alex, 2026-10-29): 3V3 is off while the unit is off, so it draws nothing then, and the 30 uA budget and REQ-PRD-05's shelf life are unchanged. It watches seat 1's Start through the 3V3-side buffered power-key line (the RP board's PWR_BTN_N: Q1 with R16 to 3V3), so no VSYS or cell voltage reaches its unpowered input (DF-266, VER-159). The slider still turns the unit on through its own latch path (PWR_EN, the diode OR of D2), which needs no TPS3421. The hard reset works whenever the unit is on, with USB in or not.
 - Source: bringup.md step 5.1; design.py U2, U3, U10, R17, Q1, R16, D2 (the RP board's); Alex, 2026-10-29, in chat (the TPS3421 on 3V3); the 45 C number is Claude's estimate (O-51).
 - Method: T
 - Verified by: VER-65, VER-146
@@ -795,13 +809,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-211, VER-33
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the turn-on margin of the power key SW24 through Q1; the RP2350B board's power key is the DS Lite slider (REQ-PWR-21, DESIGN.md:64)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the turn-on margin of the power key SW24 through Q1; the RP2350B board's power key is seat 1's Start (REQ-PWR-21, DESIGN.md:60)
 
 ### REQ-PWR-09: Turn-off after a reset or crash
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power soc
-- Statement: On the cell with no USB, after a watchdog reset or a panic, the power hold shall release and every rail fall below 0.5 V within 2 s of the power key or slider being released, unless the firmware takes the hold again in that time.
+- Statement: On the cell with no USB, after a watchdog reset or a panic, the power hold shall release and every rail fall below 0.5 V within 2 s of seat 1's Start being released, unless the firmware takes the hold again in that time.
 - Rationale: a crashed unit must turn itself off, not drain the cell: PWR_HOLD (GPIO44) resets as an input, and after RP2350-E9 a released pad can sit near 2 V, so an external pull-down holds it low (R42 4.7k, E9 needs 8.2k or less; analysis/errata_rp2350.md, VER-239, VER-243).
 - Source: design.py R42 (PWR_HOLD's pull-down); pinmap.md Power control; analysis/errata_rp2350.md.
 - Method: T
@@ -826,9 +840,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power buttons
-- Statement: With 1 Mohm across the power slider's contacts (or seat 1's Start, if it is the power key) and the cell at 4.2 V, the device shall stay off (every rail below 0.5 V) for 10 min.
-- Rationale: the power slider's contact (or seat 1's Start, if it is the power key) carries a rail on one pad; sweat, flux or a pressed cap can bridge it (DF-242). The Starts left the power path (Was: both Start domes).
-- Source: design.py R13, R15 and Q1 on the power key's line (the RP board's, kept on the RP2350B board); 2n7002_cj.txt:55; VER-239's output once the switch is chosen.
+- Statement: With 1 Mohm across seat 1's Start's contacts and the cell at 4.2 V, the device shall stay off (every rail below 0.5 V) for 10 min.
+- Rationale: seat 1's Start's contact carries a rail on one pad (VSYS through a diode to PWR_EN); sweat, flux or a pressed cap can bridge it (DF-242). Only seat 1's Start is on the power path (Was: both Start domes on the RP board).
+- Source: design.py R13, R15 and Q1 on the power key's line (the RP board's, kept on the RP2350B board, now fed from seat 1's Start); 2n7002_cj.txt:55; VER-239's output.
 - Method: T, A
 - Verified by: VER-240
 - Phase: EVT
@@ -909,7 +923,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-211, VER-213, VER-33
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the power key SW24; the RP2350B board's power key is the DS Lite slider (REQ-PWR-21)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the power key SW24; the RP2350B board's power key is seat 1's Start (REQ-PWR-21)
 
 ### REQ-PWR-19: A jig on J7 does not back-feed U3
 - Level: subsystem
@@ -936,17 +950,18 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Status: PROPOSED
 - Notes: Rewritten on 2026-10-29. It was the F1C200s's core, DRAM and IO rails and their order (tag vv-f1c200s-final).
 
-### REQ-PWR-21: The power slider
+### REQ-PWR-21: The power key: seat 1's Start
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power buttons case
-- Statement: The DS Lite power slider in the right edge shall turn the device on at once when slid, with the firmware latching power immediately and no hold needed, and the firmware shall turn it off on a 1 to 2 s hold; if no board switch fits the slider, seat 1's Start shall be the power key, a press turning it on at once and a 1 to 2 s hold turning it off.
-- Rationale: the power key is Alex's choice. The hold to turn off is 1 to 2 s (Alex, 2026-10-29, REQ-PRD-08.B); the RP board's hold-to-latch at power-on, where the firmware raised PWR_HOLD only after Start was held for about a second, is dropped (Alex, 2026-10-29, REQ-PRD-15). A longer hold, about 8 s, is the hard reset of REQ-SOC-04 and works whatever the firmware is doing.
-- Source: DESIGN.md:59 ('Power is the DS Lite power slider in the right edge, taken from the DS Lite button kit: slide it to turn on, hold it to turn off. If no board switch fits the slider, seat 1's Start is the power key instead: press to turn on, hold to turn off. (2026-10-28)'); Alex, 2026-10-29, in chat (no hold to turn on; a 1 to 2 s hold to turn off).
+- Statement: Seat 1's Start shall be the power key: pressing it shall power the regulator, the firmware shall latch PWR_HOLD only after Start has been held 2.5 s (2 to 3 s), and if it is released earlier the power shall drop and the unit be fully off; with the unit on, the firmware shall turn it off on a 1 to 2 s hold. There shall be no power slider, slide switch, case slot for one or board-edge switch.
+- Rationale: Alex, 2026-10-29: the DS Lite power slider is dropped and seat 1's Start is the power key. Start's own membrane contact also feeds the power-latch path as the RP board's SW21 did (Start joins VSYS to PWR_EN through a diode; the MCU reads it through the buffered line). The 2 to 3 s hold to turn on is so a bump in a pocket does not switch it on (DESIGN.md:60); this reverses the 'no hold-to-latch' change made earlier the same day (REQ-PRD-15). The 1 to 2 s hold to turn off is the firmware's; about 8 s is the hard reset of REQ-SOC-04, which works whatever the firmware is doing.
+- Source: DESIGN.md:60 ('Power is seat 1's Start button: hold it for 2 to 3 seconds to turn on, so a bump in a pocket doesn't switch it on, and hold it to turn off. (2026-10-29)'); Alex, 2026-10-29, in chat (the 2.5 s hold, the 1 to 2 s off hold, no slider).
 - Method: A, T
 - Verified by: VER-239, VER-240
 - Phase: EVT
 - Status: PROPOSED
+- Notes: Restated on 2026-10-29 at Alex's decision. It was the DS Lite power slider, with seat 1's Start as the fallback and no hold to turn on.
 
 ### REQ-PWR-22: VBUS out when the console is host
 - Level: subsystem
@@ -1178,9 +1193,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc power
-- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding the power slider for about 8 s shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
-- Rationale: there is no reset button; the watchdog and the power slider are the ways out of a hang (REQ-PWR-10). The slider's long hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. The TPS3421 is fed from 3V3 (Alex, 2026-10-29), so it draws nothing while the unit is off (REQ-PWR-07), and reads the slider through the 3V3-side buffered power-key line; the slider turns the unit on through its own latch path, so the hard reset is needed only while the unit is on. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
-- Source: DESIGN.md:63 ('There is no separate reset button. (2026-10-28)'); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B); the TPS3421 datasheet (VER-258).
+- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding seat 1's Start for about 8 s shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
+- Rationale: there is no reset button; the watchdog and a long hold of seat 1's Start are the ways out of a hang (REQ-PWR-10). Start's 8 s hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. The TPS3421 is fed from 3V3 (Alex, 2026-10-29), so it draws nothing while the unit is off (REQ-PWR-07), and reads Start through the 3V3-side buffered power-key line; Start turns the unit on through its own latch path, so the hard reset is needed only while the unit is on. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
+- Source: DESIGN.md:64 ('There is no separate reset button. (2026-10-28)'); DESIGN.md:65 (hold seat 1's Start about 8 s); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B); the TPS3421 datasheet (VER-258).
 - Method: A, T
 - Verified by: VER-198, VER-105, VER-258, VER-241
 - Phase: EVT
@@ -1190,8 +1205,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc display storage usbc audio buttons
-- Statement: Every function shall sit on an RP2350B pin that has it in the datasheet's pin table: the display bus and its control lines, the audio output, the 20 contacts and the power slider, the cell sense on an ADC pin, a UART or the SWD pins for the debug connector, with USB on the chip's own USB pins and the flash on the QSPI pins, 0 mux conflicts, and no function left on a GPIO the datasheet reserves.
-- Rationale: a QFN-80 has 48 GPIOs and fixed special pins (QSPI, USB, ADC on GPIO40 to 47); a function on a pin without it is a respin. The 21 inputs take 21 of the 48 GPIOs, read directly (Alex, 2026-10-29); VER-262 counts the budget, and the 74HC165 chain is the first thing to change if it runs short.
+- Statement: Every function shall sit on an RP2350B pin that has it in the datasheet's pin table: the display bus and its control lines, the audio output, the 20 contacts (seat 1's Start among them, also the power key), the cell sense on an ADC pin, a UART or the SWD pins for the debug connector, with USB on the chip's own USB pins and the flash on the QSPI pins, 0 mux conflicts, and no function left on a GPIO the datasheet reserves.
+- Rationale: a QFN-80 has 48 GPIOs and fixed special pins (QSPI, USB, ADC on GPIO40 to 47); a function on a pin without it is a respin. The 20 inputs take 20 of the 48 GPIOs, read directly (Alex, 2026-10-29; the power slider is dropped, so one input fewer); VER-262 counts the budget, and the 74HC165 chain is the first thing to change if it runs short.
 - Source: next_spin_requirements.md:12, :24-25; the RP2350 datasheet (to download: VER-233).
 - Method: A, I
 - Verified by: VER-232, VER-262
@@ -1259,6 +1274,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 - Notes: New on 2026-10-29. Open to confirm: how the boot ROM picks slot A or B for a dragged firmware .uf2; whether the recovery .uf2 can rewrite a bootloader locked by block protection (DF-263); that a normal power-off or the hard reset does not count as a failed boot (DF-264).
+
+### REQ-SOC-11: The Sleep save in the flash's spare area
+- Level: subsystem
+- Board: rp2350b
+- Subsystem: soc storage
+- Statement: The flash's spare region shall hold one battle snapshot of 16 KB or less carrying the firmware's build ID and a check value, written within 1 s of Sleep being chosen; a power cut at any moment of the write shall leave either the previous valid save or no valid save, never a half-written one that resumes; at power-on a save with another build ID, or one that fails its check, shall be discarded and the unit start at the lobby.
+- Rationale: REQ-PRD-20 needs the battle to survive the cell being unplugged, so it goes to flash; the spare region is REQ-SOC-10's, beside the settings and the debug log. The 16 KB is Claude's margin over Alex's 'a few KB'. The firmware's build ID is what makes an older snapshot's layout unreadable by newer firmware; the check value catches a torn write. The write must not wear the log's sectors out (DF-259): Sleep is rare, so the save rotates over a few sectors of the region (DF-267).
+- Source: Alex, 2026-10-29, in chat (REQ-PRD-20: a snapshot of a few KB in the spare area, the build ID, the discard rules); the GD25Q128 datasheet's sector erase time, program time and endurance (VER-264 reads them).
+- Method: A, T
+- Verified by: VER-264, VER-263
+- Phase: EVT
+- Status: PROPOSED
+- Notes: New on 2026-10-29. The 16 KB, the rotation over sectors and the all-or-nothing write are Claude's proposals.
 
 ## Subsystem: USB-C device (USB), since 2026-10-29
 
@@ -1536,7 +1564,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: Leakage between a contact's two combs shall be 100 Mohm or more at 4.2 V, clean and after 24 h at high humidity.
-- Rationale: the power slider's contact carries a rail on one pad, so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
+- Rationale: seat 1's Start's contact carries a rail on one pad (the diode into PWR_EN), so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
 - Source: validation_plan gate item 5, #185.
 - Method: T
 - Verified by: VER-46, VER-248
@@ -1608,7 +1636,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: buttons case
 - Statement: Each 4 mm metal dome (HYP 600-415S-260) shall sit with its rim on its footprint's ring all round at 0.1 mm of placement error, close under its cap's full travel, and rest open with its plunger 0.05 mm or more clear of its apex at the measured Start/Select strip.
-- Rationale: a dome pressed at rest under seat 1's Start, if it is the power key (REQ-PWR-21), turns the device on in the case for good (DF-242); the strip's plunger height is an estimate (ss_lift).
+- Rationale: a dome pressed at rest under seat 1's Start, the power key (REQ-PWR-21), turns the device on in the case for good (DF-242); the strip's plunger height is an estimate (ss_lift).
 - Source: design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
 - Method: A, I
 - Verified by: VER-178, VER-180, VER-48
@@ -1631,8 +1659,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: buttons soc
-- Statement: Every contact and the power slider shall be read at least every 2 ms, so a press of 10 ms or more is never missed.
-- Rationale: the contacts and the slider are read directly on GPIOs (Alex, 2026-10-29), so the read is a poll of 21 pad levels and its rate is the firmware's; behind the 74HC165 chain (the pin-relief option) it would be a shift-register scan. Claude's proposal.
+- Statement: Every contact shall be read at least every 2 ms, so a press of 10 ms or more is never missed.
+- Rationale: the contacts are read directly on GPIOs (Alex, 2026-10-29), so the read is a poll of 20 pad levels and its rate is the firmware's; behind the 74HC165 chain (the pin-relief option) it would be a shift-register scan. Claude's proposal.
 - Source: Claude's estimate; Alex to set it.
 - Method: T, A
 - Verified by: VER-56, VER-199
@@ -1670,7 +1698,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case buttons
 - Statement: Every cap shall sit and press its full dome travel (the D-pad rocked in 8 directions) with 0 contact with the shell, and at rest touch only its dome.
-- Rationale: a cap that drags or is preloaded feels wrong or sticks; the power key's cap held down keeps the device on.
+- Rationale: a cap that drags or is preloaded feels wrong or sticks; seat 1's Start cap (the power key) held down keeps the device on.
 - Source: case/check_buttons.py.
 - Method: A, D
 - Verified by: VER-07, VER-48
@@ -1729,7 +1757,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: case
-- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, the power slider's slot, cap holes, speaker grille, screw holes).
+- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, cap holes, speaker grille, screw holes).
 - Rationale: screw pilots and a notch once came through the face (DEF-19).
 - Source: 177123c.
 - Method: A, I
@@ -2206,7 +2234,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: both
 - Subsystem: all
-- Statement: A self-test image shall check the 20 contacts and the power slider, pin neighbour bridges, the panel's ID and fills, the backlight, an audio tone, the flash's JEDEC ID and its 16 MB readback, the USB-C device enumeration, the cell reading and the charger's states, print PASS or FAIL per item and take 5 min or less a unit.
+- Statement: A self-test image shall check the 20 contacts, pin neighbour bridges, the panel's ID and fills, the backlight, an audio tone, the flash's JEDEC ID and its 16 MB readback, the USB-C device enumeration, the cell reading and the charger's states, print PASS or FAIL per item and take 5 min or less a unit.
 - Rationale: 30 units need a repeatable test; OTP writes can brick a unit.
 - Source: validation_plan #57, #100, #174, #202.
 - Method: T

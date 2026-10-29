@@ -1,7 +1,7 @@
 class,subsystem,status,reason
 3,case,NOT_NEEDED,"The case has no electrical connection: nothing on it is wired. Its openings against the connectors are class 14 (VER-165) and its fit against the board is class 13."
 4,case,NOT_NEEDED,"The case holds no component value. Its dimensions at their tolerance corners are stack-ups, which are class 13 (VER-20, VER-174, VER-181)."
-6,case,NOT_NEEDED,"The case has no electrical state to sequence. The power slider's fit in it is classes 13 and 14 (VER-239), and what the slider does is the power subsystem's (VER-240)."
+6,case,NOT_NEEDED,"The case has no electrical state to sequence. The power key is seat 1's Start, so the case has no slider or slot for one (classes 13 and 14, VER-239), and what Start does as the power key is the power subsystem's (VER-240)."
 8,case,NOT_NEEDED,"The case has no schematic and no copper. Where the board's parts sit against the case is class 13 (VER-19, VER-174)."
 9,case,NOT_NEEDED,"The case has no footprint or land pattern: it is printed, not assembled by JLC. Its openings against the parts are classes 13 and 14."
 10,case,NOT_NEEDED,"Class 10 is the PCB's fab rules at JLC (holes, plating, clearances, silk). The case is printed by Alex; whether a print makes the parts that fit is VER-48 (class 13)."
