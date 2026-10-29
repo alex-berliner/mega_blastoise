@@ -244,8 +244,8 @@ FAULTS = [
      lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Verified by", "")),
     ("requirement APPROVED with no APPROVALS line", "structure", "has no committed line for it",
      lambda d: block_field(d, "requirements.md", "REQ-PRD-05", "Status", "APPROVED")),
-    ("allocation on the wrong board", "structure", "a .F allocation is Board: f1c200s",
-     lambda d: block_field(d, "requirements.md", "REQ-PRD-01.F", "Board", "both")),
+    ("allocation on the wrong board", "structure", "a .B allocation is Board: rp2350b",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-01.B", "Board", "both")),
     ("risk ACCEPTED with no APPROVALS line", "structure", "ACCEPTED but releases/APPROVALS.md",
      lambda d: csv_edit(d, "dfmea.csv", "DF-247", status="ACCEPTED")),
     ("approval line signed by Claude", "structure", "only Alex signs",
@@ -406,11 +406,11 @@ FAULTS = [
      "DEF-01: DROPPED needs 'DROPPED with esp32s3 (tag vv-esp32s3-final): <why>'",
      lambda d: block_field(d, "defects.md", "DEF-01", "Status", "DROPPED (the board left)")),
     ("DROPPED: a DFMEA row DROPPED on the live board", "structure",
-     "DF-04: DROPPED, but its board 'f1c200s' is not a dropped board",
-     lambda d: csv_edit(d, "dfmea.csv", "DF-04", board="f1c200s")),
+     "DF-04: DROPPED, but its board 'rp2350b' is not a dropped board",
+     lambda d: csv_edit(d, "dfmea.csv", "DF-04", board="rp2350b")),
     ("DROPPED: a gate criterion DROPPED on the live board", "structure",
-     "G-ORD-25: DROPPED, but its board 'f1c200s' is not a dropped board",
-     lambda d: text_edit(d, "gates.md", "| RETIRED | prod_board |", "| DROPPED | f1c200s |")),
+     "G-ORD-25: DROPPED, but its board 'rp2350b' is not a dropped board",
+     lambda d: text_edit(d, "gates.md", "| RETIRED | prod_board |", "| DROPPED | rp2350b |")),
     ("DROPPED: a live check on a dropped board", "structure", "VER-01: board 'esp32s3' was dropped",
      lambda d: csv_edit(d, "verification.csv", "VER-01", board="esp32s3")),
     ("DROPPED: a live requirement verified by a dropped check", "structure",
@@ -425,21 +425,21 @@ FAULTS = [
      "DF-219: cites DF-148, which is DROPPED",
      lambda d: csv_edit(d, "dfmea.csv", "DF-219", prevention=lambda x: x + "; as DF-148 asked")),
     ("baseline board: an F1C200s PASS on the dropped board's files", "structure",
-     "VER-01: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     "VER-01: PASS for rp2350b, but the design baseline is the dropped esp32s3 board's files",
      lambda d: csv_edit(d, "verification.csv", "VER-01", last_result="PASS", commit="0637562", date="2026-10-28",
                         evidence="hardware/vv/evidence/2026-10-28_VER-01_check_netlist.txt")),
     ("baseline board: README names no baseline board", "structure", "the design baseline names no board",
      lambda d: drop_line(d, "README.md", "- Baseline board:")),
-    ("subsystems: a live requirement that names none", "structure", "REQ-PRD-12: a live requirement names its subsystems",
-     lambda d: block_field(d, "requirements.md", "REQ-PRD-12", "Subsystem", "")),
+    ("subsystems: a live requirement that names none", "structure", "REQ-PRD-14: a live requirement names its subsystems",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-14", "Subsystem", "")),
     ("subsystems: a live requirement on the dropped board's subsystem", "structure",
-     "REQ-PRD-12: subsystem 'mcu' is not one of",
-     lambda d: block_field(d, "requirements.md", "REQ-PRD-12", "Subsystem", "mcu display")),
+     "REQ-PRD-14: subsystem 'mcu' is not one of",
+     lambda d: block_field(d, "requirements.md", "REQ-PRD-14", "Subsystem", "mcu display")),
     ("subsystems: a live check on the dropped board's subsystem", "structure", "VER-01: subsystem 'usb_debug' is not one of",
      lambda d: csv_edit(d, "verification.csv", "VER-01", subsystems="power usb_debug")),
     ("new-MCU path: a stage that names a dropped check", "structure", "NM-04: needs VER-203, which is DROPPED",
-     lambda d: text_edit(d, "gates.md", "| VER-232 VER-231 VER-235 VER-234 VER-238 |",
-                         "| VER-232 VER-203 VER-231 VER-235 VER-234 VER-238 |")),
+     lambda d: text_edit(d, "gates.md", "| VER-232 VER-231 VER-235 VER-256 VER-238 |",
+                         "| VER-232 VER-203 VER-231 VER-235 VER-256 VER-238 |")),
     ("new-MCU path: a stage whose entry skips the stage before it", "structure",
      "NM-05: its entry needs the stage before it (NM-04)",
      lambda d: text_edit(d, "gates.md", "| NM-04 | VER-01 VER-03", "| NM-03 | VER-01 VER-03")),
@@ -456,34 +456,34 @@ FAULTS = [
     # F's audit of the re-target (2026-10-28): the chip gate's exemption, the stages' entry needs, the dropped
     # defects' lessons, the planned paths
     ("baseline board: a PASS that reads a doc under hardware/ref_design is no dev-board check", "structure",
-     "VER-221: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
-     lambda d: csv_edit(d, "verification.csv", "VER-221", last_result="PASS", commit=HEAD7, date=TODAY,
-                        evidence="hardware/vv/evidence/2026-10-28_VER-221_chip_gate.txt",
+     "VER-251: PASS for rp2350b, but the design baseline is the dropped esp32s3 board's files",
+     lambda d: csv_edit(d, "verification.csv", "VER-251", last_result="PASS", commit=HEAD7, date=TODAY,
+                        evidence="hardware/vv/evidence/2026-10-29_VER-251_chip_gate.txt",
                         covers="docs/static/next_spin_requirements.md hardware/ref_design/docs/bringup.md")),
     ("baseline board: a PASS that names a part is no dev-board check", "structure",
-     "VER-233: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     "VER-233: PASS for rp2350b, but the design baseline is the dropped esp32s3 board's files",
      lambda d: csv_edit(d, "verification.csv", "VER-233", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/vv/evidence/2026-10-28_VER-233_datasheets.txt",
                         covers="hardware/ref_design/datasheets/SOURCES.md part:U1")),
     ("baseline board: a PASS that runs a register script is no dev-board check (the script reads design.py)",
-     "structure", "VER-189: PASS for f1c200s, but the design baseline is the dropped esp32s3 board's files",
+     "structure", "VER-189: PASS for rp2350b, but the design baseline is the dropped esp32s3 board's files",
      lambda d: csv_edit(d, "verification.csv", "VER-189", last_result="PASS", commit=HEAD7, date=TODAY,
                         evidence="hardware/vv/evidence/2026-10-28_VER-189_review.txt",
                         covers="hardware/vv/requirements.md hardware/vv/tools/paper_checks.py")),
     ("new-MCU path: a stage's entry need not met keeps it open", "report",
-     "NM-02 Chip selection: done, queue issue #4 (Alex, 2026-10-28: the F1C200s, the V3s as fallback): not met: entry:",
+     "NM-02 Chip selection: done, queue issue #4 (Alex, 2026-10-29: the RP2350B with a 16 MB GD25Q128 flash; the F1C200s is dropped): not met: entry:",
      lambda d: text_edit(d, "gates.md", "| NM-01 | DOC:docs/static/next_spin_requirements.md::^##.Chosen",
                          "| NM-01 DOC:docs/static/DESIGN.md::NO_SUCH_LINE | DOC:docs/static/next_spin_requirements.md::^##.Chosen")),
     ("DROPPED: a dropped defect that names no live DF row its lesson carries to", "structure",
      "DEF-07: DROPPED needs the live DF row its lesson carries to",
      lambda d: text_edit(d, "defects.md", " Its lesson carries as DF-251 (the debug UART's direction in the pin plan) on "
-                         "the F1C200s board.", "")),
+                         "the RP2350B board.", "")),
     ("DROPPED: a dropped defect whose lesson row is itself DROPPED", "structure",
      "DEF-07: DROPPED needs the live DF row its lesson carries to",
      lambda d: text_edit(d, "defects.md", "carries as DF-251 (the debug UART's", "carries as DF-04 (the debug UART's")),
     ("DROPPED: a dropped defect that does not say what it was there", "structure",
      "DEF-07: DROPPED needs what it was there",
-     lambda d: text_edit(d, "defects.md", "dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. "
+     lambda d: text_edit(d, "defects.md", "dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. "
                          "Its lesson carries as DF-251", "dropped. Its lesson carries as DF-251")),
     ("repo paths: a misspelt path on a live check passes as planned no more", "structure",
      "hardware/ref_design/board/tools/check_netlst.py was never committed",
@@ -493,18 +493,18 @@ FAULTS = [
 
 
 def live_baseline(d):
-    """2026-10-28: take the baseline's design files as the live board's (README '- Baseline board: `f1c200s`'), so a
+    """2026-10-28: take the baseline's design files as the live board's (README '- Baseline board: `rp2350b`'), so a
     seed can give an F1C200s check a PASS: on the real register they are the dropped ESP32-S3 board's, and the default
     mode refuses one (the seeds test the trace gate's rules, not the design)."""
     p = os.path.join(d, "README.md")
     s = open(p, encoding="utf-8").read()
-    open(p, "w", encoding="utf-8").write(s.replace("- Baseline board: `esp32s3`", "- Baseline board: `f1c200s`", 1))
+    open(p, "w", encoding="utf-8").write(s.replace("- Baseline board: `esp32s3`", "- Baseline board: `rp2350b`", 1))
 
 
 def add_defect(d, did, checks, gate="ORDER"):
     """A live defect of the F1C200s board for a seed (the re-seed left it none of its own)."""
     with open(os.path.join(d, "defects.md"), "a", encoding="utf-8") as f:
-        f.write(f"\n### {did}: a seeded defect\n- Board: f1c200s\n- Found: seed_faults.py\n- Symptom: seeded\n"
+        f.write(f"\n### {did}: a seeded defect\n- Board: rp2350b\n- Found: seed_faults.py\n- Symptom: seeded\n"
                 f"- Root cause: seeded\n- Why missed: seeded\n- Check added or changed: {checks}\n- Updated: none\n"
                 f"- Gate: {gate}\n- Status: OPEN\n")
 

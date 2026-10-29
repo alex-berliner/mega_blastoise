@@ -20,8 +20,8 @@ check that FAILs is recorded as FAIL with its evidence: a finding the order gate
 script that tests only part of its row's pass limit does not belong here: split the row first
 (VER-20 and VER-182, O-R21), so an exit 0 is a whole PASS. Since 2026-10-28 a DROPPED, RETIRED or CUT
 row is not run, and while README's '- Baseline board:' is a dropped board (the ESP32-S3 board's files
-are still on main) no check of the F1C200s board is run either: only the register's own checks (board
-'both') run until an F1C200s design is the baseline.
+are still on main) no check of the RP2350B board is run either: only the register's own checks (board
+'both') run until an RP2350B design is the baseline.
 
 Python 3 standard library only.
 """
@@ -165,7 +165,7 @@ def main():
         row = dict(zip(head, byid[vid]))
         # 2026-10-28: a check of a dropped board is not run; and while the design files at the baseline are a dropped
         # board's (README '- Baseline board:'), a check of the live board is not run on them: its result would be
-        # the dropped board's, not the F1C200s board's (check_trace refuses such a PASS or FAIL). A check that reads
+        # the dropped board's, not the RP2350B board's (check_trace refuses such a PASS or FAIL). A check that reads
         # none of those files (a dev-board test, a datasheet download) runs (ct.reads_board_files)
         if row["last_result"] in ct.GONE + ("CUT",):
             print(f"{vid} {name}: not run: {row['last_result']}")

@@ -8,13 +8,19 @@ first, and a status.
 
 **Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 and re-seeded them for each
 board since (684a609, be437f8, the RP2354B board at 71737ae, the ESP32-S3 board at 39cc07f). On
-2026-10-28 both of those boards were dropped and the register was re-seeded for the next spin, the
-Allwinner F1C200s board (board `f1c200s`; docs/static/DESIGN.md:77, docs/static/next_spin_requirements.md):
-REQ-PRD-12 to -17 state DESIGN.md's goals for it, each quoting its DESIGN.md line; the chip (SOC) and
-USB-C roles (USB) sections are new; the ESP32-S3 board's own requirements (the module, its radio, its
-allocations `.R`, its power key, its backlight sinks, its PWM audio, its 74HC165 chain) are DROPPED with
-it and name its tag, `vv-esp32s3-final`. A carried requirement whose rationale or source still reasons
-from the ESP32-S3 board's parts says so ('Was: on the ESP32-S3 board ..., to redo for the F1C200s
+2026-10-28 both of those boards were dropped and the register was re-seeded for an Allwinner F1C200s
+board; on 2026-10-29 Alex changed the next spin again (docs/static/DESIGN.md:71 and
+docs/static/next_spin_requirements.md): the RP2350B (QFN-80, no flash inside) with one GD25Q128 16 MB QSPI
+flash holding the program and the sound, no GBA, no Linux, no SD card, no Wi-Fi, online play through an
+Android phone's Chrome (WebUSB). The register is now the RP2350B board's (board `rp2350b`, allocations
+`.B`). The F1C200s board's own requirements (GBA at full speed and link play, games and saves, the
+microSD slot, the FUSB303B's host and device roles, VBUS out as host) are DROPPED with it and name its
+tag, `vv-f1c200s-final` (cffe55b). REQ-PRD-14 and -15 are rewritten for the phone bridge and the
+bare-metal boot, REQ-PRD-18 (sound from the flash) is new, REQ-PRD-09 is Alex's all-in cost, and the
+chip (SOC) section is the RP2350B's with its flash and its minimal design. The ESP32-S3 board's own
+requirements (the module, its radio, its allocations `.R`, its power key, its backlight sinks, its PWM
+audio, its 74HC165 chain) stay DROPPED with it and name its tag, `vv-esp32s3-final`. A carried requirement whose rationale or source still reasons
+from the ESP32-S3 board's parts says so ('Was: on the ESP32-S3 board ..., to redo for the RP2350B
 board'): the statement is what binds. Where DESIGN.md gives no number, the number is Claude's proposal
 and says so. A requirement whose subject left the design is RETIRED with the commit that removed it; it
 keeps its ID. None is binding until Alex decides it in [releases/APPROVALS.md](releases/APPROVALS.md):
@@ -26,14 +32,14 @@ How to read a block:
 
 - Level: product (what a player or Alex sees), subsystem (a block of the design), or
   board (one board's make and test).
-- Board: both or f1c200s (the F1C200s board, the next design of `hardware/ref_design`, REF-A).
+- Board: both or rp2350b (the RP2350B board, the next design of `hardware/ref_design`, REF-A).
   'both' is the product level: the need stated without one board's parts or numbers. A product
   requirement that names the board's parts or numbers is split: the parent (Board: both) states
-  the need, and its allocation `REQ-X.F` (Board: f1c200s) holds the board's numbers. The gate
-  evaluates f1c200s and both. `esp32s3` marks a DROPPED row (its `.R` allocations among them);
+  the need, and its allocation `REQ-X.B` (Board: rp2350b) holds the board's numbers. The gate
+  evaluates rp2350b and both. `esp32s3` and `f1c200s` mark a DROPPED row (the ESP32-S3 board's `.R` and the F1C200s board's `.F` allocations among them);
   `prod_board` (Alex's `hardware/prod_board@611ebe3` and `hardware/prod_case@611ebe3`, deleted in
   574c94c, Alex: not needed) marks REQ-PBD-*, RETIRED.
-- Subsystem: the F1C200s board's subsystems the requirement is allocated to (grid.md's power,
+- Subsystem: the RP2350B board's subsystems the requirement is allocated to (grid.md's power,
   cell, soc, storage, usbc, display, audio, buttons, case), or 'all'.
 - Source: a datasheet page (the review file that quotes it is named), a standard clause, a
   validation_plan method (#n), a line of DESIGN.md (Alex's spec) or next_spin_requirements.md,
@@ -60,7 +66,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: two players press at the same time; a matrix would ghost.
 - Source: Alex's use.
 - Method: T
-- Verified by: allocated: REQ-PRD-01.F (Was: REQ-PRD-01.R, the ESP32-S3 board's)
+- Verified by: allocated: REQ-PRD-01.B (Was: REQ-PRD-01.R, the ESP32-S3 board's)
 - Phase: EVT
 - Status: PROPOSED
 - Notes: Was: prod_board had 16 contacts and no Start or Select at 76955d2, and its own allocation was Alex's; 574c94c deleted prod_board from the repository (Alex: not needed).
@@ -75,15 +81,15 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-56, VER-76
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the three 74HC165s (U11 the third) and the power key SW24 were the ESP32-S3 board's; REQ-PRD-01.F allocates the need to the F1C200s board
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the three 74HC165s (U11 the third) and the power key SW24 were the ESP32-S3 board's; REQ-PRD-01.B allocates the need to the RP2350B board
 
-### REQ-PRD-01.F: Twenty independent inputs and the power slider (f1c200s)
+### REQ-PRD-01.B: Twenty independent inputs and the power slider (rp2350b)
 - Level: product
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: buttons
 - Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), and the power slider (or seat 1's Start, if it is the power key), each on its own line, with any combination held at once read correctly.
-- Rationale: two players press at the same time; how the F1C200s reads them (GPIO or a chain) is the pin plan's (VER-232).
-- Source: DESIGN.md:41 ('Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select'), DESIGN.md:64 (the power slider).
+- Rationale: two players press at the same time; how the RP2350B reads them (its 48 GPIOs directly, or a chain) is the pin plan's (VER-232).
+- Source: DESIGN.md:39 ('Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select'), DESIGN.md:59 (the power slider).
 - Method: T
 - Verified by: VER-56, VER-76
 - Phase: EVT
@@ -97,7 +103,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: the one shared screen is the product.
 - Source: Alex's use.
 - Method: T
-- Verified by: allocated: REQ-PRD-02.F (Was: REQ-PRD-02.R)
+- Verified by: allocated: REQ-PRD-02.B (Was: REQ-PRD-02.R)
 - Phase: EVT
 - Status: PROPOSED
 
@@ -111,15 +117,15 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-60, VER-61
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's allocation; the panel stays on the F1C200s board, allocated in REQ-PRD-02.F
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's allocation; the panel stays on the RP2350B board, allocated in REQ-PRD-02.B
 
-### REQ-PRD-02.F: One readable screen (f1c200s)
+### REQ-PRD-02.B: One readable screen (rp2350b)
 - Level: product
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
-- Statement: The 320 x 480 ER-TFT035IPS-6 (ILI9488) shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat, driven by the F1C200s on the 8-bit 8080 bus.
+- Statement: The 320 x 480 ER-TFT035IPS-6 (ILI9488) shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat, driven by the RP2350B on the panel's 8-bit 8080 bus.
 - Rationale: the one shared screen is the product; the panel is today's.
-- Source: DESIGN.md:60 ('one 3.5 inch IPS screen'); next_spin_requirements.md:29 ('today's ILI9488 on the 8-bit 8080 bus').
+- Source: DESIGN.md:55 ('one 3.5 inch IPS screen'); next_spin_requirements.md:12 ('a display bus fast enough for the 320 x 480 panel'), :27 ('today's ILI9488').
 - Method: T
 - Verified by: VER-224, VER-60, VER-61
 - Phase: EVT
@@ -133,7 +139,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a session of play on one charge.
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
-- Verified by: allocated: REQ-PRD-03.F (Was: REQ-PRD-03.R)
+- Verified by: allocated: REQ-PRD-03.B (Was: REQ-PRD-03.R)
 - Phase: EVT
 - Status: PROPOSED
 
@@ -147,16 +153,16 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-101, VER-153
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): its 90-120 mA budget was the ESP32-S3 board's; REQ-PRD-03.F holds the F1C200s board's
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): its 90-120 mA budget was the ESP32-S3 board's; REQ-PRD-03.B holds the RP2350B board's
 - Notes: proposed: DEFERRED to EVT pending VER-37 (the cell's spec sheet) and VER-153 (F-33); only Alex sets it.
 
-### REQ-PRD-03.F: Play time (f1c200s)
+### REQ-PRD-03.B: Play time (rp2350b)
 - Level: product
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell power
-- Statement: From charge-done the device shall play for at least 4.0 h of battling (bare metal, backlight at 50%, sound at -12 dBFS) and at least 2.5 h of GBA play under Linux, at 25 C, before the low-cell cutoff.
-- Rationale: a session of play on one charge; GBA under Linux draws more than the bare-metal battler. the number is Claude's proposal: DESIGN.md does not give one; Alex sets it.
-- Source: Claude's estimate; the F1C200s's draw from the dev board (VER-221) and the power budget (VER-231).
+- Statement: From charge-done the device shall play for at least 4.0 h of battling (backlight at 50%, sound at -12 dBFS) at 25 C before the low-cell cutoff.
+- Rationale: a session of play on one charge; the RP2350B at 150 MHz draws far less than an application processor would, so the 4.0 h of the parent holds with margin on paper. The number is Claude's proposal: DESIGN.md does not give one; Alex sets it.
+- Source: Claude's estimate; the stripboard Pico 2's measured draw and the power budget (VER-231).
 - Method: T, A
 - Verified by: VER-231, VER-101, VER-153
 - Phase: EVT
@@ -170,9 +176,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a flat unit is ready again within an evening.
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
-- Verified by: allocated: REQ-PRD-04.F (Was: REQ-PRD-04.R)
+- Verified by: allocated: REQ-PRD-04.B (Was: REQ-PRD-04.R)
 - Phase: EVT
-- Notes: the first draft said 3.0 h from 1.5 A, the allocation REQ-PRD-04.F says 4.0 h from 0.5 A (the BQ24073's USB500 input limit is 475 mA): Alex sets the time (PLAN.md decision DEC-04, F-R12).
+- Notes: the first draft said 3.0 h from 1.5 A, the allocation REQ-PRD-04.B says 4.0 h from 0.5 A (the BQ24073's USB500 input limit is 475 mA): Alex sets the time (PLAN.md decision DEC-04, F-R12).
 - Status: PROPOSED
 
 ### REQ-PRD-04.R: Charge time (ref_design)
@@ -185,15 +191,15 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-102
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the BQ24073's status pins and R5 were the ESP32-S3 board's; REQ-PRD-04.F holds the F1C200s board's
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the BQ24073's status pins and R5 were the ESP32-S3 board's; REQ-PRD-04.B holds the RP2350B board's
 - Notes: proposed: DEFERRED to EVT pending VER-37 (F-33); only Alex sets it.
 
-### REQ-PRD-04.F: Charge time (f1c200s)
+### REQ-PRD-04.B: Charge time (rp2350b)
 - Level: product
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell power
 - Statement: From the low-cell cutoff the cell shall reach charge-done within 4.0 h at 25 C from a source offering 0.5 A or more at 4.75-5.25 V, device on the charging screen.
-- Rationale: a flat unit is ready again within an evening; the charger is not chosen yet.
+- Rationale: a flat unit is ready again within an evening; the charger is not chosen yet (the BQ24074 of ref_design is the candidate).
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
 - Verified by: VER-102
@@ -206,7 +212,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: power cell
 - Statement: Switched off with a full cell and no USB, the board shall drain the cell by no more than 30 uA, so that the board alone takes 2 years or more to empty it.
 - Rationale: 700 mAh / 30 uA is about 2.7 years; the cell's own self-discharge dominates.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design_review.md's Off state (18-22 uA) predates the BQ24073 (Was: it counts D5's reverse leakage, and D5 left in 2d1124d); VER-103 re-derives the budget for the BQ24073 board (O-R23); validation_plan #33.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design_review.md's Off state (18-22 uA) predates the BQ24073 (Was: it counts D5's reverse leakage, and D5 left in 2d1124d); VER-103 re-derives the budget for the BQ24073 board (O-R23); validation_plan #33.
 - Method: T, A
 - Verified by: VER-65, VER-103
 - Phase: EVT
@@ -246,7 +252,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: bring-up and field recovery must not need the case opened or a soldering iron.
 - Source: validation_plan #182, #202.
 - Method: D, T
-- Verified by: allocated: REQ-PRD-08.F (Was: REQ-PRD-08.R)
+- Verified by: allocated: REQ-PRD-08.B (Was: REQ-PRD-08.R)
 - Phase: EVT
 - Status: PROPOSED
 
@@ -260,39 +266,39 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-212
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3's USB Serial/JTAG and J7's BOOT and EN pads; REQ-PRD-08.F holds the F1C200s board's recovery
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3's USB Serial/JTAG and J7's BOOT and EN pads; REQ-PRD-08.B holds the RP2350B board's recovery
 
-### REQ-PRD-08.F: Recoverable firmware (f1c200s)
+### REQ-PRD-08.B: Recoverable firmware (rp2350b)
 - Level: product
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc usbc storage
-- Statement: A unit with blank, corrupt or hung firmware shall take a new image with the case closed: the microSD card rewritten in a computer, or, with no card in, through the F1C200s boot ROM's USB mode (FEL) over USB-C from a computer, 3 out of 3 tries.
-- Rationale: there is no reset button and no BOOT button; the boot ROM tries the card first and falls back to USB (to confirm from the F1C200s datasheet, not on disk).
-- Source: DESIGN.md:68 ('There is no separate reset button.'); next_spin_requirements.md:27 ('the boot ROM tries SD first').
+- Statement: A unit with blank or corrupt firmware shall take a new image with the case closed through the RP2350 boot ROM's USB boot mode (over USB-C from a computer), and a unit with hung firmware shall reset by the watchdog within 2 s and then run or fall back to the same USB boot mode, 3 out of 3 tries.
+- Rationale: there is no reset button and no BOOT button on the case; the RP2350 boot ROM enters USB boot mode itself when the flash holds no valid image, and a running image reboots to it on a command over its own USB (the phone bridge's port). With the case open a BOOTSEL test pad on QSPI SS (as in Raspberry Pi's minimal design: to confirm, VER-233) forces it.
+- Source: DESIGN.md:63 ('There is no separate reset button.'); Alex, 2026-10-29, in chat (recovery is the RP2350's USB boot ROM over USB-C); the RP2350 datasheet's boot sequence (to download: VER-233).
 - Method: D, T
-- Verified by: VER-241, VER-222
+- Verified by: VER-241, VER-252
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-PRD-09: Cost
 - Level: product
-- Board: f1c200s
+- Board: both
 - Subsystem: all
-- Statement: The all-in cost per unit at 10 units shall be $45 or less (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament, the microSD card).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the number comes from VER-117's re-run of cost.py with a new board quote at 72.4 x 151.48 mm (73.4 mm across J1's tab; case.scad's board_l, the Edge.Cuts outline); bom.md's board line still asks for 72.4 x 151.64 mm and its price is still the quote for 70.5 x 151.34 mm (DEF-79).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: docs/bom.md; Alex's use.
+- Statement: The all-in cost for Alex to hold one fully assembled unit shall be $57 or less at 10 units and $38 or less at 50 units, all-in being the board, parts, JLC assembly, panel, cell, speaker, silicone, screws, tape, the home-printed case, every shipping leg, and US tariffs and duties.
+- Rationale: this is Alex's definition of cost (2026-10-29): what it costs him to hold one finished unit, not the board's price. The two numbers are Claude's estimate of what it comes to, about $57 a unit at 10 and $38 at 50, not a target: the number is Alex's to set and stays a proposal until he does.
+- Source: Alex's definition of cost, 2026-10-29; Claude's estimate (VER-117 re-runs it: hardware/ref_design/board/tools/cost.py, JLC's instant quote, the parts, every shipping leg, the US tariff and duty rate on each).
 - Method: I
 - Verified by: VER-117
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-29: it was $45 or less at 10 units (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament, the microSD card); the new definition adds tape, tariffs and duties and every shipping leg, and drops the card, which left the design. Alex approved the other REQ-PRD rows in chat as worded at c3aec22; this row is not approved.
 
 ### REQ-PRD-10: Serviceable cell and panel
 - Level: product
 - Board: both
 - Subsystem: cell display case
 - Statement: Alex shall replace the cell or the panel with a screwdriver and no soldering in 10 min or less each.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: cells age and glass breaks; J2 is a plug and J3 a ZIF so both swap.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: cells age and glass breaks; J2 is a plug and J3 a ZIF so both swap.
 - Source: validation_plan #194, #203 (EU Regulation 2023/1542 Art. 11 if sold in the EU).
 - Method: D
 - Verified by: VER-91
@@ -313,7 +319,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-PRD-12: GBA games at full speed
 - Level: product
-- Board: both
+- Board: f1c200s
 - Subsystem: soc display audio
 - Statement: Pokemon FireRed under the gpSP emulator shall run at 59.7 fps or more averaged over 10 min (the GBA's own 59.73 Hz), with no frame skipped and sound on, and no 1 s window under 57 fps, in the overworld and in a battle.
 - Rationale: goal 4: the console plays GBA games at full speed. 59.7 fps and the 57 fps floor are Claude's proposal: DESIGN.md says 'at full speed', next_spin_requirements.md '60 fps'; Alex sets them.
@@ -321,12 +327,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-221, VER-247
 - Phase: ORDER
-- Status: PROPOSED
+- Status: DROPPED
 - Notes: The chip gate (gates.md NM-03) measures it on a dev board before any board design; a fail sends the project to the V3s (DESIGN.md:77).
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): GBA left the design on 2026-10-29 (DESIGN.md: goal 4 removed); its statement is at the tag
 
 ### REQ-PRD-13: GBA link play over a USB-C cable
 - Level: product
-- Board: both
+- Board: f1c200s
 - Subsystem: usbc soc
 - Statement: Two consoles joined by one USB-C to USB-C cable shall link Pokemon FireRed through the emulator's GBA Wireless Adapter support, one console the USB host and the other the device as the FUSB303B's role detection decides, for a trade and a battle, with 0 disconnects in 30 min linked.
 - Rationale: goal 4: two consoles link with a USB-C cable to play GBA games together. 30 min and 0 disconnects are Claude's proposal.
@@ -334,36 +341,39 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-225, VER-226
 - Phase: EVT
-- Status: PROPOSED
+- Status: DROPPED
 - Notes: next_spin_requirements.md:16 says the emulator's link support is 'not yet checked' (DF-243).
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): GBA link play and USB host mode left the design on 2026-10-29; its statement is at the tag
 
-### REQ-PRD-14: Online play as a Showdown guest
+### REQ-PRD-14: Online play as a Showdown guest through a phone
 - Level: product
 - Board: both
 - Subsystem: usbc soc
-- Statement: Under Linux, with a phone's USB tether or a USB Wi-Fi dongle on the USB-C port (the console the USB host), the device shall join Pokemon Showdown's own server as a guest with no login and finish 5 of 5 random battles, Gen 1 and Gen 3, with no disconnect.
-- Rationale: goal 3: the same console takes on players online. There is no Wi-Fi on the board. 5 of 5 is Claude's proposal.
-- Source: DESIGN.md:52 ('Players can play against others online, as a guest on Pokemon Showdown (the free online Pokemon battle site) with no login. (2026-10-26)'); DESIGN.md:87, :89; next_spin_requirements.md:17, :30.
+- Statement: With the console on one USB-C cable to an Android phone, a web page in the phone's Chrome browser (WebUSB, the bridge page) shall pass the battle between the console and Pokemon Showdown's own server, joined as a guest with no login, and finish 5 of 5 random battles, Gen 1 and Gen 3, each accepted by Showdown's server, with no disconnect.
+- Rationale: goal 3: the same console takes on players online. The console is a USB device and has no Wi-Fi: the phone carries the network. 5 of 5 is Claude's proposal.
+- Source: DESIGN.md:48 ('Players can play against others online, as a guest on Pokemon Showdown (the free online Pokemon battle site) with no login. (2026-10-26)'); DESIGN.md:81 (a guest only, Showdown's own servers, none of ours); DESIGN.md:83 ('Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29)'); next_spin_requirements.md:16.
 - Method: T
-- Verified by: VER-225, VER-227
-- Phase: EVT
+- Verified by: VER-251, VER-227
+- Phase: ORDER
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29. It was the F1C200s board's: Linux with a phone's USB tether or a USB Wi-Fi dongle, the console the USB host (tag vv-f1c200s-final). The chip gate (gates.md NM-03) runs the phone bridge test on the stripboard Pico 2 (RP2350A) before any board design.
 
 ### REQ-PRD-15: A match within seconds of power-on
 - Level: product
 - Board: both
 - Subsystem: soc storage
-- Statement: From the power slider to the battler's lobby on screen shall take 1.0 s or less with no operating system, 10 of 10 power-ons; with the Linux button held at power-on, the GBA menu shall show within 10 s.
-- Rationale: goal 1: a match within seconds. DESIGN.md:91 gives 'within about a second' for the battler; the 1.0 s limit and the 10 of 10 power-ons are Claude's proposal for it, and the 10 s for Linux is Claude's proposal too (DESIGN.md:90: Linux 'only if it boots fast'); Alex sets them. The 1.0 s is VER-223's pass limit at the chip gate.
-- Source: DESIGN.md:54 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:91 ('At power-on the Pokemon battler starts on its own, with no operating system, within about a second.'); next_spin_requirements.md:19.
+- Statement: From the power slider to the battler's lobby on screen shall take 1.0 s or less, 10 of 10 power-ons, with no operating system under the bare-metal Rust battler.
+- Rationale: goal 1: a match within seconds. DESIGN.md:84 gives 'within about a second'; the 1.0 s limit and the 10 of 10 power-ons are Claude's proposal for it, and Alex sets them. The 1.0 s is VER-223's pass limit.
+- Source: DESIGN.md:49 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:84 ('At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)'); next_spin_requirements.md:17.
 - Method: T
 - Verified by: VER-223, VER-228
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final).
 
 ### REQ-PRD-16: Games and saves over USB or SD
 - Level: product
-- Board: both
+- Board: f1c200s
 - Subsystem: storage usbc
 - Statement: A 16 MB GBA ROM and its save shall load onto the console either on the microSD card written in a computer, or over USB-C with the console a USB mass-storage device of the computer, and the game shall then run with its save; a 16 MB copy over USB shall take 60 s or less.
 - Rationale: games and saves come from a computer; 16 MB is FireRed's ROM. The 60 s is Claude's proposal.
@@ -371,20 +381,34 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-225, VER-229
 - Phase: EVT
-- Status: PROPOSED
+- Status: DROPPED
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): loading games and saves, and the microSD card, left the design on 2026-10-29; its statement is at the tag
 
 ### REQ-PRD-17: About today's size or smaller
 - Level: product
 - Board: both
 - Subsystem: case
 - Statement: The closed case shall measure at most 78.9 x 156.48 mm in plan and 9.6 mm thick at the screen, each +0.3 mm for print tolerance, and each spin shall record a size-minimization pass.
-- Rationale: goal 5: it fits in a pocket and every spin is as small as it can be. The numbers are today's case as next_spin_requirements.md gives it; the +0.3 mm for print tolerance is Claude's proposal (next_spin_requirements.md:20 says 'no growth'); Alex sets it.
-- Source: DESIGN.md:65 ('It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)'); next_spin_requirements.md:20 ('no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen)').
+- Rationale: goal 4: it fits in a pocket and every spin is as small as it can be. The numbers are today's case as next_spin_requirements.md gives it; the +0.3 mm for print tolerance is Claude's proposal (next_spin_requirements.md says 'no growth'); Alex sets it.
+- Source: DESIGN.md:60 ('It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)'); next_spin_requirements.md:18 ('no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen)').
 - Method: I, A
 - Verified by: VER-230, VER-48, VER-20
 - Phase: CASE
 - Status: PROPOSED
 - Notes: Was: REQ-PRD-06 gave 78.9 x 156.64 mm and 10.7 mm for the ESP32-S3 board's case; next_spin_requirements.md gives 156.48 and 9.6 as today's.
+
+### REQ-PRD-18: Sound from the 16 MB flash
+- Level: product
+- Board: both
+- Subsystem: audio storage soc
+- Statement: The console shall play its sound from samples stored in the one 16 MB QSPI flash and read in place, the program and data taking 4 MB or less and the sound 8 MB or more of the 16 MB, with 0 audible dropouts (buffer underruns) in 30 min of battling at the full display rate.
+- Rationale: Alex: "we need external spi flash to do sound right". The program is 1.4 MB today (next_spin_requirements.md:13); sound samples at 16 bits and 32 kHz mono are 64 KB a second, so 8 MB is about 2 min of them before any compression. 4 MB, 8 MB and 30 min are Claude's proposal; Alex sets them.
+- Source: Alex, 2026-10-29 ('we need external spi flash to do sound right'); DESIGN.md:71 ('a 16 MB flash memory chip beside it, which holds the program and the sound'); next_spin_requirements.md:15 ('Sound done right: room for sound samples: a 16 MB flash chip the chip reads as memory').
+- Method: T, A
+- Verified by: VER-256, VER-252, VER-255
+- Phase: ORDER
+- Status: PROPOSED
+- Notes: New on 2026-10-29.
 
 ## Subsystem: cell and charging (BAT)
 
@@ -394,7 +418,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: cell
 - Statement: The charger shall stop the cell at 4.20 V +-1% (4.158-4.242 V at the cell terminals at charge-done) and never above the cell maker's maximum charge voltage.
 - Rationale: overcharge is the main cell hazard.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: BQ24073 datasheet SLUS810N, VBAT(REG) (design.py and pinmap.md quote 4.2 V +-1%); IEC 62133-2 (upper limit charging voltage set by the cell maker).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: BQ24073 datasheet SLUS810N, VBAT(REG) (design.py and pinmap.md quote 4.2 V +-1%); IEC 62133-2 (upper limit charging voltage set by the cell maker).
 - Method: T, A
 - Verified by: VER-67, VER-134, VER-14
 - Phase: EVT
@@ -408,7 +432,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: 0.5 C is the usual standard rate for small pouch cells.
 - Source: IEC 62133-2 (the cell maker's charging limits); validation_plan #28, #128.
 - Method: T, I, A
-- Verified by: allocated: REQ-BAT-02.F (Was: REQ-BAT-02.R)
+- Verified by: allocated: REQ-BAT-02.B (Was: REQ-BAT-02.R)
 - Phase: EVT
 - Status: PROPOSED
 
@@ -422,12 +446,12 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-66, VER-37, VER-160
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): R5 against the BQ24073's KISET was the ESP32-S3 board's charger; REQ-BAT-02.F holds the F1C200s board's
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): R5 against the BQ24073's KISET was the ESP32-S3 board's charger; REQ-BAT-02.B holds the RP2350B board's
 - Notes: proposed: DEFERRED to EVT pending VER-37 (F-33); only Alex sets it.
 
-### REQ-BAT-02.F: Charge current (f1c200s)
+### REQ-BAT-02.B: Charge current (rp2350b)
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell
 - Statement: The constant-current charge shall measure at most 0.5 C of the chosen cell's rated capacity and at most its maker's standard charge current, at the charger's and its set resistor's tolerance.
 - Rationale: the charger is not chosen yet; its set resistor follows the cell's spec sheet (carryover C-4).
@@ -442,8 +466,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: cell
 - Statement: At 99.9% of units, charging shall pause when the cell is above 45 C or below 0 C, or outside the cell maker's charge range if that is narrower: the hot edge at or under 45 C and the cold edge at or over 0 C (one-sided limits), and resume when back in range.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot); TH1's resistance at 25 C and its B are each +-1% (tctr0805.txt:260, the part number's two F's).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot); TH1's resistance at 25 C and its B are each +-1% (tctr0805.txt:260, the part number's two F's).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
 - Method: A, T
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
@@ -470,7 +494,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: small cell connectors have no battery polarity standard; a reversed cell can destroy the charger.
 - Source: assembly practice; IEC 62133-2.
 - Method: I
-- Verified by: allocated: REQ-BAT-05.F (Was: REQ-BAT-05.R)
+- Verified by: allocated: REQ-BAT-05.B (Was: REQ-BAT-05.R)
 - Phase: EVT
 - Status: PROPOSED
 
@@ -484,11 +508,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-49, VER-54
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): J2 pin 1 was the ESP32-S3 board's cell header; REQ-BAT-05.F holds the F1C200s board's
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): J2 pin 1 was the ESP32-S3 board's cell header; REQ-BAT-05.B holds the RP2350B board's
 
-### REQ-BAT-05.F: Cell polarity (f1c200s)
+### REQ-BAT-05.B: Cell polarity (rp2350b)
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell
 - Statement: 100% of cells shall be checked with a meter before first mating, red lead on the cell header's pin 1 (marked '+' on the silk), and the result recorded per lot.
 - Rationale: a reversed cell is a severity 10 failure (carryover C-7).
@@ -512,7 +536,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-BAT-07: Room to swell
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell case
 - Statement: The closed case shall leave 0.4 mm or more of free height above the cell at worst-case tolerance (a 4.5 mm cell), under everything that lies over its pocket.
 - Rationale: pouch cells grow 8-10% in thickness over life; 0.4 mm for a 4.0 mm cell.
@@ -525,11 +549,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-BAT-08: Nothing hard against the pouch
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell case
 - Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances; the tub's pocket at least 0.1 mm a side larger than a worst-case cell after the print's tolerance (0.4 mm in each direction); and no back-side copper within 1 mm of the hole.
 - Rationale: a pierced pouch shorts internally and can burn; a pouch pressed into a pocket too small for it is stressed the same way (round 3's O-S1, 2026-10-27: the fit clause, a PROPOSED number).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
 - Method: A, I
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
@@ -538,23 +562,23 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-BAT-09: Charge path single faults
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell power
 - Statement: No single fault in the charger, its current-set and thermistor parts, the cell-side capacitors or the cell's leads shall charge the cell above 4.25 V or above its maker's standard charge current, or let it charge outside its temperature window; the cell's PCM stays the second layer.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: a BQ24073 whose CV or battery FET fails, or whose TS is held in range (DF-216, DF-217, (Was: DF-151)), charges the cell with only the PCM left.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a BQ24073 whose CV or battery FET fails, or whose TS is held in range (DF-216, DF-217, (Was: DF-151)), charges the cell with only the PCM left.
 - Source: validation_plan #89; IEC 62368-1 Annex B.4; IEC 62133-2.
 - Method: A, T
 - Verified by: VER-98, VER-133, VER-134, VER-135, VER-169, VER-82, VER-88, VER-168
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. the phase moved to EVT with VER-98 (O-R9).
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. the phase moved to EVT with VER-98 (O-R9).
 
 ### REQ-BAT-10: Deep discharge
 - Level: subsystem
 - Board: both
 - Subsystem: cell power
 - Statement: After the firmware shuts down at its cutoff, the board's off-state drain plus the cell's PCM drain and its self-discharge shall keep the cell above its PCM's under-voltage trip for 2 months or more at 25 C, and for the period Alex sets at 45 C storage.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain. With both terms the figure may be nearer 1 month: Alex sets the number knowing them.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain. With both terms the figure may be nearer 1 month: Alex sets the number knowing them.
 - Source: Claude's estimate; validation_plan #33.
 - Method: A, T
 - Verified by: VER-103, VER-65, VER-146
@@ -575,24 +599,24 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-BAT-12: Cutoff accuracy
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell soc
 - Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest load the firmware draws (Linux running a GBA game, backlight at full).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: since 39cc07f the ESP32-S3's ADC1 reads VBAT/2 at 12 dB against its own reference: its total error after Espressif's calibration is +-50 mV at the pin (esp32-s3.txt:3804), +-100 mV of VBAT, measured with Wi-Fi off (3780-3781), and the datasheet does not split offset from gain, so a one-point gain set at charge-done (the charger's CV is +-1%) cannot be shown to meet the window: the per-unit point at 3.50 V does (VER-138, DF-225). U10 buffers the divider, so the pad's leakage does not flow through R17/R18's 235 kohm. Was: the 3V3-referenced ADC and its dropout knee, which left at 39cc07f.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design.py R17, R18, U10; pinmap.md Battery voltage; esp32-s3.txt:3779-3804 (ADC); mcp6001.txt:135-142; Claude's analysis (O-23, O-49).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: since 39cc07f the ESP32-S3's ADC1 reads VBAT/2 at 12 dB against its own reference: its total error after Espressif's calibration is +-50 mV at the pin (esp32-s3.txt:3804), +-100 mV of VBAT, measured with Wi-Fi off (3780-3781), and the datasheet does not split offset from gain, so a one-point gain set at charge-done (the charger's CV is +-1%) cannot be shown to meet the window: the per-unit point at 3.50 V does (VER-138, DF-225). U10 buffers the divider, so the pad's leakage does not flow through R17/R18's 235 kohm. Was: the 3V3-referenced ADC and its dropout knee, which left at 39cc07f.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py R17, R18, U10; pinmap.md Battery voltage; esp32-s3.txt:3779-3804 (ADC); mcp6001.txt:135-142; Claude's analysis (O-23, O-49).
 - Method: A, T
 - Verified by: VER-138, VER-139, VER-67
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. U10 (MCP6001) buffers VBAT_DIV onto IO1, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift, whose datasheet gives typical figures only (VER-138). The ADC's own +-50 mV at the pin is what the per-unit calibration at 3.50 V (REQ-TST-06) takes out; its drift with temperature and Wi-Fi is VER-139's and VER-67's.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. U10 (MCP6001) buffers VBAT_DIV onto IO1, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift, whose datasheet gives typical figures only (VER-138). The ADC's own +-50 mV at the pin is what the per-unit calibration at 3.50 V (REQ-TST-06) takes out; its drift with temperature and Wi-Fi is VER-139's and VER-67's.
 
 ### REQ-BAT-13: Charge timeout
 - Level: subsystem
 - Board: both
 - Subsystem: cell
 - Statement: A charge that has not terminated shall stop within 5 h +-20% of fast charge (and 30 min of pre-charge under 3.0 V), and the firmware shall show a charge fault until USB is re-plugged.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: a soft-shorted or damaged cell must not charge without end; the BQ24073's safety timers do it with TMR open, the firmware reads CHG at 2 Hz as the fault.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: BQ24073 datasheet (pin_review/u2.json pins 9 and 14); Claude's proposal (O-50).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a soft-shorted or damaged cell must not charge without end; the BQ24073's safety timers do it with TMR open, the firmware reads CHG at 2 Hz as the fault.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: BQ24073 datasheet (pin_review/u2.json pins 9 and 14); Claude's proposal (O-50).
 - Method: T
 - Verified by: VER-145
 - Phase: EVT
@@ -600,20 +624,20 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-BAT-14: Mating the cell
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell power
 - Statement: Plugging a 4.2 V cell into the cell's header with no USB shall not trip the PCM (the cell's voltage present after each plug), shall leave the device off, and shall peak the system rail at 4.5 V or less, 10 plugs out of 10.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: with no USB, U2's battery FET is on, so the plug connects C3 directly and about 25 uF more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: with no USB, U2's battery FET is on, so the plug connects C3 directly and about 25 uF more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226).
 - Source: Claude's analysis (O-42).
 - Method: A, T
 - Verified by: VER-140, VER-141
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-BAT-15: Cell leads protected
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell case
 - Statement: Both cell leads shall be sleeved (heat-shrink or a printed grommet) where they run along the board's routed hole edge to the cell's header, with 0 bare lead insulation against the FR4 edge, seen in the FAI and after the drop test.
 - Rationale: the routed edge wears the insulation and shorts CELL_P to the GND pour, with only the PCM left (DF-214).
@@ -622,14 +646,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-109, VER-93
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-BAT-16: Usable capacity per lot
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell
 - Statement: One cell per lot shall deliver 600 mAh or more from charge-done to the chosen cutoff at about 140 mA, with its capacity to 3.50 V and to 3.60 V recorded.
-- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.F) and the cutoff choice (DF-225) depend on it.
+- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.B) and the cutoff choice (DF-225) depend on it.
 - Source: Claude's proposal (O-58): Alex sets the lot limit.
 - Method: T
 - Verified by: VER-153
@@ -643,7 +667,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power usbc
 - Statement: With a cell in, the device shall run (3V3 in regulation) from 4.40-5.50 V at the USB-C connector, both plug orientations; with no cell, from 4.75-5.50 V; and it shall not limit-cycle on a source that folds back at 500 mA.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: USB 2.0 sources give 4.75-5.25 V; cables drop more; under the BQ24073's VIN-DPM (4.5 V) the input current is cut back and the cell makes up the rest, which a board with no cell cannot.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: USB 2.0 sources give 4.75-5.25 V; cables drop more; under the BQ24073's VIN-DPM (4.5 V) the input current is cut back and the cell makes up the rest, which a board with no cell cannot.
 - Source: USB 2.0 cl. 7.2.1; pin_review/u2.json pin 5 (VIN-DPM 4.5 V on USB500); validation_plan #51, #80.
 - Method: T
 - Verified by: VER-80, VER-83
@@ -652,29 +676,29 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-PWR-16: USB input range: charge
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power usbc
-- Statement: From 4.75-5.25 V at the USB-C connector the cell shall charge to done within REQ-PRD-04.F's time; between 4.40 V and 4.75 V the input current, whether the cell supplements the system, and whether the charge completes shall be measured and recorded.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the BQ24073 cuts its input current back at 4.5 V (VIN-DPM), so a weak source charges slowly or not at all.
+- Statement: From 4.75-5.25 V at the USB-C connector the cell shall charge to done within REQ-PRD-04.B's time; between 4.40 V and 4.75 V the input current, whether the cell supplements the system, and whether the charge completes shall be measured and recorded.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the BQ24073 cuts its input current back at 4.5 V (VIN-DPM), so a weak source charges slowly or not at all.
 - Source: Claude's analysis (O-24, F-9); pin_review/u2.json.
 - Method: T
 - Verified by: VER-80, VER-102
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. decision for Alex after VER-80: raise the lower bound, or accept (PLAN.md decision DEC-15).
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. decision for Alex after VER-80: raise the lower bound, or accept (PLAN.md decision DEC-15).
 
 ### REQ-PWR-02: Hot-plug peaks
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power usbc
 - Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at or under the charger's over-voltage minimum less 0.2 V, and every pin fed from VBUS (the charger's, the FUSB303B's, the VBUS switch's) shall stay 0.3 V or more under its absolute maximum.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: REQ-PWR-14's transient rule: EN1 0.3 V under its 7 V absolute maximum (6.7 V), U3's EN (6 V absolute) with margin; the OVP limit from its minimum, not its 6.6 V nominal (O-R18); VSYS is U2's regulated OUT.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: REQ-PWR-14's transient rule: EN1 0.3 V under its 7 V absolute maximum (6.7 V), U3's EN (6 V absolute) with margin; the OVP limit from its minimum, not its 6.6 V nominal (O-R18); VSYS is U2's regulated OUT.
 - Source: pin_review/u2.json (IN 28 V absolute, OVP 6.6 V, EN1 7 V), pin_review/u3.json (EN 6 V).
 - Method: A, T
 - Verified by: VER-12, VER-71
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. bringup.md 5.6 still describes the old charger's simulation (DEF-21; Was: the TP4056 design's). u2.json quotes only OVP's 6.6 V nominal: VER-34 takes SLUS810N's minimum into it (pin_review is outside hardware/vv) before VER-12 is built.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. bringup.md 5.6 still describes the old charger's simulation (DEF-21; Was: the TP4056 design's). u2.json quotes only OVP's 6.6 V nominal: VER-34 takes SLUS810N's minimum into it (pin_review is outside hardware/vv) before VER-12 is built.
 
 ### REQ-PWR-03: LDO enable never above its input
 - Level: subsystem
@@ -693,26 +717,26 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power
 - Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for the system rail's range on the cell and on USB and for loads from 0 to the 3V3 budget of REQ-PWR-20.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the module's VDD33 is 3.0-3.6 V (esp32-s3-wroom-1.txt:1596) and the panel's logic supply 3.3 V maximum; the TLV75733P is +-1.5% over TJ -40 to 125 C (tlv757p.txt:255) and its load regulation 0.060 V/A (260); 620 mA is VER-31's peak in a Wi-Fi TX burst.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: tlv757p.txt:252-260; esp32-s3-wroom-1.txt:1596; ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-227).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the module's VDD33 is 3.0-3.6 V (esp32-s3-wroom-1.txt:1596) and the panel's logic supply 3.3 V maximum; the TLV75733P is +-1.5% over TJ -40 to 125 C (tlv757p.txt:255) and its load regulation 0.060 V/A (260); 620 mA is VER-31's peak in a Wi-Fi TX burst.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: tlv757p.txt:252-260; esp32-s3-wroom-1.txt:1596; ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-227).
 - Method: T
 - Verified by: VER-83, VER-235
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-PWR-05: 3V3 through the unplug
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power
 - Statement: Through the USB-to-cell hand-over at full load (backlight 100%, sound playing, Linux running a GBA game), every rail shall stay inside its range (REQ-PWR-20) and the device shall not reset.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the module's VDD33 minimum is 3.0 V (esp32-s3-wroom-1.txt:1596); the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET, VSYS's copper to U3 and the TLV75733P's dropout: 2.976 V at 3.50 V in a TX burst (VER-235, DF-210).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: esp32-s3-wroom-1.txt:1596; tlv757p.txt:298; bq24074.txt:724; design.py U2.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the module's VDD33 minimum is 3.0 V (esp32-s3-wroom-1.txt:1596); the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET, VSYS's copper to U3 and the TLV75733P's dropout: 2.976 V at 3.50 V in a TX burst (VER-235, DF-210).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: esp32-s3-wroom-1.txt:1596; tlv757p.txt:298; bq24074.txt:724; design.py U2.
 - Method: A, T
 - Verified by: VER-70
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-PWR-06: Hand-over time
 - Level: subsystem
@@ -731,7 +755,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power cell
 - Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: designed under 30 uA at 25 C: 26.8 uA at a 4.2 V cell (VER-103: U2 6.5, U3 1.0 (tlv757p.txt:265), R17 into U10's unpowered input 7.9, U7 8.4 on a stand-in, the FETs' leakage 3.0); leakage rises with temperature (O-51).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: designed under 30 uA at 25 C: 26.8 uA at a 4.2 V cell (VER-103: U2 6.5, U3 1.0 (tlv757p.txt:265), R17 into U10's unpowered input 7.9, U7 8.4 on a stand-in, the FETs' leakage 3.0); leakage rises with temperature (O-51).
 - Source: bringup.md step 5.1; the 45 C number is Claude's estimate (O-51).
 - Method: T
 - Verified by: VER-65, VER-146
@@ -748,28 +772,28 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-211, VER-33
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the turn-on margin of the power key SW24 through Q1; the F1C200s board's power key is the DS Lite slider (REQ-PWR-21, DESIGN.md:64)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the turn-on margin of the power key SW24 through Q1; the RP2350B board's power key is the DS Lite slider (REQ-PWR-21, DESIGN.md:64)
 
 ### REQ-PWR-09: Turn-off after a reset or crash
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power soc
 - Statement: On the cell with no USB, after a watchdog reset or a panic, the power hold shall release and every rail fall below 0.5 V within 2 s of the power key or slider being released, unless the firmware takes the hold again in that time.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: a crashed unit must turn itself off, not drain the cell: IO21 resets as an input with no pull (pinmap.md 'Pins at reset') and R42 4.7k pulls it down (VER-239).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design.py R42; pinmap.md Power control; esp32-s3.txt:3748.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a crashed unit must turn itself off, not drain the cell: IO21 resets as an input with no pull (pinmap.md 'Pins at reset') and R42 4.7k pulls it down (VER-239).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py R42; pinmap.md Power control; esp32-s3.txt:3748.
 - Method: T
 - Verified by: VER-243, VER-105
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-PWR-10: No hang keeps it on
 - Level: subsystem
 - Board: both
 - Subsystem: power soc
 - Statement: Without USB, no firmware hang shall keep the device on for more than 10 s; every image, the self-test included, shall enable the watchdog before any blocking init.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: hardware alone cannot tell a hang with PWR_HOLD high from normal play.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: validation_plan gate item 3 and Fable's note 1; pinmap.md.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: hardware alone cannot tell a hang with PWR_HOLD high from normal play.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: validation_plan gate item 3 and Fable's note 1; pinmap.md.
 - Method: I, T
 - Verified by: VER-104, VER-105
 - Phase: EVT
@@ -777,23 +801,23 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-PWR-11: No turn-on from leakage
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power buttons
 - Statement: With 1 Mohm across the power slider's contacts (or seat 1's Start, if it is the power key) and the cell at 4.2 V, the device shall stay off (every rail below 0.5 V) for 10 min.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: SW24 carries VSYS on one pad all the time; sweat, flux or a pressed cap can bridge it (DF-242). The Starts left the power path at 39cc07f (Was: both Start domes).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design.py R13, R15, SW24; tlv757p.txt:328-331; 2n7002_cj.txt:55; VER-239's output.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: SW24 carries VSYS on one pad all the time; sweat, flux or a pressed cap can bridge it (DF-242). The Starts left the power path at 39cc07f (Was: both Start domes).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py R13, R15, SW24; tlv757p.txt:328-331; 2n7002_cj.txt:55; VER-239's output.
 - Method: T, A
 - Verified by: VER-240
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-PWR-12: USB input current
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power usbc
 - Statement: From a default-power USB source (CC at 0.25-0.61 V) the input current shall be 500 mA or less within 2 s of plug-in.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: U2's USB500 limit is 475 mA (EN1 high by R43, EN2 grounded); the charge and the system share it.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: U2's USB500 limit is 475 mA (EN1 high by R43, EN2 grounded); the charge and the system share it.
 - Source: USB 2.0 cl. 7.2.1; pin_review/u2.json pins 5 and 6; validation_plan #94.
 - Method: T
 - Verified by: VER-81
@@ -803,20 +827,20 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-PWR-13: VBUS capacitance and inrush
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power usbc
 - Statement: The board shall present 10 uF or less on VBUS and take 50 uC or less at a plug-in at 5.25 V (USB 2.0 cl. 7.2.4.1), each capacitor at its tolerance and its DC bias, when the console is a sink.
 - Rationale: USB 2.0's inrush limit is 10 uF or 50 uC at the plug; the old power path's 265 uC came from its diode charging VSYS (Was: the TP4056 design's D5, which left in 2d1124d).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, U2.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, U2.
 - Method: A
 - Verified by: VER-99
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. no deviation is needed at be437f8 (VER-99). U2's current limit while it brings VSYS up is a datasheet claim; VER-71's scope picture shows it.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. no deviation is needed at be437f8 (VER-99). U2's current limit while it brings VSYS up is a datasheet claim; VER-71's scope picture shows it.
 
 ### REQ-PWR-14: Derating
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: In every mode (off, cell, USB, charging, hot plug, unplug): each IC's steady-state stress shall be at or below its recommended operating maximum and each transient at least 0.3 V below its absolute maximum; each passive and discrete (MLCC voltage, FET Vds and Vgs, diode VR and IF, resistor power) shall be at 80% or less of its rating, 90% for transients under 10 us; every exception named here.
 - Rationale: the old rule (80% of every absolute maximum) failed by construction on every 3.3 V part, so it could not tell an intended stress from an oversight (O-22).
@@ -837,14 +861,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-31, VER-83, VER-144
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the 3V3 budget in a Wi-Fi burst against the TLV75733P's 1 A; the F1C200s board has no Wi-Fi, and its rails are REQ-PWR-20
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the 3V3 budget in a Wi-Fi burst against the TLV75733P's 1 A; the RP2350B board has no Wi-Fi, and its rails are REQ-PWR-20
 
 ### REQ-PWR-17: A faulty USB source
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power usbc
 - Statement: A source putting 6-20 V on VBUS (a broken charger, a PD source stuck high) shall over-stress no part: the lowest VBUS that takes a part over its absolute maximum shall be 20 V or more, or the value Alex accepts.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 9.1 V and EN1 through R43 takes U2's EN1 (7 V) over at 12.4 V (VER-177, with R14 47k and R43 220k since 71737ae; Was: 6.9 V and 9.5 V with 10k and 100k).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 9.1 V and EN1 through R43 takes U2's EN1 (7 V) over at 12.4 V (VER-177, with R14 47k and R43 220k since 71737ae; Was: 6.9 V and 9.5 V with 10k and 100k).
 - Source: pin_review/u2.json, u3.json; Claude's analysis (O's sign-off objection on the cell path, DF-222).
 - Method: A, T
 - Verified by: VER-177, VER-97
@@ -862,7 +886,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-211, VER-213, VER-33
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the power key SW24; the F1C200s board's power key is the DS Lite slider (REQ-PWR-21)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the power key SW24; the RP2350B board's power key is the DS Lite slider (REQ-PWR-21)
 
 ### REQ-PWR-19: A jig on J7 does not back-feed U3
 - Level: subsystem
@@ -874,27 +898,28 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-159, VER-212
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): J7's 3V3 pogo pad back-feeding U3; the lesson carries as DF-241 on the F1C200s board's debug connector
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): J7's 3V3 pogo pad back-feeding U3; the lesson carries as DF-241 on the RP2350B board's debug connector
 
-### REQ-PWR-20: The F1C200s's rails
+### REQ-PWR-20: The RP2350B's rails
 - Level: subsystem
-- Board: f1c200s
-- Subsystem: power soc
-- Statement: The board shall supply the F1C200s's core, its in-package DRAM and its IO, each inside the F1C200s datasheet's recommended range at the chip's peak load and the regulator's tolerance, and bring them up and down in the order the datasheet gives.
-- Rationale: the F1C200s has 64 MB of DRAM inside its package and three or more supply domains (about 1.1 V core, 2.5 V DRAM and 3.3 V IO, from memory: to confirm, the datasheet is not on disk).
-- Source: next_spin_requirements.md:26 ('Allwinner F1C200s, QFN-88, 64 MB DDR in the package'); the F1C200s datasheet (to download: VER-233).
+- Board: rp2350b
+- Subsystem: power soc storage
+- Statement: The board shall supply the RP2350B's IO and USB and ADC rails and the flash's VCC at 3.3 V, and its 1.1 V core from the chip's on-chip regulator with the inductor, capacitors and VREG AVDD filter of Raspberry Pi's minimal design, each inside the RP2350 datasheet's and the GD25Q128 datasheet's recommended range at the chip's peak load and the regulator's tolerance.
+- Rationale: the RP2350B has no flash inside, so the flash is a second load on the 3.3 V rail; its core is made on the chip. The ranges are the datasheets' (not on disk: VER-233).
+- Source: next_spin_requirements.md:26 ('Raspberry Pi's 2-layer RP2350B minimal design, flash included, copied as drawn'); the RP2350 datasheet and the GD25Q128 datasheet (to download: VER-233).
 - Method: A, T
 - Verified by: VER-235, VER-231, VER-83, VER-249
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29. It was the F1C200s's core, DRAM and IO rails and their order (tag vv-f1c200s-final).
 
 ### REQ-PWR-21: The power slider
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power buttons case
 - Statement: The DS Lite power slider in the right edge shall turn the device on when slid, and off when held for 1 s or more; if no board switch fits the slider, seat 1's Start shall be the power key, a press turning it on and a 1 s hold turning it off.
 - Rationale: the power key is Alex's choice. The 1 s hold is Claude's proposal.
-- Source: DESIGN.md:64 ('Power is the DS Lite power slider in the right edge, taken from the DS Lite button kit: slide it to turn on, hold it to turn off. If no board switch fits the slider, seat 1's Start is the power key instead: press to turn on, hold to turn off. (2026-10-28)').
+- Source: DESIGN.md:59 ('Power is the DS Lite power slider in the right edge, taken from the DS Lite button kit: slide it to turn on, hold it to turn off. If no board switch fits the slider, seat 1's Start is the power key instead: press to turn on, hold to turn off. (2026-10-28)').
 - Method: A, T
 - Verified by: VER-239, VER-240
 - Phase: EVT
@@ -910,7 +935,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: A, T
 - Verified by: VER-234, VER-225
 - Phase: ORDER
-- Status: PROPOSED
+- Status: DROPPED
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): USB host mode left the design on 2026-10-29: the console is a USB device and never sources VBUS; its statement is at the tag
 
 ## Subsystem: core (MCU), the ESP32-S3 module: DROPPED with the ESP32-S3 board
 
@@ -1085,39 +1111,41 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Status: DROPPED
 - Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 module's requirement; the F1C200s's are REQ-SOC-01 to -08
 
-## Subsystem: the chip (SOC), the F1C200s, since 2026-10-28
+## Subsystem: the chip (SOC), the RP2350B and its flash, since 2026-10-29
 
-### REQ-SOC-01: Boot from the microSD card
+### REQ-SOC-01: Run in place from the external flash
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc storage
-- Statement: At every power-on with a card in, the F1C200s's boot ROM shall load the bare-metal image from the microSD card and run it, 20 of 20 power-ons, on a card formatted by a computer.
-- Rationale: the card is the only storage (no SPI flash).
-- Source: next_spin_requirements.md:27 ('microSD only ... the boot ROM tries SD first').
+- Statement: At every power-on the RP2350B's boot ROM shall find the bare-metal image in the GD25Q128 on its QSPI pins and run it in place (XIP), 20 of 20 power-ons, with the whole 16 MB read back through the XIP window matching the image's CRC and the flash's JEDEC ID reading as the GD25Q128's.
+- Rationale: the RP2350B has no flash inside; the one 16 MB flash holds the program and the sound. The GD25Q128's ID is 0xC84018 from memory (to confirm from its datasheet: VER-233).
+- Source: DESIGN.md:71; next_spin_requirements.md:13, :24-25 (the chip, the flash).
 - Method: T
-- Verified by: VER-222, VER-237
+- Verified by: VER-252, VER-237
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29. It was the F1C200s's boot from the microSD card (tag vv-f1c200s-final).
 
-### REQ-SOC-02: The bare-metal Rust core on the F1C200s
+### REQ-SOC-02: The bare-metal Rust core on the RP2350B
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc
-- Statement: The no_std Rust battler core shall build for the F1C200s's ARM9 (armv5te) and run from its 64 MB in-package DRAM after the image's own documented DRAM init (no vendor binary), with today's 420 KB of RAM and 1.4 MB of code and data.
-- Rationale: a bare-metal Rust boot is required; the core's size on the RP2350 today.
-- Source: next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'), :19 ('a Rust target and documented boot ROM and RAM init'); DESIGN.md:90.
+- Statement: The no_std Rust battler core shall build for the RP2350B's Cortex-M33 cores and run from the flash in place with its data in the chip's 520 KB of SRAM, with today's 420 KB of RAM and 1.4 MB of code and data, and 100 KB of SRAM or more free.
+- Rationale: a bare-metal Rust boot is required; the core's size on the RP2350 today (the stripboard Pico 2, an RP2350A with the same cores and SRAM). The 100 KB free is Claude's proposal.
+- Source: next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); DESIGN.md:84.
 - Method: T, A
-- Verified by: VER-222, VER-237
+- Verified by: VER-252, VER-237
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29. It was the F1C200s's ARM9 running from its DRAM (tag vv-f1c200s-final).
 
 ### REQ-SOC-03: The crystal
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc
-- Statement: The F1C200s's 24 MHz crystal shall start at every power-up across the cell's range and on USB, with load capacitors from the crystal's and the chip's datasheets.
-- Rationale: the clock every bus derives from; 24 MHz from memory, to confirm (the datasheet is not on disk).
-- Source: the F1C200s datasheet (to download: VER-233).
+- Statement: The RP2350B's 12 MHz crystal shall start at every power-up across the cell's range and on USB, with the load capacitors and series resistor of Raspberry Pi's minimal design.
+- Rationale: the clock the chip and its USB derive from; 12 MHz is the RP2350's reference clock (to confirm: the datasheet is not on disk).
+- Source: the RP2350 datasheet and the minimal design (to download: VER-233).
 - Method: A, T
 - Verified by: VER-198, VER-237
 - Phase: EVT
@@ -1125,11 +1153,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-SOC-04: Reset with no reset button
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc power
-- Statement: With no reset button, the F1C200s shall come out of reset by its power-on reset at every power-up, and a hung firmware shall reset by the watchdog within 2 s.
+- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, and a hung firmware shall reset by the watchdog within 2 s.
 - Rationale: there is no reset button; the watchdog and the power slider are the ways out of a hang (REQ-PWR-10).
-- Source: DESIGN.md:68 ('There is no separate reset button. (2026-10-28)').
+- Source: DESIGN.md:63 ('There is no separate reset button. (2026-10-28)').
 - Method: A, T
 - Verified by: VER-198, VER-105
 - Phase: EVT
@@ -1137,23 +1165,23 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-SOC-05: The pin plan
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc display storage usbc audio buttons
-- Statement: Every function shall sit on an F1C200s pin that has it in the datasheet's pin table: the 8-bit 8080 bus and its control lines, SD0's 4 bits, USB OTG and its ID, the FUSB303B's I2C and interrupt, the audio output, the 20 contacts and the power slider, and a UART for the debug connector, with 0 mux conflicts and the boot pins at their boot levels.
-- Rationale: a QFN-88 has a fixed pin-mux; a function on a pin without it is a respin.
-- Source: next_spin_requirements.md:12, :26-29; the F1C200s datasheet (to download: VER-233).
+- Statement: Every function shall sit on an RP2350B pin that has it in the datasheet's pin table: the display bus and its control lines, the audio output, the 20 contacts and the power slider, the cell sense on an ADC pin, a UART or the SWD pins for the debug connector, with USB on the chip's own USB pins and the flash on the QSPI pins, 0 mux conflicts, and no function left on a GPIO the datasheet reserves.
+- Rationale: a QFN-80 has 48 GPIOs and fixed special pins (QSPI, USB, ADC on GPIO40 to 47); a function on a pin without it is a respin.
+- Source: next_spin_requirements.md:12, :24-25; the RP2350 datasheet (to download: VER-233).
 - Method: A, I
 - Verified by: VER-232
 - Phase: ORDER
 - Status: PROPOSED
 
-### REQ-SOC-06: Chip identity per unit
+### REQ-SOC-06: Chip and flash identity per unit
 - Level: board
-- Board: f1c200s
-- Subsystem: soc
-- Statement: Each unit shall report an F1C200s by its chip ID with 64 MB of DRAM passing a full-size memory test, logged against its serial.
-- Rationale: a substituted or remarked chip, or a part with the 32 MB F1C100s die, is caught on the bench.
-- Source: next_spin_requirements.md:26 (64 MB DDR in the package).
+- Board: rp2350b
+- Subsystem: soc storage
+- Statement: Each unit shall report an RP2350B in a QFN-80 and a GD25Q128 by its JEDEC ID, with its 16 MB reading back without error, logged against its serial.
+- Rationale: a substituted or remarked chip or flash (a 4 MB or 8 MB flash, a part with its own flash inside, a QFN-60 RP2350A) is caught on the bench.
+- Source: next_spin_requirements.md:24-25 (the chosen chip and flash).
 - Method: T
 - Verified by: VER-242
 - Phase: EVT
@@ -1161,89 +1189,104 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-SOC-07: The chip's heat
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc case
-- Statement: The F1C200s's case temperature shall stay inside its datasheet limit in every mode at 40 C ambient in the closed case.
+- Statement: The RP2350B's temperature shall stay inside its datasheet limit in every mode at 40 C ambient in the closed case.
 - Rationale: the limit is the datasheet's (not on disk).
-- Source: the F1C200s datasheet (to download: VER-233); IEC 62368-1 for the skin (REQ-THM-01).
+- Source: the RP2350 datasheet (to download: VER-233); IEC 62368-1 for the skin (REQ-THM-01).
 - Method: A, T
-- Verified by: VER-238, VER-86, VER-250
+- Verified by: VER-238, VER-86, VER-257
 - Phase: EVT
 - Status: PROPOSED
 
 ### REQ-SOC-08: Debug access and the battle log
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: soc
-- Statement: With the case open, the debug connector shall give the F1C200s's UART console and the rails' test pads; debug builds shall keep every battle line on the card and show the log on the next boot, and production builds shall have it off.
+- Statement: With the case open, the debug connector shall give the RP2350B's SWD pins and a UART console and the rails' test pads; debug builds shall keep every battle line in a log region of the flash and show the log on the next boot, and production builds shall have it off.
 - Rationale: bring-up needs a console; the battle log is Alex's debug aid.
-- Source: DESIGN.md:69 ('The board has test pads and a debug connector for bring-up.'); DESIGN.md:70 ('Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off.').
+- Source: DESIGN.md:64 ('The board has test pads and a debug connector for bring-up.'); DESIGN.md:65 ('Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off.').
 - Method: D
 - Verified by: VER-158, VER-241
 - Phase: EVT
 - Status: PROPOSED
 
-## Subsystem: USB-C roles (USB), since 2026-10-28
-
-### REQ-USB-01: USB-C roles
+### REQ-SOC-09: The flash's footprint and wiring follow the minimal design
 - Level: subsystem
-- Board: f1c200s
-- Subsystem: usbc
-- Statement: The USB-C port shall attach as a device to a computer or a charger, as a host to a phone, a dongle or an OTG adapter, and on a USB-C to USB-C cable between two consoles exactly one shall be host, 20 of 20 plug-ins each way, the FUSB303B's result reaching the F1C200s's OTG ID.
-- Rationale: one port that can be either end of a cable.
-- Source: next_spin_requirements.md:28 ('FUSB303B role controller (C895444) driving the OTG ID pin'); DESIGN.md:77 ('one USB-C port that can act as either end of a cable').
-- Method: T, A
-- Verified by: VER-225, VER-234, VER-80
+- Board: rp2350b
+- Subsystem: soc storage
+- Statement: The GD25Q128's land pattern shall match its package drawing, and its wiring (QSPI SCLK, QSPI SS, QSPI SD0 to SD3 to the RP2350B's QSPI pins of the same name, its VCC and decoupling, and the QSPI SS line's pull-up and BOOTSEL pad) shall match Raspberry Pi's 2-layer RP2350B minimal design net for net, with 0 differences, and no QSPI track shall be more than 2 mm longer than the minimal design's longest.
+- Rationale: the core layout is copied from Raspberry Pi's minimal design, flash included (Alex, 2026-10-29); a swapped SD1 and SD2, a wrong land or a long QSPI track is a board that does not boot. The 2 mm is Claude's proposal.
+- Source: next_spin_requirements.md:26 ('Raspberry Pi's 2-layer RP2350B minimal design, flash included, copied as drawn'); hardware/ref_design/board/lib/battler.pretty/RP2350B_QFN80_RPi.kicad_mod (the chip's footprint from it, under RPI-RP2350B-MINIMAL_LICENSE.txt); the GD25Q128 datasheet (to download: VER-233).
+- Method: A, I
+- Verified by: VER-253, VER-254, VER-125
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: New on 2026-10-29. The earlier RP board's copied core is at tag vv-rp2354b-final (its in-package flash needed none of this).
 
-### REQ-USB-02: The USB data pair on two layers
+## Subsystem: USB-C device (USB), since 2026-10-29
+
+### REQ-USB-01: USB-C as a device
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: usbc
-- Statement: D+ and D- shall run as a 90 ohm +-15% differential pair from the receptacle to the F1C200s over unbroken ground on the 2-layer board, length-matched within 2 mm with stubs of 3.5 mm or less, so high speed (480 Mbps) works, or the firmware shall hold the port at full speed and REQ-PRD-16's copy time shall be re-checked.
-- Rationale: the F1C200s's USB is high speed (from memory, to confirm); a 2-layer 1.6 mm board makes 90 ohm hard. The numbers are Claude's proposal from USB 2.0.
-- Source: USB 2.0 cl. 7.1; DESIGN.md:66 (two layers).
+- Statement: The USB-C port shall attach as a device (a sink, Rd 5.1 kohm on CC1 and on CC2, no role controller) to an Android phone, a computer or a charger, in both plug orientations, 20 of 20 plug-ins each way, enumerate as the console's WebUSB device, and never source VBUS.
+- Rationale: the console is a USB device only (DESIGN.md:83); the phone is the host and carries the network.
+- Source: DESIGN.md:83; next_spin_requirements.md:16 ('a USB device port'); USB Type-C 1.x (Rd on each CC, to confirm the tolerance).
+- Method: T, A
+- Verified by: VER-251, VER-195, VER-80
+- Phase: ORDER
+- Status: PROPOSED
+- Notes: Rewritten on 2026-10-29. It was the FUSB303B's host and device roles and the OTG ID pin (tag vv-f1c200s-final).
+
+### REQ-USB-02: The USB data pair
+- Level: subsystem
+- Board: rp2350b
+- Subsystem: usbc
+- Statement: D+ and D- shall run side by side from the receptacle to the RP2350B over unbroken ground on the 2-layer board, through the series resistors of Raspberry Pi's minimal design, length-matched within 2 mm with stubs of 3.5 mm or less, for full speed (12 Mbps).
+- Rationale: the RP2350's USB is full speed, so no 480 Mbps impedance target is claimed; the pair is still kept tight and over ground for ESD and noise. The 2 mm and 3.5 mm are Claude's proposal from USB 2.0.
+- Source: USB 2.0 cl. 7.1; DESIGN.md:61 (two layers); the RP2350 datasheet and the minimal design (to download: VER-233).
 - Method: A
 - Verified by: VER-236, VER-108
 - Phase: ORDER
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29. It was the F1C200s's high-speed pair at 90 ohm (tag vv-f1c200s-final).
 
 ## Subsystem: display (DSP)
 
 ### REQ-DSP-01: Panel interface
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display soc
-- Statement: The panel shall run its 8-bit 8080 bus (IM2-0 = 011, CSX and RDX as the bus needs) from the F1C200s's LCD controller in its CPU (i80) mode, or from GPIO if the chip gate shows the controller cannot (VER-224).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: proves the interface straps and the bus; since 39cc07f the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/living/display_parallel_proposal.md). Was: 4-wire SPI.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: er-tft035ips-6.txt:709-722; design.py PANEL.
+- Statement: The panel shall run its 8-bit 8080 bus (IM2-0 = 011, CSX and RDX as the bus needs) from the RP2350B through a PIO state machine and DMA, or from GPIO if the chip gate shows PIO cannot (VER-224).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: proves the interface straps and the bus; since 39cc07f the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/living/display_parallel_proposal.md). Was: 4-wire SPI.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: er-tft035ips-6.txt:709-722; design.py PANEL.
 - Method: T
 - Verified by: VER-224, VER-60
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-DSP-02: Write speed
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display soc
 - Statement: 8080 writes at the firmware's write clock shall draw 10 full 320 x 480 frames of a checker pattern with 0 corrupted pixels, the clock inside the ILI9488's write cycle with its tolerance.
 - Rationale: the ILI9488's parallel write cycle is 40 ns (twc, ili9488.txt:16159), so 25 MHz is the limit with 0 ns spare (VER-199, DF-206); RGB565 is two bytes a pixel over the 8-bit bus.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: ili9488.txt:16159-16172; pinmap.md Display.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ili9488.txt:16159-16172; pinmap.md Display.
 - Method: T
 - Verified by: VER-61, VER-199
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-DSP-03: Panel pin map
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
 - Statement: J3 pin j shall carry panel pin 51 - j for all 50 contacts, so LED_A (panel pin 1) is on J3 pin 50.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design.py display section; pin_review/panel.json; the ER-TFT035IPS-6's map since 79de1f7.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py display section; pin_review/panel.json; the ER-TFT035IPS-6's map since 79de1f7.
 - Method: A, T
 - Verified by: VER-02, VER-136
 - Phase: ORDER
@@ -1252,7 +1295,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-DSP-04: FPC fit
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display case
 - Statement: The panel's FPC tail shall be 0.30 +-0.05 mm thick (the ER-TFT035IPS-6's drawing: 0.3 +-0.03) and 25.5 +-0.07 mm wide, and the folded FPC shall reach J3 with 0.5-3 mm of slack and no crease.
 - Rationale: the FH12-50S's FPC specification; too short cannot mate, too long bows under the panel.
@@ -1264,23 +1307,23 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-DSP-05: Backlight current
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
 - Statement: At the firmware's highest duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance of the backlight driver's parts and the system rail's range on the cell and on USB.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the panel's 120 mA (6 x 20 mA); with R61 3.74k (71737ae, DEC-31) the worst case at 100% is 117.7 mA (VER-137). Was: 122.4 mA with R61 3.9k at be437f8.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the panel's 120 mA (6 x 20 mA); with R61 3.74k (71737ae, DEC-31) the worst case at 100% is 117.7 mA (VER-137). Was: 122.4 mA with R61 3.9k at be437f8.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
 - Method: T, A
 - Verified by: VER-62, VER-137, VER-05
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-DSP-06: Backlight transient
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
 - Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the board's 3.74k on BL_PWM (IO9's LEDC: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the board's 3.74k on BL_PWM (IO9's LEDC: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05).
 - Source: board/sim/backlight_results.txt (to re-run).
 - Method: A, T
 - Verified by: VER-05, VER-62
@@ -1289,10 +1332,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-DSP-07: Backlight headroom
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
 - Statement: At the firmware's maximum duty and VSYS 3.5 V the LED current shall drop by 5% or less from its value at 4.2 V for LED Vf up to 3.2 V, and by 10% or less for Vf up to 3.4 V (the newer datasheet's maximum).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: brightness should not sag until the cutoff; at 18.0 mA an LED (54.1 mA a pin over three, nominal, R61 3.74k) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: brightness should not sag until the cutoff; at 18.0 mA an LED (54.1 mA a pin over three, nominal, R61 3.74k) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
 - Source: pin_review/panel.json; design_review.md Backlight.
 - Method: A, T
 - Verified by: VER-05, VER-137, VER-62
@@ -1309,11 +1352,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-05, VER-62
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the loop stability of the ESP32-S3 board's two discrete backlight sinks; the F1C200s board's backlight driver is not chosen (REQ-DSP-05 to -07 and -09 hold the panel's limits)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the loop stability of the ESP32-S3 board's two discrete backlight sinks; the RP2350B board's backlight driver is not chosen (REQ-DSP-05 to -07 and -09 hold the panel's limits)
 
 ### REQ-DSP-09: Backlight off when 3V3 is off
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
 - Statement: With 3V3 off, a VSYS hot plug shall produce less than 5 mA of LED current for less than 10 us.
 - Rationale: no flash at plug-in while the device is off.
@@ -1325,29 +1368,29 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-DSP-10: Tearing-effect signal
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display soc
-- Statement: With TEON set, the panel's TE pin shall reach an F1C200s input and show one TE pulse per frame at 60 Hz +-10%.
+- Statement: With TEON set, the panel's TE pin shall reach an RP2350B input and show one TE pulse per frame at 60 Hz +-10%.
 - Rationale: firmware starts frames on it to avoid tearing.
 - Source: bringup.md display step 6.
 - Method: T
 - Verified by: VER-63
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-DSP-11: Redraw time
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display soc
 - Statement: A full-screen 320 x 480 RGB565 redraw shall take 16.7 ms or less (60 fps), so a GBA frame (240 x 160, scaled) reaches the panel every 16.7 ms.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the PSRAM holds the 307,200 B frame (docs/living/esp32s3_board_proposal.md). Was: 220 ms over SPI.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: ili9488.txt:16159; docs/living/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the PSRAM holds the 307,200 B frame (docs/living/esp32s3_board_proposal.md). Was: 220 ms over SPI.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ili9488.txt:16159; docs/living/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
 - Method: A, T
 - Verified by: VER-224, VER-61, VER-199
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. PLAN.md decision DEC-13 was taken in the design: the 8080 8-bit bus (docs/living/display_parallel_proposal.md, 39cc07f); Alex sets the two numbers.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. PLAN.md decision DEC-13 was taken in the design: the 8080 8-bit bus (docs/living/display_parallel_proposal.md, 39cc07f); Alex sets the two numbers.
 
 ### REQ-DSP-12: Backlight halves match at low duty
 - Level: subsystem
@@ -1365,7 +1408,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-AUD-01: Loudness
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: audio
 - Statement: A full-scale 1 kHz sine shall deliver 0.35 W or more into the 8 ohm speaker (4.75 V peak-to-peak across it or more) on a 3.8 V cell.
 - Rationale: designed 0.4-0.5 W on the cell, about 0.5 W on USB (VSYS 4.4 V); it clips below a 3.7 V cell.
@@ -1385,14 +1428,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-64, VER-100
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's 312.5 kHz PWM audio carrier; the F1C200s board's audio source is its own codec (to confirm at NM-04)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's 312.5 kHz PWM audio carrier; the RP2350B board's audio source is its own codec (to confirm at NM-04)
 
 ### REQ-AUD-03: Bandwidth
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: audio
 - Statement: The audio chain shall be -3 dB at 10 kHz or higher and at 50 Hz or lower.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: a 15 mm speaker reproduces little above 10 kHz; since 39cc07f the 1.5k filter gives 9.7 kHz nominal and 8.2 kHz at the worst corner (VER-100: FAIL), while design.py's comment says 6.7 kHz (its sim): Alex restates the number or the filter changes (DEF-93).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a 15 mm speaker reproduces little above 10 kHz; since 39cc07f the 1.5k filter gives 9.7 kHz nominal and 8.2 kHz at the worst corner (VER-100: FAIL), while design.py's comment says 6.7 kHz (its sim): Alex restates the number or the filter changes (DEF-93).
 - Source: design_review.md Audio.
 - Method: A, T
 - Verified by: VER-100, VER-64
@@ -1401,7 +1444,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-AUD-04: Amplifier heat
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: audio
 - Statement: After 10 min of a continuous full-scale 1 kHz tone on USB at 25 C, the amplifier's top shall be 85 C or less.
 - Rationale: about 0.54 W in an SOIC-8; the case skin limit is REQ-THM-01.
@@ -1410,28 +1453,28 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-64, VER-200
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-AUD-05: Amplifier off and wake
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: audio soc
 - Statement: With the amplifier's enable off the amplifier shall draw 10 uA or less and be silent; with it on it shall reach full level within 50 ms with no pop over 10 mV at the speaker.
 - Rationale: 4.2 uA shutdown typical; about 100 ms to charge the bypass capacitor.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: FM8002A datasheet p.3 (pin_review/u7.json); pinmap.md Audio.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: FM8002A datasheet p.3 (pin_review/u7.json); pinmap.md Audio.
 - Method: T
 - Verified by: VER-64, VER-196
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-AUD-06: Speaker rating
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: audio
 - Statement: The firmware shall cap full scale to the speaker's rating: 0.5 W into 8 ohm for the GSPK151035PN, or the rating of the speaker the release names.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: bom.md (INGHAi GSPK151035PN, C530539, 0.5 W); Claude's review (O-31).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: bom.md (INGHAi GSPK151035PN, C530539, 0.5 W); Claude's review (O-31).
 - Method: I
 - Verified by: VER-128
 - Phase: EVT
@@ -1443,9 +1486,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Subsystem: buttons
-- Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 15 kohm of pill resistance, against whatever pull-up and input threshold the F1C200s board reads it through.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 47k (+-5%) pull-up (RN1-RN4 since 71737ae, DEC-24) a pill reads pressed under about 17 kohm (Was: the RP2350's 50k internal pull-up allowed 10 kohm; 3.7 kohm with 10k at be437f8): DF-230.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: validation_plan gate item 5, #42, #137; TI SN74HC165 VIL.
+- Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 15 kohm of pill resistance, against whatever pull-up and input threshold the RP2350B board reads it through.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 47k (+-5%) pull-up (RN1-RN4 since 71737ae, DEC-24) a pill reads pressed under about 17 kohm (Was: the RP2350's 50k internal pull-up allowed 10 kohm; 3.7 kohm with 10k at be437f8): DF-230.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: validation_plan gate item 5, #42, #137; TI SN74HC165 VIL.
 - Method: T
 - Verified by: VER-45, VER-56, VER-248
 - Phase: EVT
@@ -1457,7 +1500,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: Leakage between a contact's two combs shall be 100 Mohm or more at 4.2 V, clean and after 24 h at high humidity.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the power key SW24 carries VSYS on one pad, so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the power key SW24 carries VSYS on one pad, so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
 - Source: validation_plan gate item 5, #185.
 - Method: T
 - Verified by: VER-46, VER-248
@@ -1526,11 +1569,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-BTN-08: Start/Select domes
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: buttons case
 - Statement: Each 4 mm metal dome (HYP 600-415S-260) shall sit with its rim on its footprint's ring all round at 0.1 mm of placement error, close under its cap's full travel, and rest open with its plunger 0.05 mm or more clear of its apex at the measured Start/Select strip.
 - Rationale: a dome pressed at rest under SW21 or SW23 turns the device on in the case for good (DF-230); the strip's plunger height is an estimate (ss_lift).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
 - Method: A, I
 - Verified by: VER-178, VER-180, VER-48
 - Phase: CASE
@@ -1546,14 +1589,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-198, VER-199, VER-56, VER-179
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's 24-bit chain of three 74HC165s; REQ-BTN-10 states the scan for the F1C200s board
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's 24-bit chain of three 74HC165s; REQ-BTN-10 states the scan for the RP2350B board
 
 ### REQ-BTN-10: Every input read every 2 ms
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: buttons soc
-- Statement: Every contact and the power slider shall be read at least every 2 ms, so a press of 10 ms or more is never missed and a GBA frame sees the input from the frame before.
-- Rationale: the F1C200s may read the contacts on GPIO or through a chain; the scan rate is the firmware's. Claude's proposal.
+- Statement: Every contact and the power slider shall be read at least every 2 ms, so a press of 10 ms or more is never missed.
+- Rationale: the RP2350B may read the contacts on GPIO or through a chain; the scan rate is the firmware's. Claude's proposal.
 - Source: Claude's estimate; Alex to set it.
 - Method: T, A
 - Verified by: VER-56, VER-199
@@ -1564,7 +1607,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-01: Heights inside the case
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: Every part on the board shall clear its local case limit by 0.2 mm or more, using heights from each part's drawing or a measurement, with 0 parts on guessed heights.
 - Rationale: check_fit guesses package heights today (DF-229).
@@ -1576,7 +1619,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-02: Stack closes
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: The Z stack (the tub's floor and pockets, cell, board, parts, speaker, panel, tape, the one-piece top) shall close with 0.2 mm or more of margin at worst-case tolerance including 0.4 mm of cell swelling.
 - Rationale: nominal fits fail at tolerance.
@@ -1588,7 +1631,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-03: Buttons work under the shell
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case buttons
 - Statement: Every cap shall sit and press its full dome travel (the D-pad rocked in 8 directions) with 0 contact with the shell, and at rest touch only its dome.
 - Rationale: a cap that drags or is preloaded feels wrong or sticks; the power key's cap held down keeps the device on.
@@ -1600,7 +1643,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-04: Assembly keyed
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: The board shall fit the tub in 1 orientation only, and each A/B/X/Y cap in 1 hole and 1 rotation only.
 - Rationale: no wrong assembly by hand.
@@ -1612,7 +1655,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-05: Opening and closing
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: The case shall survive 20 open/close cycles with its six M2 screws, with 0 cracked keys or grip ribs, 0 stripped bosses and 0 torn cell leads.
 - Rationale: the first PLA print's hooks snapped (DEF-15) and the one-piece top's joints are thin printed features (DF-232); service needs opening, and the cell comes out with the tub on its leads (DF-239).
@@ -1624,7 +1667,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-06: Parts stay put
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case cell
 - Statement: After the drop test the cell shall have moved 1 mm or less, the cell plug and the panel FPC shall still be seated, and the panel shall be uncracked.
 - Rationale: a loose cell or plug in a dropped handheld is a hazard and a fault.
@@ -1648,7 +1691,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-08: No unintended openings
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, the microSD opening, the power slider's slot, cap holes, speaker grille, screw holes).
 - Rationale: screw pilots and a notch once came through the face (DEF-19).
@@ -1657,14 +1700,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-113, VER-48
 - Phase: CASE
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-MEC-09: Screws engage
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: Each of the four side screws (H1-H4, under the screen band) shall engage 4.0 mm or more of its pilot above the board and end 0.5 mm or more short of the pilot's end; each of the two end screws (H5, H6, under the button ends) shall engage 3.0 mm or more and end 0.1 mm or more short.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31).
 - Source: case.scad; Claude's analysis (O-52).
 - Method: A, T
 - Verified by: VER-147, VER-92
@@ -1673,10 +1716,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-10: Panel stays bonded
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case display
 - Statement: The panel shall stay bonded in the top's pocket, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229).
 - Source: Claude's review (O-59).
 - Method: T
 - Verified by: VER-154
@@ -1685,23 +1728,23 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-MEC-11: Connector access
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: Every connector's mouth (USB-C with a mated plug, the cell's plug and wires, the panel's FPC lead-in, the speaker's plug and its leads) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and the microSD slot's body shall clear its opening in the case by 0.2 mm a side.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the USB-C opening was fixed twice; the SD slot's body is 13.85 mm wide in a 14.0 mm opening at 39cc07f (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the USB-C opening was fixed twice; the SD slot's body is 13.85 mm wide in a 14.0 mm opening at 39cc07f (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes.
 - Source: Claude's review (F-28).
 - Method: A
 - Verified by: VER-165
 - Phase: CASE
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. the phase moved to CASE with VER-165 (F-R9: the connector mouths are a case matter; a case defect does not hold the order back).
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. the phase moved to CASE with VER-165 (F-R9: the connector mouths are a case matter; a case defect does not hold the order back).
 
 ### REQ-MEC-12: MLCCs clear of the screw bosses
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: case
 - Statement: Every MLCC's pad centre shall be 4.0 mm or more from a screw hole's centre (the tub's 6.0 mm boss plus 1 mm), and 6.0 mm or more for an 0603 or larger.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9).
 - Source: Claude's review (O-43); case.scad tub_boss_d.
 - Method: A
 - Verified by: VER-142
@@ -1724,42 +1767,42 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-THM-02: Thermistor tracks the cell
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell
 - Statement: During a full charge in the closed case, the thermistor's reading shall stay within 5 C of the cell's hotter point (its centre or its end facing the thermistor).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this.
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
 - Method: T, A
 - Verified by: VER-87, VER-164
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-THM-03: No pause at room temperature
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell
 - Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (the charger's thermistor input inside its window with the cell under 35 C).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
 - Source: bringup.md step 5.4.
 - Method: T
 - Verified by: VER-68
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-THM-04: Heat budget per mode
 - Level: subsystem
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: power soc case
 - Statement: Charging while playing GBA under Linux (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall put 2.0 W or less inside the case, and every part shall stay under its temperature limit at 40 C ambient.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: at 39cc07f the worst mode is 3.31 W inside the case at VER-31's Wi-Fi load (VER-144: U3 0.43 W, U2 0.80 W, the module 0.74 W), with the air round the module over its 65 C (DF-213); the table decides a firmware rule or copper (DEF-87).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: at 39cc07f the worst mode is 3.31 W inside the case at VER-31's Wi-Fi load (VER-144: U3 0.43 W, U2 0.80 W, the module 0.74 W), with the air round the module over its 65 C (DF-213); the table decides a firmware rule or copper (DEF-87).
 - Source: Claude's analysis (O-47, F-48).
 - Method: A
 - Verified by: VER-144, VER-238
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ## Subsystem: ESD and EMC (EMC)
 
@@ -1781,13 +1824,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: Before any sale, the device shall pass FCC Part 15 Class B and CISPR 32 Class B radiated and conducted emissions at a test house, its USB-C high-speed lines in use; the board has no radio.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: since 39cc07f the device transmits (Wi-Fi): it relies on the WROOM-1U's modular grant, kept only with an antenna type the grant lists (docs/living/esp32s3_board_proposal.md 'Open checks' 5).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: since 39cc07f the device transmits (Wi-Fi): it relies on the WROOM-1U's modular grant, kept only with an antenna type the grant lists (docs/living/esp32s3_board_proposal.md 'Open checks' 5).
 - Source: FCC 47 CFR Part 15 Subpart B; CISPR 32; validation_plan #67, #162.
 - Method: T
 - Verified by: VER-96, VER-118
 - Phase: DVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ## Subsystem: radio (RF), since 39cc07f: DROPPED with the ESP32-S3 board
 
@@ -1801,7 +1844,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-205
 - Phase: ORDER
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the F1C200s board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
 
 ### REQ-RF-02: The antenna fitted and clear of metal
 - Level: subsystem
@@ -1813,7 +1856,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-205, VER-167, VER-48
 - Phase: CASE
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the F1C200s board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
 
 ### REQ-RF-03: Wi-Fi range
 - Level: subsystem
@@ -1825,7 +1868,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-207
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the F1C200s board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
 
 ### REQ-RF-04: The radio's grant
 - Level: subsystem
@@ -1837,56 +1880,59 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-217
 - Phase: SALE
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the F1C200s board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
 
-## Subsystem: storage (STO), the microSD slot, since 39cc07f
+## Subsystem: storage (STO), the microSD slot, since 39cc07f: DROPPED with the F1C200s board (the storage subsystem is now the 16 MB flash: REQ-SOC-01, REQ-SOC-09, REQ-PRD-18)
 
 ### REQ-STO-01: The microSD bus
 - Level: subsystem
 - Board: f1c200s
 - Subsystem: storage soc
 - Statement: The microSD slot shall read and write a card on the F1C200s's SD0 at 4 bits, and the boot ROM shall boot from it (REQ-SOC-01).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the slot is new at 39cc07f (docs/living/esp32s3_board_proposal.md item 5); Espressif asks pull-ups on the SDIO lines (esp32-s3-hw-design-guidelines.txt:864-865); the DM3AT's detect switch is normally open (hirose_dm3_catalog_C114218.txt:27).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: design.py J8, R79-R84; esp32-s3-hw-design-guidelines.txt:861-865; hirose_dm3_catalog_C114218.txt:26-27.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the slot is new at 39cc07f (docs/living/esp32s3_board_proposal.md item 5); Espressif asks pull-ups on the SDIO lines (esp32-s3-hw-design-guidelines.txt:864-865); the DM3AT's detect switch is normally open (hirose_dm3_catalog_C114218.txt:27).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py J8, R79-R84; esp32-s3-hw-design-guidelines.txt:861-865; hirose_dm3_catalog_C114218.txt:26-27.
 - Method: A, T
 - Verified by: VER-209, VER-198, VER-222
 - Phase: EVT
-- Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Status: DROPPED
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:71: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
 
 ### REQ-STO-02: A card plugged in while running
 - Level: subsystem
 - Board: f1c200s
 - Subsystem: storage power
 - Statement: Inserting a microSD card while the device runs shall leave the card's rail and the F1C200s's IO rail inside their ranges and cause no reset.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: J8's VDD comes straight off 3V3 through JP6 with no load switch: a card over 1.8 uF of its own dips 3V3 under 3.0 V at once (VER-206 on stand-ins, DF-245).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: esp32-s3-wroom-1.txt:1596; tlv757p.txt:267; VER-206.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: J8's VDD comes straight off 3V3 through JP6 with no load switch: a card over 1.8 uF of its own dips 3V3 under 3.0 V at once (VER-206 on stand-ins, DF-245).
+- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: esp32-s3-wroom-1.txt:1596; tlv757p.txt:267; VER-206.
 - Method: A, T
 - Verified by: VER-206, VER-209
 - Phase: EVT
-- Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Status: DROPPED
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:71: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
 
 ### REQ-STO-03: The SD opening in the case
 - Level: subsystem
 - Board: f1c200s
 - Subsystem: storage case
 - Statement: With the case closed a card shall go in and latch, and come out, 20 of 20 times, with the slot's body clear of the left wall's opening by 0.2 mm a side.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the opening is 14.0 mm over the slot's 13.85 mm body at 39cc07f (VER-165, DF-233).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the opening is 14.0 mm over the slot's 13.85 mm body at 39cc07f (VER-165, DF-233).
 - Source: case.scad sd_y, sd_z; hirose_dm3_catalog_C114218.pdf.
 - Method: A, T
 - Verified by: VER-165, VER-48
 - Phase: CASE
-- Status: PROPOSED
+- Status: DROPPED
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:71: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
 
 ## Board: manufacture (FAB)
 
 ### REQ-FAB-01: Design round trip
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: KiCad's netlist shall match design.py with 0 differences, ERC shall report 0 errors, and DRC 0 errors, 0 unconnected and 0 parity issues.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the generated KiCad files must say what design.py means.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the generated KiCad files must say what design.py means.
 - Source: validation_plan #75, #76, #173.
 - Method: A
 - Verified by: VER-01, VER-03, VER-04
@@ -1895,10 +1941,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-FAB-02: Pins against datasheets
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: Every assembled part's every pin shall be reviewed against its current datasheet with a page citation, with 0 unresolved issues, 0 unknown ratings and 0 open questions.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: ERC and parity trust design.py; only the datasheet can say a pin is wrong.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ERC and parity trust design.py; only the datasheet can say a pin is wrong.
 - Source: validation_plan #1, #113, gate item 1.
 - Method: A, I
 - Verified by: VER-02, VER-36, VER-35
@@ -1907,7 +1953,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-FAB-03: JLC capability
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: The board shall pass DRC against JLC's published 2-layer limits, copied with the capability page's date into a data file the build reads (track, space, the minimum via pad for a 0.3 mm hole, annular ring, copper to the edge 0.30 mm or more), with 0 errors; where the board's numbers are below the page's, JLC confirms them in writing before the order.
 - Rationale: KiCad's defaults do not encode JLC's limits; the old 0.13 mm ring, written from memory, failed every via on the board (F-12).
@@ -1916,20 +1962,20 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-17, VER-18, VER-28
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. the copper to the edge is met in the data at 71737ae: 0.308 mm at the closest, KiCad's edge clearance 0.31 mm and a 0.30 mm copper-to-NPTH rule (battler.kicad_dru), VER-18 PASS; at be437f8 GND pours sat 0.20 mm from both holes. As built, with the 0.2 mm outline tolerance (ROUTE_TOL), the closest is 0.108 mm, and the narrowest FR4 web 1.00 mm can be 0.60 mm (O-R2): whether 0.30 mm is a data rule or an as-built one is the dated page's to say (VER-17, DEF-56). The dated page and the vias' 0.10 mm ring are still open.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. the copper to the edge is met in the data at 71737ae: 0.308 mm at the closest, KiCad's edge clearance 0.31 mm and a 0.30 mm copper-to-NPTH rule (battler.kicad_dru), VER-18 PASS; at be437f8 GND pours sat 0.20 mm from both holes. As built, with the 0.2 mm outline tolerance (ROUTE_TOL), the closest is 0.108 mm, and the narrowest FR4 web 1.00 mm can be 0.60 mm (O-R2): whether 0.30 mm is a data rule or an as-built one is the dated page's to say (VER-17, DEF-56). The dated page and the vias' 0.10 mm ring are still open.
 
 ### REQ-FAB-04: Holes
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: Every drilled hole shall be 0.30 mm or larger, and plated and unplated holes shall be in separate drill files.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: smaller holes cost about $40 an order at JLC (a fee, a 4-wire test, TG155); a mixed file may plate J1's pegs (DEF-32).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: smaller holes cost about $40 an order at JLC (a fee, a 4-wire test, TG155); a mixed file may plate J1's pegs (DEF-32).
 - Source: design_review.md Board; assembly.md section 1; JLC's KiCad guide.
 - Method: A
 - Verified by: VER-114, VER-131
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-FAB-05: Order options
 - Level: board
@@ -1965,7 +2011,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: a CAD footprint's zero and origin can differ from the fab house's.
 - Source: validation_plan #9, #116.
 - Method: I, A
-- Verified by: allocated: REQ-FAB-07.F (Was: REQ-FAB-07.R)
+- Verified by: allocated: REQ-FAB-07.B (Was: REQ-FAB-07.R)
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1979,13 +2025,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-28, VER-29, VER-176
 - Phase: ORDER
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): it named the ESP32-S3 board's parts (U1-U9, J1-J4) and their JLC offsets; REQ-FAB-07.F holds the F1C200s board's
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): it named the ESP32-S3 board's parts (U1-U9, J1-J4) and their JLC offsets; REQ-FAB-07.B holds the RP2350B board's
 
-### REQ-FAB-07.F: Orientation and centroids (f1c200s)
+### REQ-FAB-07.B: Orientation and centroids (rp2350b)
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
-- Statement: Every polarised part's pin 1 in JLC's placement preview shall match the board's pin 1, the F1C200s's and the FUSB303B's included, and every CPL position shall be within 0.1 mm of the part's pad centre, or its origin offset recorded in a JLC_FIXED entry that names the placement preview screenshot.
+- Statement: Every polarised part's pin 1 in JLC's placement preview shall match the board's pin 1, the RP2350B's and the flash's included, and every CPL position shall be within 0.1 mm of the part's pad centre, or its origin offset recorded in a JLC_FIXED entry that names the placement preview screenshot.
 - Rationale: a part placed 90 or 180 degrees off kills the board (carryover K-3, K-4).
 - Source: JLC's placement preview; carryover.md K-3, K-4.
 - Method: I, A
@@ -1995,7 +2041,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-FAB-08: Reproducible outputs
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: The gerbers, drill, BOM and CPL shall come from the released commit by one release run from a clean worktree; two runs of fab.py shall give identical copper and drill files once their creation dates are stripped; and the uploaded zip's sha256 shall be in the release record.
 - Rationale: the board ordered must be the board checked; Alex's main checkout had an uncommitted KiCad GUI change to battler.kicad_pro on 2026-10-24.
@@ -2010,7 +2056,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: JLC shall e-test 100% of the boards against an IPC-D-356 netlist exported from the ordered board with each net-tie pair merged into one net (0 pairs of differently named nets joined by copper), or the order shall go without a netlist.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-237).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-237).
 - Source: validation_plan #103.
 - Method: I
 - Verified by: VER-26
@@ -2022,8 +2068,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: both
 - Subsystem: all
-- Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the F1C200s (C2879851), the FUSB303B (C895444) and the DM3AT (C114218) shall never be substituted.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the new parts' JLC class and stock were not checked by the board session (docs/living/esp32s3_build.md, 'Not verified'); a substituted module can carry 1.8 V PSRAM (DF-238, DF-238). Was: the RP2354B and L2.
+- Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the RP2350B (C42415655), the GD25Q128 (C2758105) and the DM3AT (C114218) shall never be substituted.
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the new parts' JLC class and stock were not checked by the board session (docs/living/esp32s3_build.md, 'Not verified'); a substituted module can carry 1.8 V PSRAM (DF-238, DF-238). Was: the RP2354B and L2.
 - Source: DEF-12, DEF-13, DEF-29.
 - Method: I
 - Verified by: VER-41
@@ -2041,7 +2087,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-90
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-FAB-12: Workmanship
 - Level: board
@@ -2065,7 +2111,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Rationale: 30 units by hand.
 - Source: validation_plan #86, #161.
 - Method: D
-- Verified by: allocated: REQ-ASM-01.F (Was: REQ-ASM-01.R)
+- Verified by: allocated: REQ-ASM-01.B (Was: REQ-ASM-01.R)
 - Phase: EVT
 - Status: PROPOSED
 
@@ -2079,15 +2125,15 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-91
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): assembly.md's order for the ESP32-S3 board; REQ-ASM-01.F holds the F1C200s board's
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): assembly.md's order for the ESP32-S3 board; REQ-ASM-01.B holds the RP2350B board's
 
-### REQ-ASM-01.F: Hand assembly (f1c200s)
+### REQ-ASM-01.B: Hand assembly (rp2350b)
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
-- Statement: Alex shall assemble 1 F1C200s unit from its assembly doc in 30 min or less with a screwdriver and a knife and no iron (nothing is soldered at assembly), on an ESD mat with a strap, damaging 0 parts, the cell plugged last and unplugged first.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: nothing is soldered at assembly (DESIGN.md:73); work next to a live cell is the hazard (carryover, DEF-41 at tag vv-esp32s3-final).
-- Source: DESIGN.md:73 ('Nothing is soldered when a unit is put together: the battery and the speaker both plug in.').
+- Statement: Alex shall assemble 1 RP2350B unit from its assembly doc in 30 min or less with a screwdriver and a knife and no iron (nothing is soldered at assembly), on an ESD mat with a strap, damaging 0 parts, the cell plugged last and unplugged first.
+- Rationale: nothing is soldered at assembly (DESIGN.md:68); work next to a live cell is the hazard (carryover, DEF-41 at tag vv-esp32s3-final).
+- Source: DESIGN.md:68 ('Nothing is soldered when a unit is put together: the battery and the speaker both plug in.').
 - Method: D
 - Verified by: VER-91
 - Phase: EVT
@@ -2095,7 +2141,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-ASM-02: Panel seated
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: display
 - Statement: The panel's FPC shall be fully inserted, square and latched, and pass the display test after 10 case closures.
 - Rationale: a half-seated FPC gives intermittent lines.
@@ -2109,16 +2155,16 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-TST-01: Test access
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
-- Statement: Every measurement in the F1C200s board's bring-up doc shall have a probe point (a test pad, a jumper pad or a named part pad), with 0 measurements that need a lifted part.
+- Statement: Every measurement in the RP2350B board's bring-up doc shall have a probe point (a test pad, a jumper pad or a named part pad), with 0 measurements that need a lifted part.
 - Rationale: bring-up must not need rework to measure.
 - Source: validation_plan #21, #155.
 - Method: I
 - Verified by: VER-158
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-TST-02: Self-test
 - Level: board
@@ -2131,7 +2177,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-76
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-TST-03: Traceability
 - Level: board
@@ -2171,20 +2217,20 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 
 ### REQ-TST-06: Per-unit VBAT calibration
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: cell
 - Statement: Each unit's cell-reading gain shall be set in production test at a true 3.50 V from the bench supply (no USB, the self-test at its highest load, a DMM checked that session against a 4.096 V reference) and lie within 0.95-1.05; a re-read at 3.50 V shall be within 10 mV; the firmware shall store no gain from a no-cell end-of-charge edge.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the F1C200s board: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-225).
+- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-225).
 - Source: Claude's review (O-63, O-60).
 - Method: T
 - Verified by: VER-155, VER-156
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-TST-07: Connector mating budget
 - Level: board
-- Board: f1c200s
+- Board: rp2350b
 - Subsystem: all
 - Statement: No shipped unit shall have any connector (the cell's, the panel's, the speaker's, the microSD slot) mated more than 50% of its rated cycles, counted per unit.
 - Rationale: wire-to-board headers and the FH12 are rated for roughly 10-30 matings (confirm per maker), bring-up alone can use them up, and the speaker's plug comes out at every opening (DF-233).
@@ -2193,7 +2239,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-157
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the F1C200s board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
 
 ### REQ-TST-08: Per-unit findings
 - Level: board

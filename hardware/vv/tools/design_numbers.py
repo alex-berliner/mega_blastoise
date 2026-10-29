@@ -725,7 +725,7 @@ def bom():
             print(f"{r} {p['mpn']}: an external antenna on a U.FL cable (esp32-s3-wroom-1.txt:100): "
                   + ("bom.md buys it" if hit else "bom.md buys no antenna and no U.FL cable: the module has no radio path"))
             ok &= bool(hit)
-    # 2026-10-28 (the F1C200s board, DESIGN.md:64): the power key is the DS Lite power slider from the button kit when a
+    # 2026-10-28 (the RP2350B board, DESIGN.md:64): the power key is the DS Lite power slider from the button kit when a
     # board switch fits it; a slide switch on the board then needs the slider itself on bom.md's buy list
     for r, p in sorted(parts.items()):
         if r.startswith("SW") and re.search(r"(?i)slide", f"{p['fp']} {p.get('value') or ''} {p['mpn'] or ''}"):
