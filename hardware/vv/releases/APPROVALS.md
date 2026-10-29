@@ -80,3 +80,8 @@ Examples (not decisions):
 | A-018 | REQ-PRD-17 | APPROVED | - | - | Alex | 2026-10-29 |
 | A-019 | REQ-PRD-18 | APPROVED | - | - | Alex | 2026-10-29 |
 | A-020 | REQ-PRD-19 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-021 | REQ-PRD-01.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-022 | REQ-PRD-08 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-023 | REQ-PRD-08.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-024 | REQ-PRD-15 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-025 | REQ-PRD-20 | APPROVED | - | - | Alex | 2026-10-29 |
