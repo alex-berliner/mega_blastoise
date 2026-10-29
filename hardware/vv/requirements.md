@@ -99,7 +99,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-56, VER-76
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Reworded on 2026-10-29 at Alex's decision (the power slider is dropped; seat 1's Start is the power key). The statement changed, so it needs Alex's re-approval.
 
 ### REQ-PRD-02: One readable screen
@@ -263,7 +263,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: D, T
 - Verified by: allocated: REQ-PRD-08.B (Was: REQ-PRD-08.R)
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Reworded on 2026-10-29 by the artifact audit (analysis/artifact_audit_2026-10-29.md): the old statement ('enter the USB boot loader ... 2 out of 2') described the RP board's BOOTSEL button and contradicted its allocation REQ-PRD-08.B (the hard reset, Select at power-on, the failed-update fall back, 3 of 3). Alex's approval A-011 covered the old text and no longer counts: Alex must re-approve this row.
 
 ### REQ-PRD-08.R: Recoverable firmware (ref_design)
@@ -288,7 +288,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: D, T
 - Verified by: VER-241, VER-252, VER-258, VER-259
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Reworded on 2026-10-29 at Alex's decision (the 8 s hold is on seat 1's Start, not the dropped power slider); only that phrase of the statement changed, and it needs Alex's re-approval. Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263).
 
 ### REQ-PRD-09: Cost
@@ -379,7 +379,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-223, VER-228
 - Phase: ORDER
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Re-timed on 2026-10-29 at Alex's decision: the statement is the text he approved in chat, and it needs his re-approval in the register. It reverses the earlier 'no hold-to-latch' change of the same day: pressing Start powers the regulator, the firmware latches PWR_HOLD only after Start has been held 2.5 s, and an early release drops the power (REQ-PWR-21, VER-228, VER-240). Earlier: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final).
 
 ### REQ-PRD-16: Games and saves over USB or SD
@@ -444,7 +444,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T, D
 - Verified by: VER-263, VER-264
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: New on 2026-10-29; it needs Alex's approval in the register. Claude's assumption, to confirm: update mode (Select held at power-on) is entered before the save is read, so an update never resumes an old battle.
 
 ## Subsystem: cell and charging (BAT)
