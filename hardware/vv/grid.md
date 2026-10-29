@@ -635,4 +635,4 @@ The order gate holds 125 cells of classes 1-15 (0 GAP, 125 planned); classes 16-
 - 12 Signals and timing / case: The case carries no signal: nothing on it is wired, and since the F1C200s and RP2350B re-targets the board has no radio whose antenna the case would hold (Was: the ESP32-S3 board's flex antenna on the left wall).
 - 14 Mating / storage: The 16 MB flash is soldered at JLC and nothing mates with it: the microSD slot, the card and its insertion left with the F1C200s board on 2026-10-29. The connectors that mate (J2, J3, J4) are the cell, display and speaker subsystems'.
 
-Last updated: 2026-10-29 12:54 EDT (generated)
+Last updated: 2026-10-29 13:19 EDT (generated)
