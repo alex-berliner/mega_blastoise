@@ -74,7 +74,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: allocated: REQ-PRD-01.B (Was: REQ-PRD-01.R, the ESP32-S3 board's)
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Was: prod_board had 16 contacts and no Start or Select at 76955d2, and its own allocation was Alex's; 574c94c deleted prod_board from the repository (Alex: not needed).
 
 ### REQ-PRD-01.R: Twenty independent inputs (ref_design)
@@ -99,7 +99,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-56, VER-76
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-02: One readable screen
 - Level: product
@@ -111,7 +111,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: allocated: REQ-PRD-02.B (Was: REQ-PRD-02.R)
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-02.R: One readable screen (ref_design)
 - Level: product
@@ -135,7 +135,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-224, VER-60, VER-61, VER-199
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Alex reviewed this row in chat on 2026-10-29: approved as written, the 8-bit 8080 bus confirmed. The evidence, read from the two datasheets (VER-199 repeats it on paper and VER-224 measures it): (1) the ILI9488 datasheet gives a 40 ns minimum write cycle (twc, section 17.4.1, DBI Type B timing characteristics); at 40 ns a 320 x 480 RGB565 frame, two writes a pixel, is 320 x 480 x 2 = 307,200 writes = 12.3 ms, so the bus maxes out at about 81 fps, 1.36x over 60. (2) The ER-TFT035IPS-6 datasheet puts IM0 to IM2 on FPC pins 7 to 9 (the 8-bit 8080 mode is IM2 IM1 IM0 = 0,1,1) and DB17 to DB0 on pins 15 to 32; the 8-bit bus uses DB7 to DB0, pins 25 to 32, and the unused data lines are tied to ground ('Fix to DGND level when not in use'). (3) The module datasheet gives no timing of its own, so the controller's is the limit. The datasheets are hardware/ref_design/datasheets/er-tft035ips-6.pdf and hardware/ref_design/datasheets/ili9488.pdf.
 
 ### REQ-PRD-03: Play time
@@ -148,7 +148,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: allocated: REQ-PRD-03.B (Was: REQ-PRD-03.R)
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-03.R: Play time (ref_design)
 - Level: product
@@ -173,7 +173,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T, A
 - Verified by: VER-231, VER-101, VER-153
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Alex reviewed this row in chat on 2026-10-29: approved as written, 4.0 h, and the 700 mAh 403450 cell stays. Claude's estimate with that cell is 5 to 6 h at about 100 to 120 mA, so 4.0 h leaves margin. VER-231 works the draw out on paper from the stripboard's measured currents; VER-101 and VER-153 measure the hours and the usable capacity on built units.
 
 ### REQ-PRD-04: Charge time
@@ -187,7 +187,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: allocated: REQ-PRD-04.B (Was: REQ-PRD-04.R)
 - Phase: EVT
 - Notes: the first draft said 3.0 h from 1.5 A, the allocation REQ-PRD-04.B says 4.0 h from 0.5 A (the BQ24073's USB500 input limit is 475 mA): Alex sets the time (PLAN.md decision DEC-04, F-R12).
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-04.R: Charge time (ref_design)
 - Level: product
@@ -212,7 +212,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-102
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-05: Shelf life when off
 - Level: product
@@ -224,7 +224,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T, A
 - Verified by: VER-65, VER-103
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-06: Size
 - Level: product
@@ -249,7 +249,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: A, T
 - Verified by: VER-98, VER-97, VER-168
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: the phase moved to EVT with VER-98 (O-R9: the DFMEA review is advisory at ORDER and binding at G-EVT-16); nothing proves a single-fault limit before that.
 
 ### REQ-PRD-08: Recoverable firmware
@@ -262,7 +262,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: D, T
 - Verified by: allocated: REQ-PRD-08.B (Was: REQ-PRD-08.R)
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-08.R: Recoverable firmware (ref_design)
 - Level: product
@@ -286,7 +286,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: D, T
 - Verified by: VER-241, VER-252, VER-258, VER-259
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263).
 
 ### REQ-PRD-09: Cost
@@ -299,7 +299,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: I
 - Verified by: VER-117
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Restated on 2026-10-29: it was $45 or less at 10 units (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament, the microSD card); the new definition adds tape, tariffs and duties and every shipping leg, and drops the card, which left the design. Alex set the limits himself on 2026-10-29: $60 or less at 10 units and $40 or less at 50 units, with the all-in definition kept exactly as worded; they are his numbers, not a proposal. Claude's estimate before that was $57 and $38 (a proposal, 2026-10-29 morning); with the TPS3421 hard-reset controller (REQ-PRD-08.B) it is about $58 and about $38.50.
 
 ### REQ-PRD-10: Serviceable cell and panel
@@ -312,7 +312,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: D
 - Verified by: VER-91
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-11: Survives drops
 - Level: product
@@ -324,7 +324,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-93
 - Phase: DVT
-- Status: PROPOSED
+- Status: APPROVED
 
 ### REQ-PRD-12: GBA games at full speed
 - Level: product
@@ -364,7 +364,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-251, VER-227
 - Phase: ORDER
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Rewritten on 2026-10-29. It was the F1C200s board's: Linux with a phone's USB tether or a USB Wi-Fi dongle, the console the USB host (tag vv-f1c200s-final). The chip gate (gates.md NM-03) runs the phone bridge test on the stripboard Pico 2 (RP2350A) before any board design. Alex reviewed this row in chat on 2026-10-29: approved as written.
 
 ### REQ-PRD-15: A match within seconds of power-on
@@ -377,7 +377,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T
 - Verified by: VER-223, VER-228
 - Phase: ORDER
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Rewritten on 2026-10-29: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final). Alex reviewed this row in chat on 2026-10-29: approved as written, and the RP board's hold-to-latch at power-on is dropped (it raised PWR_HOLD only after Start was held for about a second): a slide of the power slider turns the unit on at once and the firmware latches power immediately, so nothing before the 1.0 s waits for a hold (REQ-PWR-21, VER-240).
 
 ### REQ-PRD-16: Games and saves over USB or SD
@@ -403,7 +403,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: I, A
 - Verified by: VER-230, VER-48, VER-20
 - Phase: CASE
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: Was: REQ-PRD-06 gave 78.9 x 156.64 mm and 10.7 mm for the ESP32-S3 board's case; next_spin_requirements.md gives 156.48 and 9.6 as today's.
 
 ### REQ-PRD-18: A GBA-style sound engine from the 16 MB flash
@@ -416,7 +416,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T, A
 - Verified by: VER-256, VER-252, VER-255
 - Phase: ORDER
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: New on 2026-10-29; rewritten the same day for a GBA-style engine (it was samples in 8 MB or more of the flash, with 4 MB, 8 MB and 30 min as Claude's proposal). The sound content must be our own or licensed, not data taken from FireRed (its sequences, instruments and cries), if units are sold: the engine follows M4A's design, the content does not come with it (DF-265, VER-261). The 16 MB flash is kept by Alex's choice, even though about 2 MB covers sequenced sound; the rest is room (A/B firmware slots, REQ-SOC-10, the settings and the debug log).
 
 ### REQ-PRD-19: Update by dragging a file to a USB drive
@@ -429,7 +429,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Method: T, D
 - Verified by: VER-260, VER-259
 - Phase: EVT
-- Status: PROPOSED
+- Status: APPROVED
 - Notes: New on 2026-10-29. The flash layout proposal (Claude's, REQ-SOC-10): partition table 4 KB, bootloader 64 KB (locked), firmware A 2 MB, firmware B 2 MB, sound data, and spare for settings and the debug log. To confirm against the RP2350 datasheet (VER-259), then on a dev board (VER-260): how a dragged firmware .uf2 picks the A or B slot, and whether the boot ROM accepts a whole-flash (absolute) UF2 over a valid partition table. If it does not, the recovery step is `picotool erase` and then the one file; the statement says 'copying one recovery .uf2 file', so that extra step would need Alex's decision (DF-263 holds the related question of the locked bootloader).
 
 ## Subsystem: cell and charging (BAT)
