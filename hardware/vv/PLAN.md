@@ -1,6 +1,6 @@
 # The plan: from here to 5 boards, then 30
 
-**The register targets the next spin: the RP2350B board** (docs/static/DESIGN.md:71 and
+**The register targets the next spin: the RP2350B board** (docs/static/DESIGN.md:74 and
 docs/static/next_spin_requirements.md, Alex, 2026-10-29): the Raspberry Pi RP2350B (QFN-80, no flash inside,
 C42415655) with one GigaDevice GD25Q128 16 MB QSPI flash (C2758105) that holds the program and the sound, the
 core laid out as Raspberry Pi's 2-layer RP2350B minimal design draws it, flash included; today's ILI9488 panel;
@@ -36,7 +36,7 @@ releases/APPROVALS.md, which only he writes lines in, in commits signed with the
 
 | What | Register effect |
 |---|---|
-| Alex's change of the next spin (DESIGN.md:71, next_spin_requirements.md) | board `rp2350b`; allocations `.B` (the `.F` ones are DROPPED, the F1C200s board's); the F1C200s board is DROPPED with tag `vv-f1c200s-final` |
+| Alex's change of the next spin (DESIGN.md:74, next_spin_requirements.md) | board `rp2350b`; allocations `.B` (the `.F` ones are DROPPED, the F1C200s board's); the F1C200s board is DROPPED with tag `vv-f1c200s-final` |
 | Dropped with the F1C200s board | REQ-PRD-12, -13, -16 (GBA, link play, games and saves), REQ-PWR-22 (VBUS out as host), REQ-STO-01 to -03 (the microSD slot); DF-203, -204, -207, -208, -209, -243, -244, -245; checks VER-206, -209, -221, -222, -225, -226, -229, -234, -247, -250 |
 | Rewritten for the RP2350B | REQ-PRD-14 (the phone web bridge), REQ-PRD-15 (no Linux part), REQ-PRD-09 (Alex's all-in cost and limits), REQ-PRD-03.B, -08.B (recovery over the RP2350 USB boot ROM), REQ-PWR-20, REQ-SOC-01 to -08, REQ-USB-01, -02; the chip gate's checks VER-223, -224 and the checks that named the F1C200s |
 | New | REQ-PRD-18 (a GBA-style sound engine from the 16 MB flash), REQ-PRD-19 (update by a USB drive), REQ-SOC-10 (bootloader, partitions, A/B), REQ-SOC-09 (the flash's footprint and wiring follow the minimal design); checks VER-251 (the phone bridge test), VER-252 (XIP from the 16 MB flash), VER-253 (the flash's wiring), VER-254 (the footprints), VER-255 (sound on a unit), VER-256 (the flash's budget), VER-258 to VER-261 (the hard reset, the boot ROM's recovery, the drive update, the sound's provenance); DF-252 to DF-265 |
