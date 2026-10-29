@@ -39,7 +39,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-07, DF-98
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-223 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-223 on the RP2350B board.
 
 ### DEF-02: R15 cut to 10k removed the Start contact's pill margin
 - Found: model audit, round 2, design phase (d049b35, 2026-09-25)
@@ -50,7 +50,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-08, REQ-PWR-11, DF-27
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 (a change to one part re-derives the contacts' margins) and DF-242 (the power key) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-230 (a change to one part re-derives the contacts' margins) and DF-242 (the power key) on the RP2350B board.
 
 ### DEF-03: The unplug hand-over took tens of ms, not microseconds
 - Found: model audit, round 3, design phase (5095356, 2026-09-25)
@@ -101,7 +101,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MCU-04, DF-63
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-251 (the debug UART's direction in the pin plan) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-251 (the debug UART's direction in the pin plan) on the RP2350B board.
 
 ### DEF-08: USB series resistors were 22 ohm; the RP2350 requires 27
 - Found: datasheet pin review (check_pins.py, pin_review/u4.json pins 66 and 67), design phase (4c4d846)
@@ -112,7 +112,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MCU-02
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-209 (the USB pair's parts from the chip's own datasheet) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-261 (the USB pair's parts from the chip's own datasheet) on the RP2350B board.
 
 ### DEF-09: The ME6211's CE could rise above its VIN at a live plug-in
 - Found: datasheet pin review (pin_review/u3.json), design phase (4c4d846)
@@ -143,7 +143,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-02, DF-07
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-216 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-216 on the RP2350B board.
 
 ### DEF-12: AP3156 backlight charge pump out of stock
 - Found: stock check before ordering (b7a6238, 2026-10-07)
@@ -154,7 +154,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-238 on the RP2350B board.
 
 ### DEF-13: ProTek SRV05-4 out of stock
 - Found: stock check (eea0ee8, 2026-10-07)
@@ -165,7 +165,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-238 on the RP2350B board.
 
 ### DEF-14: U1's JLC footprint may be turned 180 degrees from KiCad's
 - Found: on another branch, 1fd0956 (2026-10-22): "JLC's footprint for C13612 is KiCad's SOT-23-6 turned 180 degrees". This branch's eea0ee8 (2026-10-07) says "the same JLC library footprint ... so the CPL rotation is unchanged". The review (F-19) reads both as true: eea0ee8 means unchanged against the ProTek C85364 it replaced, which shared JLC's footprint, and JLC's SOT-23-6 zero differs from KiCad's by 180 degrees. So the CPL with KiCad's angle places U1 reversed unless corrected.
@@ -176,7 +176,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-07.R, DF-67, DF-68 (U1 is Semtech's C13612 again since 1fd0956; assembly.md says JLC's footprint is KiCad's turned 180 degrees)
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-234 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-234 on the RP2350B board.
 
 ### DEF-15: First PLA print: hooks snapped, lid tight, pins bound
 - Found: first full print of the case (88eec7c, 2026-10-05)
@@ -187,7 +187,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-05, DF-89
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-249 (the printed case's features) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-249 (the printed case's features) on the RP2350B board.
 
 ### DEF-16: D-pad opening too tight for Alex's AliExpress D-pad
 - Found: fit print with real caps (7606442, 2026-10-19)
@@ -198,7 +198,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-03
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-249 (the printed case's features) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-249 (the printed case's features) on the RP2350B board.
 
 ### DEF-17: Deck insert would not go on over the silicone
 - Found: insert print (73c3686, 2026-10-19)
@@ -209,7 +209,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-03
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-249 (the printed case's features) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-249 (the printed case's features) on the RP2350B board.
 
 ### DEF-18: Start/Select pad's square wells hit round flange pockets
 - Found: silicone pad model (86e81e2, 2026-10-19)
@@ -220,7 +220,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-03
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-249 (the printed case's features) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-249 (the printed case's features) on the RP2350B board.
 
 ### DEF-19: Holes through the lid
 - Found: Alex, on the live 3D view (177123c, 2026-10-19)
@@ -231,7 +231,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-08, DF-90
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-249 (the printed case's features) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-249 (the printed case's features) on the RP2350B board.
 
 ### DEF-20: J6's mouth faced J5's back
 - Found: model audit, round 1 (4495595)
@@ -252,7 +252,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-TST-01, DF-102, DF-169
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-239 on the RP2350B board.
 
 ### DEF-22: The validation plan's statuses went stale
 - Found: task brief and this register (2026-10-24)
@@ -263,7 +263,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: none
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 (the docs and the register describe the board) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-239 (the docs and the register describe the board) on the RP2350B board.
 
 ### DEF-23: JST PH J2 too tall for the lowered lid
 - Found: print preparation (f231998, 2026-10-19)
@@ -274,7 +274,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-01
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 (part heights against the case) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-229 (part heights against the case) on the RP2350B board.
 
 ### DEF-24: Audio numbers in the docs were wrong
 - Found: review panel of seven model families, checked by Fable (7768a97, 2026-09-25)
@@ -285,7 +285,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-AUD-01, REQ-AUD-03, REQ-AUD-05
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-248 (the audio chain's numbers from a script) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-248 (the audio chain's numbers from a script) on the RP2350B board.
 
 ### DEF-25: Lid window too tight for the panel's float and tolerance
 - Found: model audits, rounds 1-3 (4495595, d049b35, 5095356)
@@ -296,7 +296,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-02, REQ-PRD-06
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-249 (the panel's window against its float) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-249 (the panel's window against its float) on the RP2350B board.
 
 ### DEF-26: The datasheet gate passes with open questions in it
 - Found: while seeding this register (2026-10-24)
@@ -307,7 +307,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-02, REQ-PWR-14, REQ-MCU-09, DF-94, DF-95, DF-96
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-211 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-211 on the RP2350B board.
 
 ### DEF-27: check_fit guesses part heights silently
 - Found: validation plan #96 (2026-10-05); still true at 76955d2
@@ -318,7 +318,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-01, DF-91
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-229 on the RP2350B board.
 
 ### DEF-28: Design analyses are not in the repo
 - Found: while seeding this register (2026-10-24)
@@ -329,7 +329,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-02, REQ-PWR-05, REQ-AUD-03
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-222 (the hot-plug analysis as a script) and DF-248 (the audio filter's) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-222 (the hot-plug analysis as a script) and DF-248 (the audio filter's) on the RP2350B board.
 
 ### DEF-29: RP2354B and L2 out of stock at JLC and LCSC
 - Found: BOM audit on another branch (67e3d13, 2026-10-21): "RP2354B and L2 out at JLC and LCSC, U1 3 left, J5/J6 2 left, U3 724". This branch's bom.md still shows 1665 RP2354B in stock (2026-10-07).
@@ -350,7 +350,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-08, DF-76
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-237 (the order candidate named in a release record) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-237 (the order candidate named in a release record) on the RP2350B board.
 
 ### DEF-31: The case screws engage 1.4 mm of the lid's pilots
 - Found: two-model review (O-52), 2026-10-24, from case.scad
@@ -361,7 +361,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-09, DF-119
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-232 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-232 on the RP2350B board.
 
 ### DEF-32: The drill file mixes plated and unplated holes
 - Found: two-model review (O-14), 2026-10-24, from a scratch export with fab.py's own kicad-cli arguments
@@ -372,7 +372,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-04, DF-127
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-250 (the drill files split) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-250 (the drill files split) on the RP2350B board.
 
 ### DEF-33: The CPL uses footprint origins, and J1's and J2's are off their pads
 - Found: two-model review (O-16), 2026-10-24, measured with pcbnew
@@ -383,7 +383,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-07.R, DF-128
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-234 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-234 on the RP2350B board.
 
 ### DEF-34: No firmware can run on the ordered board
 - Found: two-model review (O-56, F-44), 2026-10-24
@@ -394,7 +394,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MCU-10, REQ-MCU-11, DF-121, DF-122
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-251 (a pin file generated from design.py) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-251 (a pin file generated from design.py) on the RP2350B board.
 
 ### DEF-35: The trace gate could pass on evidence that did not show what it claimed
 - Board: both
@@ -405,7 +405,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-28 at 333cfcd: 148 of 148 seeded faults caught, after F's audit of the F1C200s re-target)
+- Status: CLOSED (VER-129 PASS 2026-10-29 at 0bc51d6: 148 of 148 seeded faults caught, after the RP2350B re-seed)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -416,7 +416,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: vp_map #19
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-250 (DRC with every warning counted) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-250 (DRC with every warning counted) on the RP2350B board.
 
 ### DEF-37: TH1 sits at the cell's edge, and four bare pads face the pouch
 - Found: two-model review (O-30, F-36), 2026-10-24, from placement.py and case.scad
@@ -427,7 +427,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-THM-02, REQ-BAT-08, DF-04
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-218 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-218 on the RP2350B board.
 
 ### DEF-38: C9 sits 0.9 mm from a screw boss's edge
 - Found: two-model review (O-43), 2026-10-24, measured with pcbnew
@@ -448,7 +448,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-DSP-05, REQ-DSP-07, REQ-DSP-12, DF-130
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-228 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-228 on the RP2350B board.
 
 ### DEF-40: After calibration, the 3.50 V cutoff may never fire
 - Found: two-model review (O-49, O-23, O-60), 2026-10-24, by hand
@@ -459,7 +459,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-12, REQ-TST-06, DF-116, DF-117
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-225 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-225 on the RP2350B board.
 
 ### DEF-41: Assembly works next to a live cell
 - Found: two-model review (O-29, F-37), 2026-10-24, from assembly.md
@@ -470,7 +470,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-102, DF-112
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 (assembly.md's order: the panel's tail latched before the cell is plugged) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-239 (assembly.md's order: the panel's tail latched before the cell is plugged) on the RP2350B board.
 
 ### DEF-42: The Start/Select pills and caps are not in the BOM
 - Found: two-model review (F-40), 2026-10-24
@@ -481,7 +481,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-167, DF-168
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 (every contact's parts bought) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-230 (every contact's parts bought) on the RP2350B board.
 
 ### DEF-43: Plug-in inrush is over USB 2.0's 50 uC
 - Found: two-model review (F-24), 2026-10-24, by arithmetic
@@ -492,7 +492,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-13
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-224 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-224 on the RP2350B board.
 
 ### DEF-44: Requirements that failed by construction
 - Board: both
@@ -514,7 +514,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-DSP-05, DF-44, REQ-DSP-09
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-228 (the backlight's worst case from design.py) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-228 (the backlight's worst case from design.py) on the RP2350B board.
 
 ### DEF-46: Bring-up's cell emulation cannot hold 3.50 V with USB in
 - Found: two-model review (O-19), 2026-10-24
@@ -525,7 +525,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-05, DF-34
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-226 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-226 on the RP2350B board.
 
 ### DEF-47: The register drifted off the design it was meant to describe
 - Board: both
@@ -547,7 +547,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-03, DF-147, DF-146
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-217 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-217 on the RP2350B board.
 
 ### DEF-49: The shift registers cut the pill margin from 10 kohm to about 3.7 kohm
 - Found: re-seeding for 684a609 (2026-10-25)
@@ -558,7 +558,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BTN-01, DF-164
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-230 on the RP2350B board.
 
 ### DEF-50: A faulty USB source reaches the regulator's enable ahead of the charger's OVP
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py vbus
@@ -569,7 +569,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-17, DF-101
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-222 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-222 on the RP2350B board.
 
 ### DEF-51: A worst-case cell had 0.30 mm to swell under the deck
 - Found: re-seeding for 684a609 (2026-10-25), design_numbers.py swell
@@ -580,7 +580,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-07, DF-84
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-215 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-215 on the RP2350B board.
 
 ### DEF-52: The trace gate and the fab checks still passed on words, typed results and unsigned approvals
 - Board: both
@@ -591,7 +591,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a live row citing a RETIRED id, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole). The drill and CPL checks (design_numbers.py drill and cpl) now run fab.py's own export into a temp dir and read what it writes; they fail on the board's real output, which DEF-32 and DEF-33 hold, not this defect.
 - Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-28 at 333cfcd: 148 of 148 seeded faults caught, after F's audit of the F1C200s re-target)
+- Status: CLOSED (VER-129 PASS 2026-10-29 at 0bc51d6: 148 of 148 seeded faults caught, after the RP2350B re-seed)
 
 ### DEF-53: A worst-case cell sits 0.25 mm from the routed FR4 edge on every side
 - Found: two-model review (O-R7), 2026-10-25, from case.scad and assembly.md step 5; restated on every side by round 2's sign-off objections (O, F), 2026-10-26
@@ -602,7 +602,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-08, DF-85 (now H)
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-214 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-214 on the RP2350B board.
 
 ### DEF-54: Rows still written for 76955d2 after the re-seed
 - Found: two-model review (O-R9, O-R10, F-R2, F-R4, F-R5, F-R7, F-R9, F-R10, F-R11, F-R14, F-R16), 2026-10-25
@@ -613,7 +613,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: VER-28, VER-29, VER-33, VER-36, VER-52, VER-68, VER-77, VER-78, VER-79, VER-89, VER-90, VER-91, VER-130, VER-148, VER-159, VER-166; REQ-ASM-01, REQ-FAB-11, REQ-PWR-08, REQ-PWR-11; DF-45, DF-144
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 (the register's rows re-read at a re-seed) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-239 (the register's rows re-read at a re-seed) on the RP2350B board.
 
 ### DEF-55: JLC's order-number marker is not on the board
 - Found: two-model review (O-R19), 2026-10-25: `grep -c JLCJLC` on battler.kicad_pcb and silk.py gives 0 and 0
@@ -624,7 +624,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-250 (JLC's order-number marker on the back silk) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-250 (JLC's order-number marker on the back silk) on the RP2350B board.
 
 ### DEF-56: Copper within 0.20 mm of the cell's and the speaker's routed edges
 - Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge)
@@ -635,7 +635,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-03, DF-179, DF-178
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-236 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-236 on the RP2350B board.
 
 ### DEF-57: The board's name, BOARD_REV and build text sit in the cell's hole
 - Found: re-seeding for be437f8 (2026-10-26), building VER-18 (design_numbers.py edge reads the silk texts)
@@ -646,7 +646,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-05, DF-125
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-236 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-236 on the RP2350B board.
 
 ### DEF-58: The cell's lead end is held by a piece of tape, not by the pocket
 - Found: two-model review (O-R8), 2026-10-26, from case.scad and assembly.md step 5
@@ -657,7 +657,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-08, DF-04, DF-85
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-214 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-214 on the RP2350B board.
 
 ### DEF-59: case.scad's panel numbers are not the drawing's
 - Found: two-model review (O-R6), 2026-10-26, from the datasheet downloaded 2026-10-26 to the main checkout (untracked)
@@ -668,7 +668,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MEC-11, DF-61, DF-123
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-229 on the RP2350B board.
 
 ### DEF-60: A GND via was moved by hand in the board file
 - Found: two-model review (O-R10), 2026-10-26, from the git log at 62b01f2
@@ -679,7 +679,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-179
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-237 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-237 on the RP2350B board.
 
 ### DEF-61: Two pin-review findings that set the BOM are unanswered
 - Found: two-model review (F-R2(d)), 2026-10-26, split from DEF-26
@@ -690,7 +690,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-14, DF-96
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-227 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-227 on the RP2350B board.
 
 ### DEF-62: The cell's pocket has no fit for a worst-case cell
 - Found: round 3's sign-off (O-S1), 2026-10-26, against DEC-27's geometry; confirmed at 71737ae on 2026-10-27 by design_numbers.py cellgap
@@ -701,7 +701,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-08, DF-85, DF-04
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-214 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-214 on the RP2350B board.
 
 ### DEF-63: U10 went on the board without its datasheet
 - Found: re-seeding for 71737ae (2026-10-27), from pin_review/u10.json
@@ -712,7 +712,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-182, DF-98, DF-138, REQ-BAT-12, REQ-PWR-07
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-211 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-211 on the RP2350B board.
 
 ### DEF-64: The speaker's plug no longer fits J4, and its replacement is not bought
 - Found: re-seeding for 71737ae (2026-10-27), from bom.md's speaker line
@@ -723,7 +723,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-183, DF-170, DF-118, REQ-MEC-11
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-231 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-231 on the RP2350B board.
 
 ### DEF-65: The swelling check used the old decks' line, not the one-piece top's ceiling
 - Found: re-seeding for 71737ae (2026-10-27): design_numbers.py swell failed at 0.30 mm when the cell's pocket reached case y 46.1
@@ -734,7 +734,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-07
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-215 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-215 on the RP2350B board.
 
 ### DEF-66: J2's polarity mark overlaps its label, and the PANEL label sits on U4's pads
 - Found: re-seeding for 71737ae (2026-10-27), reading VER-04's six DRC warnings by hand (DEF-36)
@@ -745,7 +745,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-05.R, DF-125
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-250 (no silk on a pad) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-250 (no silk on a pad) on the RP2350B board.
 
 ### DEF-67: Three of U4's supply pins have no capacitor near them, and the far DVDD pin has no 4.7 uF
 - Found: VER-197 (paper_checks.py core), built 2026-10-27 for the coverage grid's class 4 / mcu cell, at 71737ae
@@ -766,7 +766,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-12, DF-138
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-221 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-221 on the RP2350B board.
 
 ### DEF-69: A cell cut off at 3.50 V can reach its PCM's under-voltage trip in under a month
 - Found: VER-103 (paper_checks.py shelf), built 2026-10-27, at 71737ae
@@ -777,7 +777,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BAT-10, REQ-PWR-07
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-223 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-223 on the RP2350B board.
 
 ### DEF-70: C24, the core regulator's input capacitor, is under the RP2350's 4.7 uF minimum at its own tolerance
 - Found: VER-30 (paper_checks.py mlccbias), built 2026-10-27, at 71737ae
@@ -808,7 +808,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-148
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-220 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was FIXED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-220 on the RP2350B board.
 
 ### DEF-73: VBUS on J1's CC or data pins overstresses the CC parts above 3.9 V and the whole 3V3 domain above 4 V
 - Found: VER-195 (circuit_checks.py usbfault), built 2026-10-27, at 71737ae
@@ -819,7 +819,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-101, DF-51
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-222 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-222 on the RP2350B board.
 
 ### DEF-74: The F.Cu GND pour comes 2.875 mm from every comb's centre, inside REQ-BTN-04's 2.9 mm
 - Found: VER-132 (layout_checks.py fab, item (b)), built 2026-10-27, at 71737ae
@@ -830,7 +830,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-BTN-04
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was CLOSED there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-230 on the RP2350B board.
 
 ### DEF-75: The fast nets cross gaps in the ground under them, and D+ and D- differ by 3.6 mm
 - Found: VER-21 (layout_checks.py ret) and VER-108 (layout_checks.py usbpair), built 2026-10-27, at 71737ae
@@ -841,7 +841,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-51, DF-184
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-209 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-261 on the RP2350B board.
 
 ### DEF-76: pinmap.md states no clock limits for the panel's SPI or the buttons' shift registers
 - Found: VER-199 (circuit_checks.py timing), built 2026-10-27, at 71737ae
@@ -852,7 +852,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-DSP-11, DF-180
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-206 (the panel bus's clock limits) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-206 (the panel bus's clock limits) on the RP2350B board.
 
 ### DEF-77: J5's mouth faces the side wall 2 mm away: no SWD cable with the board in the tub
 - Found: VER-165 (case_checks.py mouths), built 2026-10-27, at 71737ae
@@ -873,7 +873,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-61
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-229 on the RP2350B board.
 
 ### DEF-79: bom.md's order line and its cost table are not the board being ordered
 - Found: the review's O-R3 and F-R4 (2026-10-27), reading hardware/ref_design/docs/bom.md at 71737ae
@@ -884,7 +884,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-11, REQ-PRD-09
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-239 on the RP2350B board.
 
 ### DEF-80: The flex antenna sits within 15 mm of the panel, the cell and a screw
 - Found: VER-205 (layout_checks.py antenna), built 2026-10-28, at 39cc07f
@@ -895,7 +895,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-RF-01, REQ-RF-02, REQ-RF-03, DF-192
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries to no DF row: the F1C200s board has no radio (DESIGN.md:77, no Wi-Fi).
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries to no DF row: the RP2350B board has no radio (DESIGN.md:77, no Wi-Fi).
 
 ### DEF-81: The new parts' JLC class and stock were never checked
 - Found: docs/living/esp32s3_build.md 'Not verified' and docs/living/esp32s3_pinmap_diff.md, read at this re-seed (2026-10-28)
@@ -906,7 +906,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-10, DF-69
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-238 on the RP2350B board.
 
 ### DEF-82: The module's 22 uF sits 23.6 mm from its 3V3 pin
 - Found: VER-204 (paper_checks.py module), built 2026-10-28, at 39cc07f
@@ -917,7 +917,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MCU-09, DF-187
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-210 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-210 on the RP2350B board.
 
 ### DEF-83: C3, U2's BAT capacitor, is under its 4.7 uF minimum at 4.2 V
 - Found: VER-30 (paper_checks.py mlccbias), rewritten 2026-10-28 with Samsung's DC-bias curves on disk
@@ -928,7 +928,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-136
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-235 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-235 on the RP2350B board.
 
 ### DEF-84: U4's thermal pad is 3.9 mm square against the module's 3.7
 - Found: VER-125 (check_land.py), rewritten 2026-10-28 with the module's land pattern
@@ -939,7 +939,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-185
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-220 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-220 on the RP2350B board.
 
 ### DEF-85: No antenna or U.FL cable is on any buy list, and the case has no place for it
 - Found: VER-167 (design_numbers.py bom), extended 2026-10-28, at 39cc07f
@@ -950,7 +950,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-RF-02, DF-197
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-239 (bom.md names every hand-fitted part) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-239 (bom.md names every hand-fitted part) on the RP2350B board.
 
 ### DEF-86: 3V3 falls to 2.976 V at the module in a Wi-Fi burst at the 3.50 V cutoff
 - Found: VER-204 with VER-13's copper solver, 2026-10-28, at 39cc07f
@@ -961,7 +961,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-05, REQ-MCU-09, DF-187
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-210 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-210 on the RP2350B board.
 
 ### DEF-87: Wi-Fi's heat takes the module's air over its 65 C and U3 over its junction limit on paper
 - Found: VER-144, VER-193 and VER-200 (thermal.py), rewritten 2026-10-28 at 39cc07f
@@ -972,7 +972,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-THM-04, REQ-MCU-13, DF-31, DF-193
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-213 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-213 on the RP2350B board.
 
 ### DEF-88: pin_review/u3.json describes the RT9013, not the TLV75733P on the board
 - Found: VER-36 (circuit_checks.py pinreview) at 39cc07f, 2026-10-28
@@ -983,7 +983,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-FAB-02, DEF-26
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-211 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-211 on the RP2350B board.
 
 ### DEF-89: The microSD slot's body has 0.075 mm a side in the case's opening
 - Found: VER-165 (case_checks.py mouths), extended 2026-10-28, at 39cc07f
@@ -994,7 +994,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-STO-03, REQ-MEC-11, DF-195
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-233 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-233 on the RP2350B board.
 
 ### DEF-90: J8 reaches 0.175 mm into the folded FPC's zone, 1.675 mm tall against fpc_low's 1.05
 - Found: VER-20 (case_checks.py stack) at 39cc07f, 2026-10-28
@@ -1005,7 +1005,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-123
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-229 on the RP2350B board.
 
 ### DEF-91: A microSD card plugged in while running can dip 3V3 under 3.0 V
 - Found: VER-206 (paper_checks.py sdinsert), built 2026-10-28, at 39cc07f
@@ -1016,7 +1016,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-STO-02, DF-194
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-245 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries to no DF row: the microSD card whose insertion dipped 3V3 left the design on 2026-10-29.
 
 ### DEF-92: J7's 3V3 pad back-feeds U3 when a jig powers it
 - Found: VER-159 (check_backpower.py), its jig state added 2026-10-28
@@ -1027,7 +1027,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-PWR-19, DF-189
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-241 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-241 on the RP2350B board.
 
 ### DEF-93: The audio filter's bandwidth is 8.2 kHz at the worst corner against 10 kHz
 - Found: VER-100 (paper_checks.py audio) at 39cc07f, 2026-10-28
@@ -1038,7 +1038,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-AUD-03
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-248 (the audio filter's bandwidth at its corners) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-248 (the audio filter's bandwidth at its corners) on the RP2350B board.
 
 ### DEF-94: USB's series resistors are 11.5 mm from the module
 - Found: VER-191 (paper_checks.py usb) at 39cc07f, 2026-10-28
@@ -1049,7 +1049,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-MCU-02, DF-198
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-209 (the USB pair's resistors at the chip) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-261 (the USB pair's resistors at the chip) on the RP2350B board.
 
 ### DEF-95: J2 carries up to 1.24 A against a 1 A catalogue rating
 - Found: VER-31 (circuit_checks.py ratings) at 39cc07f, 2026-10-28
@@ -1060,7 +1060,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-118
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-221 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-221 on the RP2350B board.
 
 ### DEF-96: BL_PWM low leaves the backlight glowing on a unit whose U6 offset is positive
 - Found: VER-05 (paper_checks.py backlight) at 39cc07f, 2026-10-28
@@ -1071,7 +1071,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: VER-62
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-228 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-228 on the RP2350B board.
 
 ### DEF-97: The smallest 4 mm dome's rim sits 0.171 mm inside the ring pad's inner edge
 - Found: VER-178 (check_dome.py) at 39cc07f, 2026-10-28, the first run on the dome's drawing
@@ -1082,7 +1082,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-168
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-230 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-230 on the RP2350B board.
 
 ### DEF-98: design.py names Samsung as the maker of the four Fenghua X7R capacitors
 - Found: VER-186 (check_lcsc.py) at 39cc07f, 2026-10-28, against Konnect's JLC snapshot of 2026-07-13
@@ -1093,7 +1093,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: none
 - Gate: EVT
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-238 (each part's identity against its record) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-238 (each part's identity against its record) on the RP2350B board.
 
 ### DEF-99: The PLA case over U2 runs past PLA's heat deflection when charging while playing
 - Found: VER-192 (thermal.py casemat) at 39cc07f, 2026-10-28, its first run
@@ -1104,7 +1104,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-202
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-213 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-213 on the RP2350B board.
 
 ### DEF-100: U2's exposed pad gets no paste, and its four paste windows sit between U2's pins
 - Found: VER-27 (layout_checks.py gerbers) at 39cc07f, 2026-10-28, its first run
@@ -1115,7 +1115,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-08, DF-149
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-219 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-219 on the RP2350B board.
 
 ### DEF-101: At its drawing's 3.35 mm the module breaks the glass's 0.2 mm clearance; check_fit checks it at the nominal 3.2
 - Found: VER-112 (case_checks.py heights) at 39cc07f, 2026-10-28, its first run
@@ -1126,7 +1126,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: DF-91, REQ-MEC-01
 - Gate: CASE
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-229 (heights at the drawing's maximum) on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-229 (heights at the drawing's maximum) on the RP2350B board.
 
 ### DEF-102: The panel's FPC tail is 25.5 +-0.15 mm wide against the FH12-50S's recommended 25.5 +-0.07
 - Found: VER-219 (case_checks.py fpc) at 39cc07f, 2026-10-28, its first run
@@ -1137,4 +1137,4 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Updated: REQ-DSP-04
 - Gate: ORDER
 - Board: esp32s3
-- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the F1C200s board. Its lesson carries as DF-206 on the F1C200s board.
+- Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-206 on the RP2350B board.

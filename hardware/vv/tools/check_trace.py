@@ -52,7 +52,7 @@ a defect whose Status is ACCEPTED has Alex's signed 'DF-ACCEPT:DEF-nn' line in A
 Since 2026-10-28 (the F1C200s re-target) also: a DROPPED row (a requirement, DFMEA row, check, defect or
 gate criterion of a dropped board) names that board in its board column and says 'DROPPED with <board>
 (tag <tag>): <why>' with the tag that holds the board's register (DROPPED_BOARDS), and the tag exists; a
-live row names a live board (f1c200s or both), never a dropped one; no live row leans on a DROPPED row
+live row names a live board (rp2350b or both), never a dropped one; no live row leans on a DROPPED row
 (verified by, detects, needs, an allocation) or cites one outside 'Was: ...'; every live requirement
 names its subsystems ('- Subsystem:', grid.py's SUBSYSTEMS or 'all'); while README's '- Baseline board:'
 is a dropped board, no check of the live board is PASS or FAIL (its design files are another board's) unless its
@@ -183,16 +183,16 @@ PREFIX_PHASE = {v: k for k, v in GATE_PREFIX.items()}
 # 2026-10-28: prod_board and prod_case left the repository in 574c94c (Alex: not needed). Later the same day the
 # ESP32-S3 board and the RP2354B board were both dropped: the register targets the next spin, the Allwinner F1C200s
 # board, whose design will replace the files under hardware/ref_design (docs/static/next_spin_requirements.md)
-BOARDS = ("f1c200s",)
-BOARD_VALUES = ("f1c200s", "both")
+BOARDS = ("rp2350b",)
+BOARD_VALUES = ("rp2350b", "both")
 # a RETIRED or CUT row keeps the board it was written for, so its history reads as it was (574c94c: prod_board's
 # rows; 'ref_design' is REF-A as it stood when the row left, the RP2354B or the ESP32-S3 board)
 RETIRED_BOARDS = ("prod_board", "ref_design")
 # DROPPED (2026-10-28): a row that belonged to a dropped board. It is neither a PASS nor a CLOSED: it names the
 # board and the tag holding that board's register, and no gate of the next spin counts it
-DROPPED_BOARDS = {"esp32s3": "vv-esp32s3-final", "rp2354b": "vv-rp2354b-final"}
+DROPPED_BOARDS = {"esp32s3": "vv-esp32s3-final", "rp2354b": "vv-rp2354b-final", "f1c200s": "vv-f1c200s-final"}
 GONE = ("RETIRED", "DROPPED")            # out of every gate: the subject left the design, or its board was dropped
-BOARD_ROOTS = {"f1c200s": ("hardware/ref_design/",)}
+BOARD_ROOTS = {"rp2350b": ("hardware/ref_design/",)}
 SHARED_ROOTS = ("hardware/vv/",)
 METHODS = set("TAID")
 LEVELS = ("product", "subsystem", "board")
@@ -202,8 +202,8 @@ DF_STATUS = ("OPEN", "DONE", "ACCEPTED", "RETIRED", "DROPPED")
 # ACCEPTED (2026-10-28, both sign-off reviewers of vv-rp2354b-final): a defect Alex moves to a later gate with a
 # signed 'DF-ACCEPT:DEF-nn' line; before that gate R4 and the gate's criteria let it and the checks it names through
 DEF_STATUS = ("OPEN", "FIXED", "CLOSED", "ACCEPTED", "RETIRED", "DROPPED")
-# a requirement's allocation to a board: '.F' the F1C200s board's; '.R' was the ESP32-S3 board's (DROPPED with it)
-ALLOC_SUFFIX = {"F": "f1c200s", "R": "esp32s3"}
+# a requirement's allocation to a board: '.B' the RP2350B board's; '.F' was the F1C200s board's and '.R' the ESP32-S3 board's (DROPPED with them)
+ALLOC_SUFFIX = {"B": "rp2350b", "F": "f1c200s", "R": "esp32s3"}
 VP_STATUS = ("yes", "partly", "no", "simulated")
 VP_METHODS = 218                         # validation_plan.md is archived with 218 methods
 DESIGN_PY = "hardware/ref_design/board/design.py"
@@ -231,7 +231,7 @@ CLAUDE_TRAILER = re.compile(r"^(Co-Authored-By: Claude|Claude-Session:)", re.M |
 HARD_KEY_TYPES = ("sk-ssh-ed25519@openssh.com", "sk-ecdsa-sha2-nistp256@openssh.com")
 
 RE = {
-    "REQ": r"REQ-[A-Z]{2,4}-\d{2}(?:\.[RF])?",         # .P (prod_board's allocation) left with it, 574c94c; .F the F1C200s's
+    "REQ": r"REQ-[A-Z]{2,4}-\d{2}(?:\.[RFB])?",        # .P (prod_board's allocation) left with it, 574c94c; .B the RP2350B's, .F the F1C200s's
     "DF": r"DF-\d{2,3}",
     "VER": r"VER-\d{2,3}",
     "DEF": r"DEF-\d{2,3}",
@@ -2717,7 +2717,7 @@ def main():
     ap.add_argument("--verbose", action="store_true")
     ap.add_argument("--vv", help=argparse.SUPPRESS)        # another copy of hardware/vv (seed_faults.py)
     a = ap.parse_args()
-    a.board = BOARDS[0]                                    # the one board: the F1C200s board since 2026-10-28
+    a.board = BOARDS[0]                                    # the one board: the RP2350B board since 2026-10-29
     if a.vv:
         VV = os.path.abspath(a.vv)
     db = load()
