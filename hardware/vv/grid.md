@@ -8,7 +8,7 @@ What 'classes 1-15 pass before the order' means: R9 holds a cell until a check t
 
 | Class | power | cell | soc | storage | usbc | display | audio | buttons | case |
 |---|---|---|---|---|---|---|---|---|---|
-| A1 Requirements | planned (ORDER): VER-189; measures, does not clear: VER-101 VER-102 | planned (ORDER): VER-37 VER-160@EVT VER-189; measures, does not clear: VER-101 VER-102 VER-153 | planned (ORDER): VER-189 | planned (ORDER): VER-189 | planned (ORDER): VER-189 | planned (ORDER): VER-189 | planned (ORDER): VER-189; measures, does not clear: VER-128 | planned (ORDER): VER-189; measures, does not clear: VER-50 | planned (ORDER): VER-189; measures, does not clear: VER-230 |
+| A1 Requirements | COVERED, worst FAIL: VER-189; measures, does not clear: VER-101 VER-102 | COVERED, worst FAIL: VER-37 VER-160@EVT VER-189; measures, does not clear: VER-101 VER-102 VER-153 | COVERED, worst FAIL: VER-189 | COVERED, worst FAIL: VER-189 | COVERED, worst FAIL: VER-189 | COVERED, worst FAIL: VER-189 | COVERED, worst FAIL: VER-189; measures, does not clear: VER-128 | COVERED, worst FAIL: VER-189; measures, does not clear: VER-50 | COVERED, worst FAIL: VER-189; measures, does not clear: VER-230 |
 | A2 Architecture fit | planned (ORDER): VER-34 VER-40 VER-198 VER-231 VER-258 | planned (ORDER): VER-34 VER-37 VER-40 VER-218 VER-231 | planned (ORDER): VER-34 VER-40 VER-198 VER-223 VER-224 VER-231 VER-232 VER-251 VER-252 VER-256 VER-258 VER-259 VER-262 VER-264; measures, does not clear: VER-245 | planned (ORDER): VER-34 VER-198 VER-223 VER-232 VER-252 VER-256 VER-259 VER-264 | planned (ORDER): VER-34 VER-40 VER-198 VER-232 VER-251 VER-259 | planned (ORDER): VER-34 VER-40 VER-198 VER-224 VER-232 VER-262 | planned (ORDER): VER-34 VER-40 VER-232 VER-252 VER-256 | planned (ORDER): VER-34 VER-40 VER-198 VER-232 VER-258 VER-262; measures, does not clear: VER-45 VER-46 | planned (ORDER): VER-190 |
 | B3 Connectivity | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 VER-198 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 VER-149@EVT VER-198 VER-232 VER-253 VER-262 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-198 VER-232 VER-253 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 VER-198 VER-232 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 VER-136 VER-198 VER-232 VER-262 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 VER-232 | planned (ORDER): VER-01 VER-02 VER-03 VER-34 VER-36@EVT VER-40 VER-198 VER-232 VER-262 | NOT_NEEDED |
 | B4 Values and worst case | planned (ORDER): VER-13@EVT VER-30@EVT VER-32@EVT VER-99 VER-103@EVT VER-138@EVT VER-231 VER-235 VER-258 | planned (ORDER): VER-13@EVT VER-30@EVT VER-32@EVT VER-37 VER-103@EVT VER-138@EVT VER-160@EVT VER-231 | planned (ORDER): VER-30@EVT VER-231 VER-235 VER-256 VER-258 | planned (ORDER): VER-256 | planned (ORDER): VER-195 | planned (ORDER): VER-05@EVT VER-137 | planned (ORDER): VER-30@EVT VER-100@EVT VER-256 | planned (ORDER): VER-248 VER-258 | NOT_NEEDED |
@@ -48,7 +48,7 @@ Each live requirement's '- Subsystem:' in requirements.md ('all': every subsyste
 
 | Class | covered | planned | gap | not needed | accepted gap | held by the order gate |
 |---|---|---|---|---|---|---|
-| 1 Requirements | 0 | 9 | 0 | 0 | 0 | 9 |
+| 1 Requirements | 9 | 0 | 0 | 0 | 0 | 0 |
 | 2 Architecture fit | 0 | 9 | 0 | 0 | 0 | 9 |
 | 3 Connectivity | 0 | 8 | 0 | 1 | 0 | 8 |
 | 4 Values and worst case | 0 | 8 | 0 | 1 | 0 | 8 |
@@ -66,7 +66,7 @@ Each live requirement's '- Subsystem:' in requirements.md ('all': every subsyste
 | 16 Bring-up measurements | 7 | 2 | 0 | 0 | 0 | - |
 | 17 Stress and life | 0 | 9 | 0 | 0 | 0 | - |
 | 18 Production test | 8 | 1 | 0 | 0 | 0 | - |
-| all | 15 | 137 | 0 | 10 | 0 | 125 |
+| all | 24 | 128 | 0 | 10 | 0 | 116 |
 
 ## Whole-register classes
 
@@ -75,19 +75,8 @@ Each live requirement's '- Subsystem:' in requirements.md ('all': every subsyste
 
 ## Gaps, each with its proposed check
 
-The order gate holds 125 cells of classes 1-15 (0 GAP, 125 planned); classes 16-18 have 0 GAP, for their own phases. A planned cell names the checks that would clear it once built and run, with what each computes or measures and its pass limit, from verification.csv; a bare GAP has none yet: add one as a NOT_BUILT row.
+The order gate holds 116 cells of classes 1-15 (0 GAP, 116 planned); classes 16-18 have 0 GAP, for their own phases. A planned cell names the checks that would clear it once built and run, with what each computes or measures and its pass limit, from verification.csv; a bare GAP has none yet: add one as a NOT_BUILT row.
 
-- 1 Requirements / audio: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / buttons: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / case: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / cell: VER-37 Cell spec sheet: capacity, charge current, charge temperature, PCM values, size (I, NOT_RUN, ORDER). Pass: capacity; standard charge current >= 295 mA (R5's highest, 242-295 mA); its charge temperature range against the 3.9-48.2 C window TH1 gives at 71737ae (DF-217); OVP/UVP/OCP and the short-circuit delay; its largest length and width with the PCM: 51.6 x 35.6 mm or less fits the tub's pocket at 71737ae with 0.1 mm a side after the print's 0.1 (design_numbers.py cellgap, DEC-27)
-- 1 Requirements / cell: VER-160 Charge current and window tied to the cell (cell.json) (A, NOT_BUILT, EVT). Pass: 890 V / R5 (the BQ24073's KISET) <= min(0.5 C, the standard charge current); the TS window (VER-32) inside the cell's charge range; case.scad's cell size equals cell.json's
-- 1 Requirements / cell: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / display: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / power: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / soc: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / storage: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
-- 1 Requirements / usbc: VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (I, NOT_BUILT, ORDER). Pass: 0 functions without a requirement; 0 live requirements without a number and tolerance, a primary Source (a datasheet line, a standard's clause or Alex's decision) and a live check; each finding logged as a new requirement or a DEF
 - 2 Architecture fit / audio: VER-34 Application-circuit diff per IC and primary-source audit of inherited claims (the parts the other scripts do not read; circuit_checks.py appdiff) (A, NOT_BUILT, ORDER). Pass: RESULT: PASS: every pin and application rule met on its quoted line; each pin_review file names its part's design.py part number (U3's file rewritten for C47773: the board session's file, outside hardware/vv, DEF-88); 0 vv constants on an inherited quote whose datasheet is on disk; the datasheets of U3 (C47773), the RP2350B, the GD25Q128 and the TPS3421 are read (VER-233)
 - 2 Architecture fit / audio: VER-40 Clean-room schematic review by a human who has not seen the notes (I, NOT_RUN, ORDER). Pass: replies read; every point answered in hardware/vv/evidence/cleanroom.md
 - 2 Architecture fit / audio: VER-232 Pin plan review for the RP2350B (A/I, NOT_BUILT, ORDER). Pass: 0 conflicts; every function on a pin that has it (REQ-SOC-05); the 20 inputs on 20 distinct GPIOs; VER-262's budget holds, or the relief option is applied and the plan re-run
@@ -631,8 +620,9 @@ The order gate holds 125 cells of classes 1-15 (0 GAP, 125 planned); classes 16-
 - 15 Thermal / storage: VER-193 Board-wide dissipation on paper: every part, the cell's own heat and the case's inner surface (A, NOT_BUILT, ORDER). Pass: every part's junction at or under its maximum less 20 C, and the RP2350B's case temperature under its datasheet limit (REQ-SOC-07), at 40 C outside in the worst mode; the cell's surface at or under 45 C charging while playing at 25 C ambient; each thermal resistance quoted from a datasheet with its line or a stand-in printed
 - 15 Thermal / usbc: VER-193 Board-wide dissipation on paper: every part, the cell's own heat and the case's inner surface (A, NOT_BUILT, ORDER). Pass: every part's junction at or under its maximum less 20 C, and the RP2350B's case temperature under its datasheet limit (REQ-SOC-07), at 40 C outside in the worst mode; the cell's surface at or under 45 C charging while playing at 25 C ambient; each thermal resistance quoted from a datasheet with its line or a stand-in printed
 
-## FAIL (0)
+## FAIL (1)
 
+- VER-189 Requirements review per subsystem: every function has a requirement with a number, a source and a check (ORDER): classes 1; power cell soc display audio buttons usbc case storage
 
 ## ACCEPTED at the order gate (0): not a PASS
 
@@ -655,4 +645,4 @@ The order gate holds 125 cells of classes 1-15 (0 GAP, 125 planned); classes 16-
 - 12 Signals and timing / case: The case carries no signal: nothing on it is wired, and since the F1C200s and RP2350B re-targets the board has no radio whose antenna the case would hold (Was: the ESP32-S3 board's flex antenna on the left wall).
 - 14 Mating / storage: The 16 MB flash is soldered at JLC and nothing mates with it: the microSD slot, the card and its insertion left with the F1C200s board on 2026-10-29. The connectors that mate (J2, J3, J4) are the cell, display and speaker subsystems'.
 
-Last updated: 2026-10-29 14:20 EDT (generated)
+Last updated: 2026-10-29 14:25 EDT (generated)

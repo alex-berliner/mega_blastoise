@@ -15,7 +15,7 @@ Live rows read: 135 (REQ-PRD 21, all APPROVED by Alex; lower-level 114); a row c
 - charge the cell: REQ-BAT-01 to -04, -09, -13 (VER-67, 134, 14, 32, 69, 135, 85, 98, 133, 145)
 - the RP2350B's and flash's rails: REQ-PWR-04, -05, -20 (VER-83, 235, 70, 231, 249)
 - turn on by a 2.5 s hold of seat 1's Start, off by a 1 to 2 s hold, no slider: REQ-PWR-21, -09, -10, -11, REQ-PRD-15 (VER-239, 240, 243, 105, 104, 223, 228)
-- force off by an 8 s hold, TPS3421 on 3V3: REQ-SOC-04, REQ-PRD-08.B, REQ-PWR-07 (VER-258, 241, 198, 65, 146). GAP: 'about 8 s' has no tolerance (DEF-104)
+- force off by an 8 s hold, TPS3421 on 3V3: REQ-SOC-04, REQ-PRD-08.B, REQ-PWR-07 (VER-258, 241, 198, 65, 146). GAP: 'about 8 s' has no tolerance (DEF-106)
 - Sleep saves and turns off: REQ-PRD-20, REQ-SOC-11 (VER-263, 264)
 ### cell
 - hold, sense, protect: REQ-BAT-05 to -08, -10 to -12, -14 to -16, REQ-THM-02, -03 (VER-49, 54, 88, 37, 140, 182, 181, 138, 139, 153)
@@ -46,7 +46,7 @@ Functions without a requirement before this review: 2 (now rows, PROPOSED). Left
 
 ## Test 2: every live row has a number and tolerance, a primary Source and a live check
 - A live check (not RETIRED, DROPPED or CUT, and named in the register): all 135 live rows, 0 failures (a parent row lists its allocation).
-- A number and tolerance: all but 4 rows (DEF-104): REQ-SOC-04 and REQ-PRD-08.B ('about 8 s'), REQ-SOC-03 (the crystal has no start-up time), REQ-BAT-16 ('about 140 mA').
+- A number and tolerance: all but 4 rows (DEF-106): REQ-SOC-04 and REQ-PRD-08.B ('about 8 s'), REQ-SOC-03 (the crystal has no start-up time), REQ-BAT-16 ('about 140 mA').
 - A primary Source (a datasheet line, a standard's clause or Alex's decision; a row Alex APPROVED counts as his decision; pin_review files count as the datasheets they quote): FAILS for 54 live rows (15: the design's own files, 24: validation_plan only, 15: Claude's estimate/analysis/review). Row by row:
   - REQ-BAT-05.B [the design's own files]: carryover.md C-7.
   - REQ-BAT-07 [validation_plan only]: validation_plan #26; case.scad (cell_top 1.6 over the board; the panel's back 2.4, the pan
@@ -110,7 +110,7 @@ Functions without a requirement before this review: 2 (now rows, PROPOSED). Left
 - REQ-BTN-01 and -10 mention the 74HC165 only as the pin-relief option: correct as written.
 
 ## Findings logged
-- DEF-103: 54 live rows without a primary Source. DEF-104: 'about' with no tolerance.
+- DEF-105: 54 live rows without a primary Source. DEF-106: 'about' with no tolerance.
 - New rows: REQ-AUD-07 (VER-100, VER-64), REQ-FAB-13 (VER-265, new, NOT_BUILT). Fixed: REQ-PWR-07 rationale; DESIGN.md line cites in REQ-SOC-01, -02, -08, REQ-USB-01, -02, REQ-ASM-01.B; REQ-SOC-04 proposes 4 s to 12 s.
 
 Pass limit: 0 functions without a requirement (met after the two rows); 0 live requirements without a number and tolerance, a primary Source and a live check (NOT met: 54 sources, 4 tolerances); each finding logged as a requirement or a DEF (met).

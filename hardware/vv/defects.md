@@ -1139,7 +1139,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Board: esp32s3
 - Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-206 on the RP2350B board.
 
-### DEF-103: 54 live requirements cite no primary Source (a datasheet line, a standard's clause or Alex's decision)
+### DEF-105: 54 live requirements cite no primary Source (a datasheet line, a standard's clause or Alex's decision)
 - Board: rp2350b
 - Found: VER-189 (the per-subsystem requirements review) on 2026-10-29: VER-189's pass limit wants 0 live requirements without a primary Source; 54 of the 133 live rows (REQ-PRD rows aside, which Alex signed) cite only the archived validation_plan (#n), the design's own files (design.py, case.scad, placement.py, bringup.md, design_review.md, assembly.md), or Claude's estimate, analysis or review.
 - Symptom: the numbers on those rows are the design's own or Claude's: REQ-BAT-05.B, -07, -08, -10, -14, -15; REQ-PWR-09, -10, -14; REQ-DSP-06, -09, -10; REQ-AUD-03, -04, -06; REQ-BTN-02 to -08; REQ-MEC-01 to -12; REQ-THM-02 to -04; REQ-FAB-01, -02, -05 to -10; REQ-ASM-01, -02; REQ-TST-01 to -03, -05 to -08. Nobody outside the register has set them, so a check can pass them against a number nobody owns.
@@ -1150,7 +1150,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Gate: ORDER
 - Status: OPEN (2026-10-29): the fix is Alex's decision on which of the 54 he wants to own (a number from him, or his signed line) and, for the rest, Claude citing the datasheet line or the standard's clause; evidence/2026-10-29_VER-189_requirements_review.md lists each row with its source class.
 
-### DEF-104: Live requirements whose number has no tolerance
+### DEF-106: Live requirements whose number has no tolerance
 - Board: rp2350b
 - Found: VER-189 on 2026-10-29: REQ-SOC-04 and REQ-PRD-08.B say 'about 8 s' for the hard reset; REQ-SOC-03 gives the crystal's frequency (12 MHz) but no start-up time or frequency tolerance; REQ-BAT-16 says 'about 140 mA'.
 - Symptom: a check cannot pass or fail 'about'; VER-258 had to read 'about 8 s' as 4 s to 12 s on Claude's own reading.
