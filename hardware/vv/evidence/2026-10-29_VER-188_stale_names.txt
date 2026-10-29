@@ -1,6 +1,6 @@
 # VER-188 stale_names
 DATE: 2026-10-29
-COMMIT: 0bc51d69c069798e5d3dd0cd9240be01082d13b6
+COMMIT: 76b231fd0f3084806a72f5d698627af80edcbe4c
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/stale_names.py
