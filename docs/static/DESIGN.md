@@ -39,6 +39,7 @@ What the players see and do.
 - Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select, laid out like the bottom half of a DS Lite. (2026-10-19)
 - A confirms, B goes back, and X explains what the cursor is on (move details, Pokemon stats). (2026-10-28)
 - A player can take back a locked-in choice until both players have chosen. (2026-10-28)
+- A local battle can be paused: choosing Sleep from the pause menu saves the battle and turns the console off, and the next power-on goes straight back to it. Online battles can't be paused. (2026-10-29)
 - A session runs: pick Gen 1 or Gen 3 (the first and third Pokemon game generations), set options, ready up in the lobby, choose moves, watch the turn play, then see the result and return to the lobby. (2026-10-28)
 - The options are team size (3 against 3, or 6 against 6), text speed and a tutorial before the first game. (2026-10-28)
 - Teams are random every battle, rematches included. Random teams are the only team mode. (2026-10-28)
@@ -89,4 +90,4 @@ How it behaves.
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-29 13:17 EDT
+Last updated: 2026-10-29 13:22 EDT
