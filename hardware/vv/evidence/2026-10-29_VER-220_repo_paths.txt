@@ -1,10 +1,10 @@
 # VER-220 repo_paths
 DATE: 2026-10-29
-COMMIT: 76b231fd0f3084806a72f5d698627af80edcbe4c
+COMMIT: ae77ff11f559eb1286a1c9f943382e1f4ef019da
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/repo_paths.py
-repository paths named under hardware/vv at 76b231f: 0 moved, deleted or wrongly pinned; 75 planned (never committed)
+repository paths named under hardware/vv at ae77ff1: 0 moved, deleted or wrongly pinned; 67 planned (never committed)
 RESULT: PASS
 
 exit 0

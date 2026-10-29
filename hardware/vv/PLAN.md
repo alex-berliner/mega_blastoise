@@ -55,6 +55,18 @@ Approved with Alex's numbers: -09 ($60 at 10 units, $40 at 50). Unchanged, appro
 -04, -04.B, -05, -07, -08, -10, -11, -17. Open for Alex: DF-263 (block protection on the bootloader against a
 recovery .uf2 that rewrites it).
 
+## (b3) The artifact audit applied (2026-10-29)
+
+analysis/artifact_audit_2026-10-29.md found leftovers of the dropped boards inside live rows (36 REWORD, 2 ASK, 345 KEEP).
+All 36 REWORD rows carry its corrected text, and the 34 KEEP rows with an old rationale are re-grounded on the RP2350B
+board (the RP board's circuits at tag vv-rp2354b-final, the RP2350B, the GD25Q128, the TPS3421). Alex's two answers:
+(1) the TPS3421 runs from 3V3, so it draws nothing while the unit is off (REQ-PWR-07, DF-266 for the back-power
+path, VER-258, VER-159); (2) the 20 contacts and the slider are read directly on GPIOs, with no 74HC165s (U8, U9
+and U11 go; REQ-PRD-01.B, VER-232, VER-262): the 74HC165 chain (about $0.95 a unit at 10, freeing about 18 pins)
+is the designated pin-relief option, the first thing to change if the pin plan runs short. REQ-PRD-08's statement
+changed, so Alex's approval A-011 no longer counts: the row is PROPOSED until he approves the new text. VER-188
+cannot catch leftovers until the RP2350B design.py replaces the baseline (DEF-47, VER-188's procedure).
+
 ## (c) Where the register is on the new-MCU path
 
 `python3 hardware/vv/tools/check_trace.py` prints it. Today: **NM-01, Requirements** (Alex approved the REQ-PRD
@@ -84,7 +96,7 @@ fails it once that design.py lands without them).
 | 0.2 | **Alex pins a signing key** (README, 'Approvals'). Until then no APPROVALS.md line counts. | | Alex: 15 min |
 | 0.3 | **Download** the RP2350 datasheet (its hardware design chapter holds the minimal design's drawing) and the GD25Q128 datasheet into hardware/ref_design/datasheets, with their hashes. | VER-233 | 30 min |
 | 1 | **The chip gate (NM-03)**: the phone bridge test on the stripboard Pico 2 (our bridge page in Android Chrome, Showdown's server accepting a battle, 5 Gen 1 and 5 Gen 3); XIP from a 16 MB flash on an RP2350B (Alex orders a dev board with that flash, or it waits for the first board), with a sound sample played from the top of the flash; boot time to the lobby and the real panel on a Pico 2 on the side. A fail of the bridge test stops the board design. | VER-251, VER-252, VER-223, VER-224 | 2-3 days on the bench; Alex: the dev board order, 7 to 14 days' lead |
-| 2 | **Architecture and pin plan (NM-04)**: the pin plan, the power budget, the rails (the flash's VCC among them), the flash's budget and read bandwidth, the chip's heat, the hard reset's delay and the boot ROM's recovery rules; the backlight driver, the cell sense and the USB ESD array chosen; the power slider measured against a board switch. | VER-232, VER-231, VER-235, VER-256, VER-238, VER-137, VER-144, VER-193, VER-239, VER-258, VER-259 | 2-3 days |
+| 2 | **Architecture and pin plan (NM-04)**: the pin plan and the pin budget (48 GPIOs against every function; the 74HC165 chain is the designated relief), the power budget, the rails (the flash's VCC among them), the flash's budget and read bandwidth, the chip's heat, the hard reset's delay and the boot ROM's recovery rules; the backlight driver, the cell sense and the USB ESD array chosen; the power slider measured against a board switch. | VER-232, VER-262, VER-231, VER-235, VER-256, VER-238, VER-137, VER-144, VER-193, VER-239, VER-258, VER-259 | 2-3 days |
 | 3 | **Schematic (NM-05)**: the RP2350B design.py replaces the ESP32-S3 board's on main; the netlist, ERC, the pin gate, the application circuits, the flash's wiring against the minimal design, the datasheet audit, the parts' identity, the watchdog rule; then README's baseline moves to that commit and its baseline board to `rp2350b`. | VER-01, VER-03, VER-02, VER-34, VER-198, VER-253, VER-14, VER-104 | the board session; Claude: 1 day of checks |
 | 4 | **The power path and the buses on paper**: inrush, the USB-C connector's fault reach, the amplifier's states and heat, the clocked buses (the panel's and the flash's), the cell's chain, the thermistor's place, the contacts' pull-ups against the pill. | VER-99, VER-195, VER-196, VER-200, VER-199, VER-218, VER-164, VER-248 | 1 day |
 | 5 | **Layout and the board against the case (NM-06; the case gate itself is NM-09, after the order)**: DRC, check_fit, placement drift, the XY chain, the MLCC keep-out, the ESTIMATE ledger, the cell's gap, the USB pair, return paths (the QSPI flash's among them), net classes, the contacts and the dome as placed, the panel's tail, the case's architecture, the regulators' switching loops. | VER-04, VER-06, VER-19, VER-174, VER-142, VER-152, VER-181, VER-236, VER-108, VER-21, VER-201, VER-08, VER-162, VER-178, VER-219, VER-190, VER-249 | 2 days |
@@ -179,4 +191,4 @@ checks and worst status, planned, GAP or NOT_NEEDED, and a table of the requirem
 At the order gate R9 holds every cell of classes 1-15 that no built pre-order check has cleared:
 today every cell but the NOT_NEEDED ones, since no RP2350B design exists to run a check on.
 
-Last updated: 2026-10-29 11:55 EDT (Alex's REQ-PRD review written in, branch vv-review-1)
+Last updated: 2026-10-29 13:10:42 EDT (the artifact audit applied, branch vv-audit-apply)

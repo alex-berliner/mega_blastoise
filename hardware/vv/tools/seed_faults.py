@@ -367,8 +367,8 @@ FAULTS = [
     # the review's findings applied at 71737ae (2026-10-27)
     ("F-R1: a defect marked FIXED while its own Status text says it stays OPEN", "structure",
      "DEF-47: Status is FIXED but its own text says 'stays OPEN'",
-     lambda d: text_edit(d, "defects.md", "- Status: OPEN (O-R9, 2026-10-27:",
-                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. O-R9, 2026-10-27:")),
+     lambda d: text_edit(d, "defects.md", "- Status: OPEN (2026-10-29, artifact audit:",
+                         "- Status: FIXED (It stays OPEN, and the order gate fails on it. 2026-10-29, artifact audit:")),
     ("F-R3: an analysis that reads pinmap.md without naming it in covers", "structure",
      "VER-231: its procedure reads pinmap.md, but covers does not name",
      lambda d: csv_edit(d, "verification.csv", "VER-231", procedure=lambda x: x + "; the rails pinmap.md lists")),
@@ -438,8 +438,8 @@ FAULTS = [
     ("subsystems: a live check on the dropped board's subsystem", "structure", "VER-01: subsystem 'usb_debug' is not one of",
      lambda d: csv_edit(d, "verification.csv", "VER-01", subsystems="power usb_debug")),
     ("new-MCU path: a stage that names a dropped check", "structure", "NM-04: needs VER-203, which is DROPPED",
-     lambda d: text_edit(d, "gates.md", "| VER-232 VER-231 VER-235 VER-256 VER-238 VER-258 VER-259 |",
-                         "| VER-232 VER-203 VER-231 VER-235 VER-256 VER-238 VER-258 VER-259 |")),
+     lambda d: text_edit(d, "gates.md", "| VER-232 VER-262 VER-231 VER-235 VER-256 VER-238 VER-258 VER-259 |",
+                         "| VER-232 VER-262 VER-203 VER-231 VER-235 VER-256 VER-238 VER-258 VER-259 |")),
     ("new-MCU path: a stage whose entry skips the stage before it", "structure",
      "NM-05: its entry needs the stage before it (NM-04)",
      lambda d: text_edit(d, "gates.md", "| NM-04 | VER-01 VER-03", "| NM-03 | VER-01 VER-03")),
@@ -1274,6 +1274,11 @@ def run(d, *extra, trace=TRACE):
 def fresh_copy(tmp, name):
     d = os.path.join(tmp, re.sub(r"\W+", "_", name))
     shutil.copytree(VV, d, ignore=shutil.ignore_patterns("__pycache__"))
+    # a scratch copy has no git history, so Alex's signed lines cannot count in it: his APPROVED rows are PROPOSED here
+    # (the faults that need a signed line run in the clone below, where the base commit signs them)
+    p = os.path.join(d, "requirements.md")
+    txt = open(p, encoding="utf-8").read()
+    open(p, "w", encoding="utf-8").write(re.sub(r"^- Status: APPROVED\b", "- Status: PROPOSED", txt, flags=re.M))
     return d
 
 
@@ -1336,6 +1341,13 @@ def main():
         setup_signing(repo, tmp)
         shutil.rmtree(os.path.join(repo, "hardware/vv"))
         shutil.copytree(VV, os.path.join(repo, "hardware/vv"), ignore=shutil.ignore_patterns("__pycache__"))
+        # the real register carries Alex's signed approvals (his key, not the clone's): the clone starts as the
+        # register stood before them, every row PROPOSED and the approvals table empty, and its faults add their own
+        rp = os.path.join(repo, "hardware/vv/requirements.md")
+        ap = os.path.join(repo, "hardware/vv/releases/APPROVALS.md")
+        rtxt, atxt = open(rp, encoding="utf-8").read(), open(ap, encoding="utf-8").read()
+        open(rp, "w", encoding="utf-8").write(re.sub(r"^- Status: APPROVED\b", "- Status: PROPOSED", rtxt, flags=re.M))
+        open(ap, "w", encoding="utf-8").write(re.sub(r"^\| A-\d+ \|.*\n", "", atxt, flags=re.M))
         pin_key(repo)
         base = commit(repo, "the working register and the clone's pinned key, as a base for seeded faults")
         trace = os.path.join(repo, "hardware/vv/tools/check_trace.py")
