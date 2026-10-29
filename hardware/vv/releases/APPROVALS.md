@@ -60,3 +60,23 @@ Examples (not decisions):
 
 | ID | Item | Decision | Scope | Reason | By | Date |
 |---|---|---|---|---|---|---|
+| A-001 | REQ-PRD-01 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-002 | REQ-PRD-01.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-003 | REQ-PRD-02 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-004 | REQ-PRD-02.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-005 | REQ-PRD-03 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-006 | REQ-PRD-03.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-007 | REQ-PRD-04 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-008 | REQ-PRD-04.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-009 | REQ-PRD-05 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-010 | REQ-PRD-07 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-011 | REQ-PRD-08 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-012 | REQ-PRD-08.B | APPROVED | - | - | Alex | 2026-10-29 |
+| A-013 | REQ-PRD-09 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-014 | REQ-PRD-10 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-015 | REQ-PRD-11 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-016 | REQ-PRD-14 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-017 | REQ-PRD-15 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-018 | REQ-PRD-17 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-019 | REQ-PRD-18 | APPROVED | - | - | Alex | 2026-10-29 |
+| A-020 | REQ-PRD-19 | APPROVED | - | - | Alex | 2026-10-29 |

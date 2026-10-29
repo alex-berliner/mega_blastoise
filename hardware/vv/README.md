@@ -312,6 +312,8 @@ git log -1 --format='%G? %GF'                            # G and the pinned fing
 Pinned key (Alex writes the line, in a commit signed with that key; the order gate fails while
 it is a software key unless run with --accept-software-key, K1):
 
+- Signing key: `SHA256:n56wXhCQ13aOzEA6ErXYo10FQ3ik4cKY5hsWSZZU+3Y`
+
 Until a key is pinned every line is pending, and the report says so. Claude never signs,
 never pins a key, and never writes a line in APPROVALS.md's table (it may correct the
 header's wording, as round 2 asked).
