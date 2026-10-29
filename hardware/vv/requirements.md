@@ -9,7 +9,7 @@ first, and a status.
 **Every requirement here is PROPOSED.** Claude seeded them on 2026-10-24 and re-seeded them for each
 board since (684a609, be437f8, the RP2354B board at 71737ae, the ESP32-S3 board at 39cc07f). On
 2026-10-28 both of those boards were dropped and the register was re-seeded for an Allwinner F1C200s
-board; on 2026-10-29 Alex changed the next spin again (docs/static/DESIGN.md:71 and
+board; on 2026-10-29 Alex changed the next spin again (docs/static/DESIGN.md:74 and
 docs/static/next_spin_requirements.md): the RP2350B (QFN-80, no flash inside) with one GD25Q128 16 MB QSPI
 flash holding the program and the sound, no GBA, no Linux, no SD card, no Wi-Fi, online play through an
 Android phone's Chrome (WebUSB). The register is now the RP2350B board's (board `rp2350b`, allocations
@@ -132,7 +132,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: display
 - Statement: The 320 x 480 ER-TFT035IPS-6 (ILI9488) shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat, driven by the RP2350B on the panel's 8-bit 8080 bus.
 - Rationale: the one shared screen is the product; the panel is today's. The 8-bit 8080 bus is fast enough (Notes).
-- Source: DESIGN.md:55 ('one 3.5 inch IPS screen'); next_spin_requirements.md:12 ('a display bus fast enough for the 320 x 480 panel'), :27 ('today's ILI9488'); hardware/ref_design/datasheets/ili9488.pdf and hardware/ref_design/datasheets/er-tft035ips-6.pdf (Notes); Alex confirmed the 8-bit bus on 2026-10-29.
+- Source: DESIGN.md:56 ('one 3.5 inch IPS screen'); next_spin_requirements.md:12 ('a display bus fast enough for the 320 x 480 panel'), :27 ('today's ILI9488'); hardware/ref_design/datasheets/ili9488.pdf and hardware/ref_design/datasheets/er-tft035ips-6.pdf (Notes); Alex confirmed the 8-bit bus on 2026-10-29.
 - Method: T
 - Verified by: VER-224, VER-60, VER-61, VER-199
 - Phase: EVT
@@ -259,7 +259,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: soc usbc storage
 - Statement: A unit with blank, corrupt, failed-update or hung firmware shall be recovered with the case closed, 3 out of 3 tries each, and shall take a debugger with the case open.
 - Rationale: bring-up and field recovery must not need the case opened or a soldering iron.
-- Source: DESIGN.md:63 ('There is no separate reset button.') and REQ-PRD-08.B.
+- Source: DESIGN.md:64 ('There is no separate reset button.') and REQ-PRD-08.B.
 - Method: D, T
 - Verified by: allocated: REQ-PRD-08.B (Was: REQ-PRD-08.R)
 - Phase: EVT
@@ -289,7 +289,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-241, VER-252, VER-258, VER-259
 - Phase: EVT
 - Status: APPROVED
-- Notes: Reworded on 2026-10-29 at Alex's decision (the 8 s hold is on seat 1's Start, not the dropped power slider); only that phrase of the statement changed, and it needs Alex's re-approval. Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263).
+- Notes: Reworded on 2026-10-29 at Alex's decision (the 8 s hold is on seat 1's Start, not the dropped power slider); only that phrase of the statement changed, and it needs Alex's re-approval. Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263). 'about 8 s' is read as 6 s to 10 s (Alex, 2026-10-29); REQ-SOC-04 carries the number.
 
 ### REQ-PRD-09: Cost
 - Level: product
@@ -362,7 +362,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: usbc soc
 - Statement: With the console on one USB-C cable to an Android phone, a web page in the phone's Chrome browser (WebUSB, the bridge page) shall pass the battle between the console and Pokemon Showdown's own server, joined as a guest with no login, and finish 5 of 5 random battles, Gen 1 and Gen 3, each accepted by Showdown's server, with no disconnect.
 - Rationale: goal 3: the same console takes on players online. The console is a USB device and has no Wi-Fi: the phone carries the network. 5 of 5 was Claude's proposal; Alex approved it as written on 2026-10-29.
-- Source: DESIGN.md:48 ('Players can play against others online, as a guest on Pokemon Showdown (the free online Pokemon battle site) with no login. (2026-10-26)'); DESIGN.md:81 (a guest only, Showdown's own servers, none of ours); DESIGN.md:83 ('Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29)'); next_spin_requirements.md:16.
+- Source: DESIGN.md:49 ('Players can play against others online, as a guest on Pokemon Showdown (the free online Pokemon battle site) with no login. (2026-10-26)'); DESIGN.md:84 (a guest only, Showdown's own servers, none of ours); DESIGN.md:86 ('Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29)'); next_spin_requirements.md:16.
 - Method: T
 - Verified by: VER-251, VER-227
 - Phase: ORDER
@@ -374,8 +374,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: soc storage power buttons
 - Statement: Within 0.5 s of pressing seat 1's Start the screen shall show a 'keep holding' bar; the lobby shall show within 1.0 s after the 2.5 s hold completes; 10 of 10 power-ons. Released before the hold completes, the console shall turn fully off.
-- Rationale: goal 1: a match within seconds. DESIGN.md:84 gives 'within about a second' and a 2 to 3 s hold to turn on (DESIGN.md:60), so a bump in a pocket does not switch it on; the 1.0 s limit and the 10 of 10 power-ons were Claude's proposal, and the re-timed statement is Alex's approved text of 2026-10-29. The 1.0 s after the hold is VER-228's pass limit; VER-223 measures the supply to the lobby, which is the stricter number.
-- Source: DESIGN.md:49 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:60 (hold seat 1's Start 2 to 3 s to turn on); DESIGN.md:84 ('At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)'); next_spin_requirements.md:17.
+- Rationale: goal 1: a match within seconds. DESIGN.md:87 gives 'within about a second' and a 2 to 3 s hold to turn on (DESIGN.md:60), so a bump in a pocket does not switch it on; the 1.0 s limit and the 10 of 10 power-ons were Claude's proposal, and the re-timed statement is Alex's approved text of 2026-10-29. The 1.0 s after the hold is VER-228's pass limit; VER-223 measures the supply to the lobby, which is the stricter number.
+- Source: DESIGN.md:50 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:60 (hold seat 1's Start 2 to 3 s to turn on); DESIGN.md:87 ('At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)'); next_spin_requirements.md:17.
 - Method: T
 - Verified by: VER-223, VER-228
 - Phase: ORDER
@@ -401,7 +401,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: case
 - Statement: The closed case shall measure at most 78.9 x 156.48 mm in plan and 9.6 mm thick at the screen, each +0.3 mm for print tolerance, and each spin shall record a size-minimization pass.
 - Rationale: goal 4: it fits in a pocket and every spin is as small as it can be. The numbers are today's case as next_spin_requirements.md gives it; the +0.3 mm for print tolerance is Claude's proposal (next_spin_requirements.md says 'no growth'); Alex sets it.
-- Source: DESIGN.md:60 ('It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)'); next_spin_requirements.md:18 ('no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen)').
+- Source: DESIGN.md:61 ('It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)'); next_spin_requirements.md:18 ('no growth over today's case (78.9 x 156.48 mm in plan, 9.6 mm thick at the screen)').
 - Method: I, A
 - Verified by: VER-230, VER-48, VER-20
 - Phase: CASE
@@ -414,7 +414,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: audio storage soc
 - Statement: Music shall play from note sequences on sampled instruments and 4 GBA-style synthesized channels (two square waves, a wave channel and noise); cries and sound effects shall play from compressed samples; all of it read from the 16 MB flash. The mixer shall run at least 8 channels at 32 kHz with 0 audible dropouts (buffer underruns) in 30 min of battling at the full display rate. The program shall take 4 MB or less and the sound data shall have 2 MB or more of room.
 - Rationale: Alex: "we need external spi flash to do sound right". The engine follows the design of Nintendo's M4A ('Sappy') GBA sound engine: sequences are a few KB, instruments are short samples, the four synthesized channels cost no flash, and only the cries and effects are long samples, compressed. About 2 MB covers sequenced sound, so the 2 MB of room is enough; the 16 MB flash is kept by Alex's choice. The program is 1.4 MB today (next_spin_requirements.md:13). 8 channels, 32 kHz, 4 MB, 2 MB and 30 min are the numbers of Alex's rewrite (2026-10-29).
-- Source: Alex, 2026-10-29 ('we need external spi flash to do sound right'; the statement is his text, approved on his review); DESIGN.md:71 ('a 16 MB flash memory chip beside it, which holds the program and the sound'); next_spin_requirements.md:15 ('Sound done right: room for sound samples: a 16 MB flash chip the chip reads as memory').
+- Source: Alex, 2026-10-29 ('we need external spi flash to do sound right'; the statement is his text, approved on his review); DESIGN.md:74 ('a 16 MB flash memory chip beside it, which holds the program and the sound'); next_spin_requirements.md:15 ('Sound done right: room for sound samples: a 16 MB flash chip the chip reads as memory').
 - Method: T, A
 - Verified by: VER-256, VER-252, VER-255
 - Phase: ORDER
@@ -552,8 +552,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: 100% of cells shall be checked with a meter before first mating, red lead on the cell header's pin 1 (marked '+' on the silk), and the result recorded per lot.
-- Rationale: a reversed cell is a severity 10 failure (carryover C-7).
-- Source: carryover.md C-7.
+- Rationale: a reversed cell is a severity 10 failure (carryover C-7). Derivation (VER-189 fix, 2026-10-29): a design choice for the cell's safety: 100% of cells, not a sample, because one reversed cell is a severity 10 failure and a meter check costs seconds a cell. Earlier cite (not a primary source): carryover.md C-7.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-49, VER-54
 - Phase: EVT
@@ -576,8 +576,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell case
 - Statement: The closed case shall leave 0.4 mm or more of free height above the cell at worst-case tolerance (a 4.5 mm cell), under everything that lies over its pocket.
-- Rationale: pouch cells grow 8-10% in thickness over life; 0.4 mm for a 4.0 mm cell.
-- Source: validation_plan #26; case.scad (cell_top 1.6 over the board; the panel's back 2.4, the panel frame's walls 2.8, the button ends' underside 1.9 where they reach).
+- Rationale: pouch cells grow 8-10% in thickness over life; 0.4 mm for a 4.0 mm cell. Derivation (VER-189 fix, 2026-10-29): 0.4 mm / 4.0 mm = 10%, the top of the 8-10% pouch growth the rationale gives; the worst-case cell is 4.5 mm, so the free height is held at 0.4 mm at that size. Serves the cell's life (REQ-BAT-08 is the same pouch). Earlier cite (not a primary source): validation_plan #26; case.scad (cell_top 1.6 over the board; the panel's back 2.4, the panel frame's walls 2.8, the button ends' underside 1.9 where they reach).
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-182, VER-20, VER-48
 - Phase: CASE
@@ -589,8 +589,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell case
 - Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances; the tub's pocket at least 0.1 mm a side larger than a worst-case cell after the print's tolerance (0.4 mm in each direction); and no back-side copper within 1 mm of the hole.
-- Rationale: a pierced pouch shorts internally and can burn; a pouch pressed into a pocket too small for it is stressed the same way (round 3's O-S1, 2026-10-27: the fit clause, a PROPOSED number).
-- Source: validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
+- Rationale: a pierced pouch shorts internally and can burn; a pouch pressed into a pocket too small for it is stressed the same way (round 3's O-S1, 2026-10-27: the fit clause, a PROPOSED number). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.5 mm (1.5 mm at the lead end) is the margin kept over the fab and print tolerance stack so no edge touches the pouch; 0.1 mm a side is the pocket's allowance over a worst-case cell. No datasheet sets these; the cell maker's own limit is not on disk. Earlier cite (not a primary source): validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
@@ -615,8 +615,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: cell power
 - Statement: After the firmware shuts down at its cutoff, the board's off-state drain plus the cell's PCM drain and its self-discharge shall keep the cell above its PCM's under-voltage trip for 2 months or more at 25 C, and for the period Alex sets at 45 C storage.
-- Rationale: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain, and the TPS3421, fed from 3V3, adds nothing (REQ-PWR-07). With both terms the figure may be nearer 1 month: Alex sets the number knowing them.
-- Source: Claude's estimate; validation_plan #33.
+- Rationale: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain, and the TPS3421, fed from 3V3, adds nothing (REQ-PWR-07). With both terms the figure may be nearer 1 month: Alex sets the number knowing them. Derivation (VER-189 fix, 2026-10-29): the paper arithmetic, per month at 25 C on a 700 mAh cell (REQ-PRD-03.B): board drain 30 uA x 720 h = 21.6 mAh; the PCM 3 to 6 uA x 720 h = 2.2 to 4.3 mAh; self-discharge 1 to 3% = 7 to 21 mAh; total 31 to 47 mAh a month. The usable band between 3.50 V and 3.0 V is 35 to 70 mAh (5 to 10% of 700 mAh). So 2 months needs 62 to 94 mAh and is not met on paper at the high end of the drain and self-discharge; 1 month (31 to 47 mAh) mostly is. The 2 months stays as written; Alex should decide whether it is 2 months or 1 month, or the drain figure to hold. Earlier cite (not a primary source): Claude's estimate; validation_plan #33.
+- Source: Alex's decision (to sign)
 - Method: A, T
 - Verified by: VER-103, VER-65, VER-146
 - Phase: EVT
@@ -664,8 +664,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell power
 - Statement: Plugging a 4.2 V cell into the cell's header with no USB shall not trip the PCM (the cell's voltage present after each plug), shall leave the device off, and shall peak the system rail at 4.5 V or less, 10 plugs out of 10.
-- Rationale: with no USB, U2's battery FET is on, so the plug connects C3 (10 uF) directly and C2 and C5 (14.7 uF) more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226).
-- Source: Claude's analysis (O-42).
+- Rationale: with no USB, U2's battery FET is on, so the plug connects C3 (10 uF) directly and C2 and C5 (14.7 uF) more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226). Derivation (VER-189 fix, 2026-10-29): 4.5 V is the 4.2 V full cell plus 0.3 V of ringing margin on VSYS; 10 of 10 because a plug is a repeated event and the first fail is the PCM tripping. A design choice: no datasheet gives the plug's inrush. Earlier cite (not a primary source): Claude's analysis (O-42).
+- Source: Alex's decision (to sign)
 - Method: A, T
 - Verified by: VER-140, VER-141
 - Phase: EVT
@@ -677,8 +677,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell case
 - Statement: Both cell leads shall be sleeved (heat-shrink or a printed grommet) where they run along the board's routed hole edge to the cell's header, with 0 bare lead insulation against the FR4 edge, seen in the FAI and after the drop test.
-- Rationale: the routed edge wears the insulation and shorts CELL_P to the GND pour, with only the PCM left (DF-214).
-- Source: Claude's review (F-14).
+- Rationale: the routed edge wears the insulation and shorts CELL_P to the GND pour, with only the PCM left (DF-214). Derivation (VER-189 fix, 2026-10-29): a design choice for the cell's safety: 0 bare insulation against the FR4 edge, because one worn lead shorts CELL_P to the GND pour with only the PCM left. Earlier cite (not a primary source): Claude's review (F-14).
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-109, VER-93
 - Phase: EVT
@@ -689,9 +689,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: cell
-- Statement: One cell per lot shall deliver 600 mAh or more from charge-done to the chosen cutoff at about 140 mA, with its capacity to 3.50 V and to 3.60 V recorded.
-- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.B) and the cutoff choice (DF-225) depend on it.
-- Source: Claude's proposal (O-58): Alex sets the lot limit.
+- Statement: One cell per lot shall deliver 600 mAh or more from charge-done to the chosen cutoff at 140 mA +-10% (126 to 154 mA), with its capacity to 3.50 V and to 3.60 V recorded.
+- Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.B) and the cutoff choice (DF-225) depend on it. Derivation (VER-189 fix, 2026-10-29): the arithmetic: REQ-PRD-03.B's 4.0 h x 140 mA = 560 mAh is what a session uses, so 600 mAh leaves 40 mAh (7%) of margin; Claude's estimate for the unit is 100 to 120 mA, so 140 mA is 17% to 40% more load than that. The 140 mA is set as 140 mA +-10% (126 to 154 mA) so a bench supply can be read to it. Earlier cite (not a primary source): Claude's proposal (O-58): Alex sets the lot limit.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-153
 - Phase: EVT
@@ -817,8 +817,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power soc
 - Statement: On the cell with no USB, after a watchdog reset or a panic, the power hold shall release and every rail fall below 0.5 V within 2 s of seat 1's Start being released, unless the firmware takes the hold again in that time.
-- Rationale: a crashed unit must turn itself off, not drain the cell: PWR_HOLD (GPIO44) resets as an input, and after RP2350-E9 a released pad can sit near 2 V, so an external pull-down holds it low (R42 4.7k, E9 needs 8.2k or less; analysis/errata_rp2350.md, VER-239, VER-243).
-- Source: design.py R42 (PWR_HOLD's pull-down); pinmap.md Power control; analysis/errata_rp2350.md.
+- Rationale: a crashed unit must turn itself off, not drain the cell: PWR_HOLD (GPIO44) resets as an input, and after RP2350-E9 a released pad can sit near 2 V, so an external pull-down holds it low (R42 4.7k, E9 needs 8.2k or less; analysis/errata_rp2350.md, VER-239, VER-243). Derivation (VER-189 fix, 2026-10-29): a design choice: 2 s matches the watchdog's 2 s in REQ-SOC-04, so a crashed unit takes no longer to turn off than a hung one takes to reset; 0.5 V is the level counted as off. The pull-down is R42 4.7k against RP2350-E9's 8.2k limit (analysis/errata_rp2350.md). Earlier cite (not a primary source): design.py R42 (PWR_HOLD's pull-down); pinmap.md Power control; analysis/errata_rp2350.md.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-243, VER-105
 - Phase: EVT
@@ -830,8 +830,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power soc
 - Statement: Without USB, no firmware hang shall keep the device on for more than 10 s; every image, the self-test included, shall enable the watchdog before any blocking init.
-- Rationale: hardware alone cannot tell a hang with PWR_HOLD high from normal play.
-- Source: validation_plan gate item 3 and Fable's note 1; pinmap.md.
+- Rationale: hardware alone cannot tell a hang with PWR_HOLD high from normal play. Derivation (VER-189 fix, 2026-10-29): 10 s is the watchdog's 2 s (REQ-SOC-04) plus the release of REQ-PWR-09's 2 s, which is 4 s, with 2.5 times margin (10 / 4) for a slow image to reach its first watchdog enable. A design choice. Earlier cite (not a primary source): validation_plan gate item 3 and Fable's note 1; pinmap.md.
+- Source: Alex's decision (to sign)
 - Method: I, T
 - Verified by: VER-104, VER-105
 - Phase: EVT
@@ -881,8 +881,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: In every mode (off, cell, USB, charging, hot plug, unplug): each IC's steady-state stress shall be at or below its recommended operating maximum and each transient at least 0.3 V below its absolute maximum; each passive and discrete (MLCC voltage, FET Vds and Vgs, diode VR and IF, resistor power) shall be at 80% or less of its rating, 90% for transients under 10 us; every exception named here.
-- Rationale: the old rule (80% of every absolute maximum) failed by construction on every 3.3 V part, so it could not tell an intended stress from an oversight (O-22).
-- Source: validation_plan #5, #123; Claude's proposal, revised (O-22).
+- Rationale: the old rule (80% of every absolute maximum) failed by construction on every 3.3 V part, so it could not tell an intended stress from an oversight (O-22). Derivation (VER-189 fix, 2026-10-29): a design rule: the 80% (90% under 10 us) and the 0.3 V below absolute maximum are the margins Claude proposed in O-22 for passives and ICs; no standard is cited. The panel's VCI/VDDI exception is named in the Notes. Earlier cite (not a primary source): validation_plan #5, #123; Claude's proposal, revised (O-22).
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-31, VER-36
 - Phase: EVT
@@ -1182,9 +1182,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc
-- Statement: The RP2350B's 12 MHz crystal shall start at every power-up across the cell's range and on USB, with the load capacitors and series resistor of Raspberry Pi's minimal design.
-- Rationale: the clock the chip and its USB derive from; 12 MHz is the RP2350's reference clock (to confirm: the datasheet is not on disk).
-- Source: the RP2350 datasheet and the minimal design (to download: VER-233).
+- Statement: The RP2350B's 12 MHz crystal shall be oscillating and stable within 10 ms of 3V3 valid at every power-up across the cell's range and on USB, with the load capacitors and series resistor of Raspberry Pi's minimal design.
+- Rationale: the clock the chip and its USB derive from; 12 MHz is the RP2350's reference clock (to confirm: the datasheet is not on disk). Derivation (VER-189 fix, 2026-10-29): neither the RP2350 datasheet nor the crystal's is on disk, so the start-up time is a design choice: the boot budget is 1.0 s after the hold (REQ-PRD-15) and 10 ms is 1% of it (10 ms / 1000 ms). VER-237 measures it on the first unit. The frequency tolerance is the crystal part's, chosen at NM-04, and is not set here. Earlier cite (not a primary source): the RP2350 datasheet and the minimal design (to download: VER-233).
+- Source: Alex's decision (to sign)
 - Method: A, T
 - Verified by: VER-198, VER-237
 - Phase: EVT
@@ -1194,14 +1194,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc power
-- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding seat 1's Start for 8 s (4 s to 12 s: Claude's reading of 'about', VER-258; Alex to confirm) shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
+- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding seat 1's Start for 8 s (6 s to 10 s: Alex, 2026-10-29) shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
 - Rationale: there is no reset button; the watchdog and a long hold of seat 1's Start are the ways out of a hang (REQ-PWR-10). Start's 8 s hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. The TPS3421 is fed from 3V3 (Alex, 2026-10-29), so it draws nothing while the unit is off (REQ-PWR-07), and reads Start through the 3V3-side buffered power-key line; Start turns the unit on through its own latch path, so the hard reset is needed only while the unit is on. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
-- Source: DESIGN.md:64 ('There is no separate reset button. (2026-10-28)'); DESIGN.md:65 (hold seat 1's Start about 8 s); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B); the TPS3421 datasheet (VER-258).
+- Source: DESIGN.md:64 ('There is no separate reset button. (2026-10-28)'); DESIGN.md:65 (hold seat 1's Start about 8 s); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B; 'about 8 s' read as 6 s to 10 s); the TPS3421 datasheet (VER-258).
 - Method: A, T
 - Verified by: VER-198, VER-105, VER-258, VER-241
 - Phase: EVT
 - Status: PROPOSED
-- Notes: VER-189 (2026-10-29): the statement said 'about 8 s' with no tolerance (REQ-PRD-08.B, Alex's, says the same); 4 s to 12 s is Claude's reading from VER-258, to be replaced by the TPS3421 datasheet's nearest delay or Alex's number.
+- Notes: VER-189 (2026-10-29) found 'about 8 s' with no tolerance. Alex decided on 2026-10-29: 6 s to 10 s. This row carries the number; REQ-PRD-08.B (signed) keeps his words 'about 8 s' and reads them as this range. VER-258 checks that a TPS3421 variant has its delay inside 6 s to 10 s over temperature and supply.
 
 ### REQ-SOC-05: The pin plan
 - Level: subsystem
@@ -1297,7 +1297,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: usbc
 - Statement: The USB-C port shall attach as a device (a sink, Rd 5.1 kohm on CC1 and on CC2, no role controller) to an Android phone, a computer or a charger, in both plug orientations, 20 of 20 plug-ins each way, enumerate as the console's WebUSB device, and never source VBUS.
-- Rationale: the console is a USB device only (DESIGN.md:83); the phone is the host and carries the network.
+- Rationale: the console is a USB device only (DESIGN.md:86); the phone is the host and carries the network.
 - Source: DESIGN.md:86; next_spin_requirements.md:16 ('a USB device port'); USB Type-C 1.x (Rd on each CC, to confirm the tolerance).
 - Method: T, A
 - Verified by: VER-251, VER-195, VER-80
@@ -1389,8 +1389,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
-- Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the 3.74k the RP board drew on BL_PWM (the RP2350B's PWM slice: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05); it is re-run with the board's R61.
-- Source: board/sim/backlight_results.txt (to re-run).
+- Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the 3.74k the RP board drew on BL_PWM (the RP2350B's PWM slice: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05); it is re-run with the board's R61. Derivation (VER-189 fix, 2026-10-29): the 120 mA is the panel's rated maximum forward current (the datasheet quote above), so the LED current may not exceed it. The panel publishes no pulse rating, so the 5 us allowed above it is a design choice (Claude's), and is on the to-sign list as that number alone. Earlier cite (not a primary source): board/sim/backlight_results.txt (to re-run).
+- Source: hardware/ref_design/datasheets/er-tft035ips-6.pdf p.11, section 4.4 Backlight Characteristics (er-tft035ips-6.txt:713-715): forward current, normal, 6-chip parallel, max 120 mA (typ 110 mA).
 - Method: A, T
 - Verified by: VER-05, VER-62
 - Phase: EVT
@@ -1425,8 +1425,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: With 3V3 off, a VSYS hot plug shall produce less than 5 mA of LED current for less than 10 us.
-- Rationale: no flash at plug-in while the device is off.
-- Source: board/sim/backlight_results.txt (4.7 mA peak, an older circuit); since 2026-10-28 VER-05 prints only an estimate (the gate's kick through Crss turns on the AO3400A's capacitance curve, a figure, and on how far the unlit LEDs let the drain move), so VER-62 measures it.
+- Rationale: no flash at plug-in while the device is off. Derivation (VER-189 fix, 2026-10-29): a design choice: 5 mA is 4% of the panel's 120 mA maximum backlight current (5 / 120; er-tft035ips-6.txt:714-715), so no visible flash is expected for under 10 us. Earlier cite (not a primary source): board/sim/backlight_results.txt (4.7 mA peak, an older circuit); since 2026-10-28 VER-05 prints only an estimate (the gate's kick through Crss turns on the AO3400A's capacitance curve, a figure, and on how far the unlit LEDs let the drain move), so VER-62 measures it.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-62
 - Phase: EVT
@@ -1437,8 +1437,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display soc
 - Statement: With TEON set, the panel's TE pin shall reach an RP2350B input and show one TE pulse per frame at 60 Hz +-10%.
-- Rationale: firmware starts frames on it to avoid tearing.
-- Source: bringup.md display step 6.
+- Rationale: firmware starts frames on it to avoid tearing. Derivation (VER-189 fix, 2026-10-29): a design choice: 60 Hz is the frame rate the battler's display loop targets (Claude's reading; Alex to confirm), and 10% is 54 to 66 Hz, wide enough to read a TE pulse on a scope and narrow enough to tell a missed one. Earlier cite (not a primary source): bringup.md display step 6.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-63
 - Phase: EVT
@@ -1501,8 +1501,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: audio
 - Statement: The audio chain shall be -3 dB at 10 kHz or higher and at 50 Hz or lower.
-- Rationale: a 15 mm speaker reproduces little above 10 kHz, so the chain need not pass more; the chosen source's filter (PWM or I2S, still open) is held to this at its component corners in VER-100. The RP board's two-stage RC (1k and 4.7 nF, then 220 nF into 20k) was -3 dB at about 14 kHz loaded: the starting point if the source is PWM.
-- Source: design_review.md Audio.
+- Rationale: a 15 mm speaker reproduces little above 10 kHz, so the chain need not pass more; the chosen source's filter (PWM or I2S, still open) is held to this at its component corners in VER-100. The RP board's two-stage RC (1k and 4.7 nF, then 220 nF into 20k) was -3 dB at about 14 kHz loaded: the starting point if the source is PWM. Derivation (VER-189 fix, 2026-10-29): a design choice: 10 kHz is under half of the 32 kHz mixer rate (REQ-PRD-18; 32 / 2 = 16 kHz Nyquist) and near what a 15 mm speaker can reproduce; 50 Hz is the low end. Earlier cite (not a primary source): design_review.md Audio.
+- Source: Alex's decision (to sign)
 - Method: A, T
 - Verified by: VER-100, VER-64
 - Phase: EVT
@@ -1513,8 +1513,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: audio
 - Statement: After 10 min of a continuous full-scale 1 kHz tone on USB at 25 C, the amplifier's top shall be 85 C or less.
-- Rationale: about 0.54 W in an SOIC-8; the case skin limit is REQ-THM-01.
-- Source: design_review.md Audio; bringup.md step 4.
+- Rationale: about 0.54 W in an SOIC-8; the case skin limit is REQ-THM-01. Derivation (VER-189 fix, 2026-10-29): the amplifier's top at 85 C or less is the datasheet's maximum operating temperature; the 10 min of full-scale 1 kHz at 25 C is the test that heats it (0.54 W in an SOIC-8, REQ-THM-01 for the skin limit). Earlier cite (not a primary source): design_review.md Audio; bringup.md step 4.
+- Source: hardware/ref_design/datasheets/fm8002a.pdf p.3, absolute maximum table (fm8002a.txt:110): operating temperature TOPR -40 to 85 C.
 - Method: T
 - Verified by: VER-64, VER-200
 - Phase: EVT
@@ -1539,8 +1539,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: audio
 - Statement: The firmware shall cap full scale to the speaker's rating: 0.5 W into 8 ohm for the GSPK151035PN, or the rating of the speaker the release names.
-- Rationale: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213).
-- Source: bom.md (INGHAi GSPK151035PN, C530539, 0.5 W; the RP board's, the speaker stays); Claude's review (O-31).
+- Rationale: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213). Derivation (VER-189 fix, 2026-10-29): the speaker's 0.5 W into 8 ohm is the INGHAi GSPK151035PN's rating as bom.md records it; its datasheet is not in hardware/ref_design/datasheets, so it is not cited as one. Capping at the rating keeps U7's 0.5 W on USB (more when clipped) inside it. Earlier cite (not a primary source): bom.md (INGHAi GSPK151035PN, C530539, 0.5 W; the RP board's, the speaker stays); Claude's review (O-31).
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-128
 - Phase: EVT
@@ -1552,7 +1552,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: audio soc
 - Statement: The audio source, a PWM or I2S stream the RP2350B generates because the chip has no DAC, shall play the mixer's output at a sample rate of 32 kHz or more, and any carrier or image it leaves at the speaker shall be 40 dB or more below the full-scale 1 kHz level at the worst component corner.
 - Rationale: REQ-PRD-18 sets the mixer at 8 channels and 32 kHz, and the amplifier (U7) takes an analogue input, so the stream must be turned into one. VER-64 and VER-100 still test a 40 dB carrier with no live requirement behind it, the row that held it being dropped with the ESP32-S3 board (found by VER-189; Was: REQ-AUD-02). The source (PWM or I2S) is chosen at NM-04 (VER-100).
-- Source: REQ-PRD-18 (Alex, 2026-10-29: 8 channels at 32 kHz); the 40 dB is Claude's proposal, carried from the ESP32-S3 board's carrier row (Was: REQ-AUD-02 at 39cc07f): Alex to set it.
+- Source: Alex's decision (to sign): the 40 dB carrier limit is Claude's engineering number, kept by Alex's decision of 2026-10-29; the 32 kHz is REQ-PRD-18 (Alex, 2026-10-29: 8 channels at 32 kHz).
 - Method: A, T
 - Verified by: VER-100, VER-64
 - Phase: EVT
@@ -1579,8 +1579,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: Leakage between a contact's two combs shall be 100 Mohm or more at 4.2 V, clean and after 24 h at high humidity.
-- Rationale: seat 1's Start's contact carries a rail on one pad (the diode into PWR_EN), so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
-- Source: validation_plan gate item 5, #185.
+- Rationale: seat 1's Start's contact carries a rail on one pad (the diode into PWR_EN), so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press. Derivation (VER-189 fix, 2026-10-29): 100 Mohm at 4.2 V is 4.2 V / 100 Mohm = 42 nA at most across a contact; the 47k pull-up arrays (REQ-PRD-01.B) are about 2100 times lower in resistance (100M / 47k), so a leak this size reads as open. A design choice. Earlier cite (not a primary source): validation_plan gate item 5, #185.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-46, VER-248
 - Phase: EVT
@@ -1591,8 +1591,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: The combs shall keep a copper gap of 0.20 mm or more; the worst bridging spot shall be 1.60 mm or less for the 4-ring under the 3.5 mm D-pad and A/B/X/Y pill; one 4.8 mm mask opening shall uncover all comb copper with no paste or silk.
-- Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing. Start and Select are metal domes since 2d1124d (REQ-BTN-08).
-- Source: hardware/ref_design/board/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
+- Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing. Start and Select are metal domes since 2d1124d (REQ-BTN-08). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.20 mm is above the minimum spacing JLC lists for 2 layers (REQ-FAB-03; its page is not on disk); the 1.60 mm bridging spot against the 3.5 mm pill leaves (3.5 - 1.6) / 2 = 0.95 mm of registration (REQ-BTN-06). Earlier cite (not a primary source): hardware/ref_design/board/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-08, VER-132, VER-162
 - Phase: ORDER
@@ -1603,8 +1603,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: No via, pour or other copper shall lie within 2.9 mm of a contact's centre except its own two 0.2 mm stubs.
-- Rationale: a tented via under a pill lifts it.
-- Source: design_review.md Membrane contacts.
+- Rationale: a tented via under a pill lifts it. Derivation (VER-189 fix, 2026-10-29): a design choice: 2.9 mm is the 4.8 mm mask opening's radius of 2.4 mm plus 0.5 mm; no copper inside it lifts the pill. Earlier cite (not a primary source): design_review.md Membrane contacts.
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-132
 - Phase: ORDER
@@ -1615,8 +1615,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons case
 - Statement: Each button's actuation force shall be within +-30% of a genuine DS Lite's, and its travel within +-0.2 mm, measured the same way.
-- Rationale: the point of DS Lite parts is the DS Lite feel; a relative limit avoids inventing an absolute number.
-- Source: validation_plan #43; case/DSLITE.md.
+- Rationale: the point of DS Lite parts is the DS Lite feel; a relative limit avoids inventing an absolute number. Derivation (VER-189 fix, 2026-10-29): a design choice: the DS Lite feel is the aim (DESIGN.md:57), so the limits are relative to a genuine one, +-30% force and +-0.2 mm travel, with no absolute number invented. Earlier cite (not a primary source): validation_plan #43; case/DSLITE.md.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-50
 - Phase: CASE
@@ -1627,8 +1627,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons case
 - Statement: Each pill's centre shall land within 0.9 mm of its comb's centre at worst-case tolerance.
-- Rationale: (3.5 mm pill - 1.6 mm bridging spot) / 2 is about 0.95 mm.
-- Source: validation_plan #197.
+- Rationale: (3.5 mm pill - 1.6 mm bridging spot) / 2 is about 0.95 mm. Derivation (VER-189 fix, 2026-10-29): (3.5 mm pill - 1.6 mm bridging spot) / 2 = 0.95 mm is the most the centre may miss by before the pill no longer bridges; 0.9 mm leaves 0.05 mm of margin. Earlier cite (not a primary source): validation_plan #197.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-174, VER-51
 - Phase: ORDER
@@ -1639,8 +1639,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: Each contact shall keep its closed resistance under 1 kohm for 100,000 presses.
-- Rationale: Claude's estimate for a toy used daily for a few years.
-- Source: Claude's estimate; validation_plan #159.
+- Rationale: Claude's estimate for a toy used daily for a few years. Derivation (VER-189 fix, 2026-10-29): 100,000 presses over 3 years is 100,000 / (3 x 365) = about 91 presses a day, a toy used daily; the 1 kohm closed resistance is well under the 47k pull-up (about 2% of it, 1k / 47k), so the line still reads low. A design choice. Earlier cite (not a primary source): Claude's estimate; validation_plan #159.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-94
 - Phase: DVT
@@ -1651,8 +1651,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: buttons case
 - Statement: Each 4 mm metal dome (HYP 600-415S-260) shall sit with its rim on its footprint's ring all round at 0.1 mm of placement error, close under its cap's full travel, and rest open with its plunger 0.05 mm or more clear of its apex at the measured Start/Select strip.
-- Rationale: a dome pressed at rest under seat 1's Start, the power key (REQ-PWR-21), turns the device on in the case for good (DF-242); the strip's plunger height is an estimate (ss_lift).
-- Source: design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
+- Rationale: a dome pressed at rest under seat 1's Start, the power key (REQ-PWR-21), turns the device on in the case for good (DF-242); the strip's plunger height is an estimate (ss_lift). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.1 mm of placement error and 0.05 mm of plunger clearance keep a dome from being pressed at rest, which would hold seat 1's Start, the power key, on. The dome part is HYP 600-415S-260; its drawing (dome_600-415s-260.pdf) has no text to cite. Earlier cite (not a primary source): design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-178, VER-180, VER-48
 - Phase: CASE
@@ -1689,8 +1689,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: Every part on the board shall clear its local case limit by 0.2 mm or more, using heights from each part's drawing or a measurement, with 0 parts on guessed heights.
-- Rationale: check_fit guesses package heights today (DF-229).
-- Source: validation_plan #96, #130, gate item 7.
+- Rationale: check_fit guesses package heights today (DF-229). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.2 mm of margin on a drawn or measured height, and 0 parts on guessed heights. Earlier cite (not a primary source): validation_plan #96, #130, gate item 7.
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-06, VER-112
 - Phase: ORDER
@@ -1701,8 +1701,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: The Z stack (the tub's floor and pockets, cell, board, parts, speaker, panel, tape, the one-piece top) shall close with 0.2 mm or more of margin at worst-case tolerance including 0.4 mm of cell swelling.
-- Rationale: nominal fits fail at tolerance.
-- Source: validation_plan #25, #132, gate item 7.
+- Rationale: nominal fits fail at tolerance. Derivation (VER-189 fix, 2026-10-29): a design choice: 0.2 mm margin after the 0.4 mm of cell swelling that REQ-BAT-07 holds; nominal fits fail at tolerance. Earlier cite (not a primary source): validation_plan #25, #132, gate item 7.
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-20
 - Phase: CASE
@@ -1713,8 +1713,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case buttons
 - Statement: Every cap shall sit and press its full dome travel (the D-pad rocked in 8 directions) with 0 contact with the shell, and at rest touch only its dome.
-- Rationale: a cap that drags or is preloaded feels wrong or sticks; seat 1's Start cap (the power key) held down keeps the device on.
-- Source: case/check_buttons.py.
+- Rationale: a cap that drags or is preloaded feels wrong or sticks; seat 1's Start cap (the power key) held down keeps the device on. Derivation (VER-189 fix, 2026-10-29): a design choice: a cap that touches the shell drags or sticks, and seat 1's Start held by a dragging cap keeps the device on (REQ-PWR-21). Earlier cite (not a primary source): case/check_buttons.py.
+- Source: Alex's decision (to sign)
 - Method: A, D
 - Verified by: VER-07, VER-48
 - Phase: CASE
@@ -1725,8 +1725,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: The board shall fit the tub in 1 orientation only, and each A/B/X/Y cap in 1 hole and 1 rotation only.
-- Rationale: no wrong assembly by hand.
-- Source: assembly.md sections 3 and 5.
+- Rationale: no wrong assembly by hand. Derivation (VER-189 fix, 2026-10-29): a design choice: one orientation and one rotation, so hand assembly (REQ-ASM-01) cannot go wrong. Earlier cite (not a primary source): assembly.md sections 3 and 5.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-48
 - Phase: CASE
@@ -1737,8 +1737,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: The case shall survive 20 open/close cycles with its six M2 screws, with 0 cracked keys or grip ribs, 0 stripped bosses and 0 torn cell leads.
-- Rationale: the first PLA print's hooks snapped (DEF-15) and the one-piece top's joints are thin printed features (DF-232); service needs opening, and the cell comes out with the tub on its leads (DF-239).
-- Source: validation_plan #194; assembly.md steps 9-10.
+- Rationale: the first PLA print's hooks snapped (DEF-15) and the one-piece top's joints are thin printed features (DF-232); service needs opening, and the cell comes out with the tub on its leads (DF-239). Derivation (VER-189 fix, 2026-10-29): a design choice: 20 cycles covers a few services and bring-up opens per unit; the panel's connector is limited separately (REQ-TST-07). Earlier cite (not a primary source): validation_plan #194; assembly.md steps 9-10.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-92
 - Phase: DVT
@@ -1749,8 +1749,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case cell
 - Statement: After the drop test the cell shall have moved 1 mm or less, the cell plug and the panel FPC shall still be seated, and the panel shall be uncracked.
-- Rationale: a loose cell or plug in a dropped handheld is a hazard and a fault.
-- Source: validation_plan #183.
+- Rationale: a loose cell or plug in a dropped handheld is a hazard and a fault. Derivation (VER-189 fix, 2026-10-29): a design choice: 1 mm of cell movement, with the plugs and the panel still seated and uncracked after the drop. Earlier cite (not a primary source): validation_plan #183.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-93
 - Phase: DVT
@@ -1761,8 +1761,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: case usbc
 - Statement: 5 different USB-C cables shall seat fully with the case closed.
-- Rationale: overmolds vary; the opening was widened once already (c35514f).
-- Source: validation_plan #51.
+- Rationale: overmolds vary; the opening was widened once already (c35514f). Derivation (VER-189 fix, 2026-10-29): a design choice: 5 different cables is a sample of the overmolds sold; the opening was already widened once (c35514f). Earlier cite (not a primary source): validation_plan #51.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-80
 - Phase: EVT
@@ -1773,8 +1773,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, cap holes, speaker grille, screw holes).
-- Rationale: screw pilots and a notch once came through the face (DEF-19).
-- Source: 177123c.
+- Rationale: screw pilots and a notch once came through the face (DEF-19). Derivation (VER-189 fix, 2026-10-29): a design choice: any through-opening other than the listed ones lets in dust and light; DEF-19 was one such. Earlier cite (not a primary source): 177123c.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-113, VER-48
 - Phase: CASE
@@ -1786,8 +1786,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: Each of the four side screws (H1-H4, under the screen band) shall engage 4.0 mm or more of its pilot above the board and end 0.5 mm or more short of the pilot's end; each of the two end screws (H5, H6, under the button ends) shall engage 3.0 mm or more and end 0.1 mm or more short.
-- Rationale: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31).
-- Source: case.scad; Claude's analysis (O-52).
+- Rationale: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31). Derivation (VER-189 fix, 2026-10-29): self-tapping screws want 2 to 2.5 x d in printed plastic: M2 gives 4.0 to 5.0 mm (the side screws take 4.0 mm); the end pilots hold at most 3.30 mm, so 3.0 mm = 1.5 x d with 0.1 mm to the end. A design choice. Earlier cite (not a primary source): case.scad; Claude's analysis (O-52).
+- Source: Alex's decision (to sign)
 - Method: A, T
 - Verified by: VER-147, VER-92
 - Phase: CASE
@@ -1798,8 +1798,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case display
 - Statement: The panel shall stay bonded in the top's pocket, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
-- Rationale: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229).
-- Source: Claude's review (O-59).
+- Rationale: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229). Derivation (VER-189 fix, 2026-10-29): a design choice: two players press the shared screen, so 100 presses of 20 N and 24 h at 50 C with no mura. Earlier cite (not a primary source): Claude's review (O-59).
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-154
 - Phase: EVT
@@ -1810,8 +1810,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: Every connector's mouth (USB-C with a mated plug, the cell's plug and wires, the panel's FPC lead-in, the speaker's plug and its leads) shall be clear of parts taller than 1 mm and of every case wall but its own opening.
-- Rationale: the USB-C opening was fixed twice (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes.
-- Source: Claude's review (F-28).
+- Rationale: the USB-C opening was fixed twice (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes. Derivation (VER-189 fix, 2026-10-29): a design choice: 1 mm of height clear at each connector mouth; the USB-C opening was fixed twice (VER-165). Earlier cite (not a primary source): Claude's review (F-28).
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-165
 - Phase: CASE
@@ -1823,8 +1823,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: Every MLCC's pad centre shall be 4.0 mm or more from a screw hole's centre (the tub's 6.0 mm boss plus 1 mm), and 6.0 mm or more for an 0603 or larger.
-- Rationale: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9).
-- Source: Claude's review (O-43); case.scad tub_boss_d.
+- Rationale: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9). Derivation (VER-189 fix, 2026-10-29): the tub's boss is 6.0 mm across: 6.0 / 2 + 1.0 = 4.0 mm from the hole's centre to a pad; 0603 and larger parts are longer, so 6.0 mm. A design choice. Earlier cite (not a primary source): Claude's review (O-43); case.scad tub_boss_d.
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-142
 - Phase: ORDER
@@ -1849,8 +1849,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: During a full charge in the closed case, the thermistor's reading shall stay within 5 C of the cell's hotter point (its centre or its end facing the thermistor).
-- Rationale: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this.
-- Source: placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
+- Rationale: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this. Derivation (VER-189 fix, 2026-10-29): a design choice: 5 C of difference between the thermistor and the cell's hotter point; the charger's own thresholds at TS are in bq24074.txt:824-827 (hot 300 mV, cold 2100 mV typ). Earlier cite (not a primary source): placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
+- Source: Alex's decision (to sign)
 - Method: T, A
 - Verified by: VER-87, VER-164
 - Phase: EVT
@@ -1862,8 +1862,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (the charger's thermistor input inside its window with the cell under 35 C).
-- Rationale: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
-- Source: bringup.md step 5.4.
+- Rationale: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1. Derivation (VER-189 fix, 2026-10-29): the charger pauses outside its TS thresholds (bq24074.txt:824 VHOT 300 mV typ, :826 VCOLD 2100 mV typ). 35 C on a 25 C ambient is 10 C of rise, and 15 C under the 50 C top of the 0 to 50 C window the datasheet gives for a 103AT-2 thermistor (bq24074.txt:1968); TH1 is another thermistor, and VER-87 checks its own trips. A design choice. Earlier cite (not a primary source): bringup.md step 5.4.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-68
 - Phase: EVT
@@ -1875,8 +1875,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power soc case
 - Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall put 2.0 W or less inside the case, and every part shall stay under its temperature limit at 40 C ambient.
-- Rationale: the worst mode is charging while playing: U2 (BQ24073), U3 and the RP2350B each dissipate, and VER-144's table is redone for them; the 2.0 W stays Claude's proposal until VER-144 gives the real sum, and the table decides a firmware rule or copper (DEF-87).
-- Source: Claude's analysis (O-47, F-48).
+- Rationale: the worst mode is charging while playing: U2 (BQ24073), U3 and the RP2350B each dissipate, and VER-144's table is redone for them; the 2.0 W stays Claude's proposal until VER-144 gives the real sum, and the table decides a firmware rule or copper (DEF-87). Derivation (VER-189 fix, 2026-10-29): a design choice and Claude's proposal until VER-144 gives the real sum. Earlier cite (not a primary source): Claude's analysis (O-47, F-48).
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-144, VER-238
 - Phase: EVT
@@ -1923,7 +1923,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-205
 - Phase: ORDER
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:74, next_spin_requirements.md:30)
 
 ### REQ-RF-02: The antenna fitted and clear of metal
 - Level: subsystem
@@ -1935,7 +1935,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-205, VER-167, VER-48
 - Phase: CASE
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:74, next_spin_requirements.md:30)
 
 ### REQ-RF-03: Wi-Fi range
 - Level: subsystem
@@ -1947,7 +1947,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-207
 - Phase: EVT
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:74, next_spin_requirements.md:30)
 
 ### REQ-RF-04: The radio's grant
 - Level: subsystem
@@ -1959,7 +1959,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-217
 - Phase: SALE
 - Status: DROPPED
-- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:77, next_spin_requirements.md:30)
+- Dropped: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board's radio; the RP2350B board has no Wi-Fi (DESIGN.md:74, next_spin_requirements.md:30)
 
 ## Subsystem: storage (STO), the microSD slot, since 39cc07f: DROPPED with the F1C200s board (the storage subsystem is now the 16 MB flash: REQ-SOC-01, REQ-SOC-09, REQ-PRD-18)
 
@@ -1975,7 +1975,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: DROPPED
 - Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
-- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:71: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:74: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
 
 ### REQ-STO-02: A card plugged in while running
 - Level: subsystem
@@ -1989,7 +1989,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: DROPPED
 - Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final.
-- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:71: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:74: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
 
 ### REQ-STO-03: The SD opening in the case
 - Level: subsystem
@@ -2002,7 +2002,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-165, VER-48
 - Phase: CASE
 - Status: DROPPED
-- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:71: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
+- Dropped: DROPPED with f1c200s (tag vv-f1c200s-final): the microSD slot left the design on 2026-10-29 (DESIGN.md:74: no SD card); its statement is at the tag; the flash's requirements are REQ-SOC-01 and REQ-SOC-09
 
 ## Board: manufacture (FAB)
 
@@ -2011,8 +2011,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: KiCad's netlist shall match design.py with 0 differences, ERC shall report 0 errors, and DRC 0 errors, 0 unconnected and 0 parity issues.
-- Rationale: the generated KiCad files must say what design.py means.
-- Source: validation_plan #75, #76, #173.
+- Rationale: the generated KiCad files must say what design.py means. Derivation (VER-189 fix, 2026-10-29): a design rule: 0 differences and 0 errors, because any ERC, DRC or parity issue is a drawn fault. Earlier cite (not a primary source): validation_plan #75, #76, #173.
+- Source: Alex's decision (to sign)
 - Method: A
 - Verified by: VER-01, VER-03, VER-04
 - Phase: ORDER
@@ -2023,8 +2023,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: Every assembled part's every pin shall be reviewed against its current datasheet with a page citation, with 0 unresolved issues, 0 unknown ratings and 0 open questions.
-- Rationale: ERC and parity trust design.py; only the datasheet can say a pin is wrong.
-- Source: validation_plan #1, #113, gate item 1.
+- Rationale: ERC and parity trust design.py; only the datasheet can say a pin is wrong. Derivation (VER-189 fix, 2026-10-29): a design rule: 0 unknown ratings, because only the datasheet can say a pin is wrong. Earlier cite (not a primary source): validation_plan #1, #113, gate item 1.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-02, VER-36, VER-35
 - Phase: ORDER
@@ -2061,8 +2061,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: The order shall be 2 layers, 1.6 mm, ENIG, with the order number's location specified ('JLCJLCJLCJLC' on the back silk), edge rails off (or routed removal), and every option recorded line by line in the release record (1 record per order).
-- Rationale: the pills press on bare combs, so the finish must be gold; a V-cut rail leaves a ridge the case slot is not sized for; a stray order number can land on a comb (DF-234).
-- Source: assembly.md section 1; validation_plan #189.
+- Rationale: the pills press on bare combs, so the finish must be gold; a V-cut rail leaves a ridge the case slot is not sized for; a stray order number can land on a comb (DF-234). Derivation (VER-189 fix, 2026-10-29): a design choice: 2 layers (DESIGN.md:62), 1.6 mm, ENIG because the pills press on bare combs, and no V-cut rail. Earlier cite (not a primary source): assembly.md section 1; validation_plan #189.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-42, VER-28
 - Phase: ORDER
@@ -2074,8 +2074,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: Every LCSC number shall resolve to the MPN, package, pin count and rating design.py intends, with 0 substitutions on the order.
-- Rationale: the right family in the wrong variant passes every other check.
-- Source: validation_plan #2, #122.
+- Rationale: the right family in the wrong variant passes every other check. Derivation (VER-189 fix, 2026-10-29): a design rule: 0 substitutions, because the right family in the wrong variant passes every other check. Earlier cite (not a primary source): validation_plan #2, #122.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-14, VER-186, VER-130, VER-28, VER-41
 - Phase: ORDER
@@ -2087,8 +2087,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: Every polarised part's pin 1 in the fab house's placement preview shall match the board's pin 1, and every part shall sit on its pads, with 0 unexplained differences.
-- Rationale: a CAD footprint's zero and origin can differ from the fab house's.
-- Source: validation_plan #9, #116.
+- Rationale: a CAD footprint's zero and origin can differ from the fab house's. Derivation (VER-189 fix, 2026-10-29): a design rule: pin 1 and the origin can differ between CAD and the fab house, so a preview check is needed. Earlier cite (not a primary source): validation_plan #9, #116.
+- Source: Alex's decision (to sign)
 - Method: I, A
 - Verified by: allocated: REQ-FAB-07.B (Was: REQ-FAB-07.R)
 - Phase: ORDER
@@ -2123,8 +2123,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: The gerbers, drill, BOM and CPL shall come from the released commit by one release run from a clean worktree; two runs of fab.py shall give identical copper and drill files once their creation dates are stripped; and the uploaded zip's sha256 shall be in the release record.
-- Rationale: the board ordered must be the board checked; Alex's main checkout had an uncommitted KiCad GUI change to battler.kicad_pro on 2026-10-24.
-- Source: validation_plan #12, #88, #121, gate item 11.
+- Rationale: the board ordered must be the board checked; Alex's main checkout had an uncommitted KiCad GUI change to battler.kicad_pro on 2026-10-24. Derivation (VER-189 fix, 2026-10-29): a design rule: the board ordered must be the board checked; two runs identical once dates are stripped. Earlier cite (not a primary source): validation_plan #12, #88, #121, gate item 11.
+- Source: Alex's decision (to sign)
 - Method: A, I
 - Verified by: VER-143, VER-42, VER-132
 - Phase: ORDER
@@ -2135,8 +2135,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: JLC shall e-test 100% of the boards against an IPC-D-356 netlist exported from the ordered board with each net-tie pair merged into one net (0 pairs of differently named nets joined by copper), or the order shall go without a netlist.
-- Rationale: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-237).
-- Source: validation_plan #103.
+- Rationale: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-237). Derivation (VER-189 fix, 2026-10-29): a design choice: an independent e-test from outside KiCad's own reading, or none; DVT, not ORDER. Earlier cite (not a primary source): validation_plan #103.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-26
 - Phase: DVT
@@ -2148,8 +2148,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the RP2350B (C42415655), the GD25Q128 (C2758105) and the TPS3421 (C2067262) shall never be substituted.
-- Rationale: the new parts' JLC class and stock must be read on order day; a substituted flash can be smaller or on another interface (DF-238), and the TPS3421 comes in variants with different reset delays (DF-262), so a substitute breaks the hard reset of REQ-PRD-08.B.
-- Source: DEF-12, DEF-13, DEF-29.
+- Rationale: the new parts' JLC class and stock must be read on order day; a substituted flash can be smaller or on another interface (DF-238), and the TPS3421 comes in variants with different reset delays (DF-262), so a substitute breaks the hard reset of REQ-PRD-08.B. Derivation (VER-189 fix, 2026-10-29): a design choice: 1.1 x the order quantity is 10% over, plus attrition; the three named parts are never substituted because each has variants (DF-238, DF-262). Earlier cite (not a primary source): DEF-12, DEF-13, DEF-29.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-41
 - Phase: ORDER
@@ -2200,8 +2200,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: Alex shall assemble 1 unit from its board's assembly instructions in 30 min or less, on an ESD mat with a strap, damaging 0 parts.
-- Rationale: 30 units by hand.
-- Source: validation_plan #86, #161.
+- Rationale: 30 units by hand. Derivation (VER-189 fix, 2026-10-29): 30 units by hand at 30 min each is 30 x 30 = 900 min = 15 h. A design choice. Earlier cite (not a primary source): validation_plan #86, #161.
+- Source: Alex's decision (to sign)
 - Method: D
 - Verified by: allocated: REQ-ASM-01.B (Was: REQ-ASM-01.R)
 - Phase: EVT
@@ -2224,7 +2224,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: Alex shall assemble 1 RP2350B unit from its assembly doc in 30 min or less with a screwdriver and a knife and no iron (nothing is soldered at assembly), on an ESD mat with a strap, damaging 0 parts, the cell plugged last and unplugged first.
-- Rationale: nothing is soldered at assembly (DESIGN.md:68); work next to a live cell is the hazard (carryover, DEF-41 at tag vv-esp32s3-final).
+- Rationale: nothing is soldered at assembly (DESIGN.md:71); work next to a live cell is the hazard (carryover, DEF-41 at tag vv-esp32s3-final).
 - Source: DESIGN.md:71 ('Nothing is soldered when a unit is put together: the battery and the speaker both plug in.').
 - Method: D
 - Verified by: VER-91
@@ -2236,8 +2236,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: The panel's FPC shall be fully inserted, square and latched, and pass the display test after 10 case closures.
-- Rationale: a half-seated FPC gives intermittent lines.
-- Source: assembly.md step 4; validation_plan #160.
+- Rationale: a half-seated FPC gives intermittent lines. Derivation (VER-189 fix, 2026-10-29): a design choice: a half-seated FPC gives intermittent lines, so it is checked after 10 closures. Earlier cite (not a primary source): assembly.md step 4; validation_plan #160.
+- Source: Alex's decision (to sign)
 - Method: I, T
 - Verified by: VER-106
 - Phase: EVT
@@ -2250,8 +2250,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: Every measurement in the RP2350B board's bring-up doc shall have a probe point (a test pad, a jumper pad or a named part pad), with 0 measurements that need a lifted part.
-- Rationale: bring-up must not need rework to measure.
-- Source: validation_plan #21, #155.
+- Rationale: bring-up must not need rework to measure. Derivation (VER-189 fix, 2026-10-29): a design rule: bring-up must not need rework to measure. Earlier cite (not a primary source): validation_plan #21, #155.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-158
 - Phase: ORDER
@@ -2263,8 +2263,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: A self-test image shall check the 20 contacts, pin neighbour bridges, the panel's ID and fills, the backlight, an audio tone, the flash's JEDEC ID and its 16 MB readback, the USB-C device enumeration, the cell reading and the charger's states, print PASS or FAIL per item and take 5 min or less a unit.
-- Rationale: 30 units need a repeatable test; OTP writes can brick a unit.
-- Source: validation_plan #57, #100, #174, #202.
+- Rationale: 30 units need a repeatable test; OTP writes can brick a unit. Derivation (VER-189 fix, 2026-10-29): 30 units x 5 min = 150 min = 2.5 h of test for the 30-board run; a design choice. Earlier cite (not a primary source): validation_plan #57, #100, #174, #202.
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-76
 - Phase: EVT
@@ -2276,8 +2276,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: soc
 - Statement: Every unit shall carry a serial number linked in 1 record to its chip ID, cell lot, test log and release.
-- Rationale: a field fault must lead back to its lot and its tests.
-- Source: validation_plan #195.
+- Rationale: a field fault must lead back to its lot and its tests. Derivation (VER-189 fix, 2026-10-29): a design rule: a field fault must lead back to its lot and tests; one record per serial. Earlier cite (not a primary source): validation_plan #195.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-110, VER-242
 - Phase: PVT
@@ -2300,8 +2300,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: The PVT lot's first-pass yield on the self-test shall be 90% or more, with every failure logged as a defect.
-- Rationale: below that the process, not the unit, is the problem.
-- Source: Claude's estimate.
+- Rationale: below that the process, not the unit, is the problem. Derivation (VER-189 fix, 2026-10-29): 90% of the 30-board PVT lot is 27 units (0.9 x 30) passing first time; below that the process is the problem. A design choice. Earlier cite (not a primary source): Claude's estimate.
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-111
 - Phase: PVT
@@ -2312,8 +2312,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: Each unit's cell-reading gain shall be set in production test at a true 3.50 V from the bench supply (no USB, the self-test at its highest load, a DMM checked that session against a 4.096 V reference) and lie within 0.95-1.05; a re-read at 3.50 V shall be within 10 mV; the firmware shall store no gain from a no-cell end-of-charge edge.
-- Rationale: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-225).
-- Source: Claude's review (O-63, O-60).
+- Rationale: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-225). Derivation (VER-189 fix, 2026-10-29): the charger's CV is +-1% of 4.2 V = +-42 mV (REQ-BAT-01); a re-read within 10 mV is about a quarter of that (10 / 42), and a gain of 0.95 to 1.05 is +-5%, five times the CV's +-1%. A design choice. Earlier cite (not a primary source): Claude's review (O-63, O-60).
+- Source: Alex's decision (to sign)
 - Method: T
 - Verified by: VER-155, VER-156
 - Phase: EVT
@@ -2325,8 +2325,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: No shipped unit shall have any connector (the cell's, the panel's, the speaker's) mated more than 50% of its rated cycles, counted per unit.
-- Rationale: wire-to-board headers and the FH12 are rated for roughly 10-30 matings (confirm per maker), bring-up alone can use them up, and the speaker's plug comes out at every opening (DF-233).
-- Source: Claude's review (O-61).
+- Rationale: wire-to-board headers and the FH12 are rated for roughly 10-30 matings (confirm per maker), bring-up alone can use them up, and the speaker's plug comes out at every opening (DF-233). Derivation (VER-189 fix, 2026-10-29): the FH12 is rated for 20 insertion cycles (hirose_fh12.txt:58, 'Durability (Insertion/withdrawal)... 20 cycles'); 50% of that is 10 matings a unit, so the panel's connector keeps half its life after bring-up. The other plugs' ratings are not on disk (confirm per maker); 50% is a design choice. Earlier cite (not a primary source): Claude's review (O-61).
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-157
 - Phase: EVT
@@ -2338,8 +2338,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: Every finding on a built unit shall be recorded with its serial, how it was found, its disposition (rework, scrap or use as is) and its re-test; a finding on 2 units shall become a DEF with a check.
-- Rationale: defects.md is for design defects; rework without a re-test, or a recurring process fault never raised, ships bad units.
-- Source: Claude's review (O-36).
+- Rationale: defects.md is for design defects; rework without a re-test, or a recurring process fault never raised, ships bad units. Derivation (VER-189 fix, 2026-10-29): a design rule: rework without a re-test, or a recurring process fault never raised, ships bad units; 2 units is the smallest count that shows a pattern. Earlier cite (not a primary source): Claude's review (O-36).
+- Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-110
 - Phase: EVT

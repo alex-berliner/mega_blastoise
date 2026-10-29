@@ -1,7 +1,7 @@
 # Verification and validation
 
 **This register targets the next spin: the RP2350B board** (board `rp2350b`;
-docs/static/DESIGN.md:71 and docs/static/next_spin_requirements.md, Alex, 2026-10-29): the Raspberry Pi
+docs/static/DESIGN.md:74 and docs/static/next_spin_requirements.md, Alex, 2026-10-29): the Raspberry Pi
 RP2350B (QFN-80, no flash inside) with one GD25Q128 16 MB QSPI flash that holds the program and the sound,
 the core laid out as Raspberry Pi's 2-layer RP2350B minimal design draws it, today's ILI9488 panel, no GBA, no
 Linux, no SD card, no Wi-Fi, no USB host mode; online play goes through an Android phone's Chrome (WebUSB).
