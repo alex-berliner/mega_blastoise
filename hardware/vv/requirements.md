@@ -792,12 +792,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power cell
 - Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V, the hard reset's controller (the TPS3421) being fed from 3V3 and so drawing nothing.
-- Rationale: designed under 30 uA at 25 C from the RP board's circuits, kept on the RP2350B board: U2 6.5, R17 into U10's unpowered input 7.9 at a 4.2 V cell, U7 8.4 on a stand-in, the FETs' leakage 3.0, and U3 (C47773) at the shutdown current its datasheet gives, summed in VER-103; leakage rises with temperature (O-51). The TPS3421 (the hard reset, REQ-PRD-08.B) runs from 3V3, not VSYS or the cell (Alex, 2026-10-29): 3V3 is off while the unit is off, so it draws nothing then, and the 30 uA budget and REQ-PRD-05's shelf life are unchanged. It watches seat 1's Start through the 3V3-side buffered power-key line (the RP board's PWR_BTN_N: Q1 with R16 to 3V3), so no VSYS or cell voltage reaches its unpowered input (DF-266, VER-159). The slider still turns the unit on through its own latch path (PWR_EN, the diode OR of D2), which needs no TPS3421. The hard reset works whenever the unit is on, with USB in or not.
+- Rationale: designed under 30 uA at 25 C from the RP board's circuits, kept on the RP2350B board: U2 6.5, R17 into U10's unpowered input 7.9 at a 4.2 V cell, U7 8.4 on a stand-in, the FETs' leakage 3.0, and U3 (C47773) at the shutdown current its datasheet gives, summed in VER-103; leakage rises with temperature (O-51). The TPS3421 (the hard reset, REQ-PRD-08.B) runs from 3V3, not VSYS or the cell (Alex, 2026-10-29): 3V3 is off while the unit is off, so it draws nothing then, and the 30 uA budget and REQ-PRD-05's shelf life are unchanged. It watches seat 1's Start through the 3V3-side buffered power-key line (the RP board's PWR_BTN_N: Q1 with R16 to 3V3), so no VSYS or cell voltage reaches its unpowered input (DF-266, VER-159). Seat 1's Start (the power key) still turns the unit on through its own latch path (PWR_EN, the diode OR of D2), which needs no TPS3421. The hard reset works whenever the unit is on, with USB in or not.
 - Source: bringup.md step 5.1; design.py U2, U3, U10, R17, Q1, R16, D2 (the RP board's); Alex, 2026-10-29, in chat (the TPS3421 on 3V3); the 45 C number is Claude's estimate (O-51).
 - Method: T
 - Verified by: VER-65, VER-146
 - Phase: EVT
 - Status: PROPOSED
+- Notes: VER-189 (2026-10-29): the rationale still said the DS Lite slider turns the unit on; the slider is dropped (DESIGN.md:60), so the sentence now names seat 1's Start. The statement is unchanged.
 
 ### REQ-PWR-08: Turn-on margin
 - Level: subsystem
@@ -1157,12 +1158,12 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: soc storage
 - Statement: At every power-on the RP2350B's boot ROM shall find the bare-metal image in the GD25Q128 on its QSPI pins and run it in place (XIP), 20 of 20 power-ons, with the whole 16 MB read back through the XIP window matching the image's CRC and the flash's JEDEC ID reading as the GD25Q128's.
 - Rationale: the RP2350B has no flash inside; the one 16 MB flash holds the program and the sound. The GD25Q128's ID is 0xC84018 from memory (to confirm from its datasheet: VER-233).
-- Source: DESIGN.md:71; next_spin_requirements.md:13, :24-25 (the chip, the flash).
+- Source: DESIGN.md:74; next_spin_requirements.md:13, :24-25 (the chip, the flash).
 - Method: T
 - Verified by: VER-252, VER-237
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Rewritten on 2026-10-29. It was the F1C200s's boot from the microSD card (tag vv-f1c200s-final).
+- Notes: Rewritten on 2026-10-29. It was the F1C200s's boot from the microSD card (tag vv-f1c200s-final). VER-189 (2026-10-29): DESIGN.md line numbers corrected after the Sleep line moved them (this row and REQ-SOC-02, -08, -USB-01, -USB-02, -ASM-01.B).
 
 ### REQ-SOC-02: The bare-metal Rust core on the RP2350B
 - Level: subsystem
@@ -1170,7 +1171,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: soc
 - Statement: The no_std Rust battler core shall build for the RP2350B's Cortex-M33 cores and run from the flash in place with its data in the chip's 520 KB of SRAM, with today's 420 KB of RAM and 1.4 MB of code and data, and 100 KB of SRAM or more free.
 - Rationale: a bare-metal Rust boot is required; the core's size on the RP2350 today (the stripboard Pico 2, an RP2350A with the same cores and SRAM). The 100 KB free is Claude's proposal.
-- Source: next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); DESIGN.md:84.
+- Source: next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); DESIGN.md:87.
 - Method: T, A
 - Verified by: VER-252, VER-237
 - Phase: ORDER
@@ -1193,13 +1194,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc power
-- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding seat 1's Start for about 8 s shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
+- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding seat 1's Start for 8 s (4 s to 12 s: Claude's reading of 'about', VER-258; Alex to confirm) shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
 - Rationale: there is no reset button; the watchdog and a long hold of seat 1's Start are the ways out of a hang (REQ-PWR-10). Start's 8 s hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. The TPS3421 is fed from 3V3 (Alex, 2026-10-29), so it draws nothing while the unit is off (REQ-PWR-07), and reads Start through the 3V3-side buffered power-key line; Start turns the unit on through its own latch path, so the hard reset is needed only while the unit is on. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
 - Source: DESIGN.md:64 ('There is no separate reset button. (2026-10-28)'); DESIGN.md:65 (hold seat 1's Start about 8 s); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B); the TPS3421 datasheet (VER-258).
 - Method: A, T
 - Verified by: VER-198, VER-105, VER-258, VER-241
 - Phase: EVT
 - Status: PROPOSED
+- Notes: VER-189 (2026-10-29): the statement said 'about 8 s' with no tolerance (REQ-PRD-08.B, Alex's, says the same); 4 s to 12 s is Claude's reading from VER-258, to be replaced by the TPS3421 datasheet's nearest delay or Alex's number.
 
 ### REQ-SOC-05: The pin plan
 - Level: subsystem
@@ -1243,7 +1245,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: soc
 - Statement: With the case open, the debug connector shall give the RP2350B's SWD pins and a UART console and the rails' test pads; debug builds shall keep every battle line in a log region of the flash and show the log on the next boot, and production builds shall have it off.
 - Rationale: bring-up needs a console; the battle log is Alex's debug aid.
-- Source: DESIGN.md:64 ('The board has test pads and a debug connector for bring-up.'); DESIGN.md:65 ('Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off.').
+- Source: DESIGN.md:67 ('The board has test pads and a debug connector for bring-up.'); DESIGN.md:68 ('Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off.').
 - Method: D
 - Verified by: VER-158, VER-241
 - Phase: EVT
@@ -1296,7 +1298,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: usbc
 - Statement: The USB-C port shall attach as a device (a sink, Rd 5.1 kohm on CC1 and on CC2, no role controller) to an Android phone, a computer or a charger, in both plug orientations, 20 of 20 plug-ins each way, enumerate as the console's WebUSB device, and never source VBUS.
 - Rationale: the console is a USB device only (DESIGN.md:83); the phone is the host and carries the network.
-- Source: DESIGN.md:83; next_spin_requirements.md:16 ('a USB device port'); USB Type-C 1.x (Rd on each CC, to confirm the tolerance).
+- Source: DESIGN.md:86; next_spin_requirements.md:16 ('a USB device port'); USB Type-C 1.x (Rd on each CC, to confirm the tolerance).
 - Method: T, A
 - Verified by: VER-251, VER-195, VER-80
 - Phase: ORDER
@@ -1309,7 +1311,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: usbc
 - Statement: D+ and D- shall run side by side from the receptacle to the RP2350B over unbroken ground on the 2-layer board, through the series resistors of Raspberry Pi's minimal design, length-matched within 2 mm with stubs of 3.5 mm or less, for full speed (12 Mbps).
 - Rationale: the RP2350's USB is full speed, so no 480 Mbps impedance target is claimed; the pair is still kept tight and over ground for ESD and noise. The 2 mm and 3.5 mm are Claude's proposal from USB 2.0.
-- Source: USB 2.0 cl. 7.1; DESIGN.md:61 (two layers); the RP2350 datasheet and the minimal design (to download: VER-233).
+- Source: USB 2.0 cl. 7.1; DESIGN.md:62 (two layers); the RP2350 datasheet and the minimal design (to download: VER-233).
 - Method: A
 - Verified by: VER-236, VER-108
 - Phase: ORDER
@@ -1543,6 +1545,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Verified by: VER-128
 - Phase: EVT
 - Status: PROPOSED
+
+### REQ-AUD-07: The audio source plays the mixer at 32 kHz, carrier 40 dB down
+- Level: subsystem
+- Board: rp2350b
+- Subsystem: audio soc
+- Statement: The audio source, a PWM or I2S stream the RP2350B generates because the chip has no DAC, shall play the mixer's output at a sample rate of 32 kHz or more, and any carrier or image it leaves at the speaker shall be 40 dB or more below the full-scale 1 kHz level at the worst component corner.
+- Rationale: REQ-PRD-18 sets the mixer at 8 channels and 32 kHz, and the amplifier (U7) takes an analogue input, so the stream must be turned into one. VER-64 and VER-100 still test a 40 dB carrier with no live requirement behind it, the row that held it being dropped with the ESP32-S3 board (found by VER-189; Was: REQ-AUD-02). The source (PWM or I2S) is chosen at NM-04 (VER-100).
+- Source: REQ-PRD-18 (Alex, 2026-10-29: 8 channels at 32 kHz); the 40 dB is Claude's proposal, carried from the ESP32-S3 board's carrier row (Was: REQ-AUD-02 at 39cc07f): Alex to set it.
+- Method: A, T
+- Verified by: VER-100, VER-64
+- Phase: EVT
+- Status: PROPOSED
+- Notes: New on 2026-10-29, found by VER-189 (a function with no live requirement).
 
 ## Subsystem: buttons (BTN)
 
@@ -2165,6 +2180,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: EVT
 - Status: PROPOSED
 
+### REQ-FAB-13: No indicator lights
+- Level: board
+- Board: rp2350b
+- Subsystem: all
+- Statement: The board shall carry 0 indicator lights: 0 LED parts in the BOM and on the board, the panel's own backlight LEDs excepted.
+- Rationale: Alex's spec; a light also costs a part, a pin and a few mA.
+- Source: DESIGN.md:63 ('There are no indicator lights on the board.', Alex, 2026-09-24).
+- Method: I
+- Verified by: VER-265
+- Phase: ORDER
+- Status: PROPOSED
+- Notes: New on 2026-10-29, found by VER-189 (a spec line with no requirement).
+
 ## Board: hand assembly (ASM)
 
 ### REQ-ASM-01: Hand assembly
@@ -2197,7 +2225,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: all
 - Statement: Alex shall assemble 1 RP2350B unit from its assembly doc in 30 min or less with a screwdriver and a knife and no iron (nothing is soldered at assembly), on an ESD mat with a strap, damaging 0 parts, the cell plugged last and unplugged first.
 - Rationale: nothing is soldered at assembly (DESIGN.md:68); work next to a live cell is the hazard (carryover, DEF-41 at tag vv-esp32s3-final).
-- Source: DESIGN.md:68 ('Nothing is soldered when a unit is put together: the battery and the speaker both plug in.').
+- Source: DESIGN.md:71 ('Nothing is soldered when a unit is put together: the battery and the speaker both plug in.').
 - Method: D
 - Verified by: VER-91
 - Phase: EVT

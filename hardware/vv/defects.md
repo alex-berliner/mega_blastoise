@@ -1138,3 +1138,25 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Gate: ORDER
 - Board: esp32s3
 - Status: DROPPED with esp32s3 (tag vv-esp32s3-final): the ESP32-S3 board is dropped; it was OPEN there, neither fixed nor closed on the RP2350B board. Its lesson carries as DF-206 on the RP2350B board.
+
+### DEF-103: 54 live requirements cite no primary Source (a datasheet line, a standard's clause or Alex's decision)
+- Board: rp2350b
+- Found: VER-189 (the per-subsystem requirements review) on 2026-10-29: VER-189's pass limit wants 0 live requirements without a primary Source; 54 of the 133 live rows (REQ-PRD rows aside, which Alex signed) cite only the archived validation_plan (#n), the design's own files (design.py, case.scad, placement.py, bringup.md, design_review.md, assembly.md), or Claude's estimate, analysis or review.
+- Symptom: the numbers on those rows are the design's own or Claude's: REQ-BAT-05.B, -07, -08, -10, -14, -15; REQ-PWR-09, -10, -14; REQ-DSP-06, -09, -10; REQ-AUD-03, -04, -06; REQ-BTN-02 to -08; REQ-MEC-01 to -12; REQ-THM-02 to -04; REQ-FAB-01, -02, -05 to -10; REQ-ASM-01, -02; REQ-TST-01 to -03, -05 to -08. Nobody outside the register has set them, so a check can pass them against a number nobody owns.
+- Root cause: the rows were seeded from the validation_plan's methods and the design files and carried across four boards; requirements.md's own Source definition allows 'validation_plan method (#n)', which VER-189's pass limit does not.
+- Why missed: no check read each row's Source against the pass limit's definition until VER-189 ran.
+- Check added or changed: VER-189 (re-run once each row cites a datasheet line, a standard's clause or Alex's number, or Alex signs the row)
+- Updated: REQ-BAT-05.B, REQ-BAT-07, REQ-BAT-08, REQ-BAT-10, REQ-BAT-14, REQ-BAT-15, REQ-PWR-09, REQ-PWR-10, REQ-PWR-14, REQ-DSP-06, REQ-DSP-09, REQ-DSP-10, REQ-AUD-03, REQ-AUD-04, REQ-AUD-06, REQ-BTN-02, REQ-BTN-03, REQ-BTN-04, REQ-BTN-05, REQ-BTN-06, REQ-BTN-07, REQ-BTN-08, REQ-MEC-01, REQ-MEC-02, REQ-MEC-03, REQ-MEC-04, REQ-MEC-05, REQ-MEC-06, REQ-MEC-07, REQ-MEC-08, REQ-MEC-09, REQ-MEC-10, REQ-MEC-11, REQ-MEC-12, REQ-THM-02, REQ-THM-03, REQ-THM-04, REQ-FAB-01, REQ-FAB-02, REQ-FAB-05, REQ-FAB-06, REQ-FAB-07, REQ-FAB-08, REQ-FAB-09, REQ-FAB-10, REQ-ASM-01, REQ-ASM-02, REQ-TST-01, REQ-TST-02, REQ-TST-03, REQ-TST-05, REQ-TST-06, REQ-TST-07, REQ-TST-08
+- Gate: ORDER
+- Status: OPEN (2026-10-29): the fix is Alex's decision on which of the 54 he wants to own (a number from him, or his signed line) and, for the rest, Claude citing the datasheet line or the standard's clause; evidence/2026-10-29_VER-189_requirements_review.md lists each row with its source class.
+
+### DEF-104: Live requirements whose number has no tolerance
+- Board: rp2350b
+- Found: VER-189 on 2026-10-29: REQ-SOC-04 and REQ-PRD-08.B say 'about 8 s' for the hard reset; REQ-SOC-03 gives the crystal's frequency (12 MHz) but no start-up time or frequency tolerance; REQ-BAT-16 says 'about 140 mA'.
+- Symptom: a check cannot pass or fail 'about'; VER-258 had to read 'about 8 s' as 4 s to 12 s on Claude's own reading.
+- Root cause: DESIGN.md (Alex) says 'about 8 seconds' and the rows copied it.
+- Why missed: no check read each statement for a value and a tolerance.
+- Check added or changed: VER-189 (re-run once the tolerances are set); VER-258 (reads the datasheet's delay)
+- Updated: REQ-SOC-04 (4 s to 12 s proposed, Claude's reading), REQ-SOC-03, REQ-BAT-16, REQ-PRD-08.B (signed: Alex's to change)
+- Gate: ORDER
+- Status: OPEN (2026-10-29): needs Alex's tolerance on the 8 s hard reset (REQ-PRD-08.B is his signed row); Claude can add the crystal's start-up time and the 140 mA tolerance from the datasheets.
