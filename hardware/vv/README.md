@@ -426,8 +426,8 @@ for an F1C200s board (tag `vv-f1c200s-final`, cffe55b) that Alex dropped on 2026
 next spin to the RP2350B with a 16 MB flash. This re-seed (branch vv-rp2350b, from cffe55b): board `rp2350b`,
 allocations `.B`; the F1C200s-only rows DROPPED (REQ-PRD-12, -13, -16, REQ-PWR-22, REQ-STO-01 to -03,
 DF-203, -204, -207, -208, -209, -243 to -245, ten checks); REQ-PRD-14 and -15 rewritten, REQ-PRD-18 and
-REQ-SOC-09 new, REQ-PRD-09 Alex's all-in cost (a proposal); DF-252 to DF-261 and VER-251 to VER-256 new; the
-chip gate (NM-03) is the phone bridge test plus XIP from the 16 MB flash. Alex approved every REQ-PRD row
-but -09 in chat, as worded at c3aec22; nothing is signed, so every requirement is PROPOSED and APPROVALS.md
+REQ-SOC-09 new, REQ-PRD-09 Alex's all-in cost; DF-252 to DF-261 and VER-251 to VER-256 new; the
+chip gate (NM-03) is the phone bridge test plus XIP from the 16 MB flash. Alex approved the REQ-PRD rows
+in chat, as worded at c3aec22 and at his review of 2026-10-29 (PLAN.md section b2: -02.B, -03.B, -14, -15 as written; -08.B and -18 rewritten; -19 new; -09 with his numbers, $60 and $40; branch vv-review-1, REQ-SOC-10, VER-258 to VER-261 and DF-262 to DF-265 new); nothing is signed, so every requirement is PROPOSED and APPROVALS.md
 is empty. No RP2350B check has run: there is no RP2350B design. The register is at stage NM-01 of the
 new-MCU path; the order gate fails, as it should (PLAN.md section i).

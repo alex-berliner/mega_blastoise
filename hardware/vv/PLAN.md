@@ -38,16 +38,27 @@ releases/APPROVALS.md, which only he writes lines in, in commits signed with the
 |---|---|
 | Alex's change of the next spin (DESIGN.md:71, next_spin_requirements.md) | board `rp2350b`; allocations `.B` (the `.F` ones are DROPPED, the F1C200s board's); the F1C200s board is DROPPED with tag `vv-f1c200s-final` |
 | Dropped with the F1C200s board | REQ-PRD-12, -13, -16 (GBA, link play, games and saves), REQ-PWR-22 (VBUS out as host), REQ-STO-01 to -03 (the microSD slot); DF-203, -204, -207, -208, -209, -243, -244, -245; checks VER-206, -209, -221, -222, -225, -226, -229, -234, -247, -250 |
-| Rewritten for the RP2350B | REQ-PRD-14 (the phone web bridge), REQ-PRD-15 (no Linux part), REQ-PRD-09 (Alex's all-in cost, still a proposal), REQ-PRD-03.B, -08.B (recovery over the RP2350 USB boot ROM), REQ-PWR-20, REQ-SOC-01 to -08, REQ-USB-01, -02; the chip gate's checks VER-223, -224 and the checks that named the F1C200s |
-| New | REQ-PRD-18 (sound from the 16 MB flash), REQ-SOC-09 (the flash's footprint and wiring follow the minimal design); checks VER-251 (the phone bridge test), VER-252 (XIP from the 16 MB flash), VER-253 (the flash's wiring), VER-254 (the footprints), VER-255 (sound on a unit), VER-256 (the flash's budget); DF-252 to DF-261 |
+| Rewritten for the RP2350B | REQ-PRD-14 (the phone web bridge), REQ-PRD-15 (no Linux part), REQ-PRD-09 (Alex's all-in cost and limits), REQ-PRD-03.B, -08.B (recovery over the RP2350 USB boot ROM), REQ-PWR-20, REQ-SOC-01 to -08, REQ-USB-01, -02; the chip gate's checks VER-223, -224 and the checks that named the F1C200s |
+| New | REQ-PRD-18 (a GBA-style sound engine from the 16 MB flash), REQ-PRD-19 (update by a USB drive), REQ-SOC-10 (bootloader, partitions, A/B), REQ-SOC-09 (the flash's footprint and wiring follow the minimal design); checks VER-251 (the phone bridge test), VER-252 (XIP from the 16 MB flash), VER-253 (the flash's wiring), VER-254 (the footprints), VER-255 (sound on a unit), VER-256 (the flash's budget), VER-258 to VER-261 (the hard reset, the boot ROM's recovery, the drive update, the sound's provenance); DF-252 to DF-265 |
 | Carried from the RP2354B board (tag `vv-rp2354b-final`) | the errata analysis (analysis/errata_rp2350.md, VER-245), the copied core's lessons as DF-256 to DF-261; its 21 open defects stay at the tag: they were findings on that board's files, and the lessons that apply to any board are carryover.md's |
 | The new-MCU path | gates.md NM-01 to NM-11; NM-03 is the chip gate: the phone bridge test plus XIP from the 16 MB flash (VER-251, VER-252); check_trace prints the stage |
 
+## (b2) Alex's review of the REQ-PRD rows (2026-10-29, in chat)
+
+Written into the register in branch vv-review-1; every row stays PROPOSED until Alex signs it in APPROVALS.md.
+Approved as written: REQ-PRD-02.B (the 8-bit 8080 bus confirmed, evidence in its Notes and VER-199), -03.B (4.0 h,
+the 700 mAh cell stays), -14, -15 (and the RP board's hold-to-latch at power-on dropped: REQ-PWR-21, VER-240).
+Approved and rewritten: -08.B (recovery in four layers: the hard reset, Select at power-on, the boot ROM's hash check
+and fallback, the BOOTSEL pad; REQ-SOC-04, REQ-SOC-10, VER-241, VER-258, VER-259), -18 (a GBA-style sound engine;
+VER-252, VER-255, VER-256, VER-261, DF-265). New: -19 (update by dragging a .uf2 to a USB drive; VER-260).
+Approved with Alex's numbers: -09 ($60 at 10 units, $40 at 50). Unchanged, approved at c3aec22: -01, -01.B, -02, -03,
+-04, -04.B, -05, -07, -08, -10, -11, -17. Open for Alex: DF-263 (block protection on the bootloader against a
+recovery .uf2 that rewrites it).
+
 ## (c) Where the register is on the new-MCU path
 
-`python3 hardware/vv/tools/check_trace.py` prints it. Today: **NM-01, Requirements** (Alex approved REQ-PRD
--01 to -08, -10, -11 and the rest in chat as worded at c3aec22, but nothing is signed in APPROVALS.md and
-REQ-PRD-09's number is still his to set), with NM-02, Chip selection, met out of order (next_spin_requirements.md,
+`python3 hardware/vv/tools/check_trace.py` prints it. Today: **NM-01, Requirements** (Alex approved the REQ-PRD
+rows in chat, as worded at c3aec22 or at his review of 2026-10-29 (section b2), but nothing is signed in APPROVALS.md), with NM-02, Chip selection, met out of order (next_spin_requirements.md,
 'Chosen (Alex, 2026-10-29)'). NM-03, the chip gate, waits on the datasheets on disk (VER-233, its entry need) and
 on the two tests: the phone bridge test on the stripboard Pico 2 (VER-251) and XIP from a 16 MB flash on an
 RP2350B (VER-252: it needs a dev board with that flash, or the first board). Both cover only
@@ -69,11 +80,11 @@ fails it once that design.py lands without them).
 
 | # | Step | IDs | Effort |
 |---|---|---|---|
-| 0.1 | **Alex approves the requirements (NM-01)**: REQ-PRD-01 to -18 (he approved all but -09 in chat as worded at c3aec22; -14 and -15 are rewritten since, -18 is new, -09 is the all-in cost) and their proposed numbers (5 of 5 battles, 1.0 s and 10 of 10, 4 MB and 8 MB and 30 min for the sound, $57 at 10 and $38 at 50, 78.9 x 156.48 x 9.6 mm each +0.3 mm); Claude reviews each subsystem's requirements against its functions first. | VER-189 | Claude: half a day; Alex: 1 h |
+| 0.1 | **Alex approves the requirements (NM-01)**: REQ-PRD-01 to -19 as he reviewed them in chat (at c3aec22, and on 2026-10-29: section b2) and their numbers (5 of 5 battles, 1.0 s and 10 of 10, 8 channels at 32 kHz with 4 MB for the program and 2 MB of room for the sound and 30 min, $60 at 10 and $40 at 50, 78.9 x 156.48 x 9.6 mm each +0.3 mm); Claude reviews each subsystem's requirements against its functions first. | VER-189 | Claude: half a day; Alex: 1 h |
 | 0.2 | **Alex pins a signing key** (README, 'Approvals'). Until then no APPROVALS.md line counts. | | Alex: 15 min |
 | 0.3 | **Download** the RP2350 datasheet (its hardware design chapter holds the minimal design's drawing) and the GD25Q128 datasheet into hardware/ref_design/datasheets, with their hashes. | VER-233 | 30 min |
 | 1 | **The chip gate (NM-03)**: the phone bridge test on the stripboard Pico 2 (our bridge page in Android Chrome, Showdown's server accepting a battle, 5 Gen 1 and 5 Gen 3); XIP from a 16 MB flash on an RP2350B (Alex orders a dev board with that flash, or it waits for the first board), with a sound sample played from the top of the flash; boot time to the lobby and the real panel on a Pico 2 on the side. A fail of the bridge test stops the board design. | VER-251, VER-252, VER-223, VER-224 | 2-3 days on the bench; Alex: the dev board order, 7 to 14 days' lead |
-| 2 | **Architecture and pin plan (NM-04)**: the pin plan, the power budget, the rails (the flash's VCC among them), the flash's budget and read bandwidth, the chip's heat; the backlight driver, the cell sense and the USB ESD array chosen; the power slider measured against a board switch. | VER-232, VER-231, VER-235, VER-256, VER-238, VER-137, VER-144, VER-193, VER-239 | 2-3 days |
+| 2 | **Architecture and pin plan (NM-04)**: the pin plan, the power budget, the rails (the flash's VCC among them), the flash's budget and read bandwidth, the chip's heat, the hard reset's delay and the boot ROM's recovery rules; the backlight driver, the cell sense and the USB ESD array chosen; the power slider measured against a board switch. | VER-232, VER-231, VER-235, VER-256, VER-238, VER-137, VER-144, VER-193, VER-239, VER-258, VER-259 | 2-3 days |
 | 3 | **Schematic (NM-05)**: the RP2350B design.py replaces the ESP32-S3 board's on main; the netlist, ERC, the pin gate, the application circuits, the flash's wiring against the minimal design, the datasheet audit, the parts' identity, the watchdog rule; then README's baseline moves to that commit and its baseline board to `rp2350b`. | VER-01, VER-03, VER-02, VER-34, VER-198, VER-253, VER-14, VER-104 | the board session; Claude: 1 day of checks |
 | 4 | **The power path and the buses on paper**: inrush, the USB-C connector's fault reach, the amplifier's states and heat, the clocked buses (the panel's and the flash's), the cell's chain, the thermistor's place, the contacts' pull-ups against the pill. | VER-99, VER-195, VER-196, VER-200, VER-199, VER-218, VER-164, VER-248 | 1 day |
 | 5 | **Layout and the board against the case (NM-06; the case gate itself is NM-09, after the order)**: DRC, check_fit, placement drift, the XY chain, the MLCC keep-out, the ESTIMATE ledger, the cell's gap, the USB pair, return paths (the QSPI flash's among them), net classes, the contacts and the dome as placed, the panel's tail, the case's architecture, the regulators' switching loops. | VER-04, VER-06, VER-19, VER-174, VER-142, VER-152, VER-181, VER-236, VER-108, VER-21, VER-201, VER-08, VER-162, VER-178, VER-219, VER-190, VER-249 | 2 days |
@@ -109,10 +120,10 @@ the new functions: the bring-up image running in place from the flash (VER-237),
 
 ## (f) Decisions for Alex
 
-1. **Sign the REQ-PRD approvals** you gave in chat (as worded at c3aec22) in APPROVALS.md, and decide
-   REQ-PRD-09: the all-in cost for you to hold one assembled unit, Claude's estimate about $57 at 10
-   units and $38 at 50, the number yours to set. Proposed: set it after VER-117 re-quotes it with the
-   tariffs and every shipping leg.
+1. **Sign the REQ-PRD approvals** you gave in chat (at c3aec22 and on 2026-10-29, section b2) in
+   APPROVALS.md. REQ-PRD-09 is yours: $60 or less at 10 units and $40 or less at 50 (Claude's estimate about
+   $58 and about $38.50, the TPS3421 included); VER-117 re-quotes it with the tariffs and every shipping leg.
+   Also read DF-263: block protection on the bootloader against a recovery .uf2 that rewrites it.
 2. **Order the dev board for the chip gate's XIP test** (VER-252): an RP2350B with 16 MB of QSPI
    flash (Pimoroni's Pico Plus 2 is one, to confirm). The phone bridge test (VER-251) needs only the
    stripboard Pico 2 and an Android phone. Proposed: run VER-251 first, since a fail stops the design.
@@ -131,8 +142,9 @@ carries, since each named that board's parts.
   timing. Every check that reads them names rp2350.pdf or gd25q128.pdf in 'sources', so a PASS before
   the download is BLOCKED.
 - The minimal design's exact nets, values and the BOOTSEL pad are not on disk: VER-253 and VER-254
-  compare the board with them only once VER-233 has put them there. The 2 mm QSPI limit and the 4 MB, 8 MB
-  and 30 min of the sound are Claude's proposals.
+  compare the board with them only once VER-233 has put them there. The 2 mm QSPI limit is Claude's proposal;
+  the sound's 4 MB, 2 MB and 30 min are Alex's. The TPS3421's delay variant and the boot ROM's A/B slot rule,
+  its handling of a whole-flash UF2 and the block protection against a recovery file are not read yet (VER-258, VER-259).
 - Whether Showdown's server accepts a battle from our bridge page (VER-251) is shown only by the
   test; Chrome's WebUSB behaviour on the phones Alex has is not known until it runs (DF-254).
 - A carried check whose procedure still names the ESP32-S3 board's parts looks built; its result is
@@ -167,4 +179,4 @@ checks and worst status, planned, GAP or NOT_NEEDED, and a table of the requirem
 At the order gate R9 holds every cell of classes 1-15 that no built pre-order check has cleared:
 today every cell but the NOT_NEEDED ones, since no RP2350B design exists to run a check on.
 
-Last updated: 2026-10-29 10:06 EDT (re-seeded for the RP2350B board)
+Last updated: 2026-10-29 11:55 EDT (Alex's REQ-PRD review written in, branch vv-review-1)

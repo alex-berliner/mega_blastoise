@@ -28,6 +28,12 @@ APPROVED, REJECTED, or DEFERRED with a reason. A Status here that has no matchin
 there is a structure error, and a statement edited after he approved it needs his approval again.
 `check_trace.py --gate` fails while any requirement in scope is PROPOSED.
 
+Alex reviewed the product requirements (REQ-PRD) in chat on 2026-10-29 and the register now carries his
+decisions, word for word where he gave a wording (PLAN.md section b2): REQ-PRD-02.B, -03.B, -14 and -15 approved as
+written; -08.B and -18 approved and rewritten; REQ-PRD-19 new; REQ-PRD-09 with his limits ($60 at 10 units, $40 at 50).
+The other live REQ-PRD rows are unchanged from c3aec22, where he approved them as worded. All stay PROPOSED until
+he signs them.
+
 How to read a block:
 
 - Level: product (what a player or Alex sees), subsystem (a block of the design), or
@@ -124,12 +130,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: The 320 x 480 ER-TFT035IPS-6 (ILI9488) shall show a full-screen test image with 0 missing lines or columns and correct red, green and blue order, seen from either seat, driven by the RP2350B on the panel's 8-bit 8080 bus.
-- Rationale: the one shared screen is the product; the panel is today's.
-- Source: DESIGN.md:55 ('one 3.5 inch IPS screen'); next_spin_requirements.md:12 ('a display bus fast enough for the 320 x 480 panel'), :27 ('today's ILI9488').
+- Rationale: the one shared screen is the product; the panel is today's. The 8-bit 8080 bus is fast enough (Notes).
+- Source: DESIGN.md:55 ('one 3.5 inch IPS screen'); next_spin_requirements.md:12 ('a display bus fast enough for the 320 x 480 panel'), :27 ('today's ILI9488'); hardware/ref_design/datasheets/ILI9488.pdf and hardware/ref_design/datasheets/ER-TFT035IPS-6_Datasheet.pdf (Notes); Alex confirmed the 8-bit bus on 2026-10-29.
 - Method: T
-- Verified by: VER-224, VER-60, VER-61
+- Verified by: VER-224, VER-60, VER-61, VER-199
 - Phase: EVT
 - Status: PROPOSED
+- Notes: Alex reviewed this row in chat on 2026-10-29: approved as written, the 8-bit 8080 bus confirmed. The evidence, read from the two datasheets (VER-199 repeats it on paper and VER-224 measures it): (1) the ILI9488 datasheet gives a 40 ns minimum write cycle (twc, section 17.4.1, DBI Type B timing characteristics); at 40 ns a 320 x 480 RGB565 frame, two writes a pixel, is 320 x 480 x 2 = 307,200 writes = 12.3 ms, so the bus maxes out at about 81 fps, 1.36x over 60. (2) The ER-TFT035IPS-6 datasheet puts IM0 to IM2 on FPC pins 7 to 9 (the 8-bit 8080 mode is IM2 IM1 IM0 = 0,1,1) and DB17 to DB0 on pins 15 to 32; the 8-bit bus uses DB7 to DB0, pins 25 to 32, and the unused data lines are tied to ground ('Fix to DGND level when not in use'). (3) The module datasheet gives no timing of its own, so the controller's is the limit. The datasheets are hardware/ref_design/datasheets/ER-TFT035IPS-6_Datasheet.pdf and hardware/ref_design/datasheets/ILI9488.pdf.
 
 ### REQ-PRD-03: Play time
 - Level: product
@@ -161,12 +168,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell power
 - Statement: From charge-done the device shall play for at least 4.0 h of battling (backlight at 50%, sound at -12 dBFS) at 25 C before the low-cell cutoff.
-- Rationale: a session of play on one charge; the RP2350B at 150 MHz draws far less than an application processor would, so the 4.0 h of the parent holds with margin on paper. The number is Claude's proposal: DESIGN.md does not give one; Alex sets it.
-- Source: Claude's estimate; the stripboard Pico 2's measured draw and the power budget (VER-231).
+- Rationale: a session of play on one charge; the RP2350B at 150 MHz draws far less than an application processor would, so the 4.0 h of the parent holds with margin on paper. The 4.0 h is Alex's (2026-10-29); Claude's estimate is 5 to 6 h at about 100 to 120 mA.
+- Source: Alex, 2026-10-29, in chat (4.0 h, approved as written); Claude's estimate; the stripboard Pico 2's measured draw and the power budget (VER-231).
 - Method: T, A
 - Verified by: VER-231, VER-101, VER-153
 - Phase: EVT
 - Status: PROPOSED
+- Notes: Alex reviewed this row in chat on 2026-10-29: approved as written, 4.0 h, and the 700 mAh 403450 cell stays. Claude's estimate with that cell is 5 to 6 h at about 100 to 120 mA, so 4.0 h leaves margin. VER-231 works the draw out on paper from the stripboard's measured currents; VER-101 and VER-153 measure the hours and the usable capacity on built units.
 
 ### REQ-PRD-04: Charge time
 - Level: product
@@ -271,27 +279,28 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 ### REQ-PRD-08.B: Recoverable firmware (rp2350b)
 - Level: product
 - Board: rp2350b
-- Subsystem: soc usbc storage
-- Statement: A unit with blank or corrupt firmware shall take a new image with the case closed through the RP2350 boot ROM's USB boot mode (over USB-C from a computer), and a unit with hung firmware shall reset by the watchdog within 2 s and then run or fall back to the same USB boot mode, 3 out of 3 tries.
-- Rationale: there is no reset button and no BOOT button on the case; the RP2350 boot ROM enters USB boot mode itself when the flash holds no valid image, and a running image reboots to it on a command over its own USB (the phone bridge's port). With the case open a BOOTSEL test pad on QSPI SS (as in Raspberry Pi's minimal design: to confirm, VER-233) forces it.
-- Source: DESIGN.md:63 ('There is no separate reset button.'); Alex, 2026-10-29, in chat (recovery is the RP2350's USB boot ROM over USB-C); the RP2350 datasheet's boot sequence (to download: VER-233).
+- Subsystem: soc usbc storage power buttons
+- Statement: Holding the power slider for about 8 s shall reset and turn off the unit whatever the firmware is doing. Holding seat 1's Select while turning the power on shall enter the RP2350's USB boot mode whatever state the main firmware is in. A blank unit shall enter USB boot mode by itself, a corrupted image or partition table shall fail the boot ROM's hash check and drop to USB boot mode by itself, and a failed update shall fall back to the previous firmware. All of this with the case closed, 3 out of 3 tries each.
+- Rationale: there is no reset button and no BOOT button on the case, and a hung main firmware must not need the case opened. Four layers, each a design fact: (1) the hard reset is a TI TPS3421 push-button controller (LCSC C2067262, $0.36 at 30) on the slider's line, driving the RP2350's RUN pin low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts; the exact delay depends on the variant and its delay-select pin, and 'about 8 s' means the nearest available delay, to confirm from its datasheet (VER-258). (2) A small bootloader of our own lives in its own flash partition, write-protected with the GD25Q128's block protection; it reads seat 1's Select first thing (GPIO only, before the display, sound or USB start), enters USB boot mode if it is held, and otherwise starts the main firmware (REQ-SOC-10). (3) The main firmware sits in A/B slots with the boot ROM's try-before-you-buy, plus a hash in each image; a failed-boot counter in a watchdog scratch register sends the unit to USB boot mode after 3 failed boots (REQ-SOC-10). (4) With the case open, a BOOTSEL test pad on QSPI SS forces USB boot. The firmware itself turns the unit off on a 1 to 2 s hold of the slider (REQ-PWR-21), so the 8 s hold is only for a unit that does not answer. A new image goes in by dragging a .uf2 file to the unit's USB drive (REQ-PRD-19).
+- Source: DESIGN.md:63 ('There is no separate reset button.'); Alex, 2026-10-29, in chat (rewritten and approved: the statement is his text); the RP2350 datasheet's boot sequence, partition table, hash check and try-before-you-buy (to download: VER-233; VER-259 reads them); the TPS3421 datasheet (VER-258).
 - Method: D, T
-- Verified by: VER-241, VER-252
+- Verified by: VER-241, VER-252, VER-258, VER-259
 - Phase: EVT
 - Status: PROPOSED
+- Notes: Rewritten on 2026-10-29 at Alex's review. It was: a blank or corrupt image through the USB boot mode and a hung one reset by the watchdog within 2 s, 2 of 2 tries; the watchdog stays (REQ-SOC-04) but is no longer the recovery's only path. To confirm from the datasheets: the TPS3421 variant and delay-select pin that give the nearest delay to 8 s (VER-258), and how the boot ROM's hash check and try-before-you-buy behave with a corrupted partition table (VER-259). Open question for Alex: block protection on the bootloader's partition and a recovery .uf2 that rewrites the bootloader (REQ-PRD-19) pull against each other (DF-263).
 
 ### REQ-PRD-09: Cost
 - Level: product
 - Board: both
 - Subsystem: all
-- Statement: The all-in cost for Alex to hold one fully assembled unit shall be $57 or less at 10 units and $38 or less at 50 units, all-in being the board, parts, JLC assembly, panel, cell, speaker, silicone, screws, tape, the home-printed case, every shipping leg, and US tariffs and duties.
-- Rationale: this is Alex's definition of cost (2026-10-29): what it costs him to hold one finished unit, not the board's price. The two numbers are Claude's estimate of what it comes to, about $57 a unit at 10 and $38 at 50, not a target: the number is Alex's to set and stays a proposal until he does.
-- Source: Alex's definition of cost, 2026-10-29; Claude's estimate (VER-117 re-runs it: hardware/ref_design/board/tools/cost.py, JLC's instant quote, the parts, every shipping leg, the US tariff and duty rate on each).
+- Statement: The all-in cost for Alex to hold one fully assembled unit shall be $60 or less at 10 units and $40 or less at 50 units, all-in being the board, parts, JLC assembly, panel, cell, speaker, silicone, screws, tape, the home-printed case, every shipping leg, and US tariffs and duties.
+- Rationale: this is Alex's definition of cost (2026-10-29): what it costs him to hold one finished unit, not the board's price. The two limits are Alex's (2026-10-29). Claude's estimate of what it comes to, TPS3421 included, is about $58 a unit at 10 and about $38.50 at 50, inside both.
+- Source: Alex's definition of cost and his limits, $60 at 10 and $40 at 50, 2026-10-29, in chat; Claude's estimate (VER-117 re-runs it: hardware/ref_design/board/tools/cost.py, JLC's instant quote, the parts, every shipping leg, the US tariff and duty rate on each).
 - Method: I
 - Verified by: VER-117
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-29: it was $45 or less at 10 units (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament, the microSD card); the new definition adds tape, tariffs and duties and every shipping leg, and drops the card, which left the design. Alex approved the other REQ-PRD rows in chat as worded at c3aec22; this row is not approved.
+- Notes: Restated on 2026-10-29: it was $45 or less at 10 units (board, assembly, shipping, panel, cell, speaker, silicone, caps, screws, filament, the microSD card); the new definition adds tape, tariffs and duties and every shipping leg, and drops the card, which left the design. Alex set the limits himself on 2026-10-29: $60 or less at 10 units and $40 or less at 50 units, with the all-in definition kept exactly as worded; they are his numbers, not a proposal. Claude's estimate before that was $57 and $38 (a proposal, 2026-10-29 morning); with the TPS3421 hard-reset controller (REQ-PRD-08.B) it is about $58 and about $38.50.
 
 ### REQ-PRD-10: Serviceable cell and panel
 - Level: product
@@ -350,26 +359,26 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: usbc soc
 - Statement: With the console on one USB-C cable to an Android phone, a web page in the phone's Chrome browser (WebUSB, the bridge page) shall pass the battle between the console and Pokemon Showdown's own server, joined as a guest with no login, and finish 5 of 5 random battles, Gen 1 and Gen 3, each accepted by Showdown's server, with no disconnect.
-- Rationale: goal 3: the same console takes on players online. The console is a USB device and has no Wi-Fi: the phone carries the network. 5 of 5 is Claude's proposal.
+- Rationale: goal 3: the same console takes on players online. The console is a USB device and has no Wi-Fi: the phone carries the network. 5 of 5 was Claude's proposal; Alex approved it as written on 2026-10-29.
 - Source: DESIGN.md:48 ('Players can play against others online, as a guest on Pokemon Showdown (the free online Pokemon battle site) with no login. (2026-10-26)'); DESIGN.md:81 (a guest only, Showdown's own servers, none of ours); DESIGN.md:83 ('Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29)'); next_spin_requirements.md:16.
 - Method: T
 - Verified by: VER-251, VER-227
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Rewritten on 2026-10-29. It was the F1C200s board's: Linux with a phone's USB tether or a USB Wi-Fi dongle, the console the USB host (tag vv-f1c200s-final). The chip gate (gates.md NM-03) runs the phone bridge test on the stripboard Pico 2 (RP2350A) before any board design.
+- Notes: Rewritten on 2026-10-29. It was the F1C200s board's: Linux with a phone's USB tether or a USB Wi-Fi dongle, the console the USB host (tag vv-f1c200s-final). The chip gate (gates.md NM-03) runs the phone bridge test on the stripboard Pico 2 (RP2350A) before any board design. Alex reviewed this row in chat on 2026-10-29: approved as written.
 
 ### REQ-PRD-15: A match within seconds of power-on
 - Level: product
 - Board: both
 - Subsystem: soc storage
 - Statement: From the power slider to the battler's lobby on screen shall take 1.0 s or less, 10 of 10 power-ons, with no operating system under the bare-metal Rust battler.
-- Rationale: goal 1: a match within seconds. DESIGN.md:84 gives 'within about a second'; the 1.0 s limit and the 10 of 10 power-ons are Claude's proposal for it, and Alex sets them. The 1.0 s is VER-223's pass limit.
+- Rationale: goal 1: a match within seconds. DESIGN.md:84 gives 'within about a second'; the 1.0 s limit and the 10 of 10 power-ons were Claude's proposal for it, and Alex approved them as written on 2026-10-29. The 1.0 s is VER-223's pass limit.
 - Source: DESIGN.md:49 ('It starts fast: a match within seconds of power-on. (2026-10-28)'); DESIGN.md:84 ('At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)'); next_spin_requirements.md:17.
 - Method: T
 - Verified by: VER-223, VER-228
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: Rewritten on 2026-10-29: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final).
+- Notes: Rewritten on 2026-10-29: the Linux part (a 10 s boot to the GBA menu on a held button) left the design with Linux (tag vv-f1c200s-final). Alex reviewed this row in chat on 2026-10-29: approved as written, and the RP board's hold-to-latch at power-on is dropped (it raised PWR_HOLD only after Start was held for about a second): a slide of the power slider turns the unit on at once and the firmware latches power immediately, so nothing before the 1.0 s waits for a hold (REQ-PWR-21, VER-240).
 
 ### REQ-PRD-16: Games and saves over USB or SD
 - Level: product
@@ -397,18 +406,31 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Status: PROPOSED
 - Notes: Was: REQ-PRD-06 gave 78.9 x 156.64 mm and 10.7 mm for the ESP32-S3 board's case; next_spin_requirements.md gives 156.48 and 9.6 as today's.
 
-### REQ-PRD-18: Sound from the 16 MB flash
+### REQ-PRD-18: A GBA-style sound engine from the 16 MB flash
 - Level: product
 - Board: both
 - Subsystem: audio storage soc
-- Statement: The console shall play its sound from samples stored in the one 16 MB QSPI flash and read in place, the program and data taking 4 MB or less and the sound 8 MB or more of the 16 MB, with 0 audible dropouts (buffer underruns) in 30 min of battling at the full display rate.
-- Rationale: Alex: "we need external spi flash to do sound right". The program is 1.4 MB today (next_spin_requirements.md:13); sound samples at 16 bits and 32 kHz mono are 64 KB a second, so 8 MB is about 2 min of them before any compression. 4 MB, 8 MB and 30 min are Claude's proposal; Alex sets them.
-- Source: Alex, 2026-10-29 ('we need external spi flash to do sound right'); DESIGN.md:71 ('a 16 MB flash memory chip beside it, which holds the program and the sound'); next_spin_requirements.md:15 ('Sound done right: room for sound samples: a 16 MB flash chip the chip reads as memory').
+- Statement: Music shall play from note sequences on sampled instruments and 4 GBA-style synthesized channels (two square waves, a wave channel and noise); cries and sound effects shall play from compressed samples; all of it read from the 16 MB flash. The mixer shall run at least 8 channels at 32 kHz with 0 audible dropouts (buffer underruns) in 30 min of battling at the full display rate. The program shall take 4 MB or less and the sound data shall have 2 MB or more of room.
+- Rationale: Alex: "we need external spi flash to do sound right". The engine follows the design of Nintendo's M4A ('Sappy') GBA sound engine: sequences are a few KB, instruments are short samples, the four synthesized channels cost no flash, and only the cries and effects are long samples, compressed. About 2 MB covers sequenced sound, so the 2 MB of room is enough; the 16 MB flash is kept by Alex's choice. The program is 1.4 MB today (next_spin_requirements.md:13). 8 channels, 32 kHz, 4 MB, 2 MB and 30 min are the numbers of Alex's rewrite (2026-10-29).
+- Source: Alex, 2026-10-29 ('we need external spi flash to do sound right'; the statement is his text, approved on his review); DESIGN.md:71 ('a 16 MB flash memory chip beside it, which holds the program and the sound'); next_spin_requirements.md:15 ('Sound done right: room for sound samples: a 16 MB flash chip the chip reads as memory').
 - Method: T, A
 - Verified by: VER-256, VER-252, VER-255
 - Phase: ORDER
 - Status: PROPOSED
-- Notes: New on 2026-10-29.
+- Notes: New on 2026-10-29; rewritten the same day for a GBA-style engine (it was samples in 8 MB or more of the flash, with 4 MB, 8 MB and 30 min as Claude's proposal). The sound content must be our own or licensed, not data taken from FireRed (its sequences, instruments and cries), if units are sold: the engine follows M4A's design, the content does not come with it (DF-265, VER-261). The 16 MB flash is kept by Alex's choice, even though about 2 MB covers sequenced sound; the rest is room (A/B firmware slots, REQ-SOC-10, the settings and the debug log).
+
+### REQ-PRD-19: Update by dragging a file to a USB drive
+- Level: product
+- Board: both
+- Subsystem: soc usbc storage
+- Statement: In update mode the unit shall show up as a USB drive on Windows, macOS and Linux with no driver to install. Copying one recovery .uf2 file shall restore a unit from any flash state (erased or corrupted), with the partition table, bootloader, firmware and sound included, within 3 min. Copying a firmware .uf2 shall install that firmware alone within 30 s. 3 out of 3 tries each.
+- Rationale: a player or Alex updates or rescues a unit with a computer and no tools, and no software to install. This is the RP2350 boot ROM's UF2 mass-storage mode (USB boot mode), the same one REQ-PRD-08.B drops a blank or corrupt unit into. A UF2 file carries each block's flash address, so one file can hold everything. The 3 min and the 30 s are Alex's (2026-10-29). For scale: a 1.4 MB firmware in 30 s needs about 47 KB/s of payload through the drive (VER-260 measures it).
+- Source: Alex, 2026-10-29, in chat (new and approved: the statement is his text); the RP2350 datasheet's USB boot mode and UF2 download (to download: VER-233; VER-259 reads it).
+- Method: T, D
+- Verified by: VER-260, VER-259
+- Phase: EVT
+- Status: PROPOSED
+- Notes: New on 2026-10-29. The flash layout proposal (Claude's, REQ-SOC-10): partition table 4 KB, bootloader 64 KB (locked), firmware A 2 MB, firmware B 2 MB, sound data, and spare for settings and the debug log. To confirm against the RP2350 datasheet (VER-259), then on a dev board (VER-260): how a dragged firmware .uf2 picks the A or B slot, and whether the boot ROM accepts a whole-flash (absolute) UF2 over a valid partition table. If it does not, the recovery step is `picotool erase` and then the one file; the statement says 'copying one recovery .uf2 file', so that extra step would need Alex's decision (DF-263 holds the related question of the locked bootloader).
 
 ## Subsystem: cell and charging (BAT)
 
@@ -917,9 +939,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power buttons case
-- Statement: The DS Lite power slider in the right edge shall turn the device on when slid, and off when held for 1 s or more; if no board switch fits the slider, seat 1's Start shall be the power key, a press turning it on and a 1 s hold turning it off.
-- Rationale: the power key is Alex's choice. The 1 s hold is Claude's proposal.
-- Source: DESIGN.md:59 ('Power is the DS Lite power slider in the right edge, taken from the DS Lite button kit: slide it to turn on, hold it to turn off. If no board switch fits the slider, seat 1's Start is the power key instead: press to turn on, hold to turn off. (2026-10-28)').
+- Statement: The DS Lite power slider in the right edge shall turn the device on at once when slid, with the firmware latching power immediately and no hold needed, and the firmware shall turn it off on a 1 to 2 s hold; if no board switch fits the slider, seat 1's Start shall be the power key, a press turning it on at once and a 1 to 2 s hold turning it off.
+- Rationale: the power key is Alex's choice. The hold to turn off is 1 to 2 s (Alex, 2026-10-29, REQ-PRD-08.B); the RP board's hold-to-latch at power-on, where the firmware raised PWR_HOLD only after Start was held for about a second, is dropped (Alex, 2026-10-29, REQ-PRD-15). A longer hold, about 8 s, is the hard reset of REQ-SOC-04 and works whatever the firmware is doing.
+- Source: DESIGN.md:59 ('Power is the DS Lite power slider in the right edge, taken from the DS Lite button kit: slide it to turn on, hold it to turn off. If no board switch fits the slider, seat 1's Start is the power key instead: press to turn on, hold to turn off. (2026-10-28)'); Alex, 2026-10-29, in chat (no hold to turn on; a 1 to 2 s hold to turn off).
 - Method: A, T
 - Verified by: VER-239, VER-240
 - Phase: EVT
@@ -1155,11 +1177,11 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc power
-- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, and a hung firmware shall reset by the watchdog within 2 s.
-- Rationale: there is no reset button; the watchdog and the power slider are the ways out of a hang (REQ-PWR-10).
-- Source: DESIGN.md:63 ('There is no separate reset button. (2026-10-28)').
+- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding the power slider for about 8 s shall pull the RP2350B's RUN pin low through a push-button controller and so reset and turn off the unit, whatever the firmware is doing.
+- Rationale: there is no reset button; the watchdog and the power slider are the ways out of a hang (REQ-PWR-10). The slider's long hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) on the slider's line drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
+- Source: DESIGN.md:63 ('There is no separate reset button. (2026-10-28)'); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B); the TPS3421 datasheet (VER-258).
 - Method: A, T
-- Verified by: VER-198, VER-105
+- Verified by: VER-198, VER-105, VER-258, VER-241
 - Phase: EVT
 - Status: PROPOSED
 
@@ -1223,6 +1245,19 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Phase: ORDER
 - Status: PROPOSED
 - Notes: New on 2026-10-29. The earlier RP board's copied core is at tag vv-rp2354b-final (its in-package flash needed none of this).
+
+### REQ-SOC-10: Bootloader, partitions and A/B firmware in the flash
+- Level: subsystem
+- Board: rp2350b
+- Subsystem: soc storage
+- Statement: The 16 MB flash shall hold a partition table, a bootloader of our own in its own partition write-protected with the GD25Q128's block protection, two firmware slots A and B with a hash in each image, the sound data and a spare region for settings and the debug log. At power-on the bootloader shall read seat 1's Select by GPIO alone, before the display, sound or USB start, and enter the RP2350's USB boot mode if it is held, and otherwise start the main firmware. A failed update shall fall back to the previous firmware through the boot ROM's try-before-you-buy, and a failed-boot counter in a watchdog scratch register shall send the unit to USB boot mode after 3 failed boots. With the case open, a BOOTSEL test pad on QSPI SS shall force USB boot.
+- Rationale: the design facts under REQ-PRD-08.B and REQ-PRD-19. The layout is Claude's proposal: partition table 4 KB, bootloader 64 KB (locked), firmware A 2 MB, firmware B 2 MB (a program is 1.4 MB today), sound data (REQ-PRD-18: 2 MB or more of room), and the spare. Reading Select by GPIO alone before anything else starts means no display, sound or USB fault can stop the recovery.
+- Source: Alex, 2026-10-29, in chat (REQ-PRD-08.B and -19); the RP2350 datasheet's partition table, hash check and try-before-you-buy (to download: VER-233; VER-259 reads them); the GD25Q128 datasheet's block protection (VER-259).
+- Method: A, T, D
+- Verified by: VER-259, VER-241, VER-260
+- Phase: EVT
+- Status: PROPOSED
+- Notes: New on 2026-10-29. Open to confirm: how the boot ROM picks slot A or B for a dragged firmware .uf2; whether the recovery .uf2 can rewrite a bootloader locked by block protection (DF-263); that a normal power-off or the hard reset does not count as a failed boot (DF-264).
 
 ## Subsystem: USB-C device (USB), since 2026-10-29
 

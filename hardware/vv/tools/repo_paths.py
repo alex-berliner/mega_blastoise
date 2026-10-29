@@ -61,6 +61,8 @@ PLANNED = {
     "hardware/vv/analysis/jlc_capabilities.md": "JLC's dated capability page, saved by VER-17",
     "hardware/vv/tools/release.py": "the release run VER-143 builds (VER-42 reads its output)",
     "hardware/ref_design/board/pin_review/ds": "DEF-21's finding: the folder the pin review cited, which never existed",
+    "hardware/ref_design/datasheets/ER-TFT035IPS-6_Datasheet.pdf": "the panel module's datasheet, copied in by Claude from the panel_bus scratchpad (REQ-PRD-02.B)",
+    "hardware/ref_design/datasheets/ILI9488.pdf": "the controller's datasheet, copied in by Claude from the panel_bus scratchpad (REQ-PRD-02.B)",
 }
 
 
