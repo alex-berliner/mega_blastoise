@@ -289,7 +289,7 @@ FAULTS = [
     ("O-R5: a defect with no Gate", "structure", "DEF-47: Gate ''",
      lambda d: block_field(d, "defects.md", "DEF-47", "Gate", "")),
     # 2026-10-28: the F1C200s board has no live defect of its own yet, so the seed adds one with Gate CASE, then moves it
-    ("O-R5: a CASE defect moved to the order gate blocks it", "gate", "OPEN (Gate ORDER or earlier): DEF-47 DEF-105 DEF-103",
+    ("O-R5: a CASE defect moved to the order gate blocks it", "gate", "OPEN (Gate ORDER or earlier): DEF-47 DEF-105 DEF-106 DEF-103",
      lambda d: (add_defect(d, "DEF-103", "VER-147", "CASE"), block_field(d, "defects.md", "DEF-103", "Gate", "ORDER"))),
     ("O-R8: occurrence 3 with no 'Similar:'", "structure", "DF-224: occurrence 3 needs 'Similar:",
      lambda d: csv_edit(d, "dfmea.csv", "DF-224", occurrence="3", action_priority="L")),
