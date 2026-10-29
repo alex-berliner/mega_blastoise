@@ -56,7 +56,7 @@ What the physical device is.
 - The physical design follows the DS Lite: the curves, the buttons and the feel in the hand. The aim is that it feels like holding the bottom half of a DS Lite. (2026-10-19)
 - The buttons are DS Lite silicone pads (the soft rubber button sheets) pressing on bare contacts on the circuit board. (2026-09-21)
 - Each seat has a D-pad, A/B/X/Y, Start and Select. (2026-10-19)
-- Power is seat 1's Start button: press it to turn on, hold it to turn off. (2026-10-29)
+- Power is seat 1's Start button: hold it for 2 to 3 seconds to turn on, so a bump in a pocket doesn't switch it on, and hold it to turn off. (2026-10-29)
 - It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)
 - The circuit board has two layers (the cheaper kind) and is assembled by a factory (JLCPCB) in batches. (2026-09-24)
 - There are no indicator lights on the board. (2026-09-24)
@@ -89,4 +89,4 @@ How it behaves.
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-29 13:11 EDT
+Last updated: 2026-10-29 13:17 EDT
