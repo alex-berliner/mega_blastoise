@@ -94,7 +94,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: buttons
 - Statement: The device shall read 20 momentary inputs, 10 per seat (up, down, left, right, A, B, X, Y, Start, Select), and the power slider (or seat 1's Start, if it is the power key), each on its own line, with any combination held at once read correctly.
-- Rationale: two players press at the same time; how the RP2350B reads them (its 48 GPIOs directly, or a chain) is the pin plan's (VER-232).
+- Rationale: two players press at the same time; the 20 contacts and the power slider are read directly on 21 of the RP2350B's 48 GPIOs, with the 47k pull-up arrays (Alex, 2026-10-29). The 74HC165 chain (about $0.95 a unit at 10, freeing about 18 pins) is the designated pin-relief option and the first thing to change if the pin plan runs short (Alex, 2026-10-29: 'make it the first choice to change if we need more pins ever'; VER-232, VER-262).
 - Source: DESIGN.md:39 ('Each player has the same controls: a D-pad, four face buttons (A, B, X, Y), Start and Select'), DESIGN.md:59 (the power slider).
 - Method: T
 - Verified by: VER-56, VER-76
@@ -207,7 +207,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell power
 - Statement: From the low-cell cutoff the cell shall reach charge-done within 4.0 h at 25 C from a source offering 0.5 A or more at 4.75-5.25 V, device on the charging screen.
-- Rationale: a flat unit is ready again within an evening; the charger is not chosen yet (the BQ24074 of ref_design is the candidate).
+- Rationale: a flat unit is ready again within an evening; the charger is the RP board's BQ24073 (C15220), kept on the RP2350B board (REQ-BAT-01, REQ-BAT-03, REQ-BAT-13, VER-109, VER-133).
 - Source: Claude's estimate; Alex to set the target.
 - Method: T
 - Verified by: VER-102
@@ -220,7 +220,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: power cell
 - Statement: Switched off with a full cell and no USB, the board shall drain the cell by no more than 30 uA, so that the board alone takes 2 years or more to empty it.
 - Rationale: 700 mAh / 30 uA is about 2.7 years; the cell's own self-discharge dominates.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design_review.md's Off state (18-22 uA) predates the BQ24073 (Was: it counts D5's reverse leakage, and D5 left in 2d1124d); VER-103 re-derives the budget for the BQ24073 board (O-R23); validation_plan #33.
+- Source: design_review.md's Off state (18-22 uA) predates the BQ24073 (Was: it counts D5's reverse leakage, and D5 left in 2d1124d); VER-103 re-derives the budget for the RP2350B board from the RP board's circuits, the TPS3421 on 3V3 drawing nothing while off (REQ-PWR-07; Alex, 2026-10-29) (O-R23); validation_plan #33.
 - Method: T, A
 - Verified by: VER-65, VER-103
 - Phase: EVT
@@ -256,13 +256,14 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: product
 - Board: both
 - Subsystem: soc usbc storage
-- Statement: A unit with blank, corrupt or hung firmware shall enter the USB boot loader with the case closed, with the cell flat and USB in, 2 out of 2 tries, and shall take a debugger with the case open.
+- Statement: A unit with blank, corrupt, failed-update or hung firmware shall be recovered with the case closed, 3 out of 3 tries each, and shall take a debugger with the case open.
 - Rationale: bring-up and field recovery must not need the case opened or a soldering iron.
-- Source: validation_plan #182, #202.
+- Source: DESIGN.md:63 ('There is no separate reset button.') and REQ-PRD-08.B.
 - Method: D, T
 - Verified by: allocated: REQ-PRD-08.B (Was: REQ-PRD-08.R)
 - Phase: EVT
-- Status: APPROVED
+- Status: PROPOSED
+- Notes: Reworded on 2026-10-29 by the artifact audit (analysis/artifact_audit_2026-10-29.md): the old statement ('enter the USB boot loader ... 2 out of 2') described the RP board's BOOTSEL button and contradicted its allocation REQ-PRD-08.B (the hard reset, Select at power-on, the failed-update fall back, 3 of 3). Alex's approval A-011 covered the old text and no longer counts: Alex must re-approve this row.
 
 ### REQ-PRD-08.R: Recoverable firmware (ref_design)
 - Level: product
@@ -307,7 +308,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: cell display case
 - Statement: Alex shall replace the cell or the panel with a screwdriver and no soldering in 10 min or less each.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: cells age and glass breaks; J2 is a plug and J3 a ZIF so both swap.
+- Rationale: cells age and glass breaks; J2 is a plug and J3 a ZIF so both swap.
 - Source: validation_plan #194, #203 (EU Regulation 2023/1542 Art. 11 if sold in the EU).
 - Method: D
 - Verified by: VER-91
@@ -440,7 +441,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: cell
 - Statement: The charger shall stop the cell at 4.20 V +-1% (4.158-4.242 V at the cell terminals at charge-done) and never above the cell maker's maximum charge voltage.
 - Rationale: overcharge is the main cell hazard.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: BQ24073 datasheet SLUS810N, VBAT(REG) (design.py and pinmap.md quote 4.2 V +-1%); IEC 62133-2 (upper limit charging voltage set by the cell maker).
+- Source: BQ24073 datasheet SLUS810N, VBAT(REG) (U2 as on the RP board; design.py and pinmap.md quote 4.2 V +-1%); IEC 62133-2 (upper limit charging voltage set by the cell maker).
 - Method: T, A
 - Verified by: VER-67, VER-134, VER-14
 - Phase: EVT
@@ -488,13 +489,13 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: cell
 - Statement: At 99.9% of units, charging shall pause when the cell is above 45 C or below 0 C, or outside the cell maker's charge range if that is narrower: the hot edge at or under 45 C and the cold edge at or over 0 C (one-sided limits), and resume when back in range.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot); TH1's resistance at 25 C and its B are each +-1% (tctr0805.txt:260, the part number's two F's).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
+- Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot); TH1 (10k B4460, 0805, C525375) has its resistance at 25 C and its B each +-1% (tctr0805.txt:260, the part number's two F's), as on the RP board.
+- Source: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
 - Method: A, T
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
 - Status: PROPOSED
-- Notes: at 39cc07f TH1 is a 10k B4460 0805 (TCTR0805F10K0F4460T, C525375), the highest B among the 10k NTCs JLC stocks, its resistance and B each +-1% (tctr0805.txt:260): charging runs from 5.8 C to 44.5 C at nominal values, 4.3 C to 47.8 C at SLUS810N's limits and 3.9 C to 48.2 C at the worst corner (`design_numbers.py tempwin`, VER-32). Was: B3950, 1.4 C to 51.5 C at be437f8. The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more; no stocked 10k part has it; no series or parallel resistor fixes both edges. PLAN.md decision DEC-05: accept the 48.2 C hot edge for EVT against the cell's datasheet (DF-217), or restate this requirement to the cell's own range if VER-37 shows it runs to 50 C.
+- Notes: TH1 is a 10k B4460 0805 (TCTR0805F10K0F4460T, C525375), the highest B among the 10k NTCs JLC stocks, its resistance and B each +-1% (tctr0805.txt:260): at the charger's worst corner charging runs to a hot edge of 48.2 C (the RP board's design.py comment gives 4.6 C to 48.2 C; `design_numbers.py tempwin` recomputes the window on the RP2350B board's files, VER-32). Was: B3950, 1.4 C to 51.5 C at be437f8. The worst corner bounds every unit, so it is the 99.9% figure. A 45 C hot edge at the worst corner needs B 5130 or more; no stocked 10k part has it; no series or parallel resistor fixes both edges. PLAN.md decision DEC-05: accept the 48.2 C hot edge for EVT against the cell's datasheet (DF-217), or restate this requirement to the cell's own range if VER-37 shows it runs to 50 C.
 
 ### REQ-BAT-04: Cell temperature during charge
 - Level: subsystem
@@ -575,7 +576,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: cell case
 - Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances; the tub's pocket at least 0.1 mm a side larger than a worst-case cell after the print's tolerance (0.4 mm in each direction); and no back-side copper within 1 mm of the hole.
 - Rationale: a pierced pouch shorts internally and can burn; a pouch pressed into a pocket too small for it is stressed the same way (round 3's O-S1, 2026-10-27: the fit clause, a PROPOSED number).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
+- Source: validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
 - Method: A, I
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
@@ -587,7 +588,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell power
 - Statement: No single fault in the charger, its current-set and thermistor parts, the cell-side capacitors or the cell's leads shall charge the cell above 4.25 V or above its maker's standard charge current, or let it charge outside its temperature window; the cell's PCM stays the second layer.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a BQ24073 whose CV or battery FET fails, or whose TS is held in range (DF-216, DF-217, (Was: DF-151)), charges the cell with only the PCM left.
+- Rationale: a BQ24073 whose CV or battery FET fails, or whose TS is held in range (DF-216, DF-217, (Was: DF-151)), charges the cell with only the PCM left.
 - Source: validation_plan #89; IEC 62368-1 Annex B.4; IEC 62133-2.
 - Method: A, T
 - Verified by: VER-98, VER-133, VER-134, VER-135, VER-169, VER-82, VER-88, VER-168
@@ -600,7 +601,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: cell power
 - Statement: After the firmware shuts down at its cutoff, the board's off-state drain plus the cell's PCM drain and its self-discharge shall keep the cell above its PCM's under-voltage trip for 2 months or more at 25 C, and for the period Alex sets at 45 C storage.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain. With both terms the figure may be nearer 1 month: Alex sets the number knowing them.
+- Rationale: a cell left flat in a drawer should still charge. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain, and the TPS3421, fed from 3V3, adds nothing (REQ-PWR-07). With both terms the figure may be nearer 1 month: Alex sets the number knowing them.
 - Source: Claude's estimate; validation_plan #33.
 - Method: A, T
 - Verified by: VER-103, VER-65, VER-146
@@ -623,22 +624,22 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: cell soc
-- Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest load the firmware draws (Linux running a GBA game, backlight at full).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: since 39cc07f the ESP32-S3's ADC1 reads VBAT/2 at 12 dB against its own reference: its total error after Espressif's calibration is +-50 mV at the pin (esp32-s3.txt:3804), +-100 mV of VBAT, measured with Wi-Fi off (3780-3781), and the datasheet does not split offset from gain, so a one-point gain set at charge-done (the charger's CV is +-1%) cannot be shown to meet the window: the per-unit point at 3.50 V does (VER-138, DF-225). U10 buffers the divider, so the pad's leakage does not flow through R17/R18's 235 kohm. Was: the 3V3-referenced ADC and its dropout knee, which left at 39cc07f.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py R17, R18, U10; pinmap.md Battery voltage; esp32-s3.txt:3779-3804 (ADC); mcp6001.txt:135-142; Claude's analysis (O-23, O-49).
+- Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest load the firmware draws (the battler with sound playing, backlight at full).
+- Rationale: the RP2350's ADC (GPIO40 to 47) reads VBAT/2 from R17 and R18 (470k each, 235 kohm) behind U10, an MCP6001 unity buffer from 3V3, as the RP board drew it. The RP2350's ADC error is not on disk yet (VER-233), and a one-point gain set at charge-done (the charger's CV is +-1%) cannot be shown to meet the window without its offset and gain split, so the per-unit point at 3.50 V does (VER-138, DF-225). U10 buffers the divider, so the pad's leakage (1 uA at most) flows from U10's output and not through R17 and R18, where it would be 0.47 V of VBAT, nine times this window. Off, U10 is unpowered and the pin reads 0 V.
+- Source: design.py R17, R18, U10 (the RP board's, kept on the RP2350B board); the RP2350 datasheet's ADC chapter (to download: VER-233); mcp6001.txt:135-142; Claude's analysis (O-23, O-49).
 - Method: A, T
 - Verified by: VER-138, VER-139, VER-67
 - Phase: EVT
 - Status: PROPOSED
-- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. U10 (MCP6001) buffers VBAT_DIV onto IO1, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift, whose datasheet gives typical figures only (VER-138). The ADC's own +-50 mV at the pin is what the per-unit calibration at 3.50 V (REQ-TST-06) takes out; its drift with temperature and Wi-Fi is VER-139's and VER-67's.
+- Notes: Restated on 2026-10-28 for the RP2350B board; the ESP32-S3 board's statement is at tag vv-esp32s3-final. U10 (MCP6001) buffers VBAT_DIV onto the ADC pin, so the pad's leakage flows from U10's output: the temperature-varying error is +-0.87 mV of VBAT with pessimistic stand-ins for U10's bias and drift, whose datasheet gives typical figures only (VER-138). The per-unit calibration at 3.50 V (REQ-TST-06) takes out the ADC's offset and gain; its drift with temperature is VER-139's and VER-67's. Re-grounded on 2026-10-29 by the artifact audit.
 
 ### REQ-BAT-13: Charge timeout
 - Level: subsystem
 - Board: both
 - Subsystem: cell
 - Statement: A charge that has not terminated shall stop within 5 h +-20% of fast charge (and 30 min of pre-charge under 3.0 V), and the firmware shall show a charge fault until USB is re-plugged.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a soft-shorted or damaged cell must not charge without end; the BQ24073's safety timers do it with TMR open, the firmware reads CHG at 2 Hz as the fault.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: BQ24073 datasheet (pin_review/u2.json pins 9 and 14); Claude's proposal (O-50).
+- Rationale: a soft-shorted or damaged cell must not charge without end; the BQ24073's safety timers do it with TMR open, the firmware reads CHG at 2 Hz as the fault.
+- Source: BQ24073 datasheet (pin_review/u2.json pins 9 and 14); Claude's proposal (O-50).
 - Method: T
 - Verified by: VER-145
 - Phase: EVT
@@ -649,7 +650,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell power
 - Statement: Plugging a 4.2 V cell into the cell's header with no USB shall not trip the PCM (the cell's voltage present after each plug), shall leave the device off, and shall peak the system rail at 4.5 V or less, 10 plugs out of 10.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: with no USB, U2's battery FET is on, so the plug connects C3 directly and about 25 uF more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226).
+- Rationale: with no USB, U2's battery FET is on, so the plug connects C3 (10 uF) directly and C2 and C5 (14.7 uF) more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226).
 - Source: Claude's analysis (O-42).
 - Method: A, T
 - Verified by: VER-140, VER-141
@@ -689,7 +690,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power usbc
 - Statement: With a cell in, the device shall run (3V3 in regulation) from 4.40-5.50 V at the USB-C connector, both plug orientations; with no cell, from 4.75-5.50 V; and it shall not limit-cycle on a source that folds back at 500 mA.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: USB 2.0 sources give 4.75-5.25 V; cables drop more; under the BQ24073's VIN-DPM (4.5 V) the input current is cut back and the cell makes up the rest, which a board with no cell cannot.
+- Rationale: USB 2.0 sources give 4.75-5.25 V; cables drop more; under the BQ24073's VIN-DPM (4.5 V) the input current is cut back and the cell makes up the rest, which a board with no cell cannot.
 - Source: USB 2.0 cl. 7.2.1; pin_review/u2.json pin 5 (VIN-DPM 4.5 V on USB500); validation_plan #51, #80.
 - Method: T
 - Verified by: VER-80, VER-83
@@ -701,7 +702,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power usbc
 - Statement: From 4.75-5.25 V at the USB-C connector the cell shall charge to done within REQ-PRD-04.B's time; between 4.40 V and 4.75 V the input current, whether the cell supplements the system, and whether the charge completes shall be measured and recorded.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the BQ24073 cuts its input current back at 4.5 V (VIN-DPM), so a weak source charges slowly or not at all.
+- Rationale: the BQ24073 cuts its input current back at 4.5 V (VIN-DPM), so a weak source charges slowly or not at all.
 - Source: Claude's analysis (O-24, F-9); pin_review/u2.json.
 - Method: T
 - Verified by: VER-80, VER-102
@@ -713,8 +714,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power usbc
-- Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at or under the charger's over-voltage minimum less 0.2 V, and every pin fed from VBUS (the charger's, the FUSB303B's, the VBUS switch's) shall stay 0.3 V or more under its absolute maximum.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: REQ-PWR-14's transient rule: EN1 0.3 V under its 7 V absolute maximum (6.7 V), U3's EN (6 V absolute) with margin; the OVP limit from its minimum, not its 6.6 V nominal (O-R18); VSYS is U2's regulated OUT.
+- Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at or under the charger's over-voltage minimum less 0.2 V, and every pin fed from VBUS (the charger's, the ESD array's, the CC pull-downs') shall stay 0.3 V or more under its absolute maximum.
+- Rationale: REQ-PWR-14's transient rule: EN1 0.3 V under its 7 V absolute maximum (6.7 V), U3's EN (6 V absolute) with margin; the OVP limit from its minimum, not its 6.6 V nominal (O-R18); VSYS is U2's regulated OUT.
 - Source: pin_review/u2.json (IN 28 V absolute, OVP 6.6 V, EN1 7 V), pin_review/u3.json (EN 6 V).
 - Method: A, T
 - Verified by: VER-12, VER-71
@@ -739,8 +740,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power
 - Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for the system rail's range on the cell and on USB and for loads from 0 to the 3V3 budget of REQ-PWR-20.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the module's VDD33 is 3.0-3.6 V (esp32-s3-wroom-1.txt:1596) and the panel's logic supply 3.3 V maximum; the TLV75733P is +-1.5% over TJ -40 to 125 C (tlv757p.txt:255) and its load regulation 0.060 V/A (260); 620 mA is VER-31's peak in a Wi-Fi TX burst.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: tlv757p.txt:252-260; esp32-s3-wroom-1.txt:1596; ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-227).
+- Rationale: the RP2350's IOVDD range at 3.3 V (to read from its datasheet once it is on disk: VER-233) and the panel's logic supply, 3.3 V maximum; U3 is the 3V3 regulator (C47773), whose accuracy and load regulation are read from its datasheet and re-derived in VER-235 against the 3V3 budget of REQ-PWR-20.
+- Source: the RP2350 datasheet's IOVDD range (to download: VER-233); U3's datasheet DS9013 (accuracy and load regulation); ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-227).
 - Method: T
 - Verified by: VER-83, VER-235
 - Phase: EVT
@@ -751,9 +752,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power
-- Statement: Through the USB-to-cell hand-over at full load (backlight 100%, sound playing, Linux running a GBA game), every rail shall stay inside its range (REQ-PWR-20) and the device shall not reset.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the module's VDD33 minimum is 3.0 V (esp32-s3-wroom-1.txt:1596); the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET, VSYS's copper to U3 and the TLV75733P's dropout: 2.976 V at 3.50 V in a TX burst (VER-235, DF-210).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: esp32-s3-wroom-1.txt:1596; tlv757p.txt:298; bq24074.txt:724; design.py U2.
+- Statement: Through the USB-to-cell hand-over at full load (backlight 100%, sound playing, the battler running), every rail shall stay inside its range (REQ-PWR-20) and the device shall not reset.
+- Rationale: the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET, VSYS's copper to U3 and U3's dropout, against the RP2350's and the panel's minimum (VER-235, DF-210).
+- Source: bq24074.txt:724; design.py U2, U3; U3's datasheet dropout and the RP2350 datasheet's IOVDD minimum (VER-235; to download: VER-233).
 - Method: A, T
 - Verified by: VER-70
 - Phase: EVT
@@ -776,9 +777,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Subsystem: power cell
-- Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: designed under 30 uA at 25 C: 26.8 uA at a 4.2 V cell (VER-103: U2 6.5, U3 1.0 (tlv757p.txt:265), R17 into U10's unpowered input 7.9, U7 8.4 on a stand-in, the FETs' leakage 3.0); leakage rises with temperature (O-51).
-- Source: bringup.md step 5.1; the 45 C number is Claude's estimate (O-51).
+- Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V, the hard reset's controller (the TPS3421) being fed from 3V3 and so drawing nothing.
+- Rationale: designed under 30 uA at 25 C from the RP board's circuits, kept on the RP2350B board: U2 6.5, R17 into U10's unpowered input 7.9 at a 4.2 V cell, U7 8.4 on a stand-in, the FETs' leakage 3.0, and U3 (C47773) at the shutdown current its datasheet gives, summed in VER-103; leakage rises with temperature (O-51). The TPS3421 (the hard reset, REQ-PRD-08.B) runs from 3V3, not VSYS or the cell (Alex, 2026-10-29): 3V3 is off while the unit is off, so it draws nothing then, and the 30 uA budget and REQ-PRD-05's shelf life are unchanged. It watches the slider through the 3V3-side buffered power-key line (the RP board's PWR_BTN_N: Q1 with R16 to 3V3), so no VSYS or cell voltage reaches its unpowered input (DF-266, VER-159). The slider still turns the unit on through its own latch path (PWR_EN, the diode OR of D2), which needs no TPS3421. The hard reset works whenever the unit is on, with USB in or not.
+- Source: bringup.md step 5.1; design.py U2, U3, U10, R17, Q1, R16, D2 (the RP board's); Alex, 2026-10-29, in chat (the TPS3421 on 3V3); the 45 C number is Claude's estimate (O-51).
 - Method: T
 - Verified by: VER-65, VER-146
 - Phase: EVT
@@ -801,8 +802,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power soc
 - Statement: On the cell with no USB, after a watchdog reset or a panic, the power hold shall release and every rail fall below 0.5 V within 2 s of the power key or slider being released, unless the firmware takes the hold again in that time.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a crashed unit must turn itself off, not drain the cell: IO21 resets as an input with no pull (pinmap.md 'Pins at reset') and R42 4.7k pulls it down (VER-239).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py R42; pinmap.md Power control; esp32-s3.txt:3748.
+- Rationale: a crashed unit must turn itself off, not drain the cell: PWR_HOLD (GPIO44) resets as an input, and after RP2350-E9 a released pad can sit near 2 V, so an external pull-down holds it low (R42 4.7k, E9 needs 8.2k or less; analysis/errata_rp2350.md, VER-239, VER-243).
+- Source: design.py R42 (PWR_HOLD's pull-down); pinmap.md Power control; analysis/errata_rp2350.md.
 - Method: T
 - Verified by: VER-243, VER-105
 - Phase: EVT
@@ -814,8 +815,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: power soc
 - Statement: Without USB, no firmware hang shall keep the device on for more than 10 s; every image, the self-test included, shall enable the watchdog before any blocking init.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: hardware alone cannot tell a hang with PWR_HOLD high from normal play.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: validation_plan gate item 3 and Fable's note 1; pinmap.md.
+- Rationale: hardware alone cannot tell a hang with PWR_HOLD high from normal play.
+- Source: validation_plan gate item 3 and Fable's note 1; pinmap.md.
 - Method: I, T
 - Verified by: VER-104, VER-105
 - Phase: EVT
@@ -826,8 +827,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power buttons
 - Statement: With 1 Mohm across the power slider's contacts (or seat 1's Start, if it is the power key) and the cell at 4.2 V, the device shall stay off (every rail below 0.5 V) for 10 min.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: SW24 carries VSYS on one pad all the time; sweat, flux or a pressed cap can bridge it (DF-242). The Starts left the power path at 39cc07f (Was: both Start domes).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py R13, R15, SW24; tlv757p.txt:328-331; 2n7002_cj.txt:55; VER-239's output.
+- Rationale: the power slider's contact (or seat 1's Start, if it is the power key) carries a rail on one pad; sweat, flux or a pressed cap can bridge it (DF-242). The Starts left the power path (Was: both Start domes).
+- Source: design.py R13, R15 and Q1 on the power key's line (the RP board's, kept on the RP2350B board); 2n7002_cj.txt:55; VER-239's output once the switch is chosen.
 - Method: T, A
 - Verified by: VER-240
 - Phase: EVT
@@ -839,7 +840,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power usbc
 - Statement: From a default-power USB source (CC at 0.25-0.61 V) the input current shall be 500 mA or less within 2 s of plug-in.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: U2's USB500 limit is 475 mA (EN1 high by R43, EN2 grounded); the charge and the system share it.
+- Rationale: U2's USB500 limit is 475 mA (EN1 high by R43, EN2 grounded); the charge and the system share it.
 - Source: USB 2.0 cl. 7.2.1; pin_review/u2.json pins 5 and 6; validation_plan #94.
 - Method: T
 - Verified by: VER-81
@@ -853,7 +854,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: power usbc
 - Statement: The board shall present 10 uF or less on VBUS and take 50 uC or less at a plug-in at 5.25 V (USB 2.0 cl. 7.2.4.1), each capacitor at its tolerance and its DC bias, when the console is a sink.
 - Rationale: USB 2.0's inrush limit is 10 uF or 50 uC at the plug; the old power path's 265 uC came from its diode charging VSYS (Was: the TP4056 design's D5, which left in 2d1124d).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, U2.
+- Source: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, U2.
 - Method: A
 - Verified by: VER-99
 - Phase: ORDER
@@ -890,7 +891,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: power usbc
 - Statement: A source putting 6-20 V on VBUS (a broken charger, a PD source stuck high) shall over-stress no part: the lowest VBUS that takes a part over its absolute maximum shall be 20 V or more, or the value Alex accepts.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 9.1 V and EN1 through R43 takes U2's EN1 (7 V) over at 12.4 V (VER-177, with R14 47k and R43 220k since 71737ae; Was: 6.9 V and 9.5 V with 10k and 100k).
+- Rationale: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 9.1 V and EN1 through R43 takes U2's EN1 (7 V) over at 12.4 V (VER-177, with R14 47k and R43 220k; Was: 6.9 V and 9.5 V with 10k and 100k).
 - Source: pin_review/u2.json, u3.json; Claude's analysis (O's sign-off objection on the cell path, DF-222).
 - Method: A, T
 - Verified by: VER-177, VER-97
@@ -1177,8 +1178,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: soc power
-- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding the power slider for about 8 s shall pull the RP2350B's RUN pin low through a push-button controller and so reset and turn off the unit, whatever the firmware is doing.
-- Rationale: there is no reset button; the watchdog and the power slider are the ways out of a hang (REQ-PWR-10). The slider's long hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) on the slider's line drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
+- Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding the power slider for about 8 s shall pull the RP2350B's RUN pin low through a push-button controller fed from 3V3 and so reset and turn off the unit, whatever the firmware is doing, whenever the unit is on, with USB in or not.
+- Rationale: there is no reset button; the watchdog and the power slider are the ways out of a hang (REQ-PWR-10). The slider's long hold is the hard reset of REQ-PRD-08.B: a TI TPS3421 (LCSC C2067262) drives RUN low after the hold; a reset releases PWR_HOLD, so the unit turns off, and with USB in it restarts. The TPS3421 is fed from 3V3 (Alex, 2026-10-29), so it draws nothing while the unit is off (REQ-PWR-07), and reads the slider through the 3V3-side buffered power-key line; the slider turns the unit on through its own latch path, so the hard reset is needed only while the unit is on. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
 - Source: DESIGN.md:63 ('There is no separate reset button. (2026-10-28)'); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B); the TPS3421 datasheet (VER-258).
 - Method: A, T
 - Verified by: VER-198, VER-105, VER-258, VER-241
@@ -1190,10 +1191,10 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: soc display storage usbc audio buttons
 - Statement: Every function shall sit on an RP2350B pin that has it in the datasheet's pin table: the display bus and its control lines, the audio output, the 20 contacts and the power slider, the cell sense on an ADC pin, a UART or the SWD pins for the debug connector, with USB on the chip's own USB pins and the flash on the QSPI pins, 0 mux conflicts, and no function left on a GPIO the datasheet reserves.
-- Rationale: a QFN-80 has 48 GPIOs and fixed special pins (QSPI, USB, ADC on GPIO40 to 47); a function on a pin without it is a respin.
+- Rationale: a QFN-80 has 48 GPIOs and fixed special pins (QSPI, USB, ADC on GPIO40 to 47); a function on a pin without it is a respin. The 21 inputs take 21 of the 48 GPIOs, read directly (Alex, 2026-10-29); VER-262 counts the budget, and the 74HC165 chain is the first thing to change if it runs short.
 - Source: next_spin_requirements.md:12, :24-25; the RP2350 datasheet (to download: VER-233).
 - Method: A, I
-- Verified by: VER-232
+- Verified by: VER-232, VER-262
 - Phase: ORDER
 - Status: PROPOSED
 
@@ -1294,8 +1295,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display soc
 - Statement: The panel shall run its 8-bit 8080 bus (IM2-0 = 011, CSX and RDX as the bus needs) from the RP2350B through a PIO state machine and DMA, or from GPIO if the chip gate shows PIO cannot (VER-224).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: proves the interface straps and the bus; since 39cc07f the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/living/display_parallel_proposal.md). Was: 4-wire SPI.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: er-tft035ips-6.txt:709-722; design.py PANEL.
+- Rationale: proves the interface straps and the bus: the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/living/display_parallel_proposal.md). Was: 4-wire SPI.
+- Source: er-tft035ips-6.txt:709-722; design.py PANEL.
 - Method: T
 - Verified by: VER-224, VER-60
 - Phase: ORDER
@@ -1308,7 +1309,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: display soc
 - Statement: 8080 writes at the firmware's write clock shall draw 10 full 320 x 480 frames of a checker pattern with 0 corrupted pixels, the clock inside the ILI9488's write cycle with its tolerance.
 - Rationale: the ILI9488's parallel write cycle is 40 ns (twc, ili9488.txt:16159), so 25 MHz is the limit with 0 ns spare (VER-199, DF-206); RGB565 is two bytes a pixel over the 8-bit bus.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ili9488.txt:16159-16172; pinmap.md Display.
+- Source: ili9488.txt:16159-16172; pinmap.md Display.
 - Method: T
 - Verified by: VER-61, VER-199
 - Phase: EVT
@@ -1320,8 +1321,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: J3 pin j shall carry panel pin 51 - j for all 50 contacts, so LED_A (panel pin 1) is on J3 pin 50.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py display section; pin_review/panel.json; the ER-TFT035IPS-6's map since 79de1f7.
+- Rationale: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
+- Source: design.py display section (J3's map, the same on the RP board); pin_review/panel.json; the ER-TFT035IPS-6's map since 79de1f7.
 - Method: A, T
 - Verified by: VER-02, VER-136
 - Phase: ORDER
@@ -1345,8 +1346,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: At the firmware's highest duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance of the backlight driver's parts and the system rail's range on the cell and on USB.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the panel's 120 mA (6 x 20 mA); with R61 3.74k (71737ae, DEC-31) the worst case at 100% is 117.7 mA (VER-137). Was: 122.4 mA with R61 3.9k at be437f8.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section; Claude's analysis (F-7, O-21).
+- Rationale: the panel's 120 mA (6 x 20 mA); with R61 3.74k (BL_REF's divider, DEC-31) the worst case at 100% is 117.7 mA (VER-137). Was: 122.4 mA with R61 3.9k at be437f8.
+- Source: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section (U6, Q5, Q6, R60, R61: the RP board's, kept); Claude's analysis (F-7, O-21).
 - Method: T, A
 - Verified by: VER-62, VER-137, VER-05
 - Phase: ORDER
@@ -1358,7 +1359,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the board's 3.74k on BL_PWM (IO9's LEDC: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05).
+- Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the 3.74k the RP board drew on BL_PWM (the RP2350B's PWM slice: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05); it is re-run with the board's R61.
 - Source: board/sim/backlight_results.txt (to re-run).
 - Method: A, T
 - Verified by: VER-05, VER-62
@@ -1370,7 +1371,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: display
 - Statement: At the firmware's maximum duty and VSYS 3.5 V the LED current shall drop by 5% or less from its value at 4.2 V for LED Vf up to 3.2 V, and by 10% or less for Vf up to 3.4 V (the newer datasheet's maximum).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: brightness should not sag until the cutoff; at 18.0 mA an LED (54.1 mA a pin over three, nominal, R61 3.74k) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
+- Rationale: brightness should not sag until the cutoff; at 18.0 mA an LED (54.1 mA a pin over three, nominal, R61 3.74k) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
 - Source: pin_review/panel.json; design_review.md Backlight.
 - Method: A, T
 - Verified by: VER-05, VER-137, VER-62
@@ -1418,9 +1419,9 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: display soc
-- Statement: A full-screen 320 x 480 RGB565 redraw shall take 16.7 ms or less (60 fps), so a GBA frame (240 x 160, scaled) reaches the panel every 16.7 ms.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the PSRAM holds the 307,200 B frame (docs/living/esp32s3_board_proposal.md). Was: 220 ms over SPI.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ili9488.txt:16159; docs/living/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
+- Statement: A full-screen 320 x 480 RGB565 redraw over the 8-bit 8080 bus shall take 16.7 ms or less (60 fps).
+- Rationale: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the RP2350B streams the frame from its 520 KB of SRAM over PIO, with no frame store beyond it (VER-224). Was: 220 ms over SPI.
+- Source: ili9488.txt:16159; docs/living/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
 - Method: A, T
 - Verified by: VER-224, VER-61, VER-199
 - Phase: ORDER
@@ -1470,7 +1471,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: audio
 - Statement: The audio chain shall be -3 dB at 10 kHz or higher and at 50 Hz or lower.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a 15 mm speaker reproduces little above 10 kHz; since 39cc07f the 1.5k filter gives 9.7 kHz nominal and 8.2 kHz at the worst corner (VER-100: FAIL), while design.py's comment says 6.7 kHz (its sim): Alex restates the number or the filter changes (DEF-93).
+- Rationale: a 15 mm speaker reproduces little above 10 kHz, so the chain need not pass more; the chosen source's filter (PWM or I2S, still open) is held to this at its component corners in VER-100. The RP board's two-stage RC (1k and 4.7 nF, then 220 nF into 20k) was -3 dB at about 14 kHz loaded: the starting point if the source is PWM.
 - Source: design_review.md Audio.
 - Method: A, T
 - Verified by: VER-100, VER-64
@@ -1496,7 +1497,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: audio soc
 - Statement: With the amplifier's enable off the amplifier shall draw 10 uA or less and be silent; with it on it shall reach full level within 50 ms with no pop over 10 mV at the speaker.
 - Rationale: 4.2 uA shutdown typical; about 100 ms to charge the bypass capacitor.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: FM8002A datasheet p.3 (pin_review/u7.json); pinmap.md Audio.
+- Source: FM8002A datasheet p.3 (pin_review/u7.json); design.py U7 and Q3 with R36 and R37 (shutdown held until the MCU enables it; the RP board's, kept on the RP2350B board); pinmap.md Audio.
 - Method: T
 - Verified by: VER-64, VER-196
 - Phase: EVT
@@ -1508,8 +1509,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: audio
 - Statement: The firmware shall cap full scale to the speaker's rating: 0.5 W into 8 ohm for the GSPK151035PN, or the rating of the speaker the release names.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: bom.md (INGHAi GSPK151035PN, C530539, 0.5 W); Claude's review (O-31).
+- Rationale: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213).
+- Source: bom.md (INGHAi GSPK151035PN, C530539, 0.5 W; the RP board's, the speaker stays); Claude's review (O-31).
 - Method: I
 - Verified by: VER-128
 - Phase: EVT
@@ -1522,8 +1523,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 15 kohm of pill resistance, against whatever pull-up and input threshold the RP2350B board reads it through.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: carbon pill on gold; a 74HC165's VIL at 3.3 V is about 0.94 V, so against a 47k (+-5%) pull-up (RN1-RN4 since 71737ae, DEC-24) a pill reads pressed under about 17 kohm (Was: the RP2350's 50k internal pull-up allowed 10 kohm; 3.7 kohm with 10k at be437f8): DF-230.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: validation_plan gate item 5, #42, #137; TI SN74HC165 VIL.
+- Rationale: carbon pill on gold; the contacts are read directly on RP2350B GPIOs through the 47k pull-up arrays (RN1-RN4, DEC-24). A pill of 15 kohm against a 47k pull-up at -5% (44.65k) puts 3.3 V x 15 / (15 + 44.65) = 0.83 V on the pad, so the GPIO's VIL must be 0.83 V or more; the RP2350's VIL is read from its datasheet (VER-233, VER-232), and 0.94 V (a 74HC165's at 3.3 V) would read a pill pressed up to about 17 kohm. If VIL is lower, the pull-up falls or the 15 kohm is restated by Alex (DF-230). Was: the RP2350's 50k internal pull-up allowed 10 kohm; 3.7 kohm with 10k at be437f8.
+- Source: validation_plan gate item 5, #42, #137; the RP2350 datasheet's pad input levels (to download: VER-233).
 - Method: T
 - Verified by: VER-45, VER-56, VER-248
 - Phase: EVT
@@ -1535,7 +1536,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: buttons
 - Statement: Leakage between a contact's two combs shall be 100 Mohm or more at 4.2 V, clean and after 24 h at high humidity.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the power key SW24 carries VSYS on one pad, so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
+- Rationale: the power slider's contact carries a rail on one pad, so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press.
 - Source: validation_plan gate item 5, #185.
 - Method: T
 - Verified by: VER-46, VER-248
@@ -1607,8 +1608,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: buttons case
 - Statement: Each 4 mm metal dome (HYP 600-415S-260) shall sit with its rim on its footprint's ring all round at 0.1 mm of placement error, close under its cap's full travel, and rest open with its plunger 0.05 mm or more clear of its apex at the measured Start/Select strip.
-- Rationale: a dome pressed at rest under SW21 or SW23 turns the device on in the case for good (DF-230); the strip's plunger height is an estimate (ss_lift).
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
+- Rationale: a dome pressed at rest under seat 1's Start, if it is the power key (REQ-PWR-21), turns the device on in the case for good (DF-242); the strip's plunger height is an estimate (ss_lift).
+- Source: design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
 - Method: A, I
 - Verified by: VER-178, VER-180, VER-48
 - Phase: CASE
@@ -1631,7 +1632,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: buttons soc
 - Statement: Every contact and the power slider shall be read at least every 2 ms, so a press of 10 ms or more is never missed.
-- Rationale: the RP2350B may read the contacts on GPIO or through a chain; the scan rate is the firmware's. Claude's proposal.
+- Rationale: the contacts and the slider are read directly on GPIOs (Alex, 2026-10-29), so the read is a poll of 21 pad levels and its rate is the firmware's; behind the 74HC165 chain (the pin-relief option) it would be a shift-register scan. Claude's proposal.
 - Source: Claude's estimate; Alex to set it.
 - Method: T, A
 - Verified by: VER-56, VER-199
@@ -1728,7 +1729,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: case
-- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, the microSD opening, the power slider's slot, cap holes, speaker grille, screw holes).
+- Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, the power slider's slot, cap holes, speaker grille, screw holes).
 - Rationale: screw pilots and a notch once came through the face (DEF-19).
 - Source: 177123c.
 - Method: A, I
@@ -1742,7 +1743,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: Each of the four side screws (H1-H4, under the screen band) shall engage 4.0 mm or more of its pilot above the board and end 0.5 mm or more short of the pilot's end; each of the two end screws (H5, H6, under the button ends) shall engage 3.0 mm or more and end 0.1 mm or more short.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31).
+- Rationale: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31).
 - Source: case.scad; Claude's analysis (O-52).
 - Method: A, T
 - Verified by: VER-147, VER-92
@@ -1754,7 +1755,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case display
 - Statement: The panel shall stay bonded in the top's pocket, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229).
+- Rationale: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229).
 - Source: Claude's review (O-59).
 - Method: T
 - Verified by: VER-154
@@ -1765,8 +1766,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: case
-- Statement: Every connector's mouth (USB-C with a mated plug, the cell's plug and wires, the panel's FPC lead-in, the speaker's plug and its leads) shall be clear of parts taller than 1 mm and of every case wall but its own opening, and the microSD slot's body shall clear its opening in the case by 0.2 mm a side.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the USB-C opening was fixed twice; the SD slot's body is 13.85 mm wide in a 14.0 mm opening at 39cc07f (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes.
+- Statement: Every connector's mouth (USB-C with a mated plug, the cell's plug and wires, the panel's FPC lead-in, the speaker's plug and its leads) shall be clear of parts taller than 1 mm and of every case wall but its own opening.
+- Rationale: the USB-C opening was fixed twice (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes.
 - Source: Claude's review (F-28).
 - Method: A
 - Verified by: VER-165
@@ -1779,7 +1780,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: case
 - Statement: Every MLCC's pad centre shall be 4.0 mm or more from a screw hole's centre (the tub's 6.0 mm boss plus 1 mm), and 6.0 mm or more for an 0603 or larger.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9).
+- Rationale: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9).
 - Source: Claude's review (O-43); case.scad tub_boss_d.
 - Method: A
 - Verified by: VER-142
@@ -1805,8 +1806,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: During a full charge in the closed case, the thermistor's reading shall stay within 5 C of the cell's hotter point (its centre or its end facing the thermistor).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this.
-- Source: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
+- Rationale: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this.
+- Source: placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
 - Method: T, A
 - Verified by: VER-87, VER-164
 - Phase: EVT
@@ -1818,7 +1819,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (the charger's thermistor input inside its window with the cell under 35 C).
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
+- Rationale: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1.
 - Source: bringup.md step 5.4.
 - Method: T
 - Verified by: VER-68
@@ -1830,8 +1831,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: rp2350b
 - Subsystem: power soc case
-- Statement: Charging while playing GBA under Linux (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall put 2.0 W or less inside the case, and every part shall stay under its temperature limit at 40 C ambient.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: at 39cc07f the worst mode is 3.31 W inside the case at VER-31's Wi-Fi load (VER-144: U3 0.43 W, U2 0.80 W, the module 0.74 W), with the air round the module over its 65 C (DF-213); the table decides a firmware rule or copper (DEF-87).
+- Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall put 2.0 W or less inside the case, and every part shall stay under its temperature limit at 40 C ambient.
+- Rationale: the worst mode is charging while playing: U2 (BQ24073), U3 and the RP2350B each dissipate, and VER-144's table is redone for them; the 2.0 W stays Claude's proposal until VER-144 gives the real sum, and the table decides a firmware rule or copper (DEF-87).
 - Source: Claude's analysis (O-47, F-48).
 - Method: A
 - Verified by: VER-144, VER-238
@@ -1858,8 +1859,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: subsystem
 - Board: both
 - Subsystem: all
-- Statement: Before any sale, the device shall pass FCC Part 15 Class B and CISPR 32 Class B radiated and conducted emissions at a test house, its USB-C high-speed lines in use; the board has no radio.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: since 39cc07f the device transmits (Wi-Fi): it relies on the WROOM-1U's modular grant, kept only with an antenna type the grant lists (docs/living/esp32s3_board_proposal.md 'Open checks' 5).
+- Statement: Before any sale, the device shall pass FCC Part 15 Class B and CISPR 32 Class B radiated and conducted emissions at a test house, its USB-C full-speed lines in use; the board has no radio.
+- Rationale: the board has no radio, so it is an unintentional radiator and needs the Part 15 Subpart B declaration only, with no modular grant and no antenna type to keep; its USB is full speed (12 Mbit/s).
 - Source: FCC 47 CFR Part 15 Subpart B; CISPR 32; validation_plan #67, #162.
 - Method: T
 - Verified by: VER-96, VER-118
@@ -1967,7 +1968,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: KiCad's netlist shall match design.py with 0 differences, ERC shall report 0 errors, and DRC 0 errors, 0 unconnected and 0 parity issues.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the generated KiCad files must say what design.py means.
+- Rationale: the generated KiCad files must say what design.py means.
 - Source: validation_plan #75, #76, #173.
 - Method: A
 - Verified by: VER-01, VER-03, VER-04
@@ -1979,7 +1980,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: Every assembled part's every pin shall be reviewed against its current datasheet with a page citation, with 0 unresolved issues, 0 unknown ratings and 0 open questions.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: ERC and parity trust design.py; only the datasheet can say a pin is wrong.
+- Rationale: ERC and parity trust design.py; only the datasheet can say a pin is wrong.
 - Source: validation_plan #1, #113, gate item 1.
 - Method: A, I
 - Verified by: VER-02, VER-36, VER-35
@@ -2004,7 +2005,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: all
 - Statement: Every drilled hole shall be 0.30 mm or larger, and plated and unplated holes shall be in separate drill files.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: smaller holes cost about $40 an order at JLC (a fee, a 4-wire test, TG155); a mixed file may plate J1's pegs (DEF-32).
+- Rationale: smaller holes cost about $40 an order at JLC (a fee, a 4-wire test, TG155); a mixed file may plate J1's pegs (DEF-32).
 - Source: design_review.md Board; assembly.md section 1; JLC's KiCad guide.
 - Method: A
 - Verified by: VER-114, VER-131
@@ -2091,7 +2092,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: JLC shall e-test 100% of the boards against an IPC-D-356 netlist exported from the ordered board with each net-tie pair merged into one net (0 pairs of differently named nets joined by copper), or the order shall go without a netlist.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-237).
+- Rationale: a check from outside KiCad's own reading; JP1-JP5 would read as 5 shorts (DF-237).
 - Source: validation_plan #103.
 - Method: I
 - Verified by: VER-26
@@ -2103,8 +2104,8 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: both
 - Subsystem: all
-- Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the RP2350B (C42415655), the GD25Q128 (C2758105) and the DM3AT (C114218) shall never be substituted.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the new parts' JLC class and stock were not checked by the board session (docs/living/esp32s3_build.md, 'Not verified'); a substituted module can carry 1.8 V PSRAM (DF-238, DF-238). Was: the RP2354B and L2.
+- Statement: On order day every BOM line shall have stock of 1.1 x the order quantity plus attrition, or be pre-ordered or consigned; the RP2350B (C42415655), the GD25Q128 (C2758105) and the TPS3421 (C2067262) shall never be substituted.
+- Rationale: the new parts' JLC class and stock must be read on order day; a substituted flash can be smaller or on another interface (DF-238), and the TPS3421 comes in variants with different reset delays (DF-262), so a substitute breaks the hard reset of REQ-PRD-08.B.
 - Source: DEF-12, DEF-13, DEF-29.
 - Method: I
 - Verified by: VER-41
@@ -2205,7 +2206,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: both
 - Subsystem: all
-- Statement: A self-test image shall check the 20 contacts and the power slider, pin neighbour bridges, the panel's ID and fills, the backlight, an audio tone, the card, the USB-C roles, the cell reading and the charger's states, print PASS or FAIL per item and take 5 min or less a unit.
+- Statement: A self-test image shall check the 20 contacts and the power slider, pin neighbour bridges, the panel's ID and fills, the backlight, an audio tone, the flash's JEDEC ID and its 16 MB readback, the USB-C device enumeration, the cell reading and the charger's states, print PASS or FAIL per item and take 5 min or less a unit.
 - Rationale: 30 units need a repeatable test; OTP writes can brick a unit.
 - Source: validation_plan #57, #100, #174, #202.
 - Method: T
@@ -2255,7 +2256,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: rp2350b
 - Subsystem: cell
 - Statement: Each unit's cell-reading gain shall be set in production test at a true 3.50 V from the bench supply (no USB, the self-test at its highest load, a DMM checked that session against a 4.096 V reference) and lie within 0.95-1.05; a re-read at 3.50 V shall be within 10 mV; the firmware shall store no gain from a no-cell end-of-charge edge.
-- Rationale: Was: on the ESP32-S3 board (tag vv-esp32s3-final), to redo for the RP2350B board: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-225).
+- Rationale: the charger's CV is only +-1% (+-42 mV), and with no cell the BQ24073's battery detection toggles CHG (CHG_STAT_N), so a gain from an end-of-charge edge can be off by the cutoff's whole margin (DF-225).
 - Source: Claude's review (O-63, O-60).
 - Method: T
 - Verified by: VER-155, VER-156
@@ -2267,7 +2268,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Level: board
 - Board: rp2350b
 - Subsystem: all
-- Statement: No shipped unit shall have any connector (the cell's, the panel's, the speaker's, the microSD slot) mated more than 50% of its rated cycles, counted per unit.
+- Statement: No shipped unit shall have any connector (the cell's, the panel's, the speaker's) mated more than 50% of its rated cycles, counted per unit.
 - Rationale: wire-to-board headers and the FH12 are rated for roughly 10-30 matings (confirm per maker), bring-up alone can use them up, and the speaker's plug comes out at every opening (DF-233).
 - Source: Claude's review (O-61).
 - Method: I

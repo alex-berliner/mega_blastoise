@@ -1860,7 +1860,20 @@ def accepted_checks(db, phase, board=None):
 def cross_check_approvals(db):
     """O-45: statuses that need Alex must match a line he committed in APPROVALS.md."""
     for r in db["reqs"].values():
-        st, eff = r["f"].get("Status"), eff_req_status(db, r["id"])
+        st = r["f"].get("Status")
+        if st == "PROPOSED" and db["eff"].get(r["id"], {}).get("decision") == "APPROVED":
+            # 2026-10-29: a signed statement edited since is not approved any more; the row goes back to PROPOSED
+            # (Status says so) and waits for Alex's new line. The old line stays in APPROVALS.md as history; while
+            # Status stays APPROVED the error below still fires.
+            a = db["eff"][r["id"]]
+            rel = vv_rel("requirements.md")
+            bl = blame(rel) if rel and rel in TRACKED else {}
+            if any(set(bl.get(n, "0" * 40)) <= {"0"} or not is_ancestor(bl.get(n, "0" * 40), a["sha"])
+                   for n in r["lines"].get("Statement", [])):
+                warn(r["_where"], f"{r['id']}: its statement changed after Alex approved it ({a['id']}): PROPOSED "
+                                  "again until he approves the new text")
+                del db["eff"][r["id"]]
+        eff = eff_req_status(db, r["id"])
         if st in GONE and eff != st:
             err(r["_where"], f"{r['id']}: {st}, but Alex decided it ({db['eff'][r['id']]['id']}): he rejects it instead")
         elif st != "PROPOSED" and st != eff:

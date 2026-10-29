@@ -405,7 +405,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (tools/seed_faults.py: each of these faults seeded into a copy of the register must fail check_trace).
 - Updated: README rules; gates.md G-ORD-22; dfmea.csv 'detects'; verification.csv valid_days
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-29 at 76b231f: 148 of 148 seeded faults caught, after the REQ-PRD review)
+- Status: FIXED (VER-129 stale after the audit edits; CLOSED again on its PASS)
 
 ### DEF-36: check_pcb.py passes every DRC warning that is not silk
 - Found: two-model review (O-12, F-27), 2026-10-24
@@ -536,7 +536,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: check_trace.py's structure check now fails when README.md's design baseline differs from HEAD or does not name every design path (design.py, placement.py, lib/, battler.kicad_pcb, last_route.ses, build_pcb.py, route.py, silk.py, fab.py, case.scad); VER-129 seeds both faults and passes. Still to do outside hardware/vv: a hardware step in scripts/check.sh that runs check_trace.py (PLAN.md step 0.3).
 - Updated: README (baseline at 684a609), every file of the register
 - Gate: ORDER
-- Status: OPEN (O-R9, 2026-10-27: the register now describes 71737ae, and VER-129 passes, but scripts/check.sh still runs only the host tests, the firmware check, the wasm build and the UI probe, so the drift check runs only when someone runs it. It is FIXED again once scripts/check.sh runs `python3 hardware/vv/tools/check_trace.py`, a one-line step outside hardware/vv that is Alex's (PLAN.md step 0.3); it would have caught DEF-39's return in 79de1f7. If Alex would rather not hold the order for it, its Gate moves to CASE in a register edit his next GATE@ line freezes)
+- Status: OPEN (2026-10-29, artifact audit: the register describes the RP2350B board, but design.py on main is still the dropped ESP32-S3 board's (README, Baseline board: esp32s3), so the drift check cannot yet compare them, and VER-188 (stale_names.py) passes leftovers of the dropped boards because it compares against that file: it cannot catch them until the RP2350B design.py replaces the baseline (PLAN.md step 3, NM-05). It is FIXED again when scripts/check.sh runs `python3 hardware/vv/tools/check_trace.py`, a one-line step outside hardware/vv that is Alex's (PLAN.md step 0.3), and the RP2350B design replaces the baseline. If Alex would rather not hold the order for it, its Gate moves to CASE in a register edit his next GATE@ line freezes)
 
 ### DEF-48: The charge window's hot edge is 47 C and nothing on the board can move it
 - Found: re-seeding for 684a609 (2026-10-25), from pin_review/u2.json pin 1
@@ -591,7 +591,7 @@ closed. RETIRED is not a way to close a defect whose part is still on the board.
 - Check added or changed: VER-129 (new seeded faults for each: a comment in fab.py, an uncommitted register edit, uncommitted evidence, an inspection on a design file, an unsigned and a merged approval line, a CASE defect at the order gate, an O=3 row with no 'Similar:', an EVT first article at the PVT gate, a live row citing a RETIRED id, a design commit on the order branch, a change record that omits a re-run, TP11 moved next to the hole). The drill and CPL checks (design_numbers.py drill and cpl) now run fab.py's own export into a temp dir and read what it writes; they fail on the board's real output, which DEF-32 and DEF-33 hold, not this defect.
 - Updated: README rules and baseline; check_trace.py; design_numbers.py; dfmea.csv occurrences; gates.md
 - Gate: ORDER
-- Status: CLOSED (VER-129 PASS 2026-10-29 at 76b231f: 148 of 148 seeded faults caught, after the REQ-PRD review)
+- Status: FIXED (VER-129 stale after the audit edits; CLOSED again on its PASS)
 
 ### DEF-53: A worst-case cell sits 0.25 mm from the routed FR4 edge on every side
 - Found: two-model review (O-R7), 2026-10-25, from case.scad and assembly.md step 5; restated on every side by round 2's sign-off objections (O, F), 2026-10-26
