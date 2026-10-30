@@ -1,0 +1,153 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mega Blastoise phone bridge</title>
+<style>
+  body { font: 16px/1.4 system-ui, sans-serif; margin: 0; padding: 12px; background: #14161c; color: #e8e8ee; }
+  h1 { font-size: 20px; margin: 0 0 8px; }
+  button { font: inherit; padding: 12px 14px; margin: 4px 4px 4px 0; border-radius: 8px; border: 0; background: #3b6fe0; color: #fff; }
+  button:disabled { background: #444a58; color: #9aa; }
+  button.alt { background: #4a4f60; }
+  .row { margin: 6px 0; }
+  .stat { display: inline-block; margin-right: 14px; }
+  .stat b { font-size: 18px; }
+  #log { height: 38vh; overflow: auto; background: #0b0c10; border-radius: 8px; padding: 6px; font: 11px/1.3 ui-monospace, monospace; white-space: pre-wrap; word-break: break-all; }
+  .ok { color: #7be08a; } .bad { color: #ff8a8a; } .dim { color: #8a90a0; }
+  label { margin-right: 10px; }
+</style>
+</head>
+<body>
+<h1>Mega Blastoise phone bridge</h1>
+<div class="row dim" id="env"></div>
+<div class="row">
+  <button id="btnBoard">1. Connect board (USB)</button>
+  <button id="btnWs" disabled>2. Connect Showdown</button>
+</div>
+<div class="row">
+  <button id="btnG1" disabled>Play Gen 1</button>
+  <button id="btnG3" disabled>Play Gen 3</button>
+  <button id="btnCancel" class="alt" disabled>Cancel search</button>
+</div>
+<div class="row">
+  <label><input type="checkbox" id="auto"> board plays by itself (soak test)</label>
+</div>
+<div class="row">
+  <button id="btnSoak" disabled>Run VER-251 soak (5 Gen 1 + 5 Gen 3, auto)</button>
+</div>
+<div class="row">
+  <span class="stat">board <b id="sBoard">no</b></span>
+  <span class="stat">Showdown <b id="sWs">no</b></span>
+  <span class="stat">battles <b id="sDone">0</b></span>
+  <span class="stat">rejected <b id="sRej">0</b></span>
+  <span class="stat">disconnects <b id="sDis">0</b></span>
+</div>
+<div class="row"><button id="btnSave" class="alt">Save log</button> <span id="verdict"></span></div>
+<div id="log"></div>
+<script type="module">
+import { Relay, RELAY_VERSION } from './relay.js';
+import { WebUsbBoard } from './board.js';
+
+const $ = (id) => document.getElementById(id);
+const WS_URL = new URLSearchParams(location.search).get('ws') || 'wss://sim3.psim.us/showdown/websocket';
+const ua = navigator.userAgent;
+const chrome = (ua.match(/(?:Chrome|CriOS)\/([\d.]+)/) || [])[1] || 'not Chrome';
+const hasUsb = 'usb' in navigator;
+$('env').textContent = `Chrome ${chrome}, WebUSB ${hasUsb ? 'yes' : 'NO'}, relay ${RELAY_VERSION}, ${WS_URL}`;
+
+const logEl = $('log');
+function paint(e) {
+  const d = document.createElement('div');
+  const cls = e.dir === 'error' ? 'bad' : (e.dir === 'ws' || e.dir === 'page' ? 'dim' : '');
+  if (cls) d.className = cls;
+  const t = new Date(e.t).toISOString().slice(11, 23);
+  d.textContent = `${t} ${e.dir} ${e.text.length > 300 ? e.text.slice(0, 300) + '...' : e.text}`;
+  logEl.appendChild(d);
+  while (logEl.childElementCount > 600) logEl.removeChild(logEl.firstChild);
+  logEl.scrollTop = logEl.scrollHeight;
+}
+
+const board = new WebUsbBoard((m) => relay.log('page', m));
+const relay = new Relay(board, { onLog: paint });
+relay.log('page', `Chrome ${chrome}; ${ua}`);
+if (!hasUsb) relay.log('error', 'this browser has no WebUSB: open this page in Chrome on Android');
+
+let busy = false;
+function refresh() {
+  $('sBoard').textContent = board.connected ? 'yes' : 'no';
+  $('sWs').textContent = relay.wsOpen ? 'yes' : 'no';
+  const done = relay.results.filter((r) => ['win', 'loss', 'tie'].includes(r.outcome)).length;
+  $('sDone').textContent = done;
+  $('sRej').textContent = relay.results.reduce((n, r) => n + Number(r.rejected || 0), 0);
+  $('sDis').textContent = relay.disconnects;
+  const ready = board.connected && relay.wsOpen && !busy;
+  $('btnWs').disabled = !board.connected || relay.wsOpen;
+  $('btnG1').disabled = !ready; $('btnG3').disabled = !ready; $('btnSoak').disabled = !ready;
+  $('btnCancel').disabled = !busy;
+}
+setInterval(refresh, 500);
+
+function meta() {
+  return { firmware: relay.fw || 'unknown', page: location.href, chrome, userAgent: ua, relay: RELAY_VERSION, webusb: hasUsb, websocket: WS_URL };
+}
+
+$('btnBoard').onclick = async () => {
+  try {
+    await board.request();
+    await relay.hello(`page ${RELAY_VERSION} chrome ${chrome}`);
+  } catch (e) { relay.log('error', `board: ${e.message || e}`); }
+  refresh();
+};
+$('btnWs').onclick = async () => {
+  try { await relay.connect(WS_URL); } catch (e) { relay.log('error', `showdown: ${e.message || e}`); }
+  refresh();
+};
+
+async function playOne(gen, auto) {
+  busy = true; refresh();
+  try {
+    const r = await relay.play(gen, auto);
+    return r;
+  } finally { busy = false; refresh(); }
+}
+$('btnG1').onclick = () => playOne(1, $('auto').checked);
+$('btnG3').onclick = () => playOne(3, $('auto').checked);
+$('btnCancel').onclick = () => relay.cancel();
+
+$('btnSoak').onclick = async () => {
+  const startedAt = Date.now();
+  const plan = [1, 3].flatMap((g) => Array(5).fill(g));
+  relay.log('page', `soak: ${plan.length} battles, board auto`);
+  const before = relay.results.length;
+  let abort = false;
+  for (const gen of plan) {
+    if (abort || !relay.wsOpen || !board.connected) { abort = true; break; }
+    const r = await playOne(gen, true);
+    if (!r || !['win', 'loss', 'tie'].includes(r.outcome)) abort = true;
+  }
+  const mine = relay.results.slice(before);
+  const done = mine.filter((r) => ['win', 'loss', 'tie'].includes(r.outcome)).length;
+  const rej = mine.reduce((n, r) => n + Number(r.rejected || 0), 0);
+  const pass = !abort && done === plan.length && rej === 0 && relay.disconnects === 0;
+  const text = `soak ${pass ? 'PASS' : 'FAIL'}: ${done} of ${plan.length} battles finished, ${rej} rejected choices, ${relay.disconnects} disconnects, ${((Date.now() - startedAt) / 60000).toFixed(1)} min`;
+  relay.log('page', text);
+  $('verdict').textContent = text;
+  $('verdict').className = pass ? 'ok' : 'bad';
+};
+
+$('btnSave').onclick = () => {
+  const blob = new Blob([relay.logText(meta())], { type: 'text/plain' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `mb-bridge-${new Date().toISOString().replace(/[:.]/g, '-')}.log`;
+  document.body.appendChild(a); a.click(); a.remove();
+};
+
+window.addEventListener('error', (e) => relay.log('error', `page error: ${e.message}`));
+window.addEventListener('unhandledrejection', (e) => relay.log('error', `page error: ${e.reason && e.reason.message || e.reason}`));
+if (hasUsb) navigator.usb.addEventListener('disconnect', () => { relay.log('error', 'USB: board unplugged'); board.open_ = false; relay.enqueue(async () => {}); refresh(); });
+refresh();
+</script>
+</body>
+</html>
