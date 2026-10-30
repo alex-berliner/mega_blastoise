@@ -29,7 +29,7 @@ Each `.3mf` is a Snapmaker Orca project built from your `fit_test_v5.3mf`, so it
 project's printer and settings: Snapmaker U1, 0.20 mm Standard, textured PEI. PLA on toolhead 1 and Bambu Support For PLA on
 toolhead 2 (the template's slot 2's settings, marked as a support filament, in slot 2; slot 1 takes the PLA settings: no PETG), and on a plate with the top a
 prime tower at the back right of the bed. Open it, check the plate, slice.
-(`mega_blastoise_print_P1S.zip` has the same plates sliced for a Bambu Lab P1S, with their weights and times.)
+(`mega_blastoise_print_P1S_<version>.zip` has the same plates sliced for a Bambu Lab P1S, with their weights and times.)
 Print times and weights below are Snapmaker Orca 2.4.1-beta's, sliced from the command line on the build machine (0.08 mm fine layers on
 the release plates, outer wall 60, inner wall 120 mm/s; the weights are what the slicer reports, the prime tower and the purge included).
 The projects stay unsliced: open one, check the plate, slice it yourself. **Use Snapmaker Orca 2.4.1-beta or later**: 2.4.0 opens these

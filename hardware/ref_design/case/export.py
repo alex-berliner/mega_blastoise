@@ -3,6 +3,8 @@
     python3 export.py          # positions.json, board.dxf
     python3 export.py --stl    # also tub.stl, top.stl (the one-piece top) and pwr_cap.stl (the power button's cap), each in its print pose
 
+Every render gets case/VERSION's string as case_version (-D), the version debossed inside the tub and the top.
+
 positions.json is what the board scripts read: button centres, screw holes,
 connector positions and height limits, all in KiCad coordinates. It comes from
 the JSON line in case.scad's echo block, so the case stays the only source.
@@ -21,8 +23,16 @@ sys.path.insert(0, os.path.join(os.path.dirname(HERE), "tools"))
 import scad  # noqa: E402  (which OpenSCAD, which backend, how many at once)
 
 
+def version():
+    """This build's version: the string in case/VERSION (C1, C2, ...), the one place it is written."""
+    v = open(os.path.join(HERE, "VERSION")).read().strip()
+    if not re.fullmatch(r"C[1-9][0-9]?", v):
+        sys.exit(f"case/VERSION is {v!r}: it should be C<n>, n counting up from 1 for each case build sent to print")
+    return v
+
+
 def openscad(out, part, extra=()):
-    r = subprocess.run([*scad.cmd(out), "-o", out, "-D", f'part="{part}"', *extra, SCAD],
+    r = subprocess.run([*scad.cmd(out), "-o", out, "-D", f'part="{part}"', "-D", f'case_version="{version()}"', *extra, SCAD],
                        capture_output=True, text=True)
     if r.returncode or "ERROR" in r.stderr or "WARNING: Assert" in r.stderr:
         sys.exit(f"openscad failed for {part}:\n{r.stderr[-2000:]}")

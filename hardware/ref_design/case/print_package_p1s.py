@@ -25,7 +25,7 @@ Bambu Studio's CLI lists no changed settings in its projects, so each project th
 process preset (P1S_PRESETS, the one at its layer height; Bambu's X1C presets are the P1S's) and
 lists what it changes from it (print_package.mark_presets), or Bambu Studio would load the preset's.
 
-Writes print/package_P1S/ and print/mega_blastoise_print_P1S.zip (build output, not in git; the release plates only); the
+Writes print/package_P1S/ and print/mega_blastoise_print_P1S_<version>.zip (the version, case/VERSION, and the guards on a clean case/ are print_package.py's; build output, not in git; the release plates only); the
 printer tests (print_package.TEST_PLATES) go to print/tests_P1S/ and print/overhang_kit.zip instead, the other plates to
 print/extras_P1S/.
 """
@@ -49,13 +49,12 @@ SLICERS = int(os.environ.get("SLICE_JOBS") or max(1, (os.cpu_count() or 4) // 4)
 
 PROFILES = os.path.join(HERE, "print", "p1s")
 OUT = os.path.join(HERE, "print", "package_P1S")
-ZIP = os.path.join(HERE, "print", "mega_blastoise_print_P1S.zip")
 README = os.path.join(HERE, "print_package_README.md")    # its <!-- printer --> part replaced
 PRINTER = """Each `.3mf` is a Bambu Studio project for a Bambu Lab P1S (0.4 mm nozzle, 0.20 mm
 Standard), arranged and already sliced (a kit built without --slice has no G-code and no numbers): open it and send it, or re-slice it after
 changing anything. Filaments as above: **Bambu PLA Basic in AMS slot 1** (every part) and **Bambu Support For PLA in AMS slot 2**
 (only on the plates with the top or a coupon cut from it, where it is the layers of the supports that touch the part, with a prime
-tower at the front right of the bed); the other plates are PLA only. (`mega_blastoise_print_U1.zip` has the same plates for the
+tower at the front right of the bed); the other plates are PLA only. (`mega_blastoise_print_U1_<version>.zip` has the same plates for the
 Snapmaker U1.) Set the plate type in Bambu Studio to the plate you use.
 
 Weights are what the slicer reports: the part and its supports, then the **purge** (the flush at each change and the prime
@@ -299,6 +298,8 @@ def main():
     if not os.environ.get("BAMBU_STUDIO"):
         sys.exit("set BAMBU_STUDIO to Bambu Studio's executable")
     only = print_package.requested(print_cache.names())
+    if any(p in print_package.RELEASE_PLATES for p in only):
+        commit = print_package.release_guard()
     print("supports, measured part by part:")
     supported = print_package.support_parts()
     queue = [(n, p) for n, p in print_package.PLATES.items() if n in only]
@@ -359,12 +360,14 @@ def main():
     a, b = text.index("<!-- printer -->"), text.index("<!-- /printer -->") + len("<!-- /printer -->")
     text = text[:a] + PRINTER.replace("<!-- PLATES -->", table) + text[b:]
     open(os.path.join(OUT, "README.md"), "w").write(text)
-    with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as o:
+    zip_path = print_package.release_zip("P1S")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as o:
         for root, _, names in os.walk(OUT):
             for n in names:
                 p = os.path.join(root, n)
                 o.write(p, os.path.join("mega_blastoise_print_P1S", os.path.relpath(p, OUT)))
-    print(f"{ZIP} ({os.path.getsize(ZIP) // 1024} kB)")
+    print(f"{zip_path} ({os.path.getsize(zip_path) // 1024} kB)")
+    print_package.after_release(commit)
 
 
 if __name__ == "__main__":

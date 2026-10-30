@@ -22,6 +22,7 @@
 // ESTIMATE marks a number that needs a real part and calipers before ordering.
 
 part = "layout";
+case_version = "C?";   // this build's version, debossed inside the tub and the top (export.py passes VERSION's string with -D; "C?" is an unversioned render)
 explode = 0;
 $fn = 72;
 
@@ -983,6 +984,53 @@ module cell2d(size) translate([cell_x1 - size[1], cell_pocket_box[0][1]]) square
 sd_y = [-42.0, -28.0];  sd_z = [z_top_cu - 0.2, z_top_cu + 2.6];
 module sd_cut() translate([-wall_l - 2, sd_y[0], sd_z[0]]) cube([wall + board_clear + 2 - 0.2, sd_y[1] - sd_y[0], sd_z[1] - sd_z[0]]);   // (0.1 into the cavity: its inner face lay exactly on the tongue's, which left non-manifold edges in the fit kit coupons)
 
+// ---- the version (Alex, 2026-10-30: "every case build has its own version, inscribed on the case wherever it is easiest and
+// changes the case least"): case_version debossed into a flat inside face that faces up in the part's print pose, so it is
+// an ordinary pocket in a top surface, never seen with the console shut: in the tub's floor, in a cell of the floor's rib
+// grid under the board, and in the top's ceiling, in the left strip beside the glass. Written in each part's print pose
+// (z up, read from above), the top's through the same turn as its print pose ("top" below)
+ver_size = 3.0;  ver_depth = 0.35;  ver_font = "Liberation Sans:style=Bold";
+ver_adv = 1.0 * ver_size;                              // the most one character takes along the line (measured: C1 is 5.0 long, C99 7.2, 2.95 tall)
+ver_len = len(case_version) * ver_adv;                  // the line's length, an upper bound (checked on the render's real width)
+// the tub: reading along x, in the cell of the floor's grid at x -12.2 to -0.2, y -27.8 to -15.8 (the board's ribs stand 0.6 either side of those lines)
+ver_tub_at = [-6.2, -21.8];
+// the top: reading along y (turned 90 degrees, counter-clockwise from above in its print pose), in the left strip, 2.0 over the
+// ceiling's flat part: x -32.5, between the side wall and the panel's frame; y 12, clear of J5 (y -5) and the boss at y 40
+ver_top_at = [-32.5, 12.0];
+function ver_rect(c, turned) = let(hx = turned ? ver_size * 0.6 : ver_len / 2, hy = turned ? ver_len / 2 : ver_size * 0.6)
+  [[c[0] - hx, c[1] - hy], [c[0] + hx, c[1] + hy]];
+// the two rectangles don't touch, each grown by m
+function ver_apart(a, b, m) = a[1][0] + m <= b[0][0] || b[1][0] + m <= a[0][0] || a[1][1] + m <= b[0][1] || b[1][1] + m <= a[0][1];
+ver_tub_rect = ver_rect(ver_tub_at, false);
+ver_top_rect = ver_rect(ver_top_at, true);
+// the version's pocket, in the part's print pose: from `depth` under the face z0 up through it
+module ver_cut(c, turned, z0) translate([c[0], c[1], z0 - ver_depth]) rotate(turned ? 90 : 0)
+  linear_extrude(ver_depth + 0.01) text(case_version, size = ver_size, font = ver_font, halign = "center", valign = "center");
+module ver_tub_cut() ver_cut(ver_tub_at, false, floor_t);
+module ver_top_cut() translate([0, 0, case_h]) rotate([180, 0, 0]) ver_cut(ver_top_at, true, top_t);   // (the print pose is this turn of the top's own frame, and back)
+assert(len(case_version) >= 2 && len(case_version) <= 3, "case_version should be like C1 to C99");
+assert(floor_t - ver_depth >= 0.8 && top_t - ver_depth >= 0.8, "the floor or the ceiling under the version is thinner than 0.8");
+assert(ver_depth >= 0.3 && ver_depth <= 0.4, "the version's depth");
+// the tub's: between the grid's ribs (and their strips' and the ring's), off the cell's and the speaker's pockets and the other keep-outs,
+// the bosses and their counterbores, the silicone pieces' rings, and well inside the board's edge (the crush ribs, the tongue)
+assert(len([for (x = [-board_w / 2:support_pitch:board_w / 2]) if (!ver_apart(ver_tub_rect, [[x - 0.6, -board_l], [x + 0.6, board_l]], 0.5)) x]) == 0
+       && len([for (y = [-board_l / 2:support_pitch:board_l / 2]) if (!ver_apart(ver_tub_rect, [[-board_w, y - 0.6], [board_w, y + 0.6]], 0.5)) y]) == 0,
+       "the tub's version runs into a rib of the floor's grid");
+assert(len([for (r = rib_free) if (!ver_apart(ver_tub_rect, [[r[0], r[1]], [r[2], r[3]]], 0.5)) r]) == 0
+       && len([for (r = strip_ribs) if (!ver_apart(ver_tub_rect, [r[0] - [0.6, 0], r[1] + [0.6, 0]], 0.5)) r]) == 0,
+       "the tub's version runs into a pocket or a rib's keep-out");
+assert(len([for (i = [0:5]) if (rect_dist(pins[i], ver_tub_rect) < max(tub_boss_d[i], screw_cb[0]) / 2 + 0.8) i]) == 0
+       && len([for (c = clusters) if (rect_dist(c, ver_tub_rect) < piece_d / 2 - 2 + 0.8) c]) == 0,
+       "the tub's version runs into a boss, a counterbore or a silicone piece's ring");
+assert(ver_tub_rect[0][0] >= -board_w / 2 + 6 && ver_tub_rect[1][0] <= board_w / 2 - 6 && abs(ver_tub_rect[0][1]) <= board_l / 2 - 6 && abs(ver_tub_rect[1][1]) <= board_l / 2 - 6,
+       "the tub's version is too near the board's edge");
+// the top's: in the left strip, in the ceiling's flat part (the band's flat face, uni_x_r), clear of the wall, the panel's frame, the side bosses and J5
+assert(ver_top_rect[0][0] >= -in_x + 2.0 && ver_top_rect[1][0] <= -((panel_w + panel_fit) / 2 + frame_wall) - 1.0 && ver_top_rect[0][0] >= -uni_x_r + 1.0,
+       "the top's version isn't in the left strip's flat part");
+assert(abs(ver_top_rect[0][1]) <= bay_l / 2 - 5 && abs(ver_top_rect[1][1]) <= bay_l / 2 - 5, "the top's version isn't under the band's flat part");
+assert(len([for (s = pins) if (rect_dist(s, ver_top_rect) < boss_d / 2 + 1.0) s]) == 0 && rect_dist(swd_pos, ver_top_rect) >= 3.0 && ver_apart(ver_top_rect, j5_box, 2.0),
+       "the top's version runs into a side boss or J5");
+
 // ---- the tub (the back): printed back down, as exported ----
 // its outside: the back rolls into the walls (in 0.1 mm layers up the round), up to the seam
 // Smooth, not in steps: one solid lofted through the outline every 0.1 up the round (the outline
@@ -1068,6 +1116,7 @@ module tub_body() difference() {
   }
   // screws: a counterbore for the head from below, then clearance up through the boss
   for (s = pins) at(s, -1) { cylinder(d = screw_cb[0], h = 1 + screw_cb[1]); cylinder(d = screw_clear, h = z_board + 2); }
+  ver_tub_cut();
   // the cell's pocket in the floor, inside its hole's outline
   translate([0, 0, floor_t - cell_pocket]) linear_extrude(cell_pocket + 0.01) corners2d(cell_pocket_box, cell_hole_r - 0.5, 0);
   // and the speaker's, inside its hole's outline (the speaker lies on it, face up)
@@ -1433,6 +1482,7 @@ module top_body() difference() {
   top_cuts();
   for (sy = [-1, 1]) end_cuts(sy);
   label_cuts();
+  ver_top_cut();
 }
 // its checks: the pocket's upper corner and the side screws' pilots 0.7 from the outside, the board's tall parts (their
 // 3D models' boxes, check_fit.py) 0.3 under the inside's limit (positions.json's own margin under a ceiling), the

@@ -140,6 +140,9 @@ and P1S at the same time (`SLICE_JOBS` slicers each, default cores/8), and keeps
 takes seconds. By hand: `python3 case/print_package.py [--slice] [--no-cache] [plate ...]` and `case/print_package_p1s.py`
 likewise; no plate named is the release kit, named plates (or `--all`) build instead, the printer tests go to
 `overhang_kit.zip` and the other plates (fit coupons, button tunings) to `case/print/extras_U1/` and `extras_P1S/`.
+Every case build has a version (`case/VERSION`, `C<n>`), debossed inside the tub and the top and in the release zip's name
+(`mega_blastoise_print_U1_C1.zip`); the release kit is refused unless `case/` is committed, so a version is one commit. How to
+cut the next one: `case/SHELL.md`, "The version".
 
 The stages, by hand:
 
