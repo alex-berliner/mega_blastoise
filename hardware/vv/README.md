@@ -6,7 +6,8 @@ RP2350B (QFN-80, no flash inside) with one GD25Q128 16 MB QSPI flash that holds 
 the core laid out as Raspberry Pi's 2-layer RP2350B minimal design draws it, today's ILI9488 panel, no GBA, no
 Linux, no SD card, no Wi-Fi, no USB host mode; online play goes through an Android phone's Chrome (WebUSB).
 The stripboard Pico 2 (an RP2350A) already runs the battler. The chip gate (gates.md NM-03) is the phone
-bridge test plus XIP from the 16 MB flash.
+bridge test alone (Alex, 2026-10-30); XIP from the 16 MB flash (VER-252) runs on the first assembled board at EVT
+(Claude's decision, 2026-10-30).
 
 **The KiCad files on main are still the ESP32-S3 board's.** There is no RP2350B schematic or layout
 yet (restoring the RP design is a later stage). The design baseline below names those files (main at
@@ -61,6 +62,7 @@ the case, survives use.
 | [tools/thermal.py](tools/thermal.py) | class 15 on paper: modes VER-144, board VER-193, amp VER-200 (fm8002a.pdf on disk; its package theta a stand-in); class 5: casemat VER-192 (the case's material against its inner surface) | |
 | [tools/stale_names.py](tools/stale_names.py) | fails on a live row naming a part, part number or net that design.py at the baseline no longer has (VER-188), and a live row pairing a connector with another connector's family (VER-188's connector-family rule); check_trace's default mode runs it | |
 | [tools/repo_paths.py](tools/repo_paths.py) | fails on a repository path a file under hardware/vv names (the saved outputs aside) that is not in HEAD's tree: moved or deleted on main, with the commit that removed it; a path written `path@<commit>` is history and must be in that commit (VER-220, 2026-10-28); a path never committed that no NOT_BUILT check and no PLANNED entry accounts for (a misspelt path); check_trace's default mode runs it | |
+| [tools/design_cites.py](tools/design_cites.py) | fails on a `DESIGN.md:<line>` cite in a live row whose quoted text (or, with no quote, whose clause's words) is not on that line of docs/static/DESIGN.md, and lists the cites it cannot match for a person; rows of dropped boards are skipped (2026-10-30) | |
 | [tools/datasheet_hashes.py](tools/datasheet_hashes.py) | records each datasheet extract's sha256, byte size and the drawing's date under evidence/, so the numbers this register quotes can be checked without committing the extracts themselves | |
 | [tools/paper_checks.py](tools/paper_checks.py) | paper checks of classes 4 and 6 from design.py (and the routed board for usb, core and copper), each with a --seed that must fail: latch VER-33, usb VER-191, audio VER-100, module VER-204 (the module's 3V3, C10's distance, EN), sdinsert VER-206 (a card plugged in while running), shelf VER-103, ampstate VER-196, hotplug VER-12, copper VER-13, mating VER-140 (no seed), mlccbias VER-30 (no seed) | |
 | [tools/check_backpower.py](tools/check_backpower.py) | the back-power path table (VER-159): in each power state, every live net that reaches an input of a part whose own supply is off; a path the ACCEPTED table does not list fails (--seed puts U1's REF back on VBUS) | |
@@ -96,6 +98,7 @@ python3 hardware/vv/tools/seed_faults.py                  # prove the trace gate
 python3 hardware/vv/tools/grid.py                         # rewrite grid.md from the register (--check: is it current?)
 python3 hardware/vv/tools/stale_names.py                  # live rows naming a part or net design.py lost
 python3 hardware/vv/tools/repo_paths.py                   # repository paths the register names that moved or left
+python3 hardware/vv/tools/design_cites.py                 # DESIGN.md line cites that point at the wrong line
 python3 hardware/vv/tools/design_numbers.py --list        # the scripted pre-order numbers
 ```
 
@@ -270,7 +273,7 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   DFMEA:COVERAGE fails: the register describes no RP2350B design yet. The exception is a check
   whose covers name only docs/static, hardware/ref_design/datasheets or hardware/vv's text (not
   its scripts under tools/, which read design.py) and whose procedure names no design file: it
-  reads none of the dropped board's files, so the chip gate's dev-board tests (VER-221 to VER-225), the
+  reads none of the dropped board's files, so the chip gate's bridge test (VER-251), the dropped board's dev-board tests (VER-221 to VER-225), the
   datasheet download (VER-233) and the requirements review (VER-189) can run before the RP2350B
   design.py exists (F's audit: NM-03 could not exit before NM-05 otherwise).
 - **Every live requirement is allocated to subsystems** (2026-10-28): a `- Subsystem:` line names
@@ -279,7 +282,7 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
 - **The new-MCU path** (gates.md, 2026-10-28): stages NM-01 to NM-11 from the requirements to
   DVT and PVT, each with entry and exit needs; the default mode prints the stage the register is
   at (the first whose entry or exit needs are not met; the stage an entry names is order only).
-  The case gate is NM-09, after the order gate: its PHASE:CASE counts every ORDER check. Stage 3 is the chip gate on a dev board; a fail there
+  The case gate is NM-09, after the order gate: its PHASE:CASE counts every ORDER check. Stage 3 is the chip gate on the stripboard Pico 2; a fail there
   sends the project to the fallback chip before any copper.
 - **A path the register names exists** (2026-10-28, VER-220). Every repository path in a file
   under hardware/vv, the saved outputs aside, is in HEAD's tree, or is written
@@ -471,7 +474,7 @@ next spin to the RP2350B with a 16 MB flash. This re-seed (branch vv-rp2350b, fr
 allocations `.B`; the F1C200s-only rows DROPPED (REQ-PRD-12, -13, -16, REQ-PWR-22, REQ-STO-01 to -03,
 DF-203, -204, -207, -208, -209, -243 to -245, ten checks); REQ-PRD-14 and -15 rewritten, REQ-PRD-18 and
 REQ-SOC-09 new, REQ-PRD-09 Alex's all-in cost; DF-252 to DF-261 and VER-251 to VER-256 new; the
-chip gate (NM-03) is the phone bridge test plus XIP from the 16 MB flash. Alex approved the REQ-PRD rows
+chip gate (NM-03) is the phone bridge test (XIP, VER-252, moved to the first board at EVT on 2026-10-30). Alex approved the REQ-PRD rows
 in chat, as worded at c3aec22 and at his review of 2026-10-29 (PLAN.md section b2: -02.B, -03.B, -14, -15 as written; -08.B and -18 rewritten; -19 new; -09 with his numbers, $60 and $40; branch vv-review-1, REQ-SOC-10, VER-258 to VER-261 and DF-262 to DF-265 new); nothing is signed, so every requirement is PROPOSED and APPROVALS.md
 is empty. No RP2350B check has run: there is no RP2350B design. The register is at stage NM-01 of the
 new-MCU path; the order gate fails, as it should (PLAN.md section i).
