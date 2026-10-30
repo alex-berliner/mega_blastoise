@@ -1374,6 +1374,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The panel shall run its 8-bit 8080 bus (IM2-0 = 011, CSX and RDX as the bus needs) from the RP2350B through a PIO state machine and DMA, or from GPIO if the chip gate shows PIO cannot (VER-224).
 - Rationale: proves the interface straps and the bus: the panel is on the 8-bit 8080 bus (er-tft035ips-6.txt:718; docs/living/display_parallel_proposal.md). Was: 4-wire SPI.
 - Source: er-tft035ips-6.txt:709-722; design.py PANEL.
+- Numbers: 8 = datasheet: er-tft035ips-6.txt:678 "8080 MCU 8-bit Bus Interface"; 8080 = datasheet: er-tft035ips-6.txt:678 "8080 MCU 8-bit Bus Interface"; 011 = datasheet: er-tft035ips-6.txt:678 "0 1 1 8080 MCU"
 - Method: T
 - Verified by: VER-224, VER-60
 - Phase: ORDER
@@ -1387,6 +1388,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: 8080 writes at the firmware's write clock shall draw 10 full 320 x 480 frames of a checker pattern with 0 corrupted pixels, the clock inside the ILI9488's write cycle with its tolerance.
 - Rationale: the ILI9488's parallel write cycle is 40 ns (twc, ili9488.txt:16159), so 25 MHz is the limit with 0 ns spare (VER-199, DF-206); RGB565 is two bytes a pixel over the 8-bit bus.
 - Source: ili9488.txt:16159-16172; pinmap.md Display.
+- Numbers: 8080 = datasheet: er-tft035ips-6.txt:678 "8080 MCU 8-bit Bus Interface"; 10 = count: ten frames, no standard sets it, fewer cannot show an intermittent corrupt pixel, more costs bench time; 320 x 480 = datasheet: er-tft035ips-6.txt:162 "Display Format 320x480"; 0 corrupted pixels = count: none allowed, zero by definition and not a sample
 - Method: T
 - Verified by: VER-61, VER-199
 - Phase: EVT
@@ -1400,6 +1402,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: J3 pin j shall carry panel pin 51 - j for all 50 contacts, so LED_A (panel pin 1) is on J3 pin 50.
 - Rationale: the folded FPC lands its contact 1 at J3's far end; a reversed map puts VSYS on a logic pin.
 - Source: design.py display section (J3's map, the same on the RP board); pin_review/panel.json; the ER-TFT035IPS-6's map since 79de1f7.
+- Numbers: 51 = derived: the folded tail reverses the order of the 50 contacts, so J3 pin j meets panel pin 50 + one - j: 50 + one = 51; 50 = datasheet: er-tft035ips-6.txt:164 "50 Pin 0.5mm Pitch Bottom Contact ZIF Connector"
 - Method: A, T
 - Verified by: VER-02, VER-136
 - Phase: ORDER
@@ -1413,6 +1416,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The panel's FPC tail shall be 0.30 +-0.05 mm thick (the ER-TFT035IPS-6's drawing: 0.3 +-0.03) and 25.5 +-0.07 mm wide, and the folded FPC shall reach J3 with 0.5-3 mm of slack and no crease.
 - Rationale: the FH12-50S's FPC specification; too short cannot mate, too long bows under the panel.
 - Source: Hirose FH12 catalog p.2, p.11 (pin_review/j3.json); validation_plan #215, #160.
+- Numbers: 0.30 +-0.05 mm = datasheet: hirose_fh12.txt:51 "t=0.3±0.05" (the FH12 series FPC contact specification, catalog p.2); 0.3 +-0.03 = datasheet: er-tft035ips-6.txt:274 "0.3±0.03MM" (the panel drawing: FPC plus PI stiffener); 25.5 +-0.07 mm = datasheet: hirose_fh12.txt:705 "B±0.07" and hirose_fh12.txt:744 "50 24.5 25.5" (the connector's FPC width B for 50 contacts, catalog p.11) and the panel drawing's own width is 25.5±0.15 (er-tft035ips-6.txt:280), twice as loose; 0.5-3 mm = judgment: Rationale "too short cannot mate, too long bows under the panel", no source gives the fold slack, tighter than 0.5 mm risks a fold that cannot reach J3, looser than 3 mm bows the tail under the panel
 - Method: I
 - Verified by: VER-44, VER-106, VER-219
 - Phase: ORDER
@@ -1425,6 +1429,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At the firmware's highest duty the six LEDs shall draw 120 mA or less in total at worst-case tolerance of the backlight driver's parts and the system rail's range on the cell and on USB.
 - Rationale: the panel's 120 mA (6 x 20 mA); with R61 3.74k (BL_REF's divider, DEC-31) the worst case at 100% is 117.7 mA (VER-137). Was: 122.4 mA with R61 3.9k at be437f8.
 - Source: ER-TFT035IPS-6 section 4.4 (pin_review/panel.json); design.py backlight section (U6, Q5, Q6, R60, R61: the RP board's, kept); Claude's analysis (F-7, O-21).
+- Numbers: 120 mA = datasheet: er-tft035ips-6.txt:714 "lpn 110 120" (forward current, normal, 6-chip parallel, max)
 - Method: T, A
 - Verified by: VER-62, VER-137, VER-05
 - Phase: ORDER
@@ -1438,6 +1443,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The LED current shall exceed 120 mA in total for 5 us or less at any event, a USB plug-in while lit included (VSYS from the cell's 3.5-4.2 V up to 4.4 V).
 - Rationale: the panel publishes no pulse rating; the committed simulation models R61 3.9k (0.124 V, 56 mA a pin), not the 3.74k the RP board drew on BL_PWM (the RP2350B's PWM slice: 0.119 V, 54.1 mA a pin, 117.2 mA worst case for the six LEDs), and reads nothing from design.py (DEF-45, VER-05); it is re-run with the board's R61. Derivation (VER-189 fix, 2026-10-29): the 120 mA is the panel's rated maximum forward current (the datasheet quote above), so the LED current may not exceed it. The panel publishes no pulse rating, so the 5 us allowed above it is a design choice (Claude's), and is on the to-sign list as that number alone. Earlier cite (not a primary source): board/sim/backlight_results.txt (to re-run).
 - Source: hardware/ref_design/datasheets/er-tft035ips-6.pdf p.11, section 4.4 Backlight Characteristics (er-tft035ips-6.txt:713-715): forward current, normal, 6-chip parallel, max 120 mA (typ 110 mA).
+- Numbers: 120 mA = datasheet: er-tft035ips-6.txt:714 "lpn 110 120" (forward current maximum); 5 us = judgment: Rationale "a design choice (Claude's)", the panel publishes no pulse rating, looser lets the LEDs see more over-current charge than the steady 120 mA limit, tighter is harder to read on the scope that VER-62 uses; 3.5-4.2 V = derived: the cell between the cutoff of REQ-BAT-12 and the full charge voltage of REQ-BAT-01: 3.50 V up to 4.20 V; 4.4 V = datasheet: bq24074.txt:729 "4.3 4.4 4.5" (OUT pin regulation VO(REG) of the BQ24073, typical 4.4 V, its maximum is 4.5 V so a charger at the top of its spread exceeds this Statement by 0.1 V)
 - Method: A, T
 - Verified by: VER-05, VER-62
 - Phase: EVT
@@ -1450,6 +1456,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At the firmware's maximum duty and VSYS 3.5 V the LED current shall drop by 5% or less from its value at 4.2 V for LED Vf up to 3.2 V, and by 10% or less for Vf up to 3.4 V (the newer datasheet's maximum).
 - Rationale: brightness should not sag until the cutoff; at 18.0 mA an LED (54.1 mA a pin over three, nominal, R61 3.74k) its Vf sits near its 3.2 V typical (rated at 20 mA), and the sink needs about 0.13 V.
 - Source: pin_review/panel.json; design_review.md Backlight.
+- Numbers: 3.5 V = derived: the cutoff of REQ-BAT-12, 3.50 V, the lowest VSYS the firmware runs on; 5% = judgment: Claude's brightness-sag limit (O-21), no source on disk sets it, tighter needs a sink with more headroom, looser lets a viewer see the sag before the cutoff; 4.2 V = derived: the full charge voltage of REQ-BAT-01, 4.20 V, the highest cell voltage; 3.2 V = datasheet: er-tft035ips-6.txt:713 "3.0 3.2 V" (backlight supply voltage Vf at If=120 mA, typical 3.0 and maximum 3.2); 10% = judgment: Claude's limit for the worst LED in the newer datasheet's Vf range, tighter needs a sink with more headroom, looser lets the screen visibly dim near the cutoff; 3.4 V = judgment: the Statement names the newer datasheet's maximum, that datasheet is not on disk (unread) and the panel datasheet on disk gives 3.2 V maximum (er-tft035ips-6.txt:713), looser than 3.4 V is not claimed by any source, tighter than 3.2 V is the datasheet on disk
 - Method: A, T
 - Verified by: VER-05, VER-137, VER-62
 - Phase: ORDER
@@ -1474,6 +1481,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With 3V3 off, a VSYS hot plug shall produce less than 5 mA of LED current for less than 10 us.
 - Rationale: no flash at plug-in while the device is off. Derivation (VER-189 fix, 2026-10-29): a design choice: 5 mA is 4% of the panel's 120 mA maximum backlight current (5 / 120; er-tft035ips-6.txt:714-715), so no visible flash is expected for under 10 us. Earlier cite (not a primary source): board/sim/backlight_results.txt (4.7 mA peak, an older circuit); since 2026-10-28 VER-05 prints only an estimate (the gate's kick through Crss turns on the AO3400A's capacitance curve, a figure, and on how far the unlit LEDs let the drain move), so VER-62 measures it.
 - Source: Alex's decision (to sign)
+- Numbers: 5 mA = judgment: 4% of the panel's 120 mA maximum (er-tft035ips-6.txt:714), a design choice (Rationale), looser may show a flash at plug-in, tighter is harder to measure on a gate kick (VER-62); 10 us = judgment: a design choice (Rationale), a flash this short is not expected to be visible (Rationale), looser may become visible, tighter is harder to measure
 - Method: T
 - Verified by: VER-62
 - Phase: EVT
@@ -1486,6 +1494,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With TEON set, the panel's TE pin shall reach an RP2350B input and show one TE pulse per frame at 60 Hz +-10%.
 - Rationale: firmware starts frames on it to avoid tearing. Derivation (VER-189 fix, 2026-10-29): a design choice: 60 Hz is the frame rate the battler's display loop targets (Claude's reading; Alex to confirm), and 10% is 54 to 66 Hz, wide enough to read a TE pulse on a scope and narrow enough to tell a missed one. Earlier cite (not a primary source): bringup.md display step 6.
 - Source: Alex's decision (to sign)
+- Numbers: 60 Hz = judgment: the frame rate the battler's display loop targets (Claude's reading, Alex to confirm per the Rationale), the ILI9488 datasheet's own frame-rate example is 60.76 Hz (ili9488.txt:10841), looser (30 Hz) halves the redraw rate, tighter (120 Hz) is beyond the 12.3 ms of bus time a frame takes (REQ-DSP-11 Rationale); +-10% = judgment: 54 to 66 Hz, wide enough to read a TE pulse on a scope, narrow enough to tell a missed pulse (Rationale), looser cannot tell a missed pulse, tighter fails a scope's own reading error
 - Method: T
 - Verified by: VER-63
 - Phase: EVT
@@ -1499,6 +1508,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: A full-screen 320 x 480 RGB565 redraw over the 8-bit 8080 bus shall take 16.7 ms or less (60 fps).
 - Rationale: the 8080 bus at 25 MHz moves an RGB565 frame in 12.3 ms of bus time (18.4 ms in RGB666, VER-199); the RP2350B streams the frame from its 520 KB of SRAM over PIO, with no frame store beyond it (VER-224). Was: 220 ms over SPI.
 - Source: ili9488.txt:16159; docs/living/display_parallel_proposal.md; Claude's estimate (Alex sets the numbers: DEC-13).
+- Numbers: 320 x 480 = datasheet: er-tft035ips-6.txt:162 "Display Format 320x480"; 8-bit = datasheet: er-tft035ips-6.txt:678 "8080 MCU 8-bit Bus Interface"; 8080 = datasheet: er-tft035ips-6.txt:678 "8080 MCU 8-bit Bus Interface"; 16.7 ms = derived: one second divided by 60 fps = 16.7 ms; 60 fps = judgment: Claude's estimate, Alex sets it (DEC-13, Source), looser (30 fps) feels slower and the redraw budget doubles, tighter (120 fps) needs the bus above the 25 MHz write limit of REQ-DSP-02 (ili9488.txt:16159 twc 40 ns)
 - Method: A, T
 - Verified by: VER-224, VER-61, VER-199
 - Phase: ORDER
@@ -1526,6 +1536,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: A full-scale 1 kHz sine shall deliver 0.35 W or more into the 8 ohm speaker (4.75 V peak-to-peak across it or more) on a 3.8 V cell.
 - Rationale: designed 0.4-0.5 W on the cell, about 0.5 W on USB (VSYS 4.4 V); it clips below a 3.7 V cell.
 - Source: design_review.md Audio; pin_review/u7.json.
+- Numbers: 1 kHz = judgment: the usual single-tone test frequency for an amplifier's output power, and the FM8002A datasheet's power table uses it (fm8002a.txt:126 "f=1KHZ"), looser or tighter changes nothing but the filter corner it meets; 0.35 W = judgment: Claude's floor under the designed 0.4-0.5 W on the cell (Rationale), tighter (0.5 W) fails on a cell where the design gives 0.4-0.5 W, looser is audibly quieter; 8 ohm = judgment: the speaker's impedance as bom.md records it (INGHAi GSPK151035PN), its datasheet is not on disk (unread), looser or tighter follows the part chosen; 4.75 V = derived: the peak-to-peak of a sine that delivers 0.35 W into 8 ohm: Vpp = square root of (eight x 0.35 x 8) = 4.73 V, rounded up in the Statement; 3.8 V = judgment: a cell near its middle (nominal 3.7 V, full 4.2 V), the Rationale says the amplifier clips below a 3.7 V cell, tighter (3.5 V) fails by design, looser (4.2 V) hides the loss at a mid-charge cell
 - Method: T
 - Verified by: VER-64
 - Phase: EVT
@@ -1550,6 +1561,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The audio chain shall be -3 dB at 10 kHz or higher and at 50 Hz or lower.
 - Rationale: a 15 mm speaker reproduces little above 10 kHz, so the chain need not pass more; the chosen source's filter (PWM or I2S, still open) is held to this at its component corners in VER-100. The RP board's two-stage RC (1k and 4.7 nF, then 220 nF into 20k) was -3 dB at about 14 kHz loaded: the starting point if the source is PWM. Derivation (VER-189 fix, 2026-10-29): a design choice: 10 kHz is under half of the 32 kHz mixer rate (REQ-PRD-18; 32 / 2 = 16 kHz Nyquist) and near what a 15 mm speaker can reproduce; 50 Hz is the low end. Earlier cite (not a primary source): design_review.md Audio.
 - Source: Alex's decision (to sign)
+- Numbers: -3 dB = judgment: the half-power corner is the convention for a bandwidth, looser (-6 dB) lets the response sag audibly at the edges, tighter (-1 dB) is stricter than a 15 mm speaker needs; 10 kHz = judgment: Rationale "a 15 mm speaker reproduces little above 10 kHz" and it is under the 16 kHz Nyquist of the 32 kHz mixer (REQ-AUD-07), looser (16 kHz) asks the chain for more than the speaker plays, tighter (5 kHz) loses the top of the sound; 50 Hz = judgment: the low end of what a 15 mm speaker plays (Rationale), looser (200 Hz) loses the bass, tighter (20 Hz) asks for what the speaker cannot reproduce
 - Method: A, T
 - Verified by: VER-100, VER-64
 - Phase: EVT
@@ -1562,6 +1574,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: After 10 min of a continuous full-scale 1 kHz tone on USB at 25 C, the amplifier's top shall be 85 C or less.
 - Rationale: about 0.54 W in an SOIC-8; the case skin limit is REQ-THM-01. Derivation (VER-189 fix, 2026-10-29): the amplifier's top at 85 C or less is the datasheet's maximum operating temperature; the 10 min of full-scale 1 kHz at 25 C is the test that heats it (0.54 W in an SOIC-8, REQ-THM-01 for the skin limit). Earlier cite (not a primary source): design_review.md Audio; bringup.md step 4.
 - Source: hardware/ref_design/datasheets/fm8002a.pdf p.3, absolute maximum table (fm8002a.txt:110): operating temperature TOPR -40 to 85 C.
+- Numbers: 10 min = judgment: the test that heats the part to steady state (Rationale), tighter may stop before the part reaches steady state, looser costs bench time; 1 kHz = judgment: the usual single-tone test frequency, the same tone as REQ-AUD-01, looser or tighter changes only which tone heats the part; 25 C = standard: IEC 62368-1:2010 (ed. 1, superseded; current is ed. 4, 2023) B.1.7 "room ambient air temperature will be 25 ° C"; 85 C = datasheet: fm8002a.txt:110 "TOPR -40 85" (operating temperature, in the absolute maximum table)
 - Method: T
 - Verified by: VER-64, VER-200
 - Phase: EVT
@@ -1575,6 +1588,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With the amplifier's enable off the amplifier shall draw 10 uA or less and be silent; with it on it shall reach full level within 50 ms with no pop over 10 mV at the speaker.
 - Rationale: 4.2 uA shutdown typical; about 100 ms to charge the bypass capacitor.
 - Source: FM8002A datasheet p.3 (pin_review/u7.json); design.py U7 and Q3 with R36 and R37 (shutdown held until the MCU enables it; the RP board's, kept on the RP2350B board); pinmap.md Audio.
+- Numbers: 10 uA = judgment: the datasheet gives only a typical power-down leakage IOFF of 4.2 uA (fm8002a.txt:123 "4.2 uA") and no maximum, 10 uA is about 2.4 times the typical, looser takes more of the 30 uA off budget of REQ-PWR-07, tighter fails a typical part with spread; 50 ms = judgment: Claude's limit for the amplifier waking before the first sound, the datasheet gives a wake time TD of 100 ms typical (fm8002a.txt:133 "100 ms", as the Rationale says) which is twice this Statement, so on paper the Statement is not met unless the bypass capacitor is smaller, looser (100 ms) matches the datasheet, tighter (20 ms) needs a smaller bypass capacitor and more noise; 10 mV = judgment: Claude's figure for a pop too small to hear on an 8 ohm speaker (no source on disk), looser lets a pop be heard, tighter is harder to read on a scope at the speaker
 - Method: T
 - Verified by: VER-64, VER-196
 - Phase: EVT
@@ -1588,6 +1602,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The firmware shall cap full scale to the speaker's rating: 0.5 W into 8 ohm for the GSPK151035PN, or the rating of the speaker the release names.
 - Rationale: U7 gives about 0.5 W into 8 ohm on USB at full scale and more once it clips toward a square wave (DF-213). Derivation (VER-189 fix, 2026-10-29): the speaker's 0.5 W into 8 ohm is the INGHAi GSPK151035PN's rating as bom.md records it; its datasheet is not in hardware/ref_design/datasheets, so it is not cited as one. Capping at the rating keeps U7's 0.5 W on USB (more when clipped) inside it. Earlier cite (not a primary source): bom.md (INGHAi GSPK151035PN, C530539, 0.5 W; the RP board's, the speaker stays); Claude's review (O-31).
 - Source: Alex's decision (to sign)
+- Numbers: 0.5 W = judgment: the INGHAi GSPK151035PN's rating as bom.md records it, the speaker's datasheet is not on disk (unread), looser overdrives a part rated lower, tighter wastes loudness the speaker can take; 8 ohm = judgment: the same speaker's impedance, as bom.md records it (datasheet unread), looser or tighter follows the part the release names
 - Method: I
 - Verified by: VER-128
 - Phase: EVT
@@ -1600,6 +1615,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The audio source, a PWM or I2S stream the RP2350B generates because the chip has no DAC, shall play the mixer's output at a sample rate of 32 kHz or more, and any carrier or image it leaves at the speaker shall be 40 dB or more below the full-scale 1 kHz level at the worst component corner.
 - Rationale: REQ-PRD-18 sets the mixer at 8 channels and 32 kHz, and the amplifier (U7) takes an analogue input, so the stream must be turned into one. VER-64 and VER-100 still test a 40 dB carrier with no live requirement behind it, the row that held it being dropped with the ESP32-S3 board (found by VER-189; Was: REQ-AUD-02). The source (PWM or I2S) is chosen at NM-04 (VER-100).
 - Source: Alex's decision (to sign): the 40 dB carrier limit is Claude's engineering number, kept by Alex's decision of 2026-10-29; the 32 kHz is REQ-PRD-18 (Alex, 2026-10-29: 8 channels at 32 kHz).
+- Numbers: 32 kHz = spec: Alex, 2026-10-29, REQ-PRD-18 (8 channels at 32 kHz, his rewrite approved on his review, recorded in requirements.md); 40 dB = judgment: Claude's engineering number, kept by Alex's decision of 2026-10-29 (Source), looser leaves an audible carrier, tighter needs a second filter stage and more parts; 1 kHz = judgment: the usual single-tone reference level, the same frequency REQ-AUD-01 uses, looser or tighter changes only the reference
 - Method: A, T
 - Verified by: VER-100, VER-64
 - Phase: EVT
@@ -1615,6 +1631,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: A DS Lite pill pressed on a contact shall measure under 1 kohm on ENIG, and each input shall still read pressed up to 15 kohm of pill resistance, against whatever pull-up and input threshold the RP2350B board reads it through.
 - Rationale: carbon pill on gold; the contacts are read directly on RP2350B GPIOs through the 47k pull-up arrays (RN1-RN4, DEC-24). A pill of 15 kohm against a 47k pull-up at -5% (44.65k) puts 3.3 V x 15 / (15 + 44.65) = 0.83 V on the pad, so the GPIO's VIL must be 0.83 V or more; the RP2350's VIL is read from its datasheet (VER-233, VER-232), and 0.94 V (a 74HC165's at 3.3 V) would read a pill pressed up to about 17 kohm. If VIL is lower, the pull-up falls or the 15 kohm is restated by Alex (DF-230). Was: the RP2350's 50k internal pull-up allowed 10 kohm; 3.7 kohm with 10k at be437f8.
 - Source: validation_plan gate item 5, #42, #137; the RP2350 datasheet's pad input levels (to download: VER-233).
+- Numbers: 1 kohm = judgment: Claude's limit for a carbon pill on ENIG (Rationale), much below the 47k pull-up so the line reads clean, tighter fails more pills, looser narrows the margin to the 15 kohm limit; 15 kohm = judgment: Claude's limit (Rationale, DF-230): the pad voltage with a 15 kohm pill against a 44.65k pull-up is 0.83 V, but the RP2350's VIL maximum at IOVDD 3.3 V is 0.8 V (rp2350.txt:86760 "IOVDD=3.3 V -0.3 0.8"), which allows a pill of only about 14.3 kohm, so on paper this Statement is not met, tighter (14 kohm) meets the datasheet, looser lets a worn pill read as open
 - Method: T
 - Verified by: VER-45, VER-56, VER-248
 - Phase: EVT
@@ -1628,6 +1645,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Leakage between a contact's two combs shall be 100 Mohm or more at 4.2 V, clean and after 24 h at high humidity.
 - Rationale: seat 1's Start's contact carries a rail on one pad (the diode into PWR_EN), so leakage across it turns the device on (REQ-PWR-11); on the others it reads as a press. Derivation (VER-189 fix, 2026-10-29): 100 Mohm at 4.2 V is 4.2 V / 100 Mohm = 42 nA at most across a contact; the 47k pull-up arrays (REQ-PRD-01.B) are about 2100 times lower in resistance (100M / 47k), so a leak this size reads as open. A design choice. Earlier cite (not a primary source): validation_plan gate item 5, #185.
 - Source: Alex's decision (to sign)
+- Numbers: 100 Mohm = judgment: 4.2 V over 100 Mohm leaks 42 nA, about 2100 times less than the 47k pull-up draws (Rationale), looser lets a wet contact read as a press, tighter is a harder measurement on a bare coupon; 4.2 V = derived: the full charge voltage of REQ-BAT-01, 4.20 V, the highest voltage a rail puts on a contact; 24 h = judgment: Claude's choice of one day, the humidity itself is not stated in the Statement and no standard on disk sets it, looser (1 h) misses slow moisture films, tighter (96 h) costs bench time
 - Method: T
 - Verified by: VER-46, VER-248
 - Phase: EVT
@@ -1640,6 +1658,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The combs shall keep a copper gap of 0.20 mm or more; the worst bridging spot shall be 1.60 mm or less for the 4-ring under the 3.5 mm D-pad and A/B/X/Y pill; one 4.8 mm mask opening shall uncover all comb copper with no paste or silk.
 - Rationale: the DS Lite's measured comb; 0.20 mm sits above JLC's minimum spacing. Start and Select are metal domes since 2d1124d (REQ-BTN-08). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.20 mm is above the minimum spacing JLC lists for 2 layers (REQ-FAB-03; its page is not on disk); the 1.60 mm bridging spot against the 3.5 mm pill leaves (3.5 - 1.6) / 2 = 0.95 mm of registration (REQ-BTN-06). Earlier cite (not a primary source): hardware/ref_design/board/membrane/README.md; check_contact_fp.py; case/DSLITE.md.
 - Source: Alex's decision (to sign)
+- Numbers: 0.20 mm = judgment: the comb's measured gap, above JLC's minimum spacing (the JLC page is not on disk), board/membrane/README.md:34 records 0.200 mm, tighter than the fab's minimum risks a short, looser means the pill must be larger to bridge it; 1.60 mm = judgment: the smallest contact spot that bridges the nets anywhere on the comb (board/membrane/README.md:35 "1.60 mm across"), it leaves 0.95 mm of registration against the 3.5 mm pill, tighter means finer copper, looser eats the registration of REQ-BTN-06; 4-ring = count: the comb pattern has four rings (board/membrane/README.md:283 "4 rings"), a design choice and not a sample; 3.5 mm = judgment: the low end of the DS Lite pill's 3.5-4 mm range inferred from the measured comb (board/membrane/README.md:35 and :116), the pill itself is not measured on disk, looser (4 mm) overstates the registration, tighter (3 mm) is smaller than any DS Lite pill seen; 4.8 mm = judgment: the mask opening of the comb pattern (board/membrane/README.md:37 "one 4.80 mm opening"), a design choice that uncovers all comb copper, looser lets the mask edge sit on a ring, tighter leaves comb copper covered
 - Method: A
 - Verified by: VER-08, VER-132, VER-162
 - Phase: ORDER
@@ -1652,6 +1671,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: No via, pour or other copper shall lie within 2.9 mm of a contact's centre except its own two 0.2 mm stubs.
 - Rationale: a tented via under a pill lifts it. Derivation (VER-189 fix, 2026-10-29): a design choice: 2.9 mm is the 4.8 mm mask opening's radius of 2.4 mm plus 0.5 mm; no copper inside it lifts the pill. Earlier cite (not a primary source): design_review.md Membrane contacts.
 - Source: Alex's decision (to sign)
+- Numbers: 2.9 mm = derived: REQ-BTN-03's 4.8 mm opening has a radius of half of 4.8 = 2.4 mm, plus the 0.5 mm margin: 2.4 + 0.5 = 2.9 mm; in: 0.5 mm margin = judgment: the margin outside the mask opening where no copper may lift the pill (Rationale), looser lets a via's tenting touch the pill, tighter costs routing room under the pad; 0.2 mm = judgment: the width of a contact's own stubs, the same 0.20 mm line the comb is drawn with (board/membrane/README.md:34), looser lets a stub reach the pill, tighter risks an open stub
 - Method: A
 - Verified by: VER-132
 - Phase: ORDER
@@ -1664,6 +1684,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Each button's actuation force shall be within +-30% of a genuine DS Lite's, and its travel within +-0.2 mm, measured the same way.
 - Rationale: the point of DS Lite parts is the DS Lite feel; a relative limit avoids inventing an absolute number. Derivation (VER-189 fix, 2026-10-29): a design choice: the DS Lite feel is the aim (DESIGN.md:57), so the limits are relative to a genuine one, +-30% force and +-0.2 mm travel, with no absolute number invented. Earlier cite (not a primary source): validation_plan #43; case/DSLITE.md.
 - Source: Alex's decision (to sign)
+- Numbers: 30% = judgment: Claude's limit relative to a genuine DS Lite (Rationale: a relative limit avoids an absolute number), looser lets the feel change noticeably, tighter fails pads that differ part to part; 0.2 mm = judgment: Claude's limit relative to a genuine DS Lite, looser lets the feel change noticeably, tighter is harder to resolve in the measurement
 - Method: T
 - Verified by: VER-50
 - Phase: CASE
@@ -1676,6 +1697,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Each pill's centre shall land within 0.9 mm of its comb's centre at worst-case tolerance.
 - Rationale: (3.5 mm pill - 1.6 mm bridging spot) / 2 is about 0.95 mm. Derivation (VER-189 fix, 2026-10-29): (3.5 mm pill - 1.6 mm bridging spot) / 2 = 0.95 mm is the most the centre may miss by before the pill no longer bridges; 0.9 mm leaves 0.05 mm of margin. Earlier cite (not a primary source): validation_plan #197.
 - Source: Alex's decision (to sign)
+- Numbers: 0.9 mm = derived: REQ-BTN-03's pill of 3.5 mm less its 1.60 mm bridging spot, halved: 3.5 - 1.60 halved = 0.95 mm, less the 0.05 mm margin = 0.9 mm; in: 0.05 mm margin = judgment: what is left between the 0.95 mm the geometry allows and the Statement, looser means a pill can lose its bridge at the limit, tighter cannot be shown at tolerance
 - Method: A, I
 - Verified by: VER-174, VER-51
 - Phase: ORDER
@@ -1688,6 +1710,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Each contact shall keep its closed resistance under 1 kohm for 100,000 presses.
 - Rationale: Claude's estimate for a toy used daily for a few years. Derivation (VER-189 fix, 2026-10-29): 100,000 presses over 3 years is 100,000 / (3 x 365) = about 91 presses a day, a toy used daily; the 1 kohm closed resistance is well under the 47k pull-up (about 2% of it, 1k / 47k), so the line still reads low. A design choice. Earlier cite (not a primary source): Claude's estimate; validation_plan #159.
 - Source: Alex's decision (to sign)
+- Numbers: 1 kohm = derived: the closed-contact limit of REQ-BTN-01, 1 kohm, unchanged by wear; 100,000 presses = judgment: Claude's estimate for a toy used daily for a few years (Rationale), 100,000 over 3 years is about 91 presses a day, looser (1,000,000) costs months of cycling on the test rig, tighter (10,000) is a year of light use
 - Method: T
 - Verified by: VER-94
 - Phase: DVT
@@ -1700,6 +1723,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Each 4 mm metal dome (HYP 600-415S-260) shall sit with its rim on its footprint's ring all round at 0.1 mm of placement error, close under its cap's full travel, and rest open with its plunger 0.05 mm or more clear of its apex at the measured Start/Select strip.
 - Rationale: a dome pressed at rest under seat 1's Start, the power key (REQ-PWR-21), turns the device on in the case for good (DF-242); the strip's plunger height is an estimate (ss_lift). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.1 mm of placement error and 0.05 mm of plunger clearance keep a dome from being pressed at rest, which would hold seat 1's Start, the power key, on. The dome part is HYP 600-415S-260; its drawing (dome_600-415s-260.pdf) has no text to cite. Earlier cite (not a primary source): design.py SW20-SW23 (Dome_4mm_Round); case.scad ss_metal_dome, ss_lift; hardware/ref_design/PLAN.md row 4.
 - Source: Alex's decision (to sign)
+- Numbers: 4 mm = judgment: the dome diameter of the part chosen (ref_design PLAN.md:26 "4 mm metal snap domes"), its drawing dome_600-415s-260.pdf has no text to quote, looser or tighter follows another dome part; 600-415S-260 = judgment: the HYP part Claude chose (PLAN.md row 4), a drawing with no text, looser or tighter is another dome with another force and travel; 0.1 mm = judgment: the placement error a dome must tolerate (Rationale: a design choice), looser lets the rim leave its ring, tighter is harder for the assembly house to place; 0.05 mm = judgment: the plunger clearance above the dome apex (case.scad assert), looser costs button travel, tighter lets a dome rest pressed and hold seat 1's Start on
 - Method: A, I
 - Verified by: VER-178, VER-180, VER-48
 - Phase: CASE
@@ -1724,6 +1748,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every contact shall be read at least every 2 ms, so a press of 10 ms or more is never missed.
 - Rationale: the contacts are read directly on GPIOs (Alex, 2026-10-29), so the read is a poll of 20 pad levels and its rate is the firmware's; behind the 74HC165 chain (the pin-relief option) it would be a shift-register scan. Claude's proposal.
 - Source: Claude's estimate; Alex to set it.
+- Numbers: 2 ms = judgment: Claude's proposal (Source), five reads inside the shortest press, looser leaves fewer reads inside a 10 ms press, tighter spends firmware time for no gain; 10 ms = judgment: a press of this length or more must not be missed, longer than a tactile contact's bounce and shorter than a deliberate tap, looser (20 ms) misses quick taps, tighter (5 ms) catches bounce as presses
 - Method: T, A
 - Verified by: VER-56, VER-199
 - Phase: EVT
@@ -1738,6 +1763,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every part on the board shall clear its local case limit by 0.2 mm or more, using heights from each part's drawing or a measurement, with 0 parts on guessed heights.
 - Rationale: check_fit guesses package heights today (DF-229). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.2 mm of margin on a drawn or measured height, and 0 parts on guessed heights. Earlier cite (not a primary source): validation_plan #96, #130, gate item 7.
 - Source: Alex's decision (to sign)
+- Numbers: 0.2 mm = judgment: the clearance margin on a drawn or measured height (Rationale: a design choice), looser leaves no room for the print's tolerance, tighter costs case thickness; 0 parts = count: no part on a guessed height, zero by definition and not a sample
 - Method: A
 - Verified by: VER-06, VER-112
 - Phase: ORDER
@@ -1750,6 +1776,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The Z stack (the tub's floor and pockets, cell, board, parts, speaker, panel, tape, the one-piece top) shall close with 0.2 mm or more of margin at worst-case tolerance including 0.4 mm of cell swelling.
 - Rationale: nominal fits fail at tolerance. Derivation (VER-189 fix, 2026-10-29): a design choice: 0.2 mm margin after the 0.4 mm of cell swelling that REQ-BAT-07 holds; nominal fits fail at tolerance. Earlier cite (not a primary source): validation_plan #25, #132, gate item 7.
 - Source: Alex's decision (to sign)
+- Numbers: 0.2 mm = judgment: the margin at worst-case tolerance after the cell's swelling (Rationale: a design choice), looser leaves no room for the print's tolerance, tighter costs case thickness; 0.4 mm = derived: the swelling REQ-BAT-07 holds, 0.4 mm
 - Method: A
 - Verified by: VER-20
 - Phase: CASE
@@ -1762,6 +1789,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every cap shall sit and press its full dome travel (the D-pad rocked in 8 directions) with 0 contact with the shell, and at rest touch only its dome.
 - Rationale: a cap that drags or is preloaded feels wrong or sticks; seat 1's Start cap (the power key) held down keeps the device on. Derivation (VER-189 fix, 2026-10-29): a design choice: a cap that touches the shell drags or sticks, and seat 1's Start held by a dragging cap keeps the device on (REQ-PWR-21). Earlier cite (not a primary source): case/check_buttons.py.
 - Source: Alex's decision (to sign)
+- Numbers: 8 directions = count: the D-pad has four arms and four diagonals, eight positions to rock through, a design fact and not a sample; 0 contact = count: none allowed, zero by definition and not a sample
 - Method: A, D
 - Verified by: VER-07, VER-48
 - Phase: CASE
@@ -1774,6 +1802,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The board shall fit the tub in 1 orientation only, and each A/B/X/Y cap in 1 hole and 1 rotation only.
 - Rationale: no wrong assembly by hand. Derivation (VER-189 fix, 2026-10-29): a design choice: one orientation and one rotation, so hand assembly (REQ-ASM-01) cannot go wrong. Earlier cite (not a primary source): assembly.md sections 3 and 5.
 - Source: Alex's decision (to sign)
+- Numbers: 1 orientation = count: keyed to a single way, unique by definition; 1 hole = count: each cap fits one hole, unique by definition; 1 rotation = count: each cap fits one rotation, unique by definition
 - Method: I
 - Verified by: VER-48
 - Phase: CASE
@@ -1786,6 +1815,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The case shall survive 20 open/close cycles with its six M2 screws, with 0 cracked keys or grip ribs, 0 stripped bosses and 0 torn cell leads.
 - Rationale: the first PLA print's hooks snapped (DEF-15) and the one-piece top's joints are thin printed features (DF-232); service needs opening, and the cell comes out with the tub on its leads (DF-239). Derivation (VER-189 fix, 2026-10-29): a design choice: 20 cycles covers a few services and bring-up opens per unit; the panel's connector is limited separately (REQ-TST-07). Earlier cite (not a primary source): validation_plan #194; assembly.md steps 9-10.
 - Source: Alex's decision (to sign)
+- Numbers: 20 open/close cycles = judgment: covers a few services and the bring-up opens per unit (Rationale), looser misses the hooks' fatigue (the first print's hooks snapped, DEF-15), tighter costs test time; 0 cracked keys or grip ribs = count: none allowed, zero by definition and not a sample; 0 stripped bosses = count: none allowed, zero by definition and not a sample; 0 torn cell leads = count: none allowed, zero by definition and not a sample
 - Method: T
 - Verified by: VER-92
 - Phase: DVT
@@ -1798,6 +1828,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: After the drop test the cell shall have moved 1 mm or less, the cell plug and the panel FPC shall still be seated, and the panel shall be uncracked.
 - Rationale: a loose cell or plug in a dropped handheld is a hazard and a fault. Derivation (VER-189 fix, 2026-10-29): a design choice: 1 mm of cell movement, with the plugs and the panel still seated and uncracked after the drop. Earlier cite (not a primary source): validation_plan #183.
 - Source: Alex's decision (to sign)
+- Numbers: 1 mm = judgment: the cell movement a pocket and tape may allow after the drop (Rationale: a design choice), looser lets the plug unseat, tighter is below the pocket's tolerance
 - Method: T
 - Verified by: VER-93
 - Phase: DVT
@@ -1810,6 +1841,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: 5 different USB-C cables shall seat fully with the case closed.
 - Rationale: overmolds vary; the opening was widened once already (c35514f). Derivation (VER-189 fix, 2026-10-29): a design choice: 5 different cables is a sample of the overmolds sold; the opening was already widened once (c35514f). Earlier cite (not a primary source): validation_plan #51.
 - Source: Alex's decision (to sign)
+- Numbers: 5 different USB-C cables = count: a sample of the overmolds sold (Rationale), no standard sets it, fewer cannot show a spread of overmolds, more costs cables bought
 - Method: T
 - Verified by: VER-80
 - Phase: EVT
@@ -1822,6 +1854,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The printed top and tub shall have 0 through-openings other than the listed ones (USB-C, cap holes, speaker grille, screw holes).
 - Rationale: screw pilots and a notch once came through the face (DEF-19). Derivation (VER-189 fix, 2026-10-29): a design choice: any through-opening other than the listed ones lets in dust and light; DEF-19 was one such. Earlier cite (not a primary source): 177123c.
 - Source: Alex's decision (to sign)
+- Numbers: 0 through-openings = count: none besides the listed ones, zero by definition and not a sample
 - Method: A, I
 - Verified by: VER-113, VER-48
 - Phase: CASE
@@ -1835,6 +1868,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Each of the four side screws (H1-H4, under the screen band) shall engage 4.0 mm or more of its pilot above the board and end 0.5 mm or more short of the pilot's end; each of the two end screws (H5, H6, under the button ends) shall engage 3.0 mm or more and end 0.1 mm or more short.
 - Rationale: self-tapping screws in printed plastic want 2 to 2.5 x d where the pilot allows it; the end pilots stop 0.6 mm under the ends' face and hold 3.30 mm at most, so one number for all six could never pass (F's objection). M2 x 6 gives 3.2 mm in both today (VER-147); M2 x 7 in the side pilots gives 4.2 mm with the tip 0.8 mm short (DEC-18, DEF-31). Derivation (VER-189 fix, 2026-10-29): self-tapping screws want 2 to 2.5 x d in printed plastic: M2 gives 4.0 to 5.0 mm (the side screws take 4.0 mm); the end pilots hold at most 3.30 mm, so 3.0 mm = 1.5 x d with 0.1 mm to the end. A design choice. Earlier cite (not a primary source): case.scad; Claude's analysis (O-52).
 - Source: Alex's decision (to sign)
+- Numbers: 4.0 mm = judgment: two screw diameters of the M2, the bottom of the 2 to 2.5 x d rule for self-tapping screws in printed plastic (Claude's analysis O-52, no source on disk), looser holds less, tighter needs a deeper pilot than the side bosses have; 0.5 mm = judgment: the gap between the tip and the pilot's end (Rationale: a design choice), looser lets a tip reach the end and crack it, tighter costs engagement; 3.0 mm = judgment: 1.5 x d for the end pilots, which hold 3.30 mm at most (Rationale), looser holds less, tighter than 3.3 mm is beyond the pilot's own limit; 0.1 mm = judgment: the end pilots stop 0.6 mm under the face and hold 3.30 mm at most, so the tip stops 0.1 mm short (Rationale), looser costs engagement, tighter is below the print's tolerance
 - Method: A, T
 - Verified by: VER-147, VER-92
 - Phase: CASE
@@ -1847,6 +1881,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The panel shall stay bonded in the top's pocket, with no mura and no new contact marks, after 100 presses of 20 N at the glass centre and 24 h at 50 C, on a tape whose part number the release record names.
 - Rationale: two players point at and press the shared screen; the panel lies on 0.15 mm tape 0.8 mm over the cell and 0.4 mm over J3 (DF-229). Derivation (VER-189 fix, 2026-10-29): a design choice: two players press the shared screen, so 100 presses of 20 N and 24 h at 50 C with no mura. Earlier cite (not a primary source): Claude's review (O-59).
 - Source: Alex's decision (to sign)
+- Numbers: 100 presses = judgment: Claude's figure for two players pressing the shared screen (Rationale: a design choice, O-59), looser shows no wear, tighter costs test time; 20 N = judgment: a firm finger press on the glass centre, IEC 62368-1:2010 (ed. 1, superseded) Annex T.2 and T.3 use 10 N and 30 N for fittings and enclosures, not for a glass press, looser (30 N) risks the glass, tighter (10 N) is a light touch; 24 h = judgment: Claude's soak for the tape's bond at temperature, looser misses creep, tighter costs bench time; 50 C = judgment: above the 40 C ambient of REQ-THM-04, looser is a harsher test than the use, tighter is no hotter than the use
 - Method: T
 - Verified by: VER-154
 - Phase: EVT
@@ -1859,6 +1894,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every connector's mouth (USB-C with a mated plug, the cell's plug and wires, the panel's FPC lead-in, the speaker's plug and its leads) shall be clear of parts taller than 1 mm and of every case wall but its own opening.
 - Rationale: the USB-C opening was fixed twice (VER-165, DF-233). Was: J5 with a JST SH cable, and the pinholes. Derivation (VER-189 fix, 2026-10-29): a design choice: 1 mm of height clear at each connector mouth; the USB-C opening was fixed twice (VER-165). Earlier cite (not a primary source): Claude's review (F-28).
 - Source: Alex's decision (to sign)
+- Numbers: 1 mm = judgment: the height clear at each connector mouth (Rationale: a design choice, F-28), looser blocks a plug's overmold, tighter leaves no room for a fingertip
 - Method: A
 - Verified by: VER-165
 - Phase: CASE
@@ -1872,6 +1908,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every MLCC's pad centre shall be 4.0 mm or more from a screw hole's centre (the tub's 6.0 mm boss plus 1 mm), and 6.0 mm or more for an 0603 or larger.
 - Rationale: the six screws clamp the board between bosses; a cracked MLCC on VSYS or VBAT shorts the cell inside the closed case (an MLCC on VSYS sat 0.9 mm from a boss at 76955d2; Was: C9). Derivation (VER-189 fix, 2026-10-29): the tub's boss is 6.0 mm across: 6.0 / 2 + 1.0 = 4.0 mm from the hole's centre to a pad; 0603 and larger parts are longer, so 6.0 mm. A design choice. Earlier cite (not a primary source): Claude's review (O-43); case.scad tub_boss_d.
 - Source: Alex's decision (to sign)
+- Numbers: the tub's 6.0 mm boss = judgment: the boss diameter the tub is drawn with (case.scad:388 tub_boss_d 6.0), a design value, looser (a larger boss) puts the keep-out further out and costs board area, tighter holds the screw head less; 1 mm = judgment: the margin outside the boss (Rationale: a design choice, O-43), looser lets a crack run to the pad, tighter costs board area; 4.0 mm = derived: half of the tub's 6.0 mm boss = 3.0 mm, plus 1 mm = 4.0 mm; 6.0 mm or more = judgment: the larger part is longer so its pad sits further from its centre (Rationale), looser lets a long pad into the boss's stress zone, tighter costs board area; 0603 = judgment: the EIA size class at which the larger limit starts (Rationale), looser (0805) leaves 0603 parts at 4.0 mm, tighter (0402) applies 6.0 mm to every MLCC
 - Method: A
 - Verified by: VER-142
 - Phase: ORDER
@@ -1886,6 +1923,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: In normal operation, every outer surface a player holds shall stay at or below 43 C (target) at 25 C ambient, and the measured rise plus the rated maximum ambient shall stay at or below 48 C, while charging and playing with the backlight at 100% and audio at full scale.
 - Rationale: IEC 62368-1's TS1 limit for plastic held 10 min to 8 h is 48 C (43 C beyond 8 h, to confirm); a handheld is held for hours. Single faults have their own, looser limit (REQ-PRD-07).
 - Source: IEC 62368-1 cl. 9.3, Table 38 (to confirm); validation_plan #93.
+- Numbers: 43 C = judgment: the target, Claude's reading that a handheld held for hours should meet a lower limit than the 48 C of the standard's edition 1 text (Rationale: 43 C beyond 8 h, to confirm, a later edition's figure that is not on disk (unread)), looser (48 C) is the edition 1 limit, tighter (40 C) leaves almost no rise over 25 C; 25 C = standard: IEC 62368-1:2010 (ed. 1, superseded; current is ed. 4, 2023) B.1.7 "room ambient air temperature will be 25 ° C"; 48 C = standard: IEC 62368-1:2010 (ed. 1, superseded; current is ed. 4, 2023) Table 42 (cl. 9.2.5, TS1) "in normal use (>1 min) c 48 48 48 48"; 100% = judgment: the worst load of the display (Rationale), looser (50%) hides the hottest case, tighter has no meaning above 100%
 - Method: T, A
 - Verified by: VER-86, VER-144
 - Phase: EVT
@@ -1898,6 +1936,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: During a full charge in the closed case, the thermistor's reading shall stay within 5 C of the cell's hotter point (its centre or its end facing the thermistor).
 - Rationale: TH1 sits on the board 1.05 mm outside the cell hole's right edge (an 0805 since 71737ae), 1.95 mm or more from the cell's long side across the FR4 edge and an air gap, the pocket keeping the cell 0.9 mm inside the edge (DF-218); the window in REQ-BAT-03 is only as good as this. Derivation (VER-189 fix, 2026-10-29): a design choice: 5 C of difference between the thermistor and the cell's hotter point; the charger's own thresholds at TS are in bq24074.txt:824-827 (hot 300 mV, cold 2100 mV typ). Earlier cite (not a primary source): placement.py TH1, CUTOUTS; case.scad; validation_plan #30.
 - Source: Alex's decision (to sign)
+- Numbers: 5 C = judgment: the difference between the thermistor and the cell's hotter point (Rationale: a design choice), looser lets the charger charge a cell hotter than it thinks, so the 45 C window of REQ-BAT-03 means little, tighter is harder to read on a bench thermocouple
 - Method: T, A
 - Verified by: VER-87, VER-164
 - Phase: EVT
@@ -1911,6 +1950,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At 25 C ambient a full charge in the closed case shall complete with 0 temperature pauses (the charger's thermistor input inside its window with the cell under 35 C).
 - Rationale: the board's own heat (U2, U3, the backlight's FETs) must not reach TH1. Derivation (VER-189 fix, 2026-10-29): the charger pauses outside its TS thresholds (bq24074.txt:824 VHOT 300 mV typ, :826 VCOLD 2100 mV typ). 35 C on a 25 C ambient is 10 C of rise, and 15 C under the 50 C top of the 0 to 50 C window the datasheet gives for a 103AT-2 thermistor (bq24074.txt:1968); TH1 is another thermistor, and VER-87 checks its own trips. A design choice. Earlier cite (not a primary source): bringup.md step 5.4.
 - Source: Alex's decision (to sign)
+- Numbers: 25 C = standard: IEC 62368-1:2010 (ed. 1, superseded; current is ed. 4, 2023) B.1.7 "room ambient air temperature will be 25 ° C"; 0 temperature pauses = count: none allowed, zero by definition and not a sample; 35 C = judgment: 10 C of rise on the 25 C ambient and 15 C under the 50 C top of the BQ24073's 103AT-2 window (bq24074.txt:1968 "0°C to 50°C"), looser (45 C) reaches the charge ceiling of REQ-BAT-03, tighter (30 C) fails a normal charge
 - Method: T
 - Verified by: VER-68
 - Phase: EVT
@@ -1924,6 +1964,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Charging while playing (5.5 V source, 3.0 V cell, backlight and audio at full scale) shall put 2.0 W or less inside the case, and every part shall stay under its temperature limit at 40 C ambient.
 - Rationale: the worst mode is charging while playing: U2 (BQ24073), U3 and the RP2350B each dissipate, and VER-144's table is redone for them; the 2.0 W stays Claude's proposal until VER-144 gives the real sum, and the table decides a firmware rule or copper (DEF-87). Derivation (VER-189 fix, 2026-10-29): a design choice and Claude's proposal until VER-144 gives the real sum. Earlier cite (not a primary source): Claude's analysis (O-47, F-48).
 - Source: Alex's decision (to sign)
+- Numbers: 5.5 V = derived: the upper run edge of REQ-PWR-01, 5.50 V, the highest source voltage and so the most the charger drops; 3.0 V = judgment: the BQ24073's pre-charge to fast-charge threshold is 3 V typical (bq24074.txt:776 "2.9 3 3.1 V"), a cell just above it takes the full charge current at the lowest voltage which is the most the charger dissipates, looser (3.5 V) misses the worst case, tighter (2.5 V) is pre-charge at a lower current; 2.0 W = judgment: Claude's proposal until VER-144 gives the real sum (Rationale), looser lets the case skin pass REQ-THM-01's limit, tighter may not be met while charging and playing; 40 C = judgment: a hot pocket or a car on a sunny day, B.1.7 of IEC 62368-1:2010 lets the maker specify the maximum ambient, looser is a harsher test than the use, tighter is nearer room ambient than the use
 - Method: A
 - Verified by: VER-144, VER-238
 - Phase: EVT
