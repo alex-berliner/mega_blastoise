@@ -83,11 +83,11 @@ How it behaves.
 - A tie shows as a tie on its own draw screen, with no health tiebreak. (2026-10-23)
 - Online play is as a Showdown guest only: no login, no accounts. It uses Showdown's own servers; there is no server of ours. (2026-10-28)
 - Our own games run as native programs, with no WebAssembly or script engine on the device. (2026-10-27)
-- Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29)
+- Online play goes through a phone: the console plugs into an Android phone over USB, and a web page in the phone's Chrome browser passes the battle between the console and Showdown. (2026-10-29) The bridge has to work with the existing hardware, or with minimal additions to it; no antenna. (2026-10-30)
 - At power-on the Pokemon battler starts on its own within about a second: our own Rust program, with no operating system under it. (2026-10-29)
 
 ## 5. Next spin
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-30 07:34 EDT
+Last updated: 2026-10-30 13:01 EDT

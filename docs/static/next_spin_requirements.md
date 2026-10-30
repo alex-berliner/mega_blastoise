@@ -29,6 +29,7 @@ with each spin. Decided with Alex on 2026-10-29 (queue issue
 | Software | the bare-metal Rust battler only | |
 
 Gate before the board design: the phone bridge test (Showdown's server accepts a battle from our
-bridge page in Android Chrome).
+bridge page in Android Chrome). The bridge works with the existing hardware or with minimal additions
+to it; no antenna (Alex, 2026-10-30).
 
-Last updated: 2026-10-29 09:34 EDT
+Last updated: 2026-10-30 13:01 EDT
