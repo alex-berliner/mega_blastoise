@@ -49,3 +49,5 @@ case/print/extras_U1/
 case/print/extras_P1S/
 case/print/.slice_cache/
 .build/
+datasheets/usb_20.pdf
+datasheets/usb_type-c_r2p5.pdf
