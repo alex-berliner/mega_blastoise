@@ -69,7 +69,7 @@ What the physical device is.
 - The battery is one lithium-ion cell. It sits in a hole in the board, under the screen, with its underside in a pocket in the case floor. It is turned 90 degrees so its long side runs along the board. (2026-10-27)
 - The speaker sits in the side margin of the board beside the screen and plays up through slots in the face. (2026-10-22)
 - Nothing is soldered when a unit is put together: the battery and the speaker both plug in. (2026-10-20)
-- The case is 3D printed and built from two parts: a tub and one flowing top piece. (2026-10-25)
+- The case is 3D printed and built from two parts: a tub and one flowing top piece. (2026-10-25) Every case build has its own version, inscribed on the case wherever it is easiest and changes the case least. (2026-10-30)
 - The top piece is a full-width band at the screen, with the DS Lite slope at its two button ends only. (2026-10-26)
 - The next spin uses the RP2350B (a Raspberry Pi microcontroller) with a 16 MB flash memory chip beside it, which holds the program and the sound. There is no Wi-Fi and no SD card. (2026-10-29)
 
@@ -90,4 +90,4 @@ How it behaves.
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-30 13:01 EDT
+Last updated: 2026-10-30 13:15 EDT
