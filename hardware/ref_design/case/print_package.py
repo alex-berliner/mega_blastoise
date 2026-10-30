@@ -3,11 +3,17 @@
 
     python3 case/print_package.py          # after case/export.py --stl and case/fitkit.py: the release kit, written in seconds
     python3 case/print_package.py --slice  # and sliced (or RELEASE=1): the checks, times and weights; cached per plate
+    python3 case/print_package.py --check  # only the release kit's guards (below), nothing built
     python3 case/print_package.py 4_fit_coupons 6_tests   # these plates instead; --all: every plate; --no-cache: slice again
 
-The release kit (print/package_U1/, mega_blastoise_print_U1.zip) is the case plates only, 1_case and 5_unit. The printer tests
+The release kit (print/package_U1/, mega_blastoise_print_U1_<version>.zip) is the case plates only, 1_case and 5_unit. The printer tests
 (7_ to 9_) go to print/tests_U1/ and overhang_kit.zip, the other plates (0_ to 4_, 6_) to print/extras_U1/: a plate named on the
 command line (or --all) builds, and none of them is ever in the release zip.
+
+The version (case/VERSION, C<n>, debossed inside the tub and the top by case.scad) is in the release zip's name, and the
+release kit is built only from a clean case/ (nothing uncommitted: git status -- case/) with tub.stl and top.stl newer than
+case.scad and VERSION, so a version maps to one commit. Afterwards the script prints the git command that tags that commit
+case-C<n> (it never tags or pushes) and reminds to bump VERSION before the next kit.
 
 Each project is built from Alex's own fit_test_v5.3mf, so it keeps his printer,
 filament and plate settings (Snapmaker U1, 0.20 mm Standard, textured PEI). Two filaments since the one-piece top
@@ -34,7 +40,7 @@ flattened from the slicers' own profiles (Snapmaker Orca 2.4.0, Bambu Studio 2.0
     python3 case/print_package.py --flatten <the slicer's resources/profiles/<vendor>> <dir> <preset> ...
 print_package_p1s.py builds the same plates for a Bambu Lab P1S.
 
-Writes print/package_U1/ and print/mega_blastoise_print_U1.zip (build output, not in git); the
+Writes print/package_U1/ and print/mega_blastoise_print_U1_<version>.zip (build output, not in git); the
 printer tests (TEST_PLATES) go to print/tests_U1/ instead and, with print_package_p1s.py's
 print/tests_P1S/, into print/overhang_kit.zip (tests_zip; `--tests` packs it again alone).
 """
@@ -42,6 +48,7 @@ import os
 import json
 import re
 import shutil
+import subprocess
 import sys
 import zipfile
 
@@ -51,7 +58,7 @@ import trimesh
 HERE = os.path.dirname(os.path.abspath(__file__))
 TEMPLATE = os.path.join(HERE, "print", "fit_test_v5.3mf")
 OUT = os.path.join(HERE, "print", "package_U1")
-ZIP = os.path.join(HERE, "print", "mega_blastoise_print_U1.zip")
+VERSION = os.path.join(HERE, "VERSION")
 BED = 270.0
 GAP = 6.0
 PLA = 1                      # the toolhead for every part: Alex's PLA is in bay 1 (2026-10-22)
@@ -568,6 +575,42 @@ def build(plate, parts, z, supported):
     return out, [(n, s) for n, m, s in meshes]
 
 
+def version():
+    """This build's version, the string in case/VERSION (C1, C2, ...)."""
+    v = open(VERSION).read().strip()
+    if not re.fullmatch(r"C[1-9][0-9]?", v):
+        sys.exit(f"case/VERSION is {v!r}: it should be C<n>, n counting up from 1 for each case build sent to print")
+    return v
+
+
+def release_zip(printer):
+    """The release kit's zip, named by printer and version."""
+    return os.path.join(HERE, "print", f"mega_blastoise_print_{printer}_{version()}.zip")
+
+
+def release_guard():
+    """A release kit is a version: refuse unless case/ is committed (a version maps to one commit) and the STLs are
+    this case.scad's and this VERSION's (export.py --stl writes them with it). Returns the commit."""
+    dirty = subprocess.run(["git", "status", "--porcelain", "--", HERE], cwd=HERE, capture_output=True, text=True).stdout
+    if dirty.strip():
+        sys.exit(f"refusing to build the release kit: case/ has uncommitted changes, and {version()} must map to one commit:\n{dirty.rstrip()}\n"
+                 "commit them (bump case/VERSION first if this is a new case), then run again")
+    stale = [n for n in ("tub.stl", "top.stl") if not os.path.exists(os.path.join(HERE, n))
+             or os.path.getmtime(os.path.join(HERE, n)) < max(os.path.getmtime(os.path.join(HERE, "case.scad")), os.path.getmtime(VERSION))]
+    if stale:
+        sys.exit(f"refusing to build the release kit: {', '.join(stale)} missing or older than case.scad / VERSION: run case/export.py --stl")
+    return subprocess.run(["git", "rev-parse", "HEAD"], cwd=HERE, capture_output=True, text=True, check=True).stdout.strip()
+
+
+def after_release(commit):
+    """Say how to tag the commit this kit was built from, and that VERSION moves on."""
+    v = version()
+    n = int(v[1:])
+    print(f"kit {v} built from commit {commit[:12]}. Tag it (local; never push without asking):\n"
+          f"    git tag case-{v} {commit}\n"
+          f"then bump case/VERSION to C{n + 1} (and commit it) before the next case build.")
+
+
 def build_plate(job):
     """build() for one plate in a worker process, with its own handle on the template."""
     plate, parts, supported = job
@@ -590,8 +633,13 @@ def main():
         return flatten(sys.argv[2], sys.argv[3], sys.argv[4:])
     if sys.argv[1:] == ["--tests"]:
         return tests_zip()
+    if sys.argv[1:] == ["--check"]:
+        commit = release_guard()
+        return print(f"the release kit's guards pass: {version()} at commit {commit[:12]}, case/ clean, the STLs newer than case.scad and VERSION")
     import print_cache
     only = requested(print_cache.names())
+    if any(p in RELEASE_PLATES for p in only):
+        commit = release_guard()
     for plate, parts in PLATES.items():
         if plate not in only:
             continue
@@ -628,12 +676,14 @@ def main():
         text = open(os.path.join(OUT, "README.md")).read()      # this build's own numbers over the recorded ones
         a, b = text.index("<!-- u1 -->"), text.index("<!-- /u1 -->")
         open(os.path.join(OUT, "README.md"), "w").write(text[:a] + "<!-- u1 -->\n" + slice_u1.table(sliced, PLATES) + "\n" + text[b:])
-    with zipfile.ZipFile(ZIP, "w", zipfile.ZIP_DEFLATED) as o:
+    zip_path = release_zip("U1")
+    with zipfile.ZipFile(zip_path, "w", zipfile.ZIP_DEFLATED) as o:
         for root, _, names in os.walk(OUT):
             for n in names:
                 p = os.path.join(root, n)
                 o.write(p, os.path.join("mega_blastoise_print", os.path.relpath(p, OUT)))
-    print(f"{ZIP} ({os.path.getsize(ZIP) // 1024} kB)")
+    print(f"{zip_path} ({os.path.getsize(zip_path) // 1024} kB)")
+    after_release(commit)
 
 
 if __name__ == "__main__":

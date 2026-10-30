@@ -159,6 +159,30 @@ top of 35d9ce0).
 ![across the right wall through a key: its tab and the top's pocket](images/section_key.png)
 ![the USB-C opening in section](images/section_usb.png)
 
+## The version (2026-10-30)
+
+Alex: "every case build has its own version, inscribed on the case wherever it is easiest and changes the case least." `C<n>`, n
+counting up from 1 for each case build sent to print (a printed kit), in `case/VERSION` and nowhere else; `export.py` passes it to
+every render as `case_version`. It is debossed 0.35 deep, 3 mm tall (Liberation Sans Bold), into an inside face that faces up in
+the part's print pose, so it is an ordinary pocket in a top surface and is never seen with the console shut:
+- **tub**: the floor's inside, reading along x, centred at (-6.2, -21.8) in the case frame, in the cell of the floor's rib grid at x
+  -12.2 to -0.2, y -27.8 to -15.8 (between the ribs, off the cell's and speaker's pockets, the bosses and the silicone rings); the floor
+  is 1.15 there (1.5 elsewhere);
+- **top**: the ceiling's inside in the left strip beside the glass, reading along y, centred at x -32.5, y 12 (case frame; in the top's
+  print pose, face down, it reads from above), between the side wall and the panel's frame, clear of J5 and the boss at y 40; the
+  ceiling is 1.65 there (2.0 elsewhere). The ends' ceilings and the panel's pocket have no flat spot clear of the walls and cuts.
+Asserts in `case.scad` (the version block): the text's box clear of the ribs, pockets, bosses, rings and the strip's keep-outs, and the
+floor and ceiling under it at least 0.8.
+
+To cut the next version (after the last kit is committed and tagged `case-C<n>`):
+```sh
+echo C2 > case/VERSION && git add case/VERSION && git commit -m "case: C2"   # plus whatever case changes C2 carries, committed
+python3 case/export.py --stl && python3 case/fitkit.py                       # the STLs with C2 in them
+python3 case/print_package.py --check                                        # dry run of the guards: clean case/, STLs newer than the sources
+python3 case/print_package.py [--slice]                                      # mega_blastoise_print_U1_C2.zip; prints the tag command
+git tag case-C2 <the commit it prints>                                       # local; push only when asked
+```
+
 ## Build order
 
 Upside down (every part goes in straight down); `docs/assembly.md` has the steps. The top lies face down on its screen face (the
