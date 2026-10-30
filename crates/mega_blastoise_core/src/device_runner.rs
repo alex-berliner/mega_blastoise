@@ -14,7 +14,7 @@
 
 extern crate alloc;
 
-use alloc::string::String;
+use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::cell::RefCell;
 
@@ -34,6 +34,7 @@ use crate::device_session::{Button, Ctx, DeviceSession, Out, TapCtx};
 use crate::display::PartySlotData;
 use crate::oled_ctl::{oled_cmds_for_event, OledCmd, OledController, BOB_TICK_MS};
 use crate::random_ai::RandomAi;
+use crate::online::OnlineTransport;
 use crate::transport::LocalTransport;
 use crate::runner;
 use crate::{player_id_to_num, LOBBY_DEMO_DELAY_MS};
@@ -65,6 +66,21 @@ pub trait DevicePort {
     /// web, a bench Pico on USB with the switch off) report Absent.
     fn battery(&self) -> crate::display_color::Battery {
         crate::display_color::Battery::Absent
+    }
+    /// What build this is (the firmware's git commit), for the bridge's log.
+    fn build_id(&self) -> &str {
+        "host"
+    }
+    /// A line for the phone bridge page ([`crate::online`]). Dropped by
+    /// platforms with no bridge.
+    fn link_send(&self, _line: &str) {}
+    /// A line the bridge page sent, if one is waiting.
+    fn link_try_recv(&self) -> Option<String> {
+        None
+    }
+    /// The next line from the bridge page; never ready on platforms with none.
+    async fn link_recv(&self) -> String {
+        core::future::pending().await
     }
 }
 
@@ -115,6 +131,8 @@ struct Inner {
     /// (narration sleeps); drained into it, cleared at each batch start.
     pending_pads: Vec<PadEvent>,
     lobby: bool,
+    /// The bridge page asked for an online battle: (generation, board auto-plays).
+    online_request: Option<(u8, bool)>,
 }
 
 pub struct DeviceRunner<'p, P: DevicePort> {
@@ -195,6 +213,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                 parties: [Vec::new(), Vec::new()],
                 pending_pads: Vec::new(),
                 lobby: false,
+                online_request: None,
             }),
         }
     }
@@ -488,6 +507,7 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
 
             // ── Ready sequence: shared state machine, pumped here. ──────
             let (seq_ai, seq_modes, seq_six) = self.run_ready_sequence().await;
+            let online = self.st.borrow_mut().online_request.take();
             {
                 let mut st = self.st.borrow_mut();
                 st.lobby = false;
@@ -504,32 +524,9 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             }
             self.present();
 
-            // One second between the second READY and the battle.
-            self.port.line_out("Both ready!");
-            self.pump_sleep(1000).await;
-
-            // Battle-start tutorial, off by default (options menu). The
-            // setting says "First game", so it spends itself: it used to
-            // replay before every match of the power-on, which is 6.75 s of
-            // unskippable pages between rematches.
-            if self.st.borrow().session.tutorial() && !(seq_ai[0] && seq_ai[1]) {
-                self.st.borrow_mut().session.opts.tutorial = false;
-                for page in 0..crate::display::TUTORIAL_PAGES {
-                    self.oled_apply(OledCmd::ShowTutorial { page });
-                    self.present();
-                    self.pump_sleep(2250).await;
-                }
-            }
-
-            let seed = self.port.seed();
-            self.st.borrow_mut().session.begin_battle();
-            self.present();
-
-            let ruleset = self.st.borrow().session.ruleset();
-            if ruleset == Ruleset::Gen3 {
-                self.run_gen3(seed, seq_six).await;
-            } else {
-                self.run_gen1(seed, seq_six).await;
+            match online {
+                Some((gen, auto)) => self.run_online(gen, auto).await,
+                None => self.run_local_battle(seq_ai, seq_six).await,
             }
 
             self.port.line_out("");
@@ -540,8 +537,15 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             self.present();
             let mut waited = 0u32;
             while waited < 30_000 {
-                match select(self.next_event(), self.port.sleep_ms(100)).await {
-                    Either::First(ev) => {
+                match select3(self.next_event(), self.port.sleep_ms(100), self.port.link_recv()).await {
+                    Either3::Third(line) => {
+                        // The page asks for the next battle: no need to wait out the recap.
+                        self.lobby_link_line(&line);
+                        if self.st.borrow().online_request.is_some() {
+                            break;
+                        }
+                    }
+                    Either3::First(ev) => {
                         if self.background_event(&ev) {
                             continue;
                         }
@@ -563,11 +567,44 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
                             _ => {}
                         }
                     }
-                    Either::Second(()) => waited += 100,
+                    Either3::Second(()) => waited += 100,
                 }
             }
             // Whatever either seat was reading, the next game starts clean.
             self.st.borrow_mut().session.log_reset();
+        }
+    }
+
+    /// A battle on this device's own engine, from the second READY on: the
+    /// one-second grace, the tutorial if it is due, then the generation the
+    /// picker chose.
+    async fn run_local_battle(&self, seq_ai: [bool; 2], seq_six: bool) {
+        // One second between the second READY and the battle.
+        self.port.line_out("Both ready!");
+        self.pump_sleep(1000).await;
+
+        // Battle-start tutorial, off by default (options menu). The
+        // setting says "First game", so it spends itself: it used to
+        // replay before every match of the power-on, which is 6.75 s of
+        // unskippable pages between rematches.
+        if self.st.borrow().session.tutorial() && !(seq_ai[0] && seq_ai[1]) {
+            self.st.borrow_mut().session.opts.tutorial = false;
+            for page in 0..crate::display::TUTORIAL_PAGES {
+                self.oled_apply(OledCmd::ShowTutorial { page });
+                self.present();
+                self.pump_sleep(2250).await;
+            }
+        }
+
+        let seed = self.port.seed();
+        self.st.borrow_mut().session.begin_battle();
+        self.present();
+
+        let ruleset = self.st.borrow().session.ruleset();
+        if ruleset == Ruleset::Gen3 {
+            self.run_gen3(seed, seq_six).await;
+        } else {
+            self.run_gen1(seed, seq_six).await;
         }
     }
 
@@ -582,13 +619,24 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         self.apply_effects(&mut fx);
         let mut last_flags = ([false; 2], [false; 2]);
         loop {
-            match select(self.next_event(), self.port.sleep_ms(COLLECT_TICK_MS as u32)).await {
-                Either::First(ev) => {
+            match select3(
+                self.next_event(),
+                self.port.sleep_ms(COLLECT_TICK_MS as u32),
+                self.port.link_recv(),
+            )
+            .await
+            {
+                Either3::First(ev) => {
                     if !self.background_event(&ev) {
                         self.lobby_event(ev, &mut seq, &mut fx);
                     }
                 }
-                Either::Second(()) => {}
+                Either3::Second(()) => {}
+                Either3::Third(line) => self.lobby_link_line(&line),
+            }
+            if self.st.borrow().online_request.is_some() {
+                // The page asked for a Showdown battle: no ready sequence.
+                break;
             }
             let done = seq.tick(self.port.now_ms(), &mut fx);
             let flags = (seq.ready_flags(), seq.ai_flags());
@@ -612,6 +660,28 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
         let six = seq.six_v_six() || self.st.borrow().session.six_v_six();
         let (ai, modes) = seq.take();
         (ai, modes, six)
+    }
+
+    /// A line from the bridge page while in the lobby ([`crate::online`]).
+    fn lobby_link_line(&self, line: &str) {
+        if line.starts_with("hello") {
+            self.port.link_send(&alloc::format!("hello mb1 fw={}", self.port.build_id()));
+            return;
+        }
+        let mut it = line.split_whitespace();
+        if it.next() != Some("play") {
+            return;
+        }
+        let gen = match it.next() {
+            Some("1") => 1,
+            Some("3") => 3,
+            _ => {
+                self.port.link_send("info play: generation must be 1 or 3");
+                return;
+            }
+        };
+        let auto = it.next() == Some("auto");
+        self.st.borrow_mut().online_request = Some((gen, auto));
     }
 
     /// One lobby-phase input into the ready sequence, via the session where
@@ -695,6 +765,79 @@ impl<'p, P: DevicePort> DeviceRunner<'p, P> {
             &mut effects,
         )
         .await;
+    }
+
+    /// An online battle on a real Showdown server, through the phone bridge:
+    /// search, then the shared battle loop over an [`OnlineTransport`], the
+    /// board's seat taking whichever side the server gives it. The other
+    /// seat is the remote player: never prompted, never waited on.
+    async fn run_online(&self, gen: u8, auto: bool) {
+        let dex: &'static ps_dex::Dex = if gen == 1 { &ps_dex::GEN1 } else { &ps_dex::GEN3 };
+        let mut transport = OnlineTransport::new(self.port, dex);
+        self.port.link_send(&alloc::format!("> |/search gen{gen}randombattle"));
+        self.port.line_out(&alloc::format!("Searching for a Gen {gen} random battle on Showdown..."));
+        self.port.link_send("info searching");
+        // Wait for the match, still painting and still hearing `cancel`.
+        while !transport.found() {
+            match select(self.next_event(), self.port.link_recv()).await {
+                Either::First(ev) => {
+                    self.background_event(&ev);
+                }
+                Either::Second(line) => {
+                    if line == "cancel" {
+                        self.port.link_send("> |/cancelsearch");
+                        self.port.link_send("info search cancelled");
+                        return;
+                    }
+                    transport.link_line(&line);
+                }
+            }
+        }
+        let Some(side) = transport.side() else {
+            self.port.link_send("info link dropped before the battle started");
+            return;
+        };
+        let local = if side == ps_protocol::SideId::P2 { 2u8 } else { 1u8 };
+        {
+            let mut st = self.st.borrow_mut();
+            st.ai_players = [false, false];
+            st.ai_players[idx(local)] = auto;
+            st.ai_players[idx(3 - local)] = true;
+        }
+        let room = transport.room().unwrap_or("").to_string();
+        self.port.line_out(&alloc::format!("Showdown battle {room}: this board is P{local}."));
+        self.port.link_send(&alloc::format!("info battle {room} p{local}"));
+        let seed = self.port.seed();
+        self.st.borrow_mut().session.begin_battle();
+        self.present();
+        let bus = InputBus::new();
+        let mut effects = RunnerEffects { r: self, bus: &bus };
+        runner::ps::run_online_battle(
+            &mut transport,
+            dex,
+            &bus,
+            self.collect_battle_input(&bus, seed),
+            &mut effects,
+        )
+        .await;
+        let st = transport.stats().clone();
+        let outcome = match (st.dropped, st.tied, st.won) {
+            (true, _, _) => "dropped",
+            (_, true, _) => "tie",
+            (_, _, Some(true)) => "win",
+            (_, _, Some(false)) => "loss",
+            _ => "unknown",
+        };
+        self.port.link_send(&alloc::format!(
+            "result gen={gen} room={room} outcome={outcome} choices={} rejected={} undecoded={}",
+            st.choices, st.rejected, st.undecoded
+        ));
+        if let Some(l) = &st.first_undecoded {
+            self.port.link_send(&alloc::format!("info first undecoded line: {l}"));
+        }
+        if !st.dropped {
+            self.port.link_send(&alloc::format!("> {room}|/leave"));
+        }
     }
 
     /// The battle input pump: prompt batches into the shared

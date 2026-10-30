@@ -14,6 +14,7 @@
 
 extern crate alloc;
 
+use alloc::collections::VecDeque;
 use alloc::string::{String, ToString};
 use alloc::vec::Vec;
 use core::future::Future;
@@ -122,7 +123,26 @@ pub async fn run_battle<T, E, F>(
     E: BoardEffects,
     F: Future<Output = ()>,
 {
-    match select(battle_loop(transport, setup, bus, effects), inputs).await {
+    match select(battle_loop(transport, setup.dex(), Some(setup), bus, effects), inputs).await {
+        Either::First(()) | Either::Second(()) => {}
+    }
+}
+
+/// Plays one battle on a server that made it already (`transport` is
+/// `remote`, [`crate::online`]): no `>start`, no teams, the player sits at
+/// whichever side the server's requests name. Otherwise [`run_battle`].
+pub async fn run_online_battle<T, E, F>(
+    transport: &mut T,
+    dex: &'static ps_dex::Dex,
+    bus: &InputBus,
+    inputs: F,
+    effects: &mut E,
+) where
+    T: Transport,
+    E: BoardEffects,
+    F: Future<Output = ()>,
+{
+    match select(battle_loop(transport, dex, None, bus, effects), inputs).await {
         Either::First(()) | Either::Second(()) => {}
     }
 }
@@ -137,41 +157,52 @@ struct Seat {
 
 async fn battle_loop<T: Transport, E: BoardEffects>(
     transport: &mut T,
-    setup: &BattleSetup,
+    dex: &'static ps_dex::Dex,
+    setup: Option<&BattleSetup>,
     bus: &InputBus,
     effects: &mut E,
 ) {
-    let mut view = BattleView::new(setup.dex());
-    for (i, team) in setup.teams.iter().enumerate() {
-        let side = if i == 0 { SideId::P1 } else { SideId::P2 };
-        for (slot, set) in team.iter().enumerate() {
-            let nick = if set.name.is_empty() { set.species } else { set.name };
-            view.set_nickname(side, slot as u8, &nick);
+    let mut view = BattleView::new(dex);
+    if let Some(setup) = setup {
+        for (i, team) in setup.teams.iter().enumerate() {
+            let side = if i == 0 { SideId::P1 } else { SideId::P2 };
+            for (slot, set) in team.iter().enumerate() {
+                let nick = if set.name.is_empty() { set.species } else { set.name };
+                view.set_nickname(side, slot as u8, &nick);
+            }
         }
-    }
 
-    let start = Command::Start { format: setup.format, seed: setup.seed.into() };
-    if transport.send(&start).is_err() {
-        return;
-    }
-    for (i, team) in setup.teams.iter().enumerate() {
-        let cmd = Command::Player {
-            side: if i == 0 { SideId::P1 } else { SideId::P2 },
-            name: Name::from_str(setup.names[i]).unwrap_or_default(),
-            team: *team,
-        };
-        if transport.send(&cmd).is_err() {
+        let start = Command::Start { format: setup.format, seed: setup.seed.into() };
+        if transport.send(&start).is_err() {
             return;
         }
+        for (i, team) in setup.teams.iter().enumerate() {
+            let cmd = Command::Player {
+                side: if i == 0 { SideId::P1 } else { SideId::P2 },
+                name: Name::from_str(setup.names[i]).unwrap_or_default(),
+                team: *team,
+            };
+            if transport.send(&cmd).is_err() {
+                return;
+            }
+        }
     }
 
-    let mut opening = true;
+    // A remote server's log and its requests come in their own time, log
+    // first (PS `sendUpdates`), so the opening is read like any turn: the
+    // request after the leads' lines, the catch-up `ActiveMonUpdate` below.
+    let mut opening = !transport.remote();
+    // What a remote server said while a seat was choosing, for the next pass.
+    let mut carry: VecDeque<Incoming> = VecDeque::new();
     loop {
+        if transport.remote() && carry.is_empty() {
+            transport.wait().await;
+        }
         // Everything the server said since the last command.
         let mut lines = Vec::new();
         let mut requests: Vec<Request> = Vec::new();
         let mut ended = false;
-        while let Some(m) = transport.poll() {
+        while let Some(m) = carry.pop_front().or_else(|| transport.poll()) {
             match m {
                 Incoming::Log(msg) | Incoming::Side(_, msg) => lines.push(msg),
                 Incoming::Request(r) => requests.push(r),
@@ -221,6 +252,9 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
                 }
             }
         }
+        if seats.is_empty() && transport.remote() {
+            continue; // the other player's turn: wait for the server
+        }
         if seats.is_empty() {
             // No end and nobody to ask: nothing anyone could press would
             // move the battle on (both transports answer a command before
@@ -247,7 +281,27 @@ async fn battle_loop<T: Transport, E: BoardEffects>(
         // One answer per prompted seat, routed by its id tag.
         let mut pending: Vec<Seat> = seats;
         while !pending.is_empty() {
-            let submitted = bus.choices.receive().await;
+            let submitted = if transport.remote() {
+                match select(bus.choices.receive(), transport.wait()).await {
+                    Either::First(s) => s,
+                    Either::Second(()) => {
+                        // The server spoke while the seat was choosing: if the
+                        // battle is over (a forfeit, a dropped link) stop
+                        // asking; anything else waits for the next pass.
+                        let mut over = false;
+                        while let Some(m) = transport.poll() {
+                            over |= matches!(m, Incoming::End);
+                            carry.push_back(m);
+                        }
+                        if over {
+                            break;
+                        }
+                        continue;
+                    }
+                }
+            } else {
+                bus.choices.receive().await
+            };
             let Some(pos) = pending.iter().position(|s| s.side.as_str() == submitted.player_id) else {
                 // A stray or duplicate answer: that seat has no request.
                 continue;

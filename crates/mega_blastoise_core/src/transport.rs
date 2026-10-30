@@ -61,9 +61,21 @@ pub enum TransportError {
 /// `poll` is non-blocking: `None` means nothing more has arrived. Both
 /// transports here answer a command before `send` returns, so after a send
 /// the runner reads until `None` and has the whole answer.
+///
+/// A transport to a server on the other end of a link ([`crate::online`])
+/// answers later, not before `send` returns: it is `remote`, and the runner
+/// awaits `wait` for the next message instead of reading "nothing more" as
+/// "nothing to do".
+#[allow(async_fn_in_trait)] // single-threaded async on both targets, by design
 pub trait Transport {
     fn send(&mut self, cmd: &Command) -> Result<(), TransportError>;
     fn poll(&mut self) -> Option<Incoming>;
+    /// True for a server that answers on its own time.
+    fn remote(&self) -> bool {
+        false
+    }
+    /// Returns once `poll` has something (a `remote` transport only).
+    async fn wait(&mut self) {}
 }
 
 // ── LocalTransport ───────────────────────────────────────────────────────────
