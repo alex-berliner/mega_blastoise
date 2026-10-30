@@ -39,6 +39,7 @@ the case, survives use.
 | [PLAN.md](PLAN.md) | the single plan: the order checklist, the phase exits, the scripts to write, the past bugs, Alex's decisions | |
 | [HISTORY.md](HISTORY.md) | the earlier rounds' ledgers and findings, moved out of PLAN.md (O-S9); check_trace does not read it | |
 | [carryover.md](carryover.md) | what the RP2354B and ESP32-S3 rounds found that the RP2350B board must also satisfy: one row a finding, its number, the check that found it and the rule, and the RP2350B board's DFMEA rows that carry each group; its first table gives each row's requirement, check and verdict at 39cc07f (the ESP32-S3 board's, history now); check_trace does not read it | |
+| [deviations.md](deviations.md) | where the register departs from NASA's EEE-INST-002 figure: NASA clause and figure, the replacement source and figure, what it saves; PROPOSED until Alex signs | DEV-NN |
 | [requirements.md](requirements.md) | what the device must do, each a number with a tolerance, a reason, a source, the subsystems it is allocated to and the checks that prove it; split per board where a board's parts or numbers enter | REQ-<AREA>-NN, REQ-<AREA>-NN.B (.F was the F1C200s board's, .R the ESP32-S3 board's) |
 | [dfmea.csv](dfmea.csv) | how each part, interface and assembly step can fail, how bad that is, what prevents it, what detects it ('detects' names the checks that can see the failure) | DF-NN |
 | [verification.csv](verification.csv) | every check: procedure, pass limit, what it covers, last result, evidence, commit, date, phase, how long a result stays valid, the instrument and its accuracy, what still has to be bought, the check classes and subsystems it targets, and the datasheet files it relies on ('sources') | VER-NN |
@@ -291,6 +292,54 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   only when a NOT_BUILT (or gone) check names it, HISTORY.md does, or repo_paths.py's PLANNED
   list gives what will write it; any other is a misspelt path and fails (F's audit).
 
+## Sources and deviations
+
+Added 2026-10-30 (Alex's policy, issue #89): every requirement number is grounded in a source. "Use the NASA
+standard but use some discretion where adhering to their standard would be adversely cost or effort intensive
+compared to another standard." NASA allows this itself: EEE-INST-002 6.5 says "Developer-controlled derating plans
+may be used upon acceptable review and project approval", 6.2.7.2 gives a path for off-the-shelf units, and Level 3
+parts "are intended for mission applications where the use of high-risk parts is acceptable". Nobody reviews this
+register for NASA, so a deviation is proposed here and Alex signs it.
+
+**The governing documents**
+
+- How requirements are written, verified and traced: NASA/SP-2016-6105 Rev 2, NASA Systems Engineering Handbook.
+- Derating: NASA EEE-INST-002 (NASA/TP-2003-212242, April 2008, Addendum 1 incorporated; NASA's own copy is in
+  hardware/ref_design/datasheets/eee-inst-002.pdf). The board's parts are treated as Level 3 (consumer, unscreened).
+  **NASA-STD-8739.11** (the EEEE parts selection, testing and derating standard) is NASA's stated successor to
+  EEE-INST-002 (NASA's slides, NTRS 20240015570, 2024-12-04, and 20250008275, 2025-08-11: "Based on the
+  EEE-INST-002", 4 assurance levels instead of 3). It does not supersede it here: no NASA page that gives its
+  approval or effective date could be reached on 2026-10-30 (standards.nasa.gov has no page at the address
+  tried; nepp.nasa.gov still serves EEE-INST-002 at https://nepp.nasa.gov/pages/EEE-INST-002.cfm) and its text is not on
+  disk, so no derating figure of it can be quoted. The first time 8739.11's text is on disk, re-read the DEV rows
+  against it. 8739.11 would not change the policy: it too has an assurance level for commercial parts (AL 4).
+- Consumer safety (touch temperature, battery charging, drop), where NASA has no rule: IEC 62368-1 and the parts'
+  own datasheets. The only full text on hand is edition 1 (2010), Alex's local copy at
+  /home/alex/Documents/IEC62368-1:2010.pdf. It is read there (pdftotext into a scratch directory), never copied into
+  the repository; a tag may quote the one value it relies on. Tag such numbers
+  `standard: IEC 62368-1:2010 (ed. 1, superseded; current is ed. 4, 2023) <clause or table> "<value>"`, so the
+  edition gap is visible. Clause numbers written from memory of the 2018 edition elsewhere in the register are
+  not tags and are re-read before they become one.
+
+**The order of preference for a number**
+
+1. A datasheet of the part (`datasheet:`).
+2. The governing standard (`standard:` naming EEE-INST-002, IEC 62368-1:2010, USB 2.0, USB Type-C, 47 CFR Part 15,
+   the UN Manual of Tests and Criteria).
+3. Another named standard or maker guidance (`standard:` naming ECSS-Q-ST-30-11C or Murata MLCC caution): a
+   deviation where NASA has a figure. It says `departs from NASA` and names its row in
+   [deviations.md](deviations.md), `DEV-nn`: NASA's clause and figure, the replacement and what it saves.
+4. Claude's judgment (`judgment:`).
+
+tools/check_trace.py reads two things, as warnings for now (`STANDARDS_STRICT` makes them errors): a `standard:`
+tag must start with a document name in its `STANDARD_DOCS` list, and an entry that says `departs from NASA` must
+name a DEV-nn that has a row in deviations.md (and any DEV-nn named must have one). Free primary documents the
+tags quote are in hardware/ref_design/datasheets with a SOURCES.md row each: eee-inst-002.pdf, usb_20.pdf,
+usb_type-c_r2p5.pdf, cfr47_part15_2025.pdf. UL 2054, UL 1642 and UL 94 are free to read only in UL's viewer (their
+terms forbid a download), so they are looked up by hand and quoted in a tag; IEC 62133-2 is paid and not on hand,
+so cell limits stay `judgment` until the cell's own datasheet is on disk. The UN Manual of Tests and Criteria 38.3
+is not on disk either (UNECE returned 403 to a download on 2026-10-30).
+
 ## Where a requirement's numbers come from (the Numbers field)
 
 Added 2026-10-30, because Alex asked how many requirements carry numbers Claude made up with no source, and the
@@ -303,8 +352,9 @@ the Statement's own text and covers every number inside it, wherever it occurs (
 - `datasheet: <file>.txt:<line> "<quote>"`: a file in hardware/ref_design/datasheets; the `.txt` line is the
   `pdftotext -layout` line, as everywhere in this register; the quote must be on that line or the next, the rule
   tools/ds.py applies. A unit conversion (18000 s = 5 h) goes after the quote.
-- `standard: <document> <clause or table> "<quote>"`: only for a standard whose text was read. The checker can
-  see only that a quote is there.
+- `standard: <document> <clause or table> "<quote>"`: only for a document whose text was read; the document is
+  one of `STANDARD_DOCS` in tools/check_trace.py ('Sources and deviations' above), and an entry that departs from
+  NASA says `departs from NASA` and names its `DEV-nn` row. The checker can see only that a quote is there.
 - `spec: docs/static/DESIGN.md:<line>` (or `docs/static/next_spin_requirements.md:<line>`; the line must exist) or
   `spec: Alex, <date>, <where it is recorded>`: Alex's own words or decision.
 - `derived: <arithmetic>` from other numbers. Every input must be tagged: another entry of this field, an
@@ -398,6 +448,7 @@ renders, kits and docs after the baseline. Every hash below
 equals the same path at c34e653 (moved from fd66be9 on 2026-10-30: the case's version string, case-version, changed case.scad, export.py and tools/build.py; no RP2350B check had run on them). The gate-moves line names the register state before this re-seed
 (fd1f6e8, vv-rp2354b-final's successor): until Alex signs a `GATE@` line, the order gate prints
 every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before he signs.
+Re-based on 2026-10-30 to c34e653 (policy session, vv-policy): main's case-version merge (467aa5e: every case build has a version, C<n>, debossed 0.35 mm into the tub floor and the top's ceiling with 0.8 mm left; the print zip is named by it) changed case.scad, case/export.py and tools/build.py only; the diff was read and touches no fit, wall, pocket or button the register measures, so only those three hashes moved.
 
 - Baseline board: `esp32s3`
 - Order branch: `main` from `c34e653`
