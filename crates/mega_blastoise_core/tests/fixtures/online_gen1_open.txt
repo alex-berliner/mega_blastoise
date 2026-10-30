@@ -1,0 +1,48 @@
+frame
+< >battle-gen1randombattle-6
+< |init|battle
+< |title|Guest 11 vs. Guest 10
+< 
+< 
+frame
+< >battle-gen1randombattle-6
+< |t:|1793381417
+< |gametype|singles
+frame
+< >battle-gen1randombattle-6
+< |player|p1|Guest 11|170|1000
+frame
+< >battle-gen1randombattle-6
+< |player|p2|Guest 10|2|1000
+< |gen|1
+< |tier|[Gen 1] Random Battle
+< |rated|
+< |rule|Desync Clause Mod: Desyncs resolve to link battle behavior from the acting player's perspective.
+< |rule|HP Percentage Mod: HP is shown in percentages
+< |rule|Endless Battle Clause: Forcing endless battles is banned
+< |rule|Sleep Clause Mod: Limit one foe put to sleep
+< |rule|Freeze Clause Mod: Limit one foe frozen
+< |rule|Species Clause: Limit one of each Pokemon
+< |rule|OHKO Clause: OHKO moves are banned
+< |rule|Evasion Moves Clause: Evasion moves are banned
+< |
+< |t:|1793381417
+< |teamsize|p1|6
+< |teamsize|p2|6
+< |start
+< |switch|p1a: Sandslash|Sandslash, L76|100/100
+< |switch|p2a: Onix|Onix, L80|220/220
+< |turn|1
+frame
+< >battle-gen1randombattle-6
+< |request|{"active":[{"moves":[{"move":"Explosion","id":"explosion","pp":8,"maxpp":8,"target":"normal","disabled":false},{"move":"Body Slam","id":"bodyslam","pp":24,"maxpp":24,"target":"normal","disabled":false},{"move":"Earthquake","id":"earthquake","pp":16,"maxpp":16,"target":"allAdjacent","disabled":false},{"move":"Rock Slide","id":"rockslide","pp":16,"maxpp":16,"target":"normal","disabled":false}]}],"side":{"name":"Guest 10","id":"p2","pokemon":[{"ident":"p2: Onix","details":"Onix, L80","condition":"220/220","active":true,"stats":{"atk":151,"def":335,"spa":127,"spd":127,"spe":191},"moves":["explosion","bodyslam","earthquake","rockslide"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Drowzee","details":"Drowzee, L84","condition":"272/272","active":false,"stats":{"atk":87,"def":158,"spa":234,"spd":234,"spe":153},"moves":["hypnosis","counter","psychic","thunderwave"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Parasect","details":"Parasect, L77","condition":"251/251","active":false,"stats":{"atk":222,"def":199,"spa":199,"spd":199,"spe":122},"moves":["spore","bodyslam","stunspore","megadrain"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Voltorb","details":"Voltorb, L88","condition":"250/250","active":false,"stats":{"atk":139,"def":174,"spa":183,"spd":183,"spe":262},"moves":["thunderbolt","thunderwave","explosion","takedown"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Hitmonlee","details":"Hitmonlee, L78","condition":"238/238","active":false,"stats":{"atk":264,"def":160,"spa":132,"spd":132,"spe":213},"moves":["highjumpkick","seismictoss","rollingkick","bodyslam"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Starmie","details":"Starmie, L68","condition":"222/222","active":false,"stats":{"atk":108,"def":183,"spa":204,"spd":204,"spe":224},"moves":["recover","surf","blizzard","thunderwave"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]},"rqid":3}
+frame
+< >battle-gen1randombattle-6
+< |
+< |t:|1793381419
+< |move|p2a: Onix|Explosion|p1a: Sandslash
+< |-damage|p1a: Sandslash|47/100
+< |faint|p2a: Onix
+frame
+< >battle-gen1randombattle-6
+< |request|{"forceSwitch":[true],"side":{"name":"Guest 10","id":"p2","pokemon":[{"ident":"p2: Onix","details":"Onix, L80","condition":"0 fnt","active":true,"stats":{"atk":151,"def":335,"spa":127,"spd":127,"spe":191},"moves":["explosion","bodyslam","earthquake","rockslide"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Drowzee","details":"Drowzee, L84","condition":"272/272","active":false,"stats":{"atk":87,"def":158,"spa":234,"spd":234,"spe":153},"moves":["hypnosis","counter","psychic","thunderwave"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Parasect","details":"Parasect, L77","condition":"251/251","active":false,"stats":{"atk":222,"def":199,"spa":199,"spd":199,"spe":122},"moves":["spore","bodyslam","stunspore","megadrain"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Voltorb","details":"Voltorb, L88","condition":"250/250","active":false,"stats":{"atk":139,"def":174,"spa":183,"spd":183,"spe":262},"moves":["thunderbolt","thunderwave","explosion","takedown"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Hitmonlee","details":"Hitmonlee, L78","condition":"238/238","active":false,"stats":{"atk":264,"def":160,"spa":132,"spd":132,"spe":213},"moves":["highjumpkick","seismictoss","rollingkick","bodyslam"],"baseAbility":"noability","item":"","pokeball":"pokeball"},{"ident":"p2: Starmie","details":"Starmie, L68","condition":"222/222","active":false,"stats":{"atk":108,"def":183,"spa":204,"spd":204,"spe":224},"moves":["recover","surf","blizzard","thunderwave"],"baseAbility":"noability","item":"","pokeball":"pokeball"}]},"noCancel":true,"rqid":5}

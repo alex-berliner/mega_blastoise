@@ -22,9 +22,11 @@
 extern crate alloc;
 
 pub mod board;
+pub mod names;
 pub mod request;
 pub mod view;
 
 pub use board::{BoardEvent, BoardEvents, MoveSlot, PromptKind};
+pub use names::DexView;
 pub use request::{choice, choice_string, slot_options, PartyMon, SeatOptions};
 pub use view::{BattleView, KnownMove, MonView, Outcome, SideView};
