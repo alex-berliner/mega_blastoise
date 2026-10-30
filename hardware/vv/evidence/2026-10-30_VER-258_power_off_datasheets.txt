@@ -1,0 +1,42 @@
+# VER-258 power_off_datasheets
+DATE: 2026-10-30
+COMMIT: 029a732dd8252528ff010e1a4814354e7a54511a
+TREE: clean under its covers
+TOOLS: pdftotext version 24.02.0; Python 3.12.3; sha256sum
+ARTEFACT: hardware/ref_design/datasheets/tps3421.pdf 69e92fb409306edb0b04baae591e8b0c2efe8699b260dc14bfe110a14098f245; hardware/ref_design/datasheets/rp2350.pdf a638d6780da919162660691bfa02c6dcf7c2a0b6e9f18e2d7519c80b664a2e39; written up in hardware/vv/analysis/power_off_datasheet_check_2026-10-30.md
+
+$ pdftotext -layout tps3421.pdf; grep -n for the delay, pulse, output and inputs
+166:                                                         Active low, open-drain output. Reset is asserted (goes low) when both PB1 and PB2
+261:                                                    VCC = 3.3 V                                                     250                  nA
+266:              (standby)                             VCC = 3.3 V                                                     350                  nA
+308:                                                   TPS3421Ey, TPS3422Ey: TS = GND                          6         7.5          9
+309:                                                   TPS3421Ey, TPS3422Ey: TS = VCC                                      0
+313:                                                   TPS3421xG                                            320         400         480      ms
+668:                         TPS3421EGDRYR/T                    0s              7.5 s             400 ms
+687:The TPS3421 has two inputs: PB1 and PB2. External pullup resistors to VCC are required to pull the input pins
+690:deassertion is independent of the inputs because tRST is a fixed time pulse. A reset pulse occurs only one time
+691:after each valid input condition. At least one input pin must be released (go high) and then driven low for the
+698:fixed time pulse. A reset pulse occurs only one time after each valid input condition. The input pin must be
+
+$ pdftotext -layout rp2350.pdf; grep -n for CHIP_RESET flags, watchdog LOAD, pad reset state, E9
+31: Release          8
+28833: 28        HAD_WATCHDOG_RESET_PSM: Last reset was a watchdog timeout which was configured to reset   RO     0x0
+28957: 18     HAD_RUN_LOW: Last reset was from the RUN pin                                                          RO   0x0
+28979: 16     HAD_POR: Last reset was from the power-on reset                                                       RO   0x0
+72040: 53        hw_set_bits(&psm_hw->wdsel, PSM_WDSEL_BITS & ~(PSM_WDSEL_ROSC_BITS | PSM_WDSEL_XOSC_BITS));
+72135: 0x004     LOAD           Load the watchdog timer. The maximum setting is 0xffffff which corresponds to approximately
+72185:     Load the watchdog timer. The maximum setting is 0xffffff which corresponds to approximately 16 seconds.
+87983:D.5.1. RP2350-E9
+88001:               Driving / pulling the pad input low with a low impedance source of 8.2 kΩ or less will overcome the erroneous
+88066: Fixed by      RP2350 A3, Documentation
+
+Pass limit, item by item (verdicts in the analysis file):
+  variant with delay about 8 s inside 6 s to 10 s: TPS3421EG, TS to GND, 6 s / 7.5 s / 9 s over -40 to 125 C, 1.6 V to 6.5 V: met
+  minimum above the 2.5 s turn-on hold: 6 s: met
+  output drives RUN low and releases it: open-drain, fixed 320 ms to 480 ms pulse, RUN has an internal pull-up: met (the pulse is fixed, not held)
+  supply range includes 3V3 and quiescent current in the 3V3 budget: 1.6 V to 6.5 V, 250 nA typical standby at 3.3 V: met
+  held Start after the reset and a reset-reason register that separates RUN, power-on and watchdog: reboot with Start held; CHIP_RESET HAD_RUN_LOW, HAD_POR, HAD_WATCHDOG_RESET_*: met
+  watchdog maximum at least 2 s: 0xffffff us, about 16 s: met
+  R42 4.7k against RP2350-E9's 8.2 kohm: met (A2 only, fixed in A3)
+
+RESULT: PASS

@@ -38,6 +38,8 @@ The file names below are what the notes and tools refer to; the source column is
 | `esp32-s3-wroom-1.pdf` | ESP32-S3-WROOM-1 / WROOM-1U module datasheet (N16R8: IO35-37 taken by the octal PSRAM) | https://www.espressif.com/sites/default/files/documentation/esp32-s3-wroom-1_wroom-1u_datasheet_en.pdf |
 | `tlv757p.pdf` | TI TLV757P 1 A LDO (candidate 3V3 regulator for Wi-Fi peaks) | https://www.ti.com/lit/ds/symlink/tlv757p.pdf |
 | `sn74hc165.pdf` | TI SN74HC165 8-bit parallel-in shift register (button chain) | https://www.ti.com/lit/ds/symlink/sn74hc165.pdf |
+| `tps3421.pdf` | TI TPS342x low-power push-button controllers with configurable delay, SBVS211B (Rev. B, April 2015; TI's file served 2026-10-30, 10 pages, sha256 69e92fb409306edb0b04baae591e8b0c2efe8699b260dc14bfe110a14098f245). Covers TPS3420, TPS3421 and TPS3422; the fitted part is TPS3421EGDRYR (LCSC C2067262: LCSC's product record, fetched 2026-10-30, gives that model): TS = GND 7.5 s (6 s to 9 s), 400 ms reset pulse | https://www.ti.com/lit/ds/symlink/tps3421.pdf |
+| `rp2350.pdf` | Raspberry Pi RP2350 datasheet, Release 8, build date 01/10/2026, build version 80d627281ed5 (served 2026-10-30, 1371 pages, sha256 a638d6780da919162660691bfa02c6dcf7c2a0b6e9f18e2d7519c80b664a2e39). The errata are Appendix D of this same document (RP2350-E9 is D.5.1); there is no separate errata PDF. An earlier copy (RP2354B era) was committed at 611ebe3 and deleted in 574c94c; this one replaces it for the RP2350B board | https://datasheets.raspberrypi.com/rp2350/rp2350-datasheet.pdf |
 
 The SPICE models for board/sim (Microchip's MCP6001/2/4 macromodel, Alpha & Omega's AO3400)
 are not committed either: `board/sim/models.py` fetches and translates them.
