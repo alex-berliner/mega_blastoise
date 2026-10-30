@@ -51,6 +51,8 @@ How to read a block:
   validation_plan method (#n), a line of DESIGN.md (Alex's spec) or next_spin_requirements.md,
   or Alex's use. "Claude's estimate" or "Claude's proposal" means nobody has set the number yet:
   Alex should.
+- Numbers: where each number in the Statement comes from, one entry per number with a tag (datasheet, standard,
+  spec, derived, judgment, count); README.md, 'Where a requirement's numbers come from'.
 - Phase: ORDER (before the 5-board order: what the copper and the BOM freeze), CASE (before
   the printed case is released and the EVT units are assembled), EVT (the 5 boards), DVT (the
   revised spin), PVT (the 30-board run), SALE (before any unit is sold or given away).
@@ -456,6 +458,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The charger shall stop the cell at 4.20 V +-1% (4.158-4.242 V at the cell terminals at charge-done) and never above the cell maker's maximum charge voltage.
 - Rationale: overcharge is the main cell hazard.
 - Source: BQ24073 datasheet SLUS810N, VBAT(REG) (U2 as on the RP board; design.py and pinmap.md quote 4.2 V +-1%); IEC 62133-2 (upper limit charging voltage set by the cell maker).
+- Numbers: 4.20 V = datasheet: bq24074.txt:773 "4.16 4.20 4.23" (VBAT(REG) typical, BQ24073); +-1% = judgment: the charger's own VBAT(REG) spread is 4.16 to 4.23 V (bq24074.txt:773 "4.16 4.20 4.23"), -0.95% to +0.71% of 4.20 V, so +-1% holds every part inside its datasheet; tighter than 0.95% fails a good charger, looser lets the cell see more than the charger's 4.23 V maximum; 4.158-4.242 V = derived: 4.20 V - 1% of 4.20 V = 4.158 V; 4.20 V + 1% of 4.20 V = 4.242 V
 - Method: T, A
 - Verified by: VER-67, VER-134, VER-14
 - Phase: EVT
@@ -468,6 +471,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The constant-current charge shall not exceed 0.5 C of the cell's rated capacity or the cell maker's standard charge current, whichever is lower.
 - Rationale: 0.5 C is the usual standard rate for small pouch cells.
 - Source: IEC 62133-2 (the cell maker's charging limits); validation_plan #28, #128.
+- Numbers: 0.5 C = judgment: Claude's ceiling, 'the usual standard rate for small pouch cells' (Rationale); the cell maker's own standard charge current (IEC 62133-2, unread) still caps it; looser (1 C) wears the cell faster, tighter than about 0.2 C (140 mA on 700 mAh) takes more than REQ-PRD-04.B's 4.0 h
 - Method: T, I, A
 - Verified by: allocated: REQ-BAT-02.B (Was: REQ-BAT-02.R)
 - Phase: EVT
@@ -493,6 +497,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The constant-current charge shall measure at most 0.5 C of the chosen cell's rated capacity and at most its maker's standard charge current, at the charger's and its set resistor's tolerance.
 - Rationale: the charger is not chosen yet; its set resistor follows the cell's spec sheet (carryover C-4).
 - Source: the cell's spec sheet (VER-37); carryover.md C-4.
+- Numbers: 0.5 C = judgment: the same ceiling as REQ-BAT-02 (Claude's choice, no source on disk; the cell's spec sheet is not on disk, VER-37); looser (1 C) wears the cell faster, tighter than about 0.2 C takes more than 4.0 h to charge
 - Method: T, A
 - Verified by: VER-66, VER-37, VER-160
 - Phase: EVT
@@ -505,6 +510,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At 99.9% of units, charging shall pause when the cell is above 45 C or below 0 C, or outside the cell maker's charge range if that is narrower: the hot edge at or under 45 C and the cold edge at or over 0 C (one-sided limits), and resume when back in range.
 - Rationale: charging a Li-ion cell outside its range plates lithium (cold) or speeds failure (hot); TH1 (10k B4460, 0805, C525375) has its resistance at 25 C and its B each +-1% (tctr0805.txt:260, the part number's two F's), as on the RP board.
 - Source: IEC 62133-2 (charging within the cell maker's temperature limits); the BQ24073's TS thresholds from SLUS810N: V_HOT 0.270-0.330 V and V_COLD 2.0-2.2 V at I_TS 72-78 uA (bq24074.txt:823-826, quoted by VER-34); validation_plan #30.
+- Numbers: 99.9% = judgment: Claude's population claim: the worst corner of the TS thresholds and of TH1's +-1% bounds every unit (Notes), so 99.9% is the figure that corner supports; looser (99%) lets 1 unit in 100 sit outside the edges, tighter (all units) is what the worst-corner analysis already claims; 45 C = judgment: the usual Li-ion charge ceiling, named by IEC 62133-2 as the cell maker's charge limit (standard unread; the cell's spec sheet is not on disk, VER-37); looser (50 C) speeds cell ageing, tighter (40 C) pauses charging in a warm pocket; TH1 reaches 48.2 C at the worst corner (Notes, DEC-05); 0 C = judgment: the usual Li-ion charge floor (lithium plating below it), IEC 62133-2 names the cell maker's limit (unread); looser (-5 C) risks plating, tighter (5 C) pauses charging in a cold room
 - Method: A, T
 - Verified by: VER-32, VER-69, VER-135
 - Phase: EVT
@@ -518,6 +524,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The cell surface shall stay at or below 45 C through a full charge in the closed case at 25 C ambient, and at or below the cell maker's maximum charge temperature at 35 C ambient.
 - Rationale: the cell sits in a hole in the board in a printed case, under the panel.
 - Source: validation_plan #31; IEC 62133-2.
+- Numbers: 45 C = judgment: the cell's charge ceiling as in REQ-BAT-03 (IEC 62133-2 unread, validation_plan #31); looser (50 C) ages the cell, tighter (40 C) fails on heat the cell was rated for; 25 C = judgment: room temperature, the usual bench condition; looser or tighter only moves the test, not the cell's limit; 35 C = judgment: Claude's warm-room figure for the second test; looser (40 C) tests a hot car, tighter (30 C) hides the case's heat trap
 - Method: T
 - Verified by: VER-85
 - Phase: EVT
@@ -530,6 +537,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: 100% of cells shall be checked with a meter before first mating and the result recorded per lot.
 - Rationale: small cell connectors have no battery polarity standard; a reversed cell can destroy the charger.
 - Source: assembly practice; IEC 62133-2.
+- Numbers: 100% = count: every cell, not a sample: a reversed cell can destroy the charger (Rationale) and a meter check costs seconds; no standard sets a sample size here
 - Method: I
 - Verified by: allocated: REQ-BAT-05.B (Was: REQ-BAT-05.R)
 - Phase: EVT
@@ -554,6 +562,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: 100% of cells shall be checked with a meter before first mating, red lead on the cell header's pin 1 (marked '+' on the silk), and the result recorded per lot.
 - Rationale: a reversed cell is a severity 10 failure (carryover C-7). Derivation (VER-189 fix, 2026-10-29): a design choice for the cell's safety: 100% of cells, not a sample, because one reversed cell is a severity 10 failure and a meter check costs seconds a cell. Earlier cite (not a primary source): carryover.md C-7.
 - Source: Alex's decision (to sign)
+- Numbers: 100% = count: every cell, not a sample, because one reversed cell is a severity 10 failure and a meter check costs seconds a cell (Rationale, VER-49); no standard sets a sample size
 - Method: I
 - Verified by: VER-49, VER-54
 - Phase: EVT
@@ -566,6 +575,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every cell shall carry a protection circuit with over-voltage at 4.35 V or less, under-voltage at 2.4 V or more and an over-current trip, each measured on 1 spare cell per lot.
 - Rationale: the PCM is the independent layer behind every charge-path fault (REQ-BAT-09).
 - Source: validation_plan #32; the cell's spec sheet once obtained (VER-37).
+- Numbers: 4.35 V = judgment: Claude's limit, 0.12 V over the charger's 4.23 V maximum (bq24074.txt:773 "4.16 4.20 4.23") so the PCM only acts on a charger fault; the cell's spec sheet is not on disk (VER-37, validation_plan #32); looser lets a fault charge further, tighter trips on a good charger; 2.4 V = judgment: Claude's under-voltage floor, a DW01-class PCM figure (REQ-BAT-10 Rationale), well under the 3.50 V cutoff (REQ-BAT-12) so the PCM is the second layer; looser harms a deeply discharged cell, tighter (3.0 V) would trip inside the usable band; 1 spare cell = count: one cell per lot is destroyed measuring the trips; no standard sets it; more cells cost lot yield, fewer leave a lot unmeasured
 - Method: T, I
 - Verified by: VER-88, VER-37, VER-140
 - Phase: EVT
@@ -578,6 +588,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The closed case shall leave 0.4 mm or more of free height above the cell at worst-case tolerance (a 4.5 mm cell), under everything that lies over its pocket.
 - Rationale: pouch cells grow 8-10% in thickness over life; 0.4 mm for a 4.0 mm cell. Derivation (VER-189 fix, 2026-10-29): 0.4 mm / 4.0 mm = 10%, the top of the 8-10% pouch growth the rationale gives; the worst-case cell is 4.5 mm, so the free height is held at 0.4 mm at that size. Serves the cell's life (REQ-BAT-08 is the same pouch). Earlier cite (not a primary source): validation_plan #26; case.scad (cell_top 1.6 over the board; the panel's back 2.4, the panel frame's walls 2.8, the button ends' underside 1.9 where they reach).
 - Source: Alex's decision (to sign)
+- Numbers: 0.4 mm = judgment: 0.4 mm / 4.0 mm = 10%, the top of the 8-10% pouch growth over life that the Rationale gives (no source for the 8-10% is on disk); looser lets a swollen cell press on the panel, tighter costs case height; 4.5 mm = judgment: the worst-case cell thickness, a 4.0 mm nominal plus tolerance; the chosen cell's spec sheet is not on disk (VER-37); looser (a thinner worst case) risks pressing on the cell, tighter costs case height
 - Method: A, I
 - Verified by: VER-182, VER-20, VER-48
 - Phase: CASE
@@ -591,6 +602,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: No routed board edge, part body, plug or rib shall press on the cell's faces: 0.5 mm or more between a worst-case cell and the board's hole on every face it can rest against (1.5 mm at its lead end), after the fab, print and fastening tolerances; the tub's pocket at least 0.1 mm a side larger than a worst-case cell after the print's tolerance (0.4 mm in each direction); and no back-side copper within 1 mm of the hole.
 - Rationale: a pierced pouch shorts internally and can burn; a pouch pressed into a pocket too small for it is stressed the same way (round 3's O-S1, 2026-10-27: the fit clause, a PROPOSED number). Derivation (VER-189 fix, 2026-10-29): a design choice: 0.5 mm (1.5 mm at the lead end) is the margin kept over the fab and print tolerance stack so no edge touches the pouch; 0.1 mm a side is the pocket's allowance over a worst-case cell. No datasheet sets these; the cell maker's own limit is not on disk. Earlier cite (not a primary source): validation_plan #27; placement.py CUTOUTS (the hole 37.8 x 54.8 mm since 71737ae); case.scad cell, cell_pocket_box.
 - Source: Alex's decision (to sign)
+- Numbers: 0.5 mm = judgment: the margin over the fab, print and fastening tolerance stack so no edge touches the pouch (Rationale: 'a design choice', no datasheet sets it); looser risks a pierced pouch, tighter costs board area; 1.5 mm = judgment: the lead end's larger margin, where the leads leave and the pouch is stiffest and flexes least (Claude's choice, no source on disk); looser risks cutting a lead, tighter costs board area; 0.1 mm = judgment: the pocket's allowance per side over a worst-case cell after the print's tolerance (Rationale); looser lets the cell rattle, tighter presses on it; 0.4 mm = judgment: the fit clause's allowance in each direction, a PROPOSED number from round 3's O-S1 (2026-10-27; Rationale); looser presses the pouch, tighter costs case size; 1 mm = judgment: back-side copper kept 1 mm from the hole so a pierced pouch has nothing to short against (Claude's choice, no source on disk); looser lets copper under a sharp edge, tighter costs routing area
 - Method: A, I
 - Verified by: VER-181, VER-06, VER-48, VER-109, VER-164
 - Phase: ORDER
@@ -604,6 +616,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: No single fault in the charger, its current-set and thermistor parts, the cell-side capacitors or the cell's leads shall charge the cell above 4.25 V or above its maker's standard charge current, or let it charge outside its temperature window; the cell's PCM stays the second layer.
 - Rationale: a BQ24073 whose CV or battery FET fails, or whose TS is held in range (DF-216, DF-217, (Was: DF-151)), charges the cell with only the PCM left.
 - Source: validation_plan #89; IEC 62368-1 Annex B.4; IEC 62133-2.
+- Numbers: 4.25 V = judgment: 20 mV above the BQ24073's own maximum VBAT(REG) of 4.23 V (bq24074.txt:773 "4.16 4.20 4.23") so a charger inside its datasheet is no fault; the reason for the exact 4.25 is not recorded (validation_plan #89 and IEC 62133-2 are not on disk); tighter than 4.23 V fails a good part, looser (4.30 V or more) lets one fault charge toward the PCM's 4.35 V (REQ-BAT-06)
 - Method: A, T
 - Verified by: VER-98, VER-133, VER-134, VER-135, VER-169, VER-82, VER-88, VER-168
 - Phase: EVT
@@ -617,6 +630,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: After shutting down at its cutoff and sitting off for 2 months at 25 C, the unit shall charge normally to full when plugged into USB, 3 of 3 units.
 - Rationale: a cell left flat in a drawer should still charge. Alex, 2026-10-29: the requirement is that the unit still charges, not that the cell stays above its PCM's trip; a PCM that trips releases when USB is plugged in and the charger precharges the cell (fact-checked in analysis/deep_discharge_2026-10-30.md: about 5 months from the cutoff to the PCM trip at typical drain, 0.9 to 2.6 months worst case; a DW01A refuses charge only below 1.5 V). The arithmetic below is the old trip-voltage view, kept for VER-103's estimate. Between 3.50 V and 3.0 V there is only about 5-10% of the capacity (35-70 mAh). 30 uA of board drain alone is 21.6 mAh a month; a DW01-class PCM adds 3-6 uA that never passes JP5; self-discharge is 1-3% a month (7-21 mAh); VSYS stays live through U2's battery FET when off, so U7's shutdown current is in the board's drain, and the TPS3421, fed from 3V3, adds nothing (REQ-PWR-07). With both terms the figure may be nearer 1 month: Alex sets the number knowing them. Derivation (VER-189 fix, 2026-10-29): the paper arithmetic, per month at 25 C on a 700 mAh cell (REQ-PRD-03.B): board drain 30 uA x 720 h = 21.6 mAh; the PCM 3 to 6 uA x 720 h = 2.2 to 4.3 mAh; self-discharge 1 to 3% = 7 to 21 mAh; total 31 to 47 mAh a month. The usable band between 3.50 V and 3.0 V is 35 to 70 mAh (5 to 10% of 700 mAh). So 2 months needs 62 to 94 mAh and is not met on paper at the high end of the drain and self-discharge; 1 month (31 to 47 mAh) mostly is. The 2 months stays as written; Alex should decide whether it is 2 months or 1 month, or the drain figure to hold. Earlier cite (not a primary source): Claude's estimate; validation_plan #33.
 - Source: Alex's decision (to sign)
+- Numbers: 2 months = judgment: Claude's estimate for a unit left in a drawer; the Rationale's paper arithmetic shows it is not met at the high end of drain and self-discharge while 1 month mostly is, and Alex is asked to choose; looser (6 months) fails more units on a flat cell, tighter (1 month) is what the paper supports; 25 C = judgment: room temperature, the usual storage condition; looser or tighter only moves the test (self-discharge doubles roughly every 10 C); 3 of 3 units = count: three units of the 5-board EVT build, no standard sets it; fewer cannot show a spread between units, more costs EVT boards
 - Method: A, T
 - Verified by: VER-266, VER-103, VER-65, VER-146
 - Phase: EVT
@@ -629,6 +643,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Before any unit with a cell is posted or sold, the UN38.3 test summary and the MSDS for the exact cell model shall be on file (2 documents).
 - Rationale: carriers refuse lithium cells without them.
 - Source: UN Manual of Tests and Criteria, Part III, 38.3; validation_plan #34.
+- Numbers: 2 documents = count: the UN38.3 test summary and the MSDS that the Statement names, one each; the UN Manual of Tests and Criteria Part III 38.3 (unread) is what asks for the test summary
 - Method: I
 - Verified by: VER-38
 - Phase: SALE
@@ -641,6 +656,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At 25 C ambient, the firmware's low-cell cutoff shall act at a true cell voltage of 3.50 V +0.05/-0.00 V on every unit after its per-unit calibration at 25 C (REQ-TST-06), at the highest load the firmware draws (the battler with sound playing, backlight at full).
 - Rationale: the RP2350's ADC (GPIO40 to 47) reads VBAT/2 from R17 and R18 (470k each, 235 kohm) behind U10, an MCP6001 unity buffer from 3V3, as the RP board drew it. The RP2350's ADC error is not on disk yet (VER-233), and a one-point gain set at charge-done (the charger's CV is +-1%) cannot be shown to meet the window without its offset and gain split, so the per-unit point at 3.50 V does (VER-138, DF-225). U10 buffers the divider, so the pad's leakage (1 uA at most) flows from U10's output and not through R17 and R18, where it would be 0.47 V of VBAT, nine times this window. Off, U10 is unpowered and the pin reads 0 V.
 - Source: design.py R17, R18, U10 (the RP board's, kept on the RP2350B board); the RP2350 datasheet's ADC chapter (to download: VER-233); mcp6001.txt:135-142; Claude's analysis (O-23, O-49).
+- Numbers: 25 C = judgment: room temperature, where the per-unit calibration is done (REQ-TST-06); looser or tighter only moves the calibration point, and the temperature drift is VER-139's and VER-67's; 3.50 V = judgment: Claude's cutoff choice (DF-225, carryover P-9): high enough to stay far above the PCM's 2.4 V trip, low enough to keep the usable band (only 5-10% of the capacity lies between 3.50 V and 3.0 V, REQ-BAT-10 Rationale); REQ-BAT-16 records 3.60 V as the alternative; looser (lower) gives more run time but runs into the PCM, tighter (higher) cuts play time; +0.05/-0.00 V = judgment: one-sided: the cutoff may be up to 50 mV late-high but never below 3.50 V; 50 mV is what an ADC and reference of +-50 mV (DF-225) can hold after per-unit calibration (VER-138); looser puts the cutoff low into the PCM's trip, tighter needs a better ADC than the RP2350's, whose error is not on disk (VER-233)
 - Method: A, T
 - Verified by: VER-138, VER-139, VER-67
 - Phase: EVT
@@ -654,6 +670,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: A charge that has not terminated shall stop within 5 h +-20% of fast charge (and 30 min of pre-charge under 3.0 V), and the firmware shall show a charge fault until USB is re-plugged.
 - Rationale: a soft-shorted or damaged cell must not charge without end; the BQ24073's safety timers do it with TMR open, the firmware reads CHG at 2 Hz as the fault.
 - Source: BQ24073 datasheet (pin_review/u2.json pins 9 and 14); Claude's proposal (O-50).
+- Numbers: 5 h +-20% = datasheet: bq24074.txt:818 "14400 18000 21600" (tMAXCHG with TMR floating: 18000 s = 5 h, 14400 s and 21600 s are -20% and +20%); 30 min = datasheet: bq24074.txt:817 "1440 1800 2160" (tPRECHG with TMR floating: 1800 s = 30 min); 3.0 V = datasheet: bq24074.txt:776 "2.9 3 3.1" (VLOWV, the pre-charge to fast-charge threshold, 3 V typical)
 - Method: T
 - Verified by: VER-145
 - Phase: EVT
@@ -666,6 +683,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Plugging a 4.2 V cell into the cell's header with no USB shall not trip the PCM (the cell's voltage present after each plug), shall leave the device off, and shall peak the system rail at 4.5 V or less, 10 plugs out of 10.
 - Rationale: with no USB, U2's battery FET is on, so the plug connects C3 (10 uF) directly and C2 and C5 (14.7 uF) more on VSYS through the FET: a peak of roughly 10-15 A for microseconds (DF-226). Derivation (VER-189 fix, 2026-10-29): 4.5 V is the 4.2 V full cell plus 0.3 V of ringing margin on VSYS; 10 of 10 because a plug is a repeated event and the first fail is the PCM tripping. A design choice: no datasheet gives the plug's inrush. Earlier cite (not a primary source): Claude's analysis (O-42).
 - Source: Alex's decision (to sign)
+- Numbers: 4.2 V = datasheet: bq24074.txt:773 "4.16 4.20 4.23" (a full cell at the charger's VBAT(REG) typical); 4.5 V or less = derived: 4.2 V + 0.3 V = 4.5 V; in: 0.3 V ringing margin = judgment: the margin for ringing on VSYS at the plug (Rationale: 'a design choice'; no datasheet gives the plug's inrush); looser lets the rail ring over 4.5 V into parts rated for it only with margin, tighter fails on ringing nobody can avoid; 10 plugs out of 10 = count: a plug is a repeated event and the first fail is the PCM tripping (Rationale); no standard sets the count; fewer cannot show a repeat, more costs cells
 - Method: A, T
 - Verified by: VER-140, VER-141
 - Phase: EVT
@@ -679,6 +697,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Both cell leads shall be sleeved (heat-shrink or a printed grommet) where they run along the board's routed hole edge to the cell's header, with 0 bare lead insulation against the FR4 edge, seen in the FAI and after the drop test.
 - Rationale: the routed edge wears the insulation and shorts CELL_P to the GND pour, with only the PCM left (DF-214). Derivation (VER-189 fix, 2026-10-29): a design choice for the cell's safety: 0 bare insulation against the FR4 edge, because one worn lead shorts CELL_P to the GND pour with only the PCM left. Earlier cite (not a primary source): Claude's review (F-14).
 - Source: Alex's decision (to sign)
+- Numbers: 0 bare lead insulation = judgment: zero, because one worn lead shorts CELL_P to the GND pour with only the PCM left (Rationale, DF-214); looser lets a worn lead through, nothing is tighter
 - Method: I
 - Verified by: VER-109, VER-93
 - Phase: EVT
@@ -692,6 +711,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: One cell per lot shall deliver 600 mAh or more from charge-done to the chosen cutoff at 140 mA +-10% (126 to 154 mA), with its capacity to 3.50 V and to 3.60 V recorded.
 - Rationale: capacity on low-cost cells is often overstated; play time (REQ-PRD-03.B) and the cutoff choice (DF-225) depend on it. Derivation (VER-189 fix, 2026-10-29): the arithmetic: REQ-PRD-03.B's 4.0 h x 140 mA = 560 mAh is what a session uses, so 600 mAh leaves 40 mAh (7%) of margin; Claude's estimate for the unit is 100 to 120 mA, so 140 mA is 17% to 40% more load than that. The 140 mA is set as 140 mA +-10% (126 to 154 mA) so a bench supply can be read to it. Earlier cite (not a primary source): Claude's proposal (O-58): Alex sets the lot limit.
 - Source: Alex's decision (to sign)
+- Numbers: 600 mAh = derived: 4.0 h x 140 mA = 560 mAh; 560 mAh + 40 mAh = 600 mAh; in: 4.0 h = spec: Alex, 2026-10-29, in chat (the play-time requirement's 4.0 h, approved as written; recorded in requirements.md at REQ-PRD-03.B Source); in: 40 mAh = judgment: 7% margin over the 560 mAh a session uses (Rationale); looser (less margin) passes cells that are short in play, tighter rejects cells at their rated capacity; 140 mA = judgment: Claude's estimate of the unit's draw is 100 to 120 mA, so 140 mA is 17% to 40% more than that (Rationale); looser (a lighter test load) flatters the cell, tighter (a heavier one) fails cells that would do the job; +-10% = judgment: so a bench supply can be read to it (Rationale); looser blurs the capacity figure, tighter needs a better supply; 126 to 154 mA = derived: 140 mA - 10% of 140 mA = 126 mA; 140 mA + 10% of 140 mA = 154 mA; 3.50 V = judgment: the cutoff REQ-BAT-12 chooses (DF-225); recorded so the choice can be made on measured capacity; looser or tighter only moves the recorded point; 3.60 V = judgment: the alternative, higher cutoff the cutoff choice (DF-225) weighs against 3.50 V; looser (lower) is the 3.50 V reading, tighter (3.70 V) would lose most of the capacity
 - Method: T
 - Verified by: VER-153
 - Phase: EVT
@@ -706,6 +726,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With a cell in, the device shall run (3V3 in regulation) from 4.40-5.50 V at the USB-C connector, both plug orientations; with no cell, from 4.75-5.50 V; and it shall not limit-cycle on a source that folds back at 500 mA.
 - Rationale: USB 2.0 sources give 4.75-5.25 V; cables drop more; under the BQ24073's VIN-DPM (4.5 V) the input current is cut back and the cell makes up the rest, which a board with no cell cannot.
 - Source: USB 2.0 cl. 7.2.1; pin_review/u2.json pin 5 (VIN-DPM 4.5 V on USB500); validation_plan #51, #80.
+- Numbers: 4.40 = judgment: the lowest VBUS at which the unit with a cell is claimed to run: just under the BQ24073's VIN-DPM typical 4.5 V (bq24074.txt:739 "4.35 4.5 4.63") so the cell makes up the input current there; USB 2.0 cl. 7.2.1 (unread) also bounds a device's VBUS from below; looser (4.2 V) runs on a source that fails the DPM loop, tighter (4.6 V) rules out cable drop; 5.50 V = judgment: the upper edge, 0.25 V over USB 2.0's 5.25 V (unread) to take in a high charger, and under the charger's input over-voltage threshold; looser meets the OVP threshold, tighter (5.25 V) fails chargers that sit a little high; 4.75 = judgment: without a cell nothing makes up the input current, so the floor sits above the VIN-DPM maximum 4.63 V (bq24074.txt:739 "4.35 4.5 4.63") and at USB 2.0's source floor (cl. 7.2.1, unread); looser starts the DPM loop, tighter excludes sources inside USB's range; 500 mA = judgment: the 500 mA of a standard USB 2.0 port (USB 2.0 cl. 7.2.1 names it but the standard's text is not on disk (unread)), the charger's USB500 limit reads 450 475 500 mA (bq24074.txt:733 "EN1 = HI, EN2 = LO 450 475 500"); looser tests a source that never folds, tighter (100 mA) is the unconfigured-device limit (DEC-08)
 - Method: T
 - Verified by: VER-80, VER-83
 - Phase: EVT
@@ -718,6 +739,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: From 4.75-5.25 V at the USB-C connector the cell shall charge to done within REQ-PRD-04.B's time; between 4.40 V and 4.75 V the input current, whether the cell supplements the system, and whether the charge completes shall be measured and recorded.
 - Rationale: the BQ24073 cuts its input current back at 4.5 V (VIN-DPM), so a weak source charges slowly or not at all.
 - Source: Claude's analysis (O-24, F-9); pin_review/u2.json.
+- Numbers: 4.75-5.25 V = judgment: the voltage range of a USB 2.0 source at the connector (cl. 7.2.1, text unread); looser takes in sources that are out of USB's range, tighter excludes valid sources; 4.40 V = judgment: the lower edge of REQ-PWR-01's run range, so the measurement covers the whole gap between run and charge; DEC-15 lets Alex raise it or accept; looser or tighter only moves the measured band; 4.75 V = judgment: the bottom of USB 2.0's source range (cl. 7.2.1, text unread) and above the VIN-DPM maximum 4.63 V (bq24074.txt:739 "4.35 4.5 4.63"); looser or tighter only moves where the measured band ends
 - Method: T
 - Verified by: VER-80, VER-102
 - Phase: EVT
@@ -731,6 +753,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At a live plug-in from an always-on USB-A port with a 2 m cable and no cell, VBUS shall peak at or under the charger's over-voltage minimum less 0.2 V, and every pin fed from VBUS (the charger's, the ESD array's, the CC pull-downs') shall stay 0.3 V or more under its absolute maximum.
 - Rationale: REQ-PWR-14's transient rule: EN1 0.3 V under its 7 V absolute maximum (6.7 V), U3's EN (6 V absolute) with margin; the OVP limit from its minimum, not its 6.6 V nominal (O-R18); VSYS is U2's regulated OUT.
 - Source: pin_review/u2.json (IN 28 V absolute, OVP 6.6 V, EN1 7 V), pin_review/u3.json (EN 6 V).
+- Numbers: 2 m = judgment: a long cable that rings harder than a short one at a live plug; looser (a 1 m cable) rings less and understates the peak, tighter (3 m) is beyond common cables; 0.2 V = judgment: the margin under the charger's over-voltage minimum, which the Rationale takes from the minimum and not the 6.6 V nominal (O-R18); looser lets VBUS peak into the OVP band, tighter fails on ringing nobody can avoid; 0.3 V = derived: the 0.3 V of REQ-PWR-14's transient rule, used as the margin under each pin's absolute maximum (Rationale)
 - Method: A, T
 - Verified by: VER-12, VER-71
 - Phase: EVT
@@ -756,6 +779,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for the system rail's range on the cell and on USB and for loads from 0 to the 3V3 budget of REQ-PWR-20.
 - Rationale: the RP2350's IOVDD range at 3.3 V (to read from its datasheet once it is on disk: VER-233) and the panel's logic supply, 3.3 V maximum; U3 is the 3V3 regulator (C47773), whose accuracy and load regulation are read from its datasheet and re-derived in VER-235 against the 3V3 budget of REQ-PWR-20.
 - Source: the RP2350 datasheet's IOVDD range (to download: VER-233); U3's datasheet DS9013 (accuracy and load regulation); ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-227).
+- Numbers: 3.30 V = datasheet: rt9013.txt:46 "33 : 3.3V" (U3's datasheet, the fixed 3.3 V option) and rp2350.txt:1216 "IOVDD Power supply for digital GPIOs, nominal voltage 1.8 V to 3.3 V"; +-3% = judgment: a window U3 can meet on paper: output accuracy -2 to +2 % at 10 mA (rt9013.txt:161 "−2 0 +2 %") plus load regulation up to 1 % (the same table) leaves no margin for line regulation, so VER-235 re-derives it against the 3V3 budget; tighter than 3% fails the part at its datasheet limits, looser (5%) raises the stress on the panel (VCI 2.5 to 3.3 V, DF-227); 3.20-3.40 V = derived: 3.30 V - 3% of 3.30 V = 3.20 V; 3.30 V + 3% of 3.30 V = 3.40 V, each rounded to the nearest hundredth of a volt; from 0 to = judgment: the load range starts at no load, where an LDO's output is highest; looser or tighter only moves where the check begins
 - Method: T
 - Verified by: VER-83, VER-235
 - Phase: EVT
@@ -769,6 +793,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Through the USB-to-cell hand-over at full load (backlight 100%, sound playing, the battler running), every rail shall stay inside its range (REQ-PWR-20) and the device shall not reset.
 - Rationale: the BQ24073 joins OUT to BAT through its battery FET with no gap, so 3V3 is the cell less the FET, VSYS's copper to U3 and U3's dropout, against the RP2350's and the panel's minimum (VER-235, DF-210).
 - Source: bq24074.txt:724; design.py U2, U3; U3's datasheet dropout and the RP2350 datasheet's IOVDD minimum (VER-235; to download: VER-233).
+- Numbers: backlight 100% = judgment: full brightness is the heaviest load on the rails through the hand-over; looser (a dimmer backlight) hides the droop, nothing is tighter
 - Method: A, T
 - Verified by: VER-70
 - Phase: EVT
@@ -794,6 +819,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With the device off and no USB, the cell current shall be 30 uA or less at 25 C and 60 uA or less at 45 C, for a cell at 3.7-4.2 V, the hard reset's controller (the TPS3421) being fed from 3V3 and so drawing nothing.
 - Rationale: designed under 30 uA at 25 C from the RP board's circuits, kept on the RP2350B board: U2 6.5, R17 into U10's unpowered input 7.9 at a 4.2 V cell, U7 8.4 on a stand-in, the FETs' leakage 3.0, and U3 (C47773) at the shutdown current its datasheet gives, summed in VER-103; leakage rises with temperature (O-51). The TPS3421 (the hard reset, REQ-PRD-08.B) runs from 3V3, not VSYS or the cell (Alex, 2026-10-29): 3V3 is off while the unit is off, so it draws nothing then, and the 30 uA budget and REQ-PRD-05's shelf life are unchanged. It watches seat 1's Start through the 3V3-side buffered power-key line (the RP board's PWR_BTN_N: Q1 with R16 to 3V3), so no VSYS or cell voltage reaches its unpowered input (DF-266, VER-159). Seat 1's Start (the power key) still turns the unit on through its own latch path (PWR_EN, the diode OR of D2), which needs no TPS3421. The hard reset works whenever the unit is on, with USB in or not.
 - Source: bringup.md step 5.1; design.py U2, U3, U10, R17, Q1, R16, D2 (the RP board's); Alex, 2026-10-29, in chat (the TPS3421 on 3V3); the 45 C number is Claude's estimate (O-51).
+- Numbers: 30 uA = judgment: the budget REQ-PRD-05 states (2 years from a full cell, Claude's estimate); the RP board's circuits sum to about 26 uA (U2 6.5, R17 into U10 7.9, U7 8.4, FETs 3.0, U3 at its shutdown current, VER-103); looser eats the shelf life, tighter than 26 uA fails the paper sum; 25 C = judgment: room temperature, the usual condition for a leakage figure; looser or tighter only moves the test; 60 uA = judgment: Claude's estimate that leakage doubles from 25 C to 45 C (O-51), no source on disk; looser lets a hot unit drain the cell, tighter fails a unit whose FETs leak as their datasheets allow; 45 C = judgment: Claude's estimate of a hot pocket or car dashboard (O-51); looser (60 C) is beyond the cell's rating, tighter (35 C) misses the hot case; 3.7-4.2 V = judgment: 3.7 V is the Li-ion nominal and 4.2 V is a full cell (bq24074.txt:773 "4.16 4.20 4.23"), the range the cell spends most of its life in; looser (down to 3.0 V) understates leakage at full charge, tighter tests one point
 - Method: T
 - Verified by: VER-65, VER-146
 - Phase: EVT
@@ -819,6 +845,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: On the cell with no USB, after a watchdog reset, a panic or the TPS3421's hard reset (the 8 s hold of seat 1's Start, REQ-SOC-04), the power hold shall release and every rail fall below 0.5 V within 2 s of the reset or, when seat 1's Start is still held, within 2 s of its release, 20 of 20 tries after the 8 s hold held on to 12 s; and after any reset that is not a power-on reset (the RUN pin's, the watchdog's, a brown-out) the firmware shall latch PWR_HOLD only on a press of Start that begins after it has seen Start released.
 - Rationale: a crashed unit must turn itself off, not drain the cell: PWR_HOLD (GPIO44) resets as an input, and after RP2350-E9 a released pad can sit near 2 V, so an external pull-down holds it low (R42 4.7k, E9 needs 8.2k or less; analysis/errata_rp2350.md, VER-239, VER-243). Derivation (VER-189 fix, 2026-10-29): a design choice: 2 s matches the watchdog's 2 s in REQ-SOC-04, so a crashed unit takes no longer to turn off than a hung one takes to reset; 0.5 V is the level counted as off. The pull-down is R42 4.7k against RP2350-E9's 8.2k limit (analysis/errata_rp2350.md). Earlier cite (not a primary source): design.py R42 (PWR_HOLD's pull-down); pinmap.md Power control; analysis/errata_rp2350.md. Added 2026-10-30 (Alex: the 8 s hold is the only button power-off), confirmed against the datasheets the same day (analysis/power_off_datasheet_check_2026-10-30.md, VER-258): Start joins VSYS to PWR_EN through a diode, so while Start is still held after the TPS3421 fires, the regulator stays powered. The TPS3421EG's reset is a fixed pulse of 320 ms to 480 ms, not held while Start stays down (tps3421.pdf p.1, p.5, p.11), and it fires again only after Start is released and held a further 6 s to 9 s, so the RP2350 reboots with Start already held and would count it as a fresh 2.5 s turn-on hold (REQ-PWR-21) and turn the unit back on. The firmware reads POWMAN CHIP_RESET, whose HAD_POR, HAD_RUN_LOW and watchdog bits are separate flags (rp2350.pdf section 6.4, Table 521, p.427-428). After a power-on reset a Start held at boot is the turn-on press, because the press that powers the regulator always begins before the firmware boots (time the 2.5 s from power-up); after any other reset the firmware waits until it has seen Start released. The rule 'only a press that begins after boot' as first written would have forbidden the turn-on itself. The 2 s is counted from Start's release, and the hold may run past 8 s (VER-240 and VER-241 (a) hold to 12 s). R42's 4.7k is under RP2350-E9's 8.2 kohm limit (rp2350.pdf Appendix D.5.1, p.1358; the erratum affects the A2 stepping and is fixed in A3); the pad is also pulled low by default after a power-on or RUN reset (rp2350.pdf section 9.3, p.539).
 - Source: Alex, 2026-10-30, in chat (the 8 s hold is the only button power-off; no re-latch after it); Alex's decision (to sign); rp2350.pdf section 6.4 (CHIP_RESET, p.427-428), section 7.3.3 (chip-level reset sources, p.452), section 9.3 (pad reset state, p.539) and Appendix D.5.1 (RP2350-E9, p.1358); tps3421.pdf p.11 (the fixed reset pulse)
+- Numbers: 8 s = spec: docs/static/DESIGN.md:65 ('Holding seat 1's Start for about 8 seconds turns the console off'); 0.5 V = judgment: the level counted as off (Rationale: 'a design choice'), below any rail's logic threshold; looser (1 V) counts a half-alive rail as off, tighter (0.1 V) waits longer for the last volt to leak away; 2 s = judgment: matches the watchdog's 2 s in REQ-SOC-04, so a crashed unit takes no longer to turn off than a hung one takes to reset (Rationale); looser lets a crash drain the cell, tighter is faster than the TPS3421's reset pulse (tps3421.txt:313 "TPS3421xG 320 400 480 ms") allows; 20 of 20 = count: twenty tries; no standard sets it; fewer cannot show an intermittent release, more costs bench time; 12 s = judgment: the hold may run past the TPS3421's maximum delay of 9 s (tps3421.txt:308 "TPS3421Ey, TPS3422Ey: TS = GND 6 7.5 9") so the case where the firmware reboots with Start still held is tested; looser (15 s) tests a hold nobody makes, tighter (9 s) stops at the part's own maximum
 - Method: T
 - Verified by: VER-243, VER-105, VER-240, VER-241, VER-258
 - Phase: EVT
@@ -832,6 +859,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Without USB, no firmware hang shall keep the device on for more than 10 s; every image, the self-test included, shall enable the watchdog before any blocking init.
 - Rationale: hardware alone cannot tell a hang with PWR_HOLD high from normal play. Derivation (VER-189 fix, 2026-10-29): 10 s is the watchdog's 2 s (REQ-SOC-04) plus the release of REQ-PWR-09's 2 s (PWR_HOLD released at the reset, every rail below 0.5 V within 2 s; the same release whether the reset is the watchdog's or the TPS3421's), which is 4 s, with 2.5 times margin (10 / 4) for a slow image to reach its first watchdog enable. Rechecked 2026-10-30 after REQ-PWR-09 took the TPS3421 reset, against rp2350.pdf section 12.9 (the watchdog's LOAD register holds up to 0xffffff, about 16 s, in microseconds, so 2 s is settable; p.1105-1108): the arithmetic is unchanged (2 s + 2 s = 4 s, 10 s / 4 s = 2.5), and the 8 s hold (6 s to 9 s, a fixed reset pulse) is a way out for a user, not a path this limit counts. A design choice. Earlier cite (not a primary source): validation_plan gate item 3 and Fable's note 1; pinmap.md.
 - Source: Alex's decision (to sign); rp2350.pdf section 12.9 (Watchdog, LOAD and CTRL.TIME, p.1105-1108)
+- Numbers: 10 s = derived: (2 s of REQ-SOC-04's watchdog + 2 s of REQ-PWR-09's release) x 2.5 = 10 s; in: 2.5 times margin = judgment: 2.5 times the 4 s the two steps take, for a slow image to reach its first watchdog enable (Rationale: 'a design choice'); looser lets a hung unit run the cell longer, tighter fails slow but healthy images
 - Method: I, T
 - Verified by: VER-104, VER-105
 - Phase: EVT
@@ -844,6 +872,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With 1 Mohm across seat 1's Start's contacts and the cell at 4.2 V, the device shall stay off (every rail below 0.5 V) for 10 min.
 - Rationale: seat 1's Start's contact carries a rail on one pad (VSYS through a diode to PWR_EN); sweat, flux or a pressed cap can bridge it (DF-242). Only seat 1's Start is on the power path (Was: both Start domes on the RP board).
 - Source: design.py R13, R15 and Q1 on the power key's line (the RP board's, kept on the RP2350B board, now fed from seat 1's Start); 2n7002_cj.txt:55; VER-239's output.
+- Numbers: 1 Mohm = judgment: Claude's model of sweat, flux or a pressed cap bridging the contact (DF-242); looser (a lower resistance) is a harder test than real leakage, tighter (10 Mohm) misses a wet contact; 4.2 V = datasheet: bq24074.txt:773 "4.16 4.20 4.23" (a full cell, the highest VSYS the leakage can see); 0.5 V = derived: the same off level as REQ-PWR-09 (0.5 V); 10 min = judgment: long enough for a latch that needs a slow leak to build up to show itself; looser (1 min) misses a slow RC, tighter (1 h) costs bench time
 - Method: T, A
 - Verified by: VER-240
 - Phase: EVT
@@ -857,6 +886,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: From a default-power USB source (CC at 0.25-0.61 V) the input current shall be 500 mA or less within 2 s of plug-in.
 - Rationale: U2's USB500 limit is 475 mA (EN1 high by R43, EN2 grounded); the charge and the system share it.
 - Source: USB 2.0 cl. 7.2.1; pin_review/u2.json pins 5 and 6; validation_plan #94.
+- Numbers: 0.25-0.61 V = judgment: the CC voltage band of a default-power USB Type-C source (the Type-C specification, unread); looser or tighter only changes which sources the test accepts as default power; 500 mA = judgment: the 500 mA of a standard USB 2.0 port (USB 2.0 cl. 7.2.1 names it but the standard's text is not on disk (unread)); the charger's USB500 limit is 475 mA typical, 500 mA maximum (bq24074.txt:733 "EN1 = HI, EN2 = LO 450 475 500"); looser takes more than a port offers, tighter (100 mA) is the unconfigured limit (DEC-08); 2 s = judgment: Claude's allowance for the charger to settle after plug-in; looser lets a unit draw over the limit for longer, tighter fails the soft start
 - Method: T
 - Verified by: VER-81
 - Phase: EVT
@@ -870,6 +900,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The board shall present 10 uF or less on VBUS and take 50 uC or less at a plug-in at 5.25 V (USB 2.0 cl. 7.2.4.1), each capacitor at its tolerance and its DC bias, when the console is a sink.
 - Rationale: USB 2.0's inrush limit is 10 uF or 50 uC at the plug; the old power path's 265 uC came from its diode charging VSYS (Was: the TP4056 design's D5, which left in 2d1124d).
 - Source: USB 2.0 cl. 7.2.4.1; validation_plan #125; design.py C1, U2.
+- Numbers: 10 uF = judgment: USB 2.0's capacitance limit at a plug (cl. 7.2.4.1, text unread); looser draws more inrush than a host port expects, tighter costs decoupling; 50 uC = judgment: USB 2.0's charge limit at a plug (cl. 7.2.4.1, text unread); looser trips a host's overcurrent, tighter costs capacitance; 5.25 V = judgment: the top of USB 2.0's source range (cl. 7.2.1, text unread), the worst case for the charge a capacitor takes; looser or tighter only changes the worst-case charge
 - Method: A
 - Verified by: VER-99
 - Phase: ORDER
@@ -883,6 +914,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: In every mode (off, cell, USB, charging, hot plug, unplug): each IC's steady-state stress shall be at or below its recommended operating maximum and each transient at least 0.3 V below its absolute maximum; each passive and discrete (MLCC voltage, FET Vds and Vgs, diode VR and IF, resistor power) shall be at 80% or less of its rating, 90% for transients under 10 us; every exception named here.
 - Rationale: the old rule (80% of every absolute maximum) failed by construction on every 3.3 V part, so it could not tell an intended stress from an oversight (O-22). Derivation (VER-189 fix, 2026-10-29): a design rule: the 80% (90% under 10 us) and the 0.3 V below absolute maximum are the margins Claude proposed in O-22 for passives and ICs; no standard is cited. The panel's VCI/VDDI exception is named in the Notes. Earlier cite (not a primary source): validation_plan #5, #123; Claude's proposal, revised (O-22).
 - Source: Alex's decision (to sign)
+- Numbers: 0.3 V = judgment: Claude's margin below absolute maximum for an IC transient (O-22); analysis/derating_rule_2026-10-30.md (section 1) finds no standard sets a fixed volts figure, and proposes replacing it with the accuracy of the check; the Statement is about to change, this tags the current text; looser lets a transient reach the rating, tighter (0.5 V) fails 3.3 V parts by construction; 80% = judgment: matches ECSS-Q-ST-30-11C Table 6-34 (VDS 80%) and Table 6-29 (chip resistor voltage 80%) and Murata's consumer MLCC 80% as quoted in analysis/derating_rule_2026-10-30.md, but not the same standards' diode 75%, VGS 75% or ceramic 60%; the Statement is about to change; looser (90%) takes the MLCC life margin, tighter (60%) is ECSS's ceramic figure and fails the board's MLCCs; 90% = judgment: Claude's figure for a transient under 10 us (O-22); ECSS 5.4.2e (analysis/derating_rule_2026-10-30.md) allows the steady-state limit plus 10% or 80%, whichever is lower, for repeated transients; the Statement is about to change; looser lets a pulse reach the rating, tighter (80%) is the steady-state figure; 10 us = judgment: Claude's boundary between a transient and steady state (O-22); no standard on disk sets a time; the Statement is about to change; looser (1 ms) calls a long pulse a transient, tighter (1 us) calls hot-plug ringing steady state
 - Method: A
 - Verified by: VER-31, VER-36
 - Phase: EVT
@@ -908,6 +940,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: A source putting 6-20 V on VBUS (a broken charger, a PD source stuck high) shall over-stress no part: the lowest VBUS that takes a part over its absolute maximum shall be 20 V or more, or the value Alex accepts.
 - Rationale: U2 blocks the fault from VSYS (OVP 6.6 V, 28 V absolute), but PWR_EN through R14/D3 takes U3's EN (6 V absolute) over at 9.1 V and EN1 through R43 takes U2's EN1 (7 V) over at 12.4 V (VER-177, with R14 47k and R43 220k; Was: 6.9 V and 9.5 V with 10k and 100k).
 - Source: pin_review/u2.json, u3.json; Claude's analysis (O's sign-off objection on the cell path, DF-222).
+- Numbers: 6-20 V = judgment: 6 V just over the USB source ceiling and 20 V the top of a USB PD source (the PD specification, unread); looser (28 V) is the charger's absolute maximum, tighter (12 V) ignores a PD source stuck at 20 V; 20 V or more = derived: the 20 V top of the 6-20 V fault range, so no part is over its absolute maximum anywhere in it
 - Method: A, T
 - Verified by: VER-177, VER-97
 - Phase: EVT
@@ -945,6 +978,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The board shall supply the RP2350B's IO and USB and ADC rails and the flash's VCC at 3.3 V, and its 1.1 V core from the chip's on-chip regulator with the inductor, capacitors and VREG AVDD filter of Raspberry Pi's minimal design, each inside the RP2350 datasheet's and the GD25Q128 datasheet's recommended range at the chip's peak load and the regulator's tolerance.
 - Rationale: the RP2350B has no flash inside, so the flash is a second load on the 3.3 V rail; its core is made on the chip. The ranges are the datasheets' (not on disk: VER-233).
 - Source: next_spin_requirements.md:26 ('Raspberry Pi's 2-layer RP2350B minimal design, flash included, copied as drawn'); the RP2350 datasheet and the GD25Q128 datasheet (to download: VER-233).
+- Numbers: 3.3 V = datasheet: rp2350.txt:1217 "USB_OTP_VDD Power supply for internal USB Full Speed PHY and OTP storage, nominal voltage 3.3 V" and rp2350.txt:1218 "ADC_AVDD Power supply for analogue-to-digital converter, nominal voltage 3.3 V" (IOVDD allows 1.8 V to 3.3 V, line 1216; the flash's VCC range is in the GD25Q128 datasheet, not on disk, VER-233); 1.1 V = datasheet: rp2350.txt:1223 "nominal voltage 1.1 V after filtering"
 - Method: A, T
 - Verified by: VER-235, VER-231, VER-83, VER-249
 - Phase: ORDER
@@ -958,6 +992,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Seat 1's Start shall be the power key: pressing it shall power the regulator, the firmware shall latch PWR_HOLD only after Start has been held 2.5 s (2 to 3 s, counted from power-up when the press began before the firmware booted), and if it is released earlier the power shall drop and the unit be fully off; the only button power-off shall be the hard-reset hold of about 8 s (REQ-SOC-04), with no shorter firmware power-off hold, and a tap of Start still opening the pause menu; the firmware shall not start a flash erase or write once Start has been held 2 s or more, and after any reset that is not a power-on reset shall latch PWR_HOLD only on a Start press that begins after it has seen Start released (REQ-PWR-09). There shall be no power slider, slide switch, case slot for one or board-edge switch.
 - Rationale: Alex, 2026-10-29: the DS Lite power slider is dropped and seat 1's Start is the power key. Start's own membrane contact also feeds the power-latch path as the RP board's SW21 did (Start joins VSYS to PWR_EN through a diode; the MCU reads it through the buffered line). The 2 to 3 s hold to turn on is so a bump in a pocket does not switch it on (DESIGN.md:60); this reverses the 'no hold-to-latch' change made earlier the same day (REQ-PRD-15). There is no firmware power-off hold: the only button power-off is the 8 s hold (6 s to 10 s), the hard reset of REQ-SOC-04, which works whatever the firmware is doing (Alex, 2026-10-30: 'The hard shut off should be 8 s across the board. No 2 s shut off.'); Sleep from the pause menu still turns the unit off after saving (REQ-PRD-20). Because the 8 s hold now cuts power on purpose in normal use, the firmware must not start a flash erase or write once Start has been held 2 s (Claude's decision, 2026-10-30; moved from 4 s the same day, since 4 s left no margin), so the cut at 6 s or later never lands mid-write in the settings, the battle log or a Sleep snapshot: 2 s plus the longest erase or write, under 2 s, ends by 4 s, 2 s before the 6 s minimum. No re-latch: see REQ-PWR-09. Checked against the datasheets on 2026-10-30 (analysis/power_off_datasheet_check_2026-10-30.md): the TPS3421EG's minimum delay is 6 s (tps3421.pdf p.5), so the 2.5 s turn-on hold never resets the unit, but 2 s plus an operation under 2 s leaves 2 s of margin to that minimum, and the TPS3421 counts from the press (power-up, on a turn-on press) while the firmware counts from its boot, so the firmware counts the hold from power-up when the press began before it booted.
 - Source: DESIGN.md:60 ('Power is seat 1's Start button: hold it for 2 to 3 seconds to turn on, so a bump in a pocket doesn't switch it on. (2026-10-29)'); DESIGN.md:65 ('Holding seat 1's Start for about 8 seconds turns the console off, even if it has frozen; there is no shorter hold to turn it off. (2026-10-30)'); Alex, 2026-10-29, in chat (the 2.5 s hold, no slider); Alex, 2026-10-30, in chat (the 8 s hold is the only power-off; the flash safeguard and the no-re-latch rule are Claude's decisions, to sign); tps3421.pdf p.5 (tTIMER 6 s to 9 s); rp2350.pdf section 6.4 (CHIP_RESET, p.427-428).
+- Numbers: 2.5 s = spec: Alex, 2026-10-29, in chat (the 2.5 s hold, no slider; recorded in this row's Source and Rationale); 2 to 3 s = spec: docs/static/DESIGN.md:60 ('hold it for 2 to 3 seconds to turn on'); about 8 s = spec: docs/static/DESIGN.md:65 ('Holding seat 1's Start for about 8 seconds turns the console off'); 2 s or more = judgment: Claude's decision, 2026-10-30 (Rationale): 2 s plus the longest erase or write (under 2 s) ends by 4 s, 2 s before the TPS3421's 6 s minimum delay (tps3421.txt:308 "TPS3421Ey, TPS3422Ey: TS = GND 6 7.5 9"); it was 4 s, which left no margin; looser starts writes a hold can cut, tighter blocks flash writes earlier in a hold
 - Method: A, T
 - Verified by: VER-239, VER-240
 - Phase: EVT
@@ -1159,6 +1194,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: At every power-on the RP2350B's boot ROM shall find the bare-metal image in the GD25Q128 on its QSPI pins and run it in place (XIP), 20 of 20 power-ons, with the whole 16 MB read back through the XIP window matching the image's CRC and the flash's JEDEC ID reading as the GD25Q128's.
 - Rationale: the RP2350B has no flash inside; the one 16 MB flash holds the program and the sound. The GD25Q128's ID is 0xC84018 from memory (to confirm from its datasheet: VER-233).
 - Source: DESIGN.md:74; next_spin_requirements.md:13, :24-25 (the chip, the flash).
+- Numbers: 20 of 20 = count: twenty power-ons; no standard sets it; fewer cannot show an intermittent boot failure, more costs bench time; 16 MB = spec: docs/static/DESIGN.md:74 ('a 16 MB flash memory chip beside it')
 - Method: T
 - Verified by: VER-252, VER-237
 - Phase: ORDER
@@ -1172,6 +1208,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The no_std Rust battler core shall build for the RP2350B's Cortex-M33 cores and run from the flash in place with its data in the chip's 520 KB of SRAM, with today's 420 KB of RAM and 1.4 MB of code and data, and 100 KB of SRAM or more free.
 - Rationale: a bare-metal Rust boot is required; the core's size on the RP2350 today (the stripboard Pico 2, an RP2350A with the same cores and SRAM). The 100 KB free is Claude's proposal.
 - Source: next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); DESIGN.md:87.
+- Numbers: 520 KB = datasheet: rp2350.txt:797 "520 kB on-chip SRAM"; 420 KB = spec: docs/static/next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); 1.4 MB = spec: docs/static/next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); 100 KB = derived: 520 KB - 420 KB = 100 KB, the SRAM that is free today (the Rationale calls it Claude's proposal): the core may grow in code but not in RAM
 - Method: T, A
 - Verified by: VER-252, VER-237
 - Phase: ORDER
@@ -1185,6 +1222,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The RP2350B's 12 MHz crystal shall be oscillating and stable within 10 ms of 3V3 valid at every power-up across the cell's range and on USB, with the load capacitors and series resistor of Raspberry Pi's minimal design.
 - Rationale: the clock the chip and its USB derive from; 12 MHz is the RP2350's reference clock (to confirm: the datasheet is not on disk). Derivation (VER-189 fix, 2026-10-29): neither the RP2350 datasheet nor the crystal's is on disk, so the start-up time is a design choice: the boot budget is 1.0 s after the hold (REQ-PRD-15) and 10 ms is 1% of it (10 ms / 1000 ms). VER-237 measures it on the first unit. The frequency tolerance is the crystal part's, chosen at NM-04, and is not set here. Earlier cite (not a primary source): the RP2350 datasheet and the minimal design (to download: VER-233).
 - Source: Alex's decision (to sign)
+- Numbers: 12 MHz = datasheet: rp2350.txt:1199 "defaults to a 12 MHz crystal"; 10 ms = judgment: 1% of the 1.0 s boot budget after the hold (REQ-PRD-15), 10 ms / 1000 ms; neither the RP2350 datasheet's nor the crystal's start-up time is read here, VER-237 measures it; looser (100 ms) eats a tenth of the boot budget, tighter (1 ms) fails crystals that start in a few ms
 - Method: A, T
 - Verified by: VER-198, VER-237
 - Phase: EVT
@@ -1197,6 +1235,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: With no reset button, the RP2350B shall come out of reset by its power-on reset at every power-up, a hung firmware shall reset by the watchdog within 2 s, and holding seat 1's Start for 8 s (6 s to 10 s: Alex, 2026-10-29) shall pull the RP2350B's RUN pin low once for a fixed pulse, through a push-button controller fed from 3V3, and so reset the RP2350B whatever the firmware is doing, whenever the unit is on, with USB in or not; on the cell the unit then turns off when Start is released (REQ-PWR-09), and with USB in it restarts.
 - Rationale: there is no reset button; the watchdog and a long hold of seat 1's Start are the ways out of a hang (REQ-PWR-10). Start's 8 s hold is the hard reset of REQ-PRD-08.B: a TI TPS3421EG (LCSC C2067262, TS pin to GND) drives RUN low after the hold, once, for a fixed 400 ms (320 ms to 480 ms), however long Start stays down; its delay is 7.5 s, 6 s to 9 s over temperature and supply (tps3421.pdf p.5, Table 2 p.11), inside 6 s to 10 s; PB1 and PB2 both sit on Start's buffered line, because it fires only when both are low, and they need a pull-up, which the TPS3421 lacks (p.3, p.11). A reset releases PWR_HOLD, so the unit turns off once Start is released, and with USB in it restarts. The TPS3421 is fed from 3V3 (Alex, 2026-10-29), so it draws nothing while the unit is off (REQ-PWR-07), and reads Start through the 3V3-side buffered power-key line; Start turns the unit on through its own latch path, so the hard reset is needed only while the unit is on. A hung image that has stopped the watchdog is the case the watchdog cannot answer.
 - Source: DESIGN.md:64 ('There is no separate reset button. (2026-10-28)'); DESIGN.md:65 (hold seat 1's Start about 8 s); Alex, 2026-10-29, in chat (the hard reset, REQ-PRD-08.B; 'about 8 s' read as 6 s to 10 s); tps3421.pdf (SBVS211B: p.1, p.3, p.5, p.11, p.12) and rp2350.pdf (section 12.9, the watchdog, p.1105-1108), read on 2026-10-30 (VER-258, analysis/power_off_datasheet_check_2026-10-30.md).
+- Numbers: 2 s = judgment: Claude's watchdog timeout; the RP2350's watchdog LOAD register reaches about 16 s so 2 s is settable (rp2350.pdf section 12.9, Notes); looser (10 s) lets a hung unit drain the cell longer (REQ-PWR-10 builds on 2 s), tighter (0.5 s) risks resets on a slow image; 8 s = spec: docs/static/DESIGN.md:65 ('about 8 seconds'); 6 s to 10 s = spec: Alex, 2026-10-29, in chat ('about 8 s' read as 6 s to 10 s; recorded in this row's Source, Notes and in APPROVALS context of REQ-PRD-08.B); the TPS3421EG's delay tps3421.txt:308 "TPS3421Ey, TPS3422Ey: TS = GND 6 7.5 9" lies inside it
 - Method: A, T
 - Verified by: VER-198, VER-105, VER-258, VER-241
 - Phase: EVT
@@ -1210,6 +1249,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Every function shall sit on an RP2350B pin that has it in the datasheet's pin table: the display bus and its control lines, the audio output, the 20 contacts (seat 1's Start among them, also the power key), the cell sense on an ADC pin, a UART or the SWD pins for the debug connector, with USB on the chip's own USB pins and the flash on the QSPI pins, 0 mux conflicts, and no function left on a GPIO the datasheet reserves.
 - Rationale: a QFN-80 has 48 GPIOs and fixed special pins (QSPI, USB, ADC on GPIO40 to 47); a function on a pin without it is a respin. The 20 inputs take 20 of the 48 GPIOs, read directly (Alex, 2026-10-29; the power slider is dropped, so one input fewer); VER-262 counts the budget, and the 74HC165 chain is the first thing to change if it runs short.
 - Source: next_spin_requirements.md:12, :24-25; the RP2350 datasheet (to download: VER-233).
+- Numbers: 20 contacts = spec: docs/static/DESIGN.md:39 (a D-pad, four face buttons, Start and Select: 10 a seat, 2 seats); 0 mux conflicts = count: none allowed: a function on a pin without it is a respin (Rationale), so zero by definition, no sample
 - Method: A, I
 - Verified by: VER-232, VER-262
 - Phase: ORDER
@@ -1222,6 +1262,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: Each unit shall report an RP2350B in a QFN-80 and a GD25Q128 by its JEDEC ID, with its 16 MB reading back without error, logged against its serial.
 - Rationale: a substituted or remarked chip or flash (a 4 MB or 8 MB flash, a part with its own flash inside, a QFN-60 RP2350A) is caught on the bench.
 - Source: next_spin_requirements.md:24-25 (the chosen chip and flash).
+- Numbers: 16 MB = spec: docs/static/DESIGN.md:74 ('a 16 MB flash memory chip beside it')
 - Method: T
 - Verified by: VER-242
 - Phase: EVT
@@ -1234,6 +1275,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The RP2350B's temperature shall stay inside its datasheet limit in every mode at 40 C ambient in the closed case.
 - Rationale: the limit is the datasheet's (not on disk).
 - Source: the RP2350 datasheet (to download: VER-233); IEC 62368-1 for the skin (REQ-THM-01).
+- Numbers: 40 C = judgment: Claude's warm-room and pocket figure; the datasheet limit it is held against is not read here (VER-233); looser (50 C) tests a hot car, tighter (30 C) hides the closed case's heat
 - Method: A, T
 - Verified by: VER-238, VER-86, VER-257
 - Phase: EVT
@@ -1258,6 +1300,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The GD25Q128's land pattern shall match its package drawing, and its wiring (QSPI SCLK, QSPI SS, QSPI SD0 to SD3 to the RP2350B's QSPI pins of the same name, its VCC and decoupling, and the QSPI SS line's pull-up and BOOTSEL pad) shall match Raspberry Pi's 2-layer RP2350B minimal design net for net, with 0 differences, and no QSPI track shall be more than 2 mm longer than the minimal design's longest.
 - Rationale: the core layout is copied from Raspberry Pi's minimal design, flash included (Alex, 2026-10-29); a swapped SD1 and SD2, a wrong land or a long QSPI track is a board that does not boot. The 2 mm is Claude's proposal.
 - Source: next_spin_requirements.md:26 ('Raspberry Pi's 2-layer RP2350B minimal design, flash included, copied as drawn'); hardware/ref_design/board/lib/battler.pretty/RP2350B_QFN80_RPi.kicad_mod (the chip's footprint from it, under RPI-RP2350B-MINIMAL_LICENSE.txt); the GD25Q128 datasheet (to download: VER-233).
+- Numbers: 2-layer = spec: docs/static/DESIGN.md:62 ('The circuit board has two layers'); 0 differences = spec: docs/static/next_spin_requirements.md:26 ('copied as drawn'): net for net, zero differences; 2 mm = judgment: the Rationale: 'the 2 mm is Claude's proposal', no source on disk; looser lets a long QSPI track degrade timing, tighter fails on routing the 2-layer board forces
 - Method: A, I
 - Verified by: VER-253, VER-254, VER-125
 - Phase: ORDER
@@ -1271,6 +1314,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The 16 MB flash shall hold a partition table, a bootloader of our own in its own partition write-protected with the GD25Q128's block protection, two firmware slots A and B with a hash in each image, the sound data and a spare region for settings and the debug log. At power-on the bootloader shall read seat 1's Select by GPIO alone, before the display, sound or USB start, and enter the RP2350's USB boot mode if it is held, and otherwise start the main firmware. A failed update shall fall back to the previous firmware through the boot ROM's try-before-you-buy, and a failed-boot counter in a watchdog scratch register shall send the unit to USB boot mode after 3 failed boots. With the case open, a BOOTSEL test pad on QSPI SS shall force USB boot.
 - Rationale: the design facts under REQ-PRD-08.B and REQ-PRD-19. The layout is Claude's proposal: partition table 4 KB, bootloader 64 KB (locked), firmware A 2 MB, firmware B 2 MB (a program is 1.4 MB today), sound data (REQ-PRD-18: 2 MB or more of room), and the spare. Reading Select by GPIO alone before anything else starts means no display, sound or USB fault can stop the recovery.
 - Source: Alex, 2026-10-29, in chat (REQ-PRD-08.B and -19); the RP2350 datasheet's partition table, hash check and try-before-you-buy (to download: VER-233; VER-259 reads them); the GD25Q128 datasheet's block protection (VER-259).
+- Numbers: 16 MB = spec: docs/static/DESIGN.md:74 ('a 16 MB flash memory chip beside it'); 3 failed boots = judgment: Claude's count: one failed boot can be a power cut, three in a row mean the image is bad; the Statement gives no source; looser (10) delays recovery of a bad image, tighter (1) sends a unit to USB boot mode on a glitch
 - Method: A, T, D
 - Verified by: VER-259, VER-241, VER-260
 - Phase: EVT
@@ -1284,6 +1328,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The flash's spare region shall hold one battle snapshot of 16 KB or less carrying the firmware's build ID and a check value, written within 1 s of Sleep being chosen; a power cut at any moment of the write shall leave either the previous valid save or no valid save, never a half-written one that resumes; at power-on a save with another build ID, or one that fails its check, shall be discarded and the unit start at the lobby.
 - Rationale: REQ-PRD-20 needs the battle to survive the cell being unplugged, so it goes to flash; the spare region is REQ-SOC-10's, beside the settings and the debug log. The 16 KB is Claude's margin over Alex's 'a few KB'. The firmware's build ID is what makes an older snapshot's layout unreadable by newer firmware; the check value catches a torn write. The write must not wear the log's sectors out (DF-259): Sleep is rare, so the save rotates over a few sectors of the region (DF-267).
 - Source: Alex, 2026-10-29, in chat (REQ-PRD-20: a snapshot of a few KB in the spare area, the build ID, the discard rules); the GD25Q128 datasheet's sector erase time, program time and endurance (VER-264 reads them).
+- Numbers: 16 KB = judgment: the Rationale: 'Claude's margin over Alex's a few KB'; looser costs spare-region sectors and write time, tighter risks a snapshot that does not fit; 1 s = spec: Alex, 2026-10-29, in chat (REQ-PRD-20: 'within 1 s', the statement is his text; recorded in requirements.md at REQ-PRD-20)
 - Method: A, T
 - Verified by: VER-264, VER-263
 - Phase: EVT
@@ -1299,6 +1344,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: The USB-C port shall attach as a device (a sink, Rd 5.1 kohm on CC1 and on CC2, no role controller) to an Android phone, a computer or a charger, in both plug orientations, 20 of 20 plug-ins each way, enumerate as the console's WebUSB device, and never source VBUS.
 - Rationale: the console is a USB device only (DESIGN.md:86); the phone is the host and carries the network.
 - Source: DESIGN.md:86; next_spin_requirements.md:16 ('a USB device port'); USB Type-C 1.x (Rd on each CC, to confirm the tolerance).
+- Numbers: 5.1 kohm = judgment: the Rd of a USB Type-C device (the Type-C specification, unread; the Source says 'to confirm the tolerance'); looser (a different Rd) is read as another current advertisement, tighter only costs a part; 20 of 20 = count: twenty plug-ins each way; no standard sets it; fewer cannot show an intermittent attach, more costs bench time
 - Method: T, A
 - Verified by: VER-251, VER-195, VER-80
 - Phase: ORDER
@@ -1312,6 +1358,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Statement: D+ and D- shall run side by side from the receptacle to the RP2350B over unbroken ground on the 2-layer board, through the series resistors of Raspberry Pi's minimal design, length-matched within 2 mm with stubs of 3.5 mm or less, for full speed (12 Mbps).
 - Rationale: the RP2350's USB is full speed, so no 480 Mbps impedance target is claimed; the pair is still kept tight and over ground for ESD and noise. The 2 mm and 3.5 mm are Claude's proposal from USB 2.0.
 - Source: USB 2.0 cl. 7.1; DESIGN.md:62 (two layers); the RP2350 datasheet and the minimal design (to download: VER-233).
+- Numbers: 2-layer = spec: docs/static/DESIGN.md:62 ('The circuit board has two layers'); 2 mm = judgment: Claude's proposal 'from USB 2.0' (Rationale; the standard is unread); looser lets the pair skew, tighter fails on routing a 2-layer board can hold; 3.5 mm = judgment: Claude's proposal from USB 2.0 (Rationale; unread); looser lets a stub reflect at 12 Mbps, tighter fails on the receptacle's own pad geometry; 12 Mbps = datasheet: rp2350.txt:69012 "communicate with Full Speed (12 Mb/s)"
 - Method: A
 - Verified by: VER-236, VER-108
 - Phase: ORDER

@@ -158,6 +158,7 @@ Python 3 standard library only.
 import argparse
 import ast
 import base64
+import contextlib
 import csv
 import datetime
 import hashlib
@@ -175,6 +176,7 @@ sys.path.insert(0, HERE)
 import grid as cgrid                    # noqa: E402  the coverage grid (classes by subsystems)
 import stale_names                      # noqa: E402  live rows naming what design.py no longer has (VER-188)
 import repo_paths                       # noqa: E402  repository paths the register names that moved or left (VER-220)
+import ds as cds                        # noqa: E402  datasheet quotes read from the PDFs (the Numbers field's datasheet: tags)
 
 PHASES = ["ORDER", "CASE", "EVT", "DVT", "PVT", "SALE"]
 GATE_ARG = {"order": "ORDER", "case": "CASE", "evt": "EVT", "dvt": "DVT", "pvt": "PVT"}
@@ -1338,6 +1340,163 @@ def in_board(path, board):
     return any(path.startswith(r) for r in BOARD_ROOTS[board])
 
 
+# ---- where each number comes from (README, 'Requirement fields': the Numbers field; 2026-10-30) ---------------------
+# Every number in a live requirement's Statement has an entry in its '- Numbers:' field saying where it comes from.
+# A row that has the field is checked in full and its faults are errors.  A live row with no field yet is only
+# counted (a warning); NUMBERS_REQUIRED turns that count into errors once every row is tagged.
+NUMBERS_REQUIRED = False
+NUMBERS_MISSING = {}                      # live rows with no Numbers field: {id: untagged numbers}
+NUM_TAGS = ("datasheet", "standard", "spec", "derived", "judgment", "count")
+# tokens in a Statement that are not numbers: IDs and part numbers (a letter run joined to digits: R42, GPIO44,
+# RP2350B, 74HC165, 3V3, QFN-80, REQ-PWR-14), dates, file line cites, clause and page cites, a standard's own
+# number (USB 2.0, IEC 62368-1), '#n' plan cites, seat and pin labels ('seat 1', 'pin 1'), hex, and list numbering ('(1)')
+NOT_NUMBER = [re.compile(p) for p in (
+    r"\b\d{4}-\d{2}-\d{2}\b",
+    r"[\w./-]+\.(?:txt|md|py|csv|json|pdf|kicad_mod|scad):\d+(?:[-:,]\d+)*",
+    r"\bp\.\s?\d+(?:-\d+)?",
+    r"\b(?:cl|clause|section|Table|Annex|Appendix)\.?\s+[A-Z]?\d+(?:\.\d+)*",
+    r"\b(?:IEC|EN|UN|ISO|USB|SBVS|SLUS)\s*(?:Type-C\s*)?\d+(?:\.\d+)*(?:-\d+)*",
+    r"#\d+",
+    r"(?i:\b(?:seat|pin)) \d\b",
+    r"\b0x[0-9A-Fa-f]+",
+    r"\b[A-Za-z][A-Za-z0-9]*(?:-[A-Za-z0-9]+)*-\d[\w.]*",
+    r"\b[A-Za-z]+\d[\w]*",
+    r"\b\d+[A-Za-z]+\d\w*",
+    r"\(\d+\)",
+)]
+NUMBER = re.compile(r"(?<![\w.])\d+(?:\.\d+)?")
+NUM_ENTRY = re.compile(r"^(?P<value>.+?) = (?P<tag>[a-z]+):\s*(?P<detail>.*)$")
+NUM_SPLIT = re.compile(r"; (?=[^;=]{1,120} = (?:" + "|".join(NUM_TAGS) + r"|[a-z]+): )")
+DS_CITE = re.compile(r'([\w.-]+)\.txt:(\d+)\s+"([^"]+)"')
+SPEC_CITE = re.compile(r"(docs/static/[\w.-]+\.md):(\d+)")
+
+
+def number_tokens(text):
+    """[(start, end, text)] of the numbers in text, after blanking everything NOT_NUMBER."""
+    t = text
+    for rx in NOT_NUMBER:
+        t = rx.sub(lambda m: " " * len(m.group(0)), t)
+    return [(m.start(), m.end(), m.group(0)) for m in NUMBER.finditer(t)]
+
+
+def numbers_entries(field):
+    """[(value, tag, detail)] of a Numbers field, or None for an entry that does not parse."""
+    out = []
+    for part in NUM_SPLIT.split(field.strip().rstrip(".")):
+        m = NUM_ENTRY.match(part.strip())
+        out.append((m.group("value").strip(), m.group("tag"), m.group("detail").strip()) if m else (part.strip(), None, ""))
+    return out
+
+
+def row_number_values(row):
+    """The float values of every number inside the entry values of a row's Numbers field."""
+    vals = set()
+    for v, _, _ in numbers_entries(row["f"].get("Numbers", "")):
+        vals |= {float(t) for _, _, t in number_tokens(v)}
+    return vals
+
+
+def check_number_entry(where, rid, entry, others, reqs):
+    """One entry's tag: a datasheet quote on its line, a spec line that exists, a derived entry whose inputs are
+    tagged, a judgment that says what looser or tighter costs."""
+    value, tag, detail = entry
+    if tag is None:
+        err(where, f"{rid}: Numbers entry {value[:60]!r} is not '<value> = <tag>: <detail>'")
+        return
+    if tag not in NUM_TAGS:
+        err(where, f"{rid}: Numbers entry {value!r}: unknown tag {tag!r} (use {', '.join(NUM_TAGS)})")
+        return
+    if not detail:
+        err(where, f"{rid}: Numbers entry {value!r}: tag {tag} with no detail")
+        return
+    if tag == "datasheet":
+        cites = DS_CITE.findall(detail)
+        if not cites:
+            err(where, f'{rid}: Numbers entry {value!r}: datasheet: wants <file>.txt:<line> "<quoted value>"')
+        for name, line, quoted in cites:
+            ok, why = False, ""
+            if not cds.have(name):
+                why = f"{name}.pdf is not in hardware/ref_design/datasheets"
+            else:
+                try:
+                    with contextlib.redirect_stdout(io.StringIO()):
+                        ok = cds.on_line(name, int(line), quoted)
+                except SystemExit:
+                    why = f"{name}.pdf could not be read"
+                why = why or f"{name}.txt:{line} does not hold {quoted!r}"
+            if not ok:
+                err(where, f"{rid}: Numbers entry {value!r}: {why}")
+    elif tag == "standard":
+        if not re.search(r'\S.* "[^"]{3,}"', detail):
+            err(where, f'{rid}: Numbers entry {value!r}: standard: wants <document> <clause> "<quote>"')
+    elif tag == "spec":
+        cite = SPEC_CITE.search(detail)
+        if cite:
+            path = os.path.join(ROOT, cite.group(1))
+            n = len(open(path, encoding="utf-8").read().splitlines()) if os.path.isfile(path) else -1
+            if not 1 <= int(cite.group(2)) <= n:
+                err(where, f"{rid}: Numbers entry {value!r}: {cite.group(0)} is not a line of a file in the repository")
+        elif not re.match(r"Alex, \d{4}-\d{2}-\d{2}\b.{8,}", detail):
+            err(where, f"{rid}: Numbers entry {value!r}: spec: wants docs/static/<file>.md:<line> or "
+                       "'Alex, <date>, <where it is recorded>'")
+    elif tag == "derived":
+        known = set()
+        for ov, _, _ in others:
+            known |= {float(t) for _, _, t in number_tokens(ov)}
+        for rr in set(re.findall(r"REQ-[A-Z]{2,4}-\d+(?:\.[A-Z])?", detail)):
+            if rr not in reqs:
+                err(where, f"{rid}: Numbers entry {value!r}: derived from {rr}, which does not exist")
+            elif not reqs[rr]["f"].get("Numbers"):
+                err(where, f"{rid}: Numbers entry {value!r}: derived from {rr}, whose numbers are not tagged")
+            else:
+                known |= row_number_values(reqs[rr])
+        # the first number after each '=' is a result (and may feed a later step); every other number is an input
+        results = set()
+        for i, seg in enumerate(detail.split("=")):
+            for j, (_, _, tok) in enumerate(number_tokens(seg)):
+                if i and not j:
+                    results.add(float(tok))
+                elif float(tok) not in known and float(tok) not in results:
+                    err(where, f"{rid}: Numbers entry {value!r}: derived: input {tok} is not tagged in this row's "
+                               "other entries or in a row it names")
+    elif tag == "judgment":
+        if not re.search(r"\b(?:looser|tighter)\b", detail):
+            err(where, f"{rid}: Numbers entry {value!r}: judgment: says what a looser or tighter number would cost")
+
+
+def check_numbers(reqs):
+    """Every number in a live requirement's Statement has a Numbers entry; each entry's tag holds.  Returns
+    {id: untagged count} for the live rows with no Numbers field (their count is a warning, an error once
+    NUMBERS_REQUIRED)."""
+    missing = {}
+    for rid, r in reqs.items():
+        f, w = r["f"], r["_where"]
+        if f.get("Status") in GONE or f.get("Board") not in BOARD_VALUES or not f.get("Statement"):
+            continue
+        st = f["Statement"]
+        toks = number_tokens(st)
+        if not f.get("Numbers"):
+            if toks:
+                missing[rid] = len(toks)
+                if NUMBERS_REQUIRED:
+                    err(w, f"{rid}: {len(toks)} number(s) in the Statement and no '- Numbers:' field")
+            continue
+        entries = numbers_entries(f["Numbers"])
+        covered = []
+        for i, e in enumerate(entries):
+            if e[0].startswith("in: "):
+                pass                                     # an input of a derived entry that the Statement does not state
+            elif e[1] is not None and e[0] not in st:
+                err(w, f"{rid}: Numbers entry {e[0]!r} is not written in the Statement")
+            elif e[1] is not None:
+                covered += [(m.start(), m.start() + len(e[0])) for m in re.finditer(re.escape(e[0]), st)]
+            check_number_entry(w, rid, e, entries[:i] + entries[i + 1:], reqs)
+        bare = [t for s0, e0, t in toks if not any(a <= s0 and e0 <= b for a, b in covered)]
+        if bare:
+            err(w, f"{rid}: {len(bare)} number(s) in the Statement with no Numbers entry: {', '.join(bare[:8])}")
+    return missing
+
+
 def load():
     global BASELINE_BOARD
     BASELINE_BOARD = parse_baseline_board()
@@ -1384,6 +1543,9 @@ def load():
         for c in r["children"]:
             if c not in reqs:
                 err(r["_where"], f"{r['id']}: allocated to {c}, which does not exist")
+
+    NUMBERS_MISSING.clear()
+    NUMBERS_MISSING.update(check_numbers(reqs))
 
     vers = {}
     for v in read_csv("verification.csv", VER_COLS):
@@ -2329,6 +2491,10 @@ def report(db, verbose):
     live = {k: q for k, q in reqs.items() if q["f"].get("Status") not in GONE}
     show("no listed check has passed", [r for r in live if live[r]["vers"] and not any(
         vers.get(v, {}).get("last_result") == "PASS" for v in live[r]["vers"])], verbose)
+    tot = sum(NUMBERS_MISSING.values())
+    show(f"live rows with numbers in the Statement and no '- Numbers:' field ({tot} numbers with no stated source"
+         + ("" if NUMBERS_REQUIRED else "; a warning until NUMBERS_REQUIRED") + ")",
+         [f"{r}:{n}" for r, n in NUMBERS_MISSING.items()], True)
     show("statement has no number (INCOSE: state a value and tolerance)",
          [r for r in live if not re.search(r"\d", live[r]["f"].get("Statement", ""))], verbose)
     show("RETIRED (their subject left the design)", [r for r in reqs if reqs[r]["f"].get("Status") == "RETIRED"],

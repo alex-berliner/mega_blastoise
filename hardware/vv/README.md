@@ -288,6 +288,48 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   only when a NOT_BUILT (or gone) check names it, HISTORY.md does, or repo_paths.py's PLANNED
   list gives what will write it; any other is a misspelt path and fails (F's audit).
 
+## Where a requirement's numbers come from (the Numbers field)
+
+Added 2026-10-30, because Alex asked how many requirements carry numbers Claude made up with no source, and the
+register did not say: check_trace.py only checked that a row had a Source. Every number in a live requirement's
+Statement now has an entry in the row's `- Numbers:` field, after Source, and check_trace.py reads it. One entry per
+number, separated by `; `, each `<value as written in the Statement> = <tag>: <detail>`. The value is a piece of
+the Statement's own text and covers every number inside it, wherever it occurs (`20 of 20` covers both,
+`4.75-5.25 V` covers both ends). Tags:
+
+- `datasheet: <file>.txt:<line> "<quote>"`: a file in hardware/ref_design/datasheets; the `.txt` line is the
+  `pdftotext -layout` line, as everywhere in this register; the quote must be on that line or the next, the rule
+  tools/ds.py applies. A unit conversion (18000 s = 5 h) goes after the quote.
+- `standard: <document> <clause or table> "<quote>"`: only for a standard whose text was read. The checker can
+  see only that a quote is there.
+- `spec: docs/static/DESIGN.md:<line>` (or `docs/static/next_spin_requirements.md:<line>`; the line must exist) or
+  `spec: Alex, <date>, <where it is recorded>`: Alex's own words or decision.
+- `derived: <arithmetic>` from other numbers. Every input must be tagged: another entry of this field, an
+  `in: <value> = <tag>: ...` entry (an input the Statement does not state, tagged like any other), or a number
+  in the Numbers field of a row the detail names (`REQ-PWR-14`). The first number after each `=` is the result;
+  every other number is an input.
+- `judgment: <the reason, and what looser or tighter would cost>`: Claude's choice. It is allowed, and named
+  plainly. The detail must say `looser` or `tighter`. When a standard is believed to set the number but its
+  text is not on disk, tag it `judgment:` and write `unread` beside the standard's name, so the numbers to
+  check against the real text are found with `grep -n unread requirements.md`.
+- `count: <reason>`: sample sizes and test counts (`20 of 20`, `3 units`) where no standard sets them; say so if a
+  standard does.
+
+Not numbers (the checker blanks these before it looks): requirement and check IDs (REQ-PWR-14, VER-258, DF-227),
+designators and net names (R42, U2, GPIO44, CC1, 3V3), part numbers and LCSC codes (RP2350B, GD25Q128, 74HC165,
+C47773, QFN-80, Cortex-M33), dates (2026-10-30), file line cites (DESIGN.md:60), clause, table, section and page
+cites (cl. 7.2.4.1, Table 521, p.427), a standard's own number (USB 2.0, IEC 62368-1), `#n` plan cites, hex
+(0xC84018), seat and pin labels (seat 1, pin 1) and list numbering ((1)). Any other run of digits in a Statement
+is a number, with its unit or without. Numbers written as words (one, two, both) are not looked for.
+
+A row with a Numbers field is checked in full and its faults are errors: a number with no entry, an entry whose
+value is not in the Statement, an unknown tag, a datasheet quote not on its line, a `spec:` line that does not
+exist, a `derived:` input nobody tagged, a `judgment:` with no looser or tighter. A live row with no field is
+counted (a warning, per row and in total) until `NUMBERS_REQUIRED` in tools/check_trace.py is set to True, which
+makes every live row's missing field an error. Tagged so far: REQ-BAT, REQ-PWR, REQ-SOC and REQ-USB
+(analysis/number_sources_2026-10-30.md). The field is not part of the Statement, so adding or editing it does not
+touch Alex's approval of a row: approvals follow the Statement's own lines (blame) and its text (a `REQ-ALL@` line).
+
 ## Approvals: signing with Alex's key
 
 check_trace counts an APPROVALS.md line only from a commit signed with the key pinned below.

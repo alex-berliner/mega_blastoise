@@ -86,6 +86,15 @@ def quote(name, line, *tokens):
     return re.sub(r"\s+", " ", lines[line - 1]).strip()
 
 
+def on_line(name, line, quoted):
+    """True if `quoted` (whitespace collapsed, case ignored) is on <name>.txt:<line> or the next line: the window
+    quote() reads, as a yes/no for check_trace's Numbers tags.  False if the file is not on disk."""
+    if not have(name):
+        return False
+    win = re.sub(r"\s+", " ", " ".join(text(name)[max(0, line - 1):line + 1]))
+    return re.sub(r"\s+", " ", quoted).strip().lower() in win.lower()
+
+
 def find(name, pattern, start=0):
     """The first line number (1-based) at or after start whose text matches pattern (a helper for writing
     quotes; checks cite fixed lines)."""
