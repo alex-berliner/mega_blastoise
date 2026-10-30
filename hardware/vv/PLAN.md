@@ -140,7 +140,7 @@ the new functions: the bring-up image running in place from the flash (VER-237),
    flash (Pimoroni's Pico Plus 2 is one, to confirm). The phone bridge test (VER-251) needs only the
    stripboard Pico 2 and an Android phone. Proposed: run VER-251 first, since a fail stops the design.
 3. **The power key**: decided by Alex on 2026-10-29: seat 1's Start, held 2.5 s to turn on
-   (DESIGN.md:60); the DS Lite slider is dropped. Proposed: work the power path's states on paper (VER-239).
+   (DESIGN.md:60) and about 8 s to turn off, the only button power-off (DESIGN.md:65, Alex, 2026-10-30); the DS Lite slider is dropped. Proposed: work the power path's states on paper (VER-239).
 4. **The case material** before any sale (DF-247). Proposed: decide at PVT.
 
 The ESP32-S3 board's decisions (DEC-40 to DEC-49), the RP2354B board's (DEC-01 to DEC-39) and the
