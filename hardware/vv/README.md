@@ -222,7 +222,7 @@ revised spin), PVT (the 30-board run), SALE (before any unit is sold or given aw
   release record, and they must match.
 - **The baseline is checked against the baseline commit too.** The default mode fails when a
   design path's hash in README differs from HEAD's blob for that path, or from the blob at the
-  baseline commit (`fd66be9` since 2026-10-28; `39cc07f` before), so a baseline rewritten from
+  baseline commit (`c34e653` since 2026-10-30; `fd66be9` from 2026-10-28; `39cc07f` before), so a baseline rewritten from
   HEAD cannot hide a design edit.
 - **Detection is only what can see the failure.** A DFMEA row's 'detects' lists the checks
   that must all pass before it is DONE. Its detection rating is 10 with none, and 8 or more
@@ -395,12 +395,12 @@ that touches any of these paths makes the default mode warn and the order gate f
 2026-10-28 it is main: ref-design-esp32s3 is merged and its board dropped, and the next design lands
 on main. Until then it was ref-design-esp32s3 from 39cc07f, where the board session committed
 renders, kits and docs after the baseline. Every hash below
-equals the same path at fd66be9. The gate-moves line names the register state before this re-seed
+equals the same path at c34e653 (moved from fd66be9 on 2026-10-30: the case's version string, case-version, changed case.scad, export.py and tools/build.py; no RP2350B check had run on them). The gate-moves line names the register state before this re-seed
 (fd1f6e8, vv-rp2354b-final's successor): until Alex signs a `GATE@` line, the order gate prints
 every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before he signs.
 
 - Baseline board: `esp32s3`
-- Order branch: `main` from `fd66be9`
+- Order branch: `main` from `c34e653`
 - Gate moves listed since: `fd1f6e8`
 - `hardware/ref_design/board/design.py` e4cc953e06891cc000ee5dc951765aceacb5ba25
 - `hardware/ref_design/board/placement.py` 4093b078390aa77a2b944ec6469ad5d6fe9c8fcb
@@ -413,7 +413,7 @@ every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before
 - `hardware/ref_design/board/fp-lib-table` 869deca7bc078b6e52f2016868bfb4b0cffe28ad
 - `hardware/ref_design/board/sym-lib-table` bad6b19dda9197494092e27b4854bcbf59f9d307
 - `hardware/ref_design/board/tools` 1bb1f0ce2b0a3f963e606003a496876e45398dae
-- `hardware/ref_design/tools/build.py` 93bcb52fa546055454242aa2bf1e65581bb27a84
+- `hardware/ref_design/tools/build.py` bca89a6a624cd62736a1d28c870d11b350554b88
 - `hardware/ref_design/board/audio.kicad_sch` 3c0ed35df2964d167b3d5319c27db1cf2ba1e400
 - `hardware/ref_design/board/battler.kicad_sch` 2eab07857a053c85bc282795adb4638d1451aa2c
 - `hardware/ref_design/board/buttons.kicad_sch` 5a0b62ab4b4ce54b3f571906b362634bd581a446
@@ -423,8 +423,8 @@ every phase or Gate this re-seed moved later (G0, O-S5), so he reads them before
 - `hardware/ref_design/board/power.kicad_sch` 1537bba1316d9d6725176c44c2c8ced554add60e
 - `hardware/ref_design/board/storage.kicad_sch` be626b579f2e1691027bdd77ad458662ec9fe1d4
 - `hardware/ref_design/board/usb_charger.kicad_sch` 9782654c75f29fbf0ea6000d53a99db9ee1ea33a
-- `hardware/ref_design/case/case.scad` 20ff57f1822494f41455946024ef5ab0c7d1e64c
-- `hardware/ref_design/case/export.py` 2b14fd99117a4885a2bbd79550ea369431f9f219
+- `hardware/ref_design/case/case.scad` d4a142700d08662c37a6b37eef6e0bae8f3f3230
+- `hardware/ref_design/case/export.py` 503955037bce27d64b471790e84f4afb4f7da6cd
 
 ## Ratings (DFMEA)
 
