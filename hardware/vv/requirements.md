@@ -778,7 +778,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Subsystem: power
 - Statement: 3V3 shall stay at 3.30 V +-3% (3.20-3.40 V) for the system rail's range on the cell and on USB and for loads from 0 to the 3V3 budget of REQ-PWR-20.
 - Rationale: the RP2350's IOVDD range at 3.3 V (to read from its datasheet once it is on disk: VER-233) and the panel's logic supply, 3.3 V maximum; U3 is the 3V3 regulator (C47773), whose accuracy and load regulation are read from its datasheet and re-derived in VER-235 against the 3V3 budget of REQ-PWR-20.
-- Source: the RP2350 datasheet's IOVDD range (to download: VER-233); U3's datasheet DS9013 (accuracy and load regulation); ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:747-748: up to 3.350 V is 50 mV over, DF-227).
+- Source: the RP2350 datasheet's IOVDD range (to download: VER-233); U3's datasheet DS9013 (accuracy and load regulation); ER-TFT035IPS-6 VCI 2.5-3.3 V recommended (er-tft035ips-6.txt:650 "VCI ... (2.5~3.3V)" and :703 "VCI 2.5 2.8 3.3 V": up to 3.350 V is 50 mV over, DF-227).
 - Numbers: 3.30 V = datasheet: rt9013.txt:46 "33 : 3.3V" (U3's datasheet, the fixed 3.3 V option) and rp2350.txt:1216 "IOVDD Power supply for digital GPIOs, nominal voltage 1.8 V to 3.3 V"; +-3% = judgment: a window U3 can meet on paper: output accuracy -2 to +2 % at 10 mA (rt9013.txt:161 "−2 0 +2 %") plus load regulation up to 1 % (the same table) leaves no margin for line regulation, so VER-235 re-derives it against the 3V3 budget; tighter than 3% fails the part at its datasheet limits, looser (5%) raises the stress on the panel (VCI 2.5 to 3.3 V, DF-227); 3.20-3.40 V = derived: 3.30 V - 3% of 3.30 V = 3.20 V; 3.30 V + 3% of 3.30 V = 3.40 V, each rounded to the nearest hundredth of a volt; from 0 to = judgment: the load range starts at no load, where an LDO's output is highest; looser or tighter only moves where the check begins
 - Method: T
 - Verified by: VER-83, VER-235
@@ -1197,7 +1197,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Numbers: 20 of 20 = count: twenty power-ons; no standard sets it; fewer cannot show an intermittent boot failure, more costs bench time; 16 MB = spec: docs/static/DESIGN.md:74 ('a 16 MB flash memory chip beside it')
 - Method: T
 - Verified by: VER-252, VER-237
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 - Notes: Rewritten on 2026-10-29. It was the F1C200s's boot from the microSD card (tag vv-f1c200s-final). VER-189 (2026-10-29): DESIGN.md line numbers corrected after the Sleep line moved them (this row and REQ-SOC-02, -08, -USB-01, -USB-02, -ASM-01.B).
 
@@ -1211,7 +1211,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Numbers: 520 KB = datasheet: rp2350.txt:797 "520 kB on-chip SRAM"; 420 KB = spec: docs/static/next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); 1.4 MB = spec: docs/static/next_spin_requirements.md:13 ('about 420 KB of RAM and 1.4 MB of code and data on the RP2350 today'); 100 KB = derived: 520 KB - 420 KB = 100 KB, the SRAM that is free today (the Rationale calls it Claude's proposal): the core may grow in code but not in RAM
 - Method: T, A
 - Verified by: VER-252, VER-237
-- Phase: ORDER
+- Phase: EVT
 - Status: PROPOSED
 - Notes: Rewritten on 2026-10-29. It was the F1C200s's ARM9 running from its DRAM (tag vv-f1c200s-final).
 
