@@ -2300,7 +2300,7 @@ USB 2.0, IEC 61000-4-2 and EN 55035. Check each against the purchased text befor
 - Board: both
 - Subsystem: all
 - Statement: The PVT lot's first-pass yield on the self-test shall be 90% or more, with every failure logged as a defect.
-- Rationale: below that the process, not the unit, is the problem. Derivation (VER-189 fix, 2026-10-29): 90% of the 30-board PVT lot is 27 units (0.9 x 30) passing first time; below that the process is the problem. A design choice. Earlier cite (not a primary source): Claude's estimate.
+- Rationale: when fewer than 90% of a lot pass the self-test first time, the process (assembly, parts or test), not the unit, is the problem. Derivation (VER-189 fix, 2026-10-29): 90% of the 30-board PVT lot is 27 units (0.9 x 30) passing first time; below that the process is the problem. A design choice. Earlier cite (not a primary source): Claude's estimate.
 - Source: Alex's decision (to sign)
 - Method: I
 - Verified by: VER-111
