@@ -6,7 +6,7 @@ Why: Alex asked how many requirements carry numbers Claude made up with no sourc
 
 After Source, each live requirement carries `- Numbers:`, one entry per number in its Statement, separated by `; `, each `<value as written in the Statement> = <tag>: <detail>`. Tags: `datasheet` (file.txt:line and a quote, verified against the PDF by tools/ds.py's rule: on the line or the next), `standard`, `spec` (DESIGN.md or next_spin_requirements.md line, or Alex's words with their date and where recorded), `derived` (arithmetic whose every input is tagged), `judgment` (Claude's choice, with what looser or tighter would cost), `count` (sample sizes and test counts). The full rules, including what is not a number (IDs, designators, part numbers, dates, line cites, clause cites, seat and pin labels, list numbering), are in README.md, 'Where a requirement's numbers come from'.
 
-Three conventions the batch needed: an `in: <value>` entry tags an input a derived number uses that the Statement does not state; a number set by a standard whose text is not on disk is tagged `judgment` and the standard's name carries the word `unread` (so `grep -n unread requirements.md` lists the numbers the later web job should check against the real text, and re-tag as `standard`); no `standard:` tag is used in this batch, because no standard's text is on disk.
+Three conventions the batch needed: an `in: <value>` entry tags an input a derived number uses that the Statement does not state; a number set by a standard whose text is not on disk is tagged `judgment` and the standard's name carries the word `unread` (so `grep -n unread requirements.md` lists the numbers the later web job should check against the real text, and re-tag as `standard`); no `standard:` tag was used in this batch, because no standard's text was on disk (the policy pass in section 10 changed that).
 
 ## 2. Approvals
 
@@ -23,10 +23,10 @@ check_trace.py (`check_numbers`, run from `load`): for every live requirement (S
 | Tag | Numbers | Share |
 |---|---|---|
 | datasheet | 13 | 9% |
-| standard | 0 | 0% |
+| standard | 16 | 11% |
 | spec | 19 | 13% |
 | derived | 13 | 9% |
-| judgment | 82 | 58% |
+| judgment | 66 | 46% |
 | count | 15 | 11% |
 
 124 entries, 4 of them `in:` inputs for derived numbers (3 judgment, 1 spec). `judgment` is the biggest tag: most of these rows' numbers were Claude's choice and the register now says so.
@@ -68,13 +68,6 @@ Row, value as written, the one-line reason. Each has the full reason, with what 
 | REQ-BAT-16 | +-10% | so a bench supply can be read to it (Rationale) |
 | REQ-BAT-16 | 3.50 V | the cutoff REQ-BAT-12 chooses (DF-225); recorded so the choice can be made on measured capacity |
 | REQ-BAT-16 | 3.60 V | the alternative, higher cutoff the cutoff choice (DF-225) weighs against 3.50 V |
-| REQ-PWR-01 | 4.40 | the lowest VBUS at which the unit with a cell is claimed to run: just under the BQ24073's VIN-DPM typical 4.5 V (bq24074.txt:739 "4.35 4.5 4.63") so the cell makes up the input current... |
-| REQ-PWR-01 | 5.50 V | the upper edge, 0.25 V over USB 2.0's 5.25 V (unread) to take in a high charger, and under the charger's input over-voltage threshold |
-| REQ-PWR-01 | 4.75 | without a cell nothing makes up the input current, so the floor sits above the VIN-DPM maximum 4.63 V (bq24074.txt:739 "4.35 4.5 4.63") and at USB 2.0's source floor (cl. 7.2.1, unread) |
-| REQ-PWR-01 | 500 mA | the 500 mA of a standard USB 2.0 port (USB 2.0 cl. 7.2.1 names it but the standard's text is not on disk (unread)), the charger's USB500 limit reads 450 475 500 mA (bq24074.txt:733 "EN1... |
-| REQ-PWR-16 | 4.75-5.25 V | the voltage range of a USB 2.0 source at the connector (cl. 7.2.1, text unread) |
-| REQ-PWR-16 | 4.40 V | the lower edge of REQ-PWR-01's run range, so the measurement covers the whole gap between run and charge; DEC-15 lets Alex raise it or accept |
-| REQ-PWR-16 | 4.75 V | the bottom of USB 2.0's source range (cl. 7.2.1, text unread) and above the VIN-DPM maximum 4.63 V (bq24074.txt:739 "4.35 4.5 4.63") |
 | REQ-PWR-02 | 2 m | a long cable that rings harder than a short one at a live plug |
 | REQ-PWR-02 | 0.2 V | the margin under the charger's over-voltage minimum, which the Rationale takes from the minimum and not the 6.6 V nominal (O-R18) |
 | REQ-PWR-04 | +-3% | a window U3 can meet on paper: output accuracy -2 to +2 % at 10 mA (rt9013.txt:161 "−2 0 +2 %") plus load regulation up to 1 % (the same table) leaves no margin for line regulation, so... |
@@ -91,17 +84,12 @@ Row, value as written, the one-line reason. Each has the full reason, with what 
 | REQ-PWR-10 | in: 2.5 times margin | 2.5 times the 4 s the two steps take, for a slow image to reach its first watchdog enable (Rationale: 'a design choice') |
 | REQ-PWR-11 | 1 Mohm | Claude's model of sweat, flux or a pressed cap bridging the contact (DF-242) |
 | REQ-PWR-11 | 10 min | long enough for a latch that needs a slow leak to build up to show itself |
-| REQ-PWR-12 | 0.25-0.61 V | the CC voltage band of a default-power USB Type-C source (the Type-C specification, unread) |
-| REQ-PWR-12 | 500 mA | the 500 mA of a standard USB 2.0 port (USB 2.0 cl. 7.2.1 names it but the standard's text is not on disk (unread)); the charger's USB500 limit is 475 mA typical, 500 mA maximum... |
 | REQ-PWR-12 | 2 s | Claude's allowance for the charger to settle after plug-in |
-| REQ-PWR-13 | 10 uF | USB 2.0's capacitance limit at a plug (cl. 7.2.4.1, text unread) |
-| REQ-PWR-13 | 50 uC | USB 2.0's charge limit at a plug (cl. 7.2.4.1, text unread) |
-| REQ-PWR-13 | 5.25 V | the top of USB 2.0's source range (cl. 7.2.1, text unread), the worst case for the charge a capacitor takes |
-| REQ-PWR-14 | 0.3 V | Claude's margin below absolute maximum for an IC transient (O-22); analysis/derating_rule_2026-10-30.md (section 1) finds no standard sets a fixed volts figure, and proposes replacing it... |
-| REQ-PWR-14 | 80% | matches ECSS-Q-ST-30-11C Table 6-34 (VDS 80%) and Table 6-29 (chip resistor voltage 80%) and Murata's consumer MLCC 80% as quoted in analysis/derating_rule_2026-10-30.md, but not the... |
-| REQ-PWR-14 | 90% | Claude's figure for a transient under 10 us (O-22); ECSS 5.4.2e (analysis/derating_rule_2026-10-30.md) allows the steady-state limit plus 10% or 80%, whichever is lower, for repeated... |
+| REQ-PWR-13 | 50 uC | USB 2.0 cl. 7.2.4.1 states no charge limit, only the 10 uF load; 50 uC is 10 uF x 5.0 V (52.5 uC at 5.25 V) |
+| REQ-PWR-14 | 0.3 V | Claude's margin; NASA M3 Note 1.1 says use the manufacturer's recommended conditions under 5 V and sets no fixed volts |
+| REQ-PWR-14 | 90% | Claude's figure; NASA S1 Table 4 Note 1 gives no transient allowance (DEV-06) and ECSS 5.4.2e caps it at 80% |
 | REQ-PWR-14 | 10 us | Claude's boundary between a transient and steady state (O-22); no standard on disk sets a time; the Statement is about to change |
-| REQ-PWR-17 | 6-20 V | 6 V just over the USB source ceiling and 20 V the top of a USB PD source (the PD specification, unread) |
+| REQ-PWR-17 | 6-20 V | 6 V is Claude's round figure over USB's 5.50 V ceiling; 20 V is the PD Standard Power Range (Type-C R2.5 line 19676); the PD specification is not on disk (unread) |
 | REQ-PWR-21 | 2 s or more | Claude's decision, 2026-10-30 (Rationale): 2 s plus the longest erase or write (under 2 s) ends by 4 s, 2 s before the TPS3421's 6 s minimum delay (tps3421.txt:308 "TPS3421Ey, TPS3422Ey:... |
 | REQ-SOC-03 | 10 ms | 1% of the 1.0 s boot budget after the hold (REQ-PRD-15), 10 ms / 1000 ms; neither the RP2350 datasheet's nor the crystal's start-up time is read here, VER-237 measures it |
 | REQ-SOC-04 | 2 s | Claude's watchdog timeout; the RP2350's watchdog LOAD register reaches about 16 s so 2 s is settable (rp2350.pdf section 12.9, Notes) |
@@ -109,9 +97,8 @@ Row, value as written, the one-line reason. Each has the full reason, with what 
 | REQ-SOC-09 | 2 mm | the Rationale: 'the 2 mm is Claude's proposal', no source on disk |
 | REQ-SOC-10 | 3 failed boots | Claude's count: one failed boot can be a power cut, three in a row mean the image is bad; the Statement gives no source |
 | REQ-SOC-11 | 16 KB | the Rationale: 'Claude's margin over Alex's a few KB' |
-| REQ-USB-01 | 5.1 kohm | the Rd of a USB Type-C device (the Type-C specification, unread; the Source says 'to confirm the tolerance') |
-| REQ-USB-02 | 2 mm | Claude's proposal 'from USB 2.0' (Rationale; the standard is unread) |
-| REQ-USB-02 | 3.5 mm | Claude's proposal from USB 2.0 (Rationale; unread) |
+| REQ-USB-02 | 2 mm | Claude's proposal; USB 2.0 (now on disk) has no PCB skew or length-match figure, so the Rationale's 'from USB 2.0' is not found |
+| REQ-USB-02 | 3.5 mm | Claude's proposal; USB 2.0 has no stub length |
 
 ## 6. The `count:` numbers
 
@@ -150,3 +137,43 @@ Tagged on its current Statement (0.3 V, 80%, 90%, 10 us, all `judgment`), with e
 `python3 hardware/vv/tools/check_trace.py` prints the rest: live rows with a number in the Statement and no Numbers field, per row, and the total. Set `NUMBERS_REQUIRED = True` in tools/check_trace.py when it reaches 0. Next: the `judgment` rows above, one by one, against the real standard or datasheet (the web job).
 
 Last updated: 2026-10-30 11:56 EDT
+
+## 10. The policy pass (2026-10-30, branch vv-policy, queue issue #89)
+
+Alex's policy: use NASA's standard (EEE-INST-002 for derating, parts at Level 3), use discretion where it costs too much, and ground every number in a source (README, 'Sources and deviations'; deviations.md). The free primary documents are now in hardware/ref_design/datasheets (eee-inst-002.pdf, usb_20.pdf, usb_type-c_r2p5.pdf, cfr47_part15_2025.pdf; SOURCES.md has URL, revision, date and sha256). Counts of the 142 numbers after the pass (section 4's table is updated to these; before it: standard 0, judgment 82):
+
+| Tag | Numbers | Share |
+|---|---|---|
+| datasheet | 13 | 9% |
+| standard | 16 | 11% |
+| spec | 19 | 13% |
+| derived | 13 | 9% |
+| judgment | 66 | 46% |
+| count | 15 | 11% |
+
+The 16 `standard:` numbers by document: USB 2.0 12 (REQ-PWR-01 4.40, 4.75, 500 mA and 5.50 V twice, the last through the VBUS Max Limit ECN: 5; REQ-PWR-12 500 mA: 1; REQ-PWR-13 10 uF and 5.25 V: 2; REQ-PWR-16 4.75-5.25 V as two, 4.40 V and 4.75 V: 4), USB Type-C R2.5 3 (REQ-PWR-12 0.25-0.61 V as two, REQ-USB-01 5.1 kohm), EEE-INST-002 1 (REQ-PWR-14 80%, which departs from NASA for five parts: DEV-01 to DEV-05). 
+
+Where a source disagrees with the Statement's number (the tag keeps the source's figure; Alex decides any Statement change):
+
+| Row | Statement | Source | Note |
+|---|---|---|---|
+| REQ-PWR-12 | CC at 0.25-0.61 V | Type-C R2.5 Table 4-36: vRd-USB 0.277 to 0.612 V (Rd within +-10%) | the Statement's band is not the R2.5 band; with Rd +-20% (Table 4-35) the sink only sees "connected" and cannot read default power |
+| REQ-USB-01 | Rd 5.1 kohm, no tolerance | Type-C R2.5 Table 4-28: +-10% to detect power capability; plug side +-20% | REQ-PWR-12 needs Rd within +-10% |
+| REQ-PWR-13 | 50 uC at 5.25 V | USB 2.0 7.2.4.1 gives no charge limit: 10 uF | 10 uF x 5.25 V is 52.5 uC, so 50 uC is tighter than the 10 uF limit; the "USB 2.0 charge limit" in the old tag was wrong |
+| REQ-USB-02 | 2 mm skew, 3.5 mm stub | USB 2.0 sets neither | the Rationale's "from USB 2.0" is not found in the specification |
+| REQ-PWR-14 | 90% for a transient under 10 us | ECSS 5.4.2e: 80% of the rating for a repeated transient; EEE-INST-002 S1 Note 1: no allowance | DEV-06 |
+| REQ-PWR-01 | 5.50 V "0.25 V over USB 2.0's 5.25 V" | USB 2.0 ECN VBUS Max Limit and Type-C R2.5: 5.50 V is itself the ceiling | the Rationale's reading is out of date; the number holds |
+
+NASA-STD-8739.11: NASA's slides name it the successor of EEE-INST-002, but no NASA page that gives its approval or effective date could be reached and its text is not on disk, so EEE-INST-002 stays the governing derating document here (README).
+
+Not sourced because the document is not free to download or not on hand (for Claude to look up by hand, in UL's viewer):
+
+| Number (row) | Standard and likely clause |
+|---|---|
+| 0.5 C charge rate, 45 C and 0 C charge window (REQ-BAT-02, -03, -04) | IEC 62133-2 (paid; the cell maker's limits); UL 2054 charge and discharge cycling and the abnormal-charging test; UL 1642 for the cell. IEC 62368-1:2010 Annex M.3.1 only requires charging "within the battery manufacturer's recommendations" and sets no figure |
+| 4.35 V over-charge trip, 2.4 V under-voltage floor (REQ-BAT-06) | UL 2054 overcharge test and the protection-circuit requirements; the cell's and the PCM's own datasheets (not on disk, VER-37) |
+| 0.4 mm swelling over 4.0 mm (REQ-BAT-07) | UL 2054 or UL 1642 may say nothing on swelling (a guess, not read); the cell maker's swelling figure is the likelier source |
+| 2 documents (REQ-BAT-11, UN38.3 summary and MSDS) | UN Manual of Tests and Criteria 38.3 (UNECE returned 403 to a download on 2026-10-30) |
+| (UL 94) | no number in REQ-BAT, PWR, SOC or USB would come from it; a flame-class row would be in the case or product rows |
+| 6-20 V (REQ-PWR-17) | USB Power Delivery specification (not on disk) |
+
