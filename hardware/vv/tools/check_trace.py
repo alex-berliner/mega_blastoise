@@ -1347,6 +1347,26 @@ def in_board(path, board):
 NUMBERS_REQUIRED = False
 NUMBERS_MISSING = {}                      # live rows with no Numbers field: {id: untagged numbers}
 NUM_TAGS = ("datasheet", "standard", "spec", "derived", "judgment", "count")
+# The documents a `standard:` tag may name (README, 'Sources and deviations'): the detail starts with one of these.
+# Longest first.  IEC 62368-1 is edition 1 only (the one copy on hand), so its name carries the edition gap.
+STANDARD_DOCS = (
+    "IEC 62368-1:2010 (ed. 1, superseded; current is ed. 4, 2023)",
+    "NASA/SP-2016-6105 Rev 2", "NASA-STD-8739.11", "EEE-INST-002",
+    "USB Type-C", "USB 2.0", "47 CFR Part 15", "UN Manual of Tests and Criteria",
+    "ECSS-Q-ST-30-11C", "Murata MLCC caution",
+)
+# A standard:/datasheet: tag that departs from NASA names its DEV-nn row of deviations.md ('departs from NASA').
+# Both checks are warnings until this is True.
+STANDARDS_STRICT = False
+DEV_ID = re.compile(r"\bDEV-\d{2}\b")
+
+
+def deviation_ids():
+    """The DEV-nn ids that have a row in deviations.md."""
+    p = os.path.join(VV, "deviations.md")
+    if not os.path.isfile(p):
+        return set()
+    return set(re.findall(r"^\|\s*(DEV-\d{2})\s*\|", open(p, encoding="utf-8").read(), re.M))
 # tokens in a Statement that are not numbers: IDs and part numbers (a letter run joined to digits: R42, GPIO44,
 # RP2350B, 74HC165, 3V3, QFN-80, REQ-PWR-14), dates, file line cites, clause and page cites, a standard's own
 # number (USB 2.0, IEC 62368-1), '#n' plan cites, seat and pin labels ('seat 1', 'pin 1'), hex, and list numbering ('(1)')
@@ -1429,6 +1449,10 @@ def check_number_entry(where, rid, entry, others, reqs):
     elif tag == "standard":
         if not re.search(r'\S.* "[^"]{3,}"', detail):
             err(where, f'{rid}: Numbers entry {value!r}: standard: wants <document> <clause> "<quote>"')
+        elif not any(detail.startswith(n) for n in STANDARD_DOCS):
+            (err if STANDARDS_STRICT else warn)(
+                where, f"{rid}: Numbers entry {value!r}: standard: names no known document "
+                       f"(STANDARD_DOCS in check_trace.py: {'; '.join(STANDARD_DOCS)})")
     elif tag == "spec":
         cite = SPEC_CITE.search(detail)
         if cite:
@@ -1464,11 +1488,24 @@ def check_number_entry(where, rid, entry, others, reqs):
             err(where, f"{rid}: Numbers entry {value!r}: judgment: says what a looser or tighter number would cost")
 
 
+def check_deviation_links(where, rid, entry, devs):
+    """A standard:/datasheet: tag that departs from NASA names its DEV-nn row; every DEV-nn named has a row."""
+    value, tag, detail = entry
+    if tag is None:
+        return
+    say = err if STANDARDS_STRICT else warn
+    if tag in ("standard", "datasheet") and "departs from NASA" in detail and not DEV_ID.search(detail):
+        say(where, f"{rid}: Numbers entry {value!r}: departs from NASA but names no DEV-nn row of deviations.md")
+    for dev in sorted(set(DEV_ID.findall(detail)) - devs):
+        say(where, f"{rid}: Numbers entry {value!r}: {dev} has no row in deviations.md")
+
+
 def check_numbers(reqs):
     """Every number in a live requirement's Statement has a Numbers entry; each entry's tag holds.  Returns
     {id: untagged count} for the live rows with no Numbers field (their count is a warning, an error once
     NUMBERS_REQUIRED)."""
     missing = {}
+    devs = deviation_ids()
     for rid, r in reqs.items():
         f, w = r["f"], r["_where"]
         if f.get("Status") in GONE or f.get("Board") not in BOARD_VALUES or not f.get("Statement"):
@@ -1491,6 +1528,7 @@ def check_numbers(reqs):
             elif e[1] is not None:
                 covered += [(m.start(), m.start() + len(e[0])) for m in re.finditer(re.escape(e[0]), st)]
             check_number_entry(w, rid, e, entries[:i] + entries[i + 1:], reqs)
+            check_deviation_links(w, rid, e, devs)
         bare = [t for s0, e0, t in toks if not any(a <= s0 and e0 <= b for a, b in covered)]
         if bare:
             err(w, f"{rid}: {len(bare)} number(s) in the Statement with no Numbers entry: {', '.join(bare[:8])}")
