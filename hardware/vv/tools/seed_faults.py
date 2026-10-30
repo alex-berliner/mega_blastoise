@@ -379,10 +379,11 @@ FAULTS = [
      "VER-21: names what design.py at " + BASE7 + " does not have: VBUS_D5 (net",
      lambda d: csv_edit(d, "verification.csv", "VER-21", pass_limit=lambda x: x + ", /USB_Charger/VBUS_D5")),
     # 2026-10-28, the F1C200s re-seed: VER-190 (the case's architecture, an ORDER analysis) is built and NOT_RUN, the
-    # only check of class 2 for the case besides VER-232's planned one: it must leave the cell planned, so all nine
-    # class 2 cells stay GAP (counting a NOT_RUN analysis would give 8)
+    # only check of class 2 for the case besides VER-232's planned one: it must leave the cell planned, so the case
+    # cell stays GAP (counting a NOT_RUN analysis would give one fewer). 2026-10-30: VER-258's datasheet PASS clears
+    # the power, soc and buttons cells, so six class 2 cells stay GAP, not nine (it was nine before VER-258 ran)
     ("O-R6: an analysis that has not run does not clear a class 1-14 cell (case, class 2)", "report",
-     "2 Architecture fit 9",
+     "2 Architecture fit 6",
      lambda d: csv_edit(d, "verification.csv", "VER-190", last_result="NOT_RUN", evidence="", commit="", date="")),
     # the framework fixes after vv-rp2354b-final's sign-off (2026-10-28)
     ("accept: a defect ACCEPTED with no DF-ACCEPT line at all", "structure",
