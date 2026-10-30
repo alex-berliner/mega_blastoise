@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-30
-COMMIT: b6548ee449e9409661a173a7c16680559ae8aa0a
+COMMIT: fea3d5f292aac965ba6e22854fbd10440bab109f
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -26,6 +26,11 @@ ok  structure a gate criterion naming a retired check
 ok  structure vp_map status changed with no evidence
 ok  structure requirement with no Verified by
 ok  structure requirement APPROVED with no APPROVALS line
+ok  structure Numbers: a number in the Statement with no entry
+ok  structure Numbers: a datasheet quote that is not on its line
+ok  structure Numbers: an unknown tag
+ok  structure Numbers: a judgment that does not say what looser or tighter costs
+ok  structure Numbers: a derived entry whose input nobody tagged
 ok  structure allocation on the wrong board
 ok  structure risk ACCEPTED with no APPROVALS line
 ok  structure approval line signed by Claude
@@ -154,7 +159,7 @@ ok  gate_no   accept: a check outside the accepted defect's list is not let thro
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
-148 seeded faults, 148 caught
+153 seeded faults, 153 caught
 RESULT: PASS
 
 exit 0
