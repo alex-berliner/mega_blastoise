@@ -48,6 +48,10 @@ board_v2 = ["dep:pio", "dep:fixed"]
 # Semi-transparent held-button overlay on the panel (debug aid).
 input-debug = []
 mem-profile = []
+# Drop the CDC console from the USB descriptor: the phone bridge's vendor
+# interface alone. The fallback if Android Chrome will not open the
+# composite device (docs/living/phone_bridge.md).
+usb-vendor-only = []
 # `sim_bench` with the battles compiled out: the flash baseline
 # `scripts/sim-budget.sh` subtracts.
 sim-bench-baseline = []

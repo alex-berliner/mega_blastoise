@@ -71,6 +71,22 @@ impl DevicePort for FwPort {
     fn battery(&self) -> mega_blastoise_core::display_color::Battery {
         crate::subsystems::battery::battery()
     }
+
+    fn build_id(&self) -> &str {
+        env!("MB_FW_COMMIT")
+    }
+
+    fn link_send(&self, line: &str) {
+        crate::subsystems::usb_v2::link_send(line);
+    }
+
+    fn link_try_recv(&self) -> Option<alloc::string::String> {
+        crate::subsystems::usb_v2::LINK_IN.try_receive().ok()
+    }
+
+    async fn link_recv(&self) -> alloc::string::String {
+        crate::subsystems::usb_v2::LINK_IN.receive().await
+    }
 }
 
 /// The sprite-bob heartbeat; also the repaint-heal tick (core presents on
