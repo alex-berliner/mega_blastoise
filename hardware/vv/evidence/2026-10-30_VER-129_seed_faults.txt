@@ -1,6 +1,6 @@
 # VER-129 seed_faults
 DATE: 2026-10-30
-COMMIT: fea3d5f292aac965ba6e22854fbd10440bab109f
+COMMIT: f0d737315905d7e199c876d0eaf8a8f64bbd2d03
 TREE: clean under its covers
 TOOLS: python 3.12.3
 $ python3 hardware/vv/tools/seed_faults.py
@@ -31,6 +31,9 @@ ok  structure Numbers: a datasheet quote that is not on its line
 ok  structure Numbers: an unknown tag
 ok  structure Numbers: a judgment that does not say what looser or tighter costs
 ok  structure Numbers: a derived entry whose input nobody tagged
+ok  report    Numbers: a standard: tag naming a document the checker does not know
+ok  report    Numbers: a tag that departs from NASA with no DEV row in deviations.md
+ok  report    Numbers: a tag that departs from NASA and names no DEV-nn
 ok  structure allocation on the wrong board
 ok  structure risk ACCEPTED with no APPROVALS line
 ok  structure approval line signed by Claude
@@ -159,7 +162,7 @@ ok  gate_no   accept: a check outside the accepted defect's list is not let thro
 ok  gate      R8: a proposal doc changed on the order branch after the baseline fails the order gate (git)
 ok  report    R8: a proposal doc changed on the order branch after the baseline warns in the default mode (git)
 ok  gate      grid R9: a GRID line signed with no ACCEPTED_GAP row leaves the cell a GAP and says why (git)
-153 seeded faults, 153 caught
+156 seeded faults, 156 caught
 RESULT: PASS
 
 exit 0
