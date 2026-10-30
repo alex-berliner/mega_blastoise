@@ -57,12 +57,12 @@ What the physical device is.
 - The physical design follows the DS Lite: the curves, the buttons and the feel in the hand. The aim is that it feels like holding the bottom half of a DS Lite. (2026-10-19)
 - The buttons are DS Lite silicone pads (the soft rubber button sheets) pressing on bare contacts on the circuit board. (2026-09-21)
 - Each seat has a D-pad, A/B/X/Y, Start and Select. (2026-10-19)
-- Power is seat 1's Start button: hold it for 2 to 3 seconds to turn on, so a bump in a pocket doesn't switch it on, and hold it to turn off. (2026-10-29)
+- Power is seat 1's Start button: hold it for 2 to 3 seconds to turn on, so a bump in a pocket doesn't switch it on. (2026-10-29)
 - It stays about today's size or smaller, never bigger than a smartphone in its case, and every new spin is made as small as it can be. (2026-10-28)
 - The circuit board has two layers (the cheaper kind) and is assembled by a factory (JLCPCB) in batches. (2026-09-24)
 - There are no indicator lights on the board. (2026-09-24)
 - There is no separate reset button. (2026-10-28)
-- Holding seat 1's Start for about 8 seconds forces the console off, even if it has frozen. (2026-10-29)
+- Holding seat 1's Start for about 8 seconds turns the console off, even if it has frozen; there is no shorter hold to turn it off. (2026-10-30)
 - Holding seat 1's Select while turning the console on starts update mode: it shows up on a computer as a USB drive, and copying one file onto it updates it or restores it from any state. (2026-10-29)
 - The board has test pads and a debug connector for bring-up. (2026-10-19)
 - Debug builds can log every battle line to flash and show the log on the next boot. Production builds have this switched off. (2026-10-28)
@@ -90,4 +90,4 @@ How it behaves.
 
 The next hardware spin's requirements, and what each needs from its chip, are in [next_spin_requirements.md](next_spin_requirements.md). (2026-10-28)
 
-Last updated: 2026-10-29 13:22 EDT
+Last updated: 2026-10-30 07:34 EDT
